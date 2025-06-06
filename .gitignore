@@ -1,0 +1,65 @@
+# 🔒 СЕКРЕТНЫЕ ФАЙЛЫ
+.env
+*.env
+.env.*
+
+# 🗄️ БАЗЫ ДАННЫХ
+*.db
+*.sqlite
+*.sqlite3
+users.db
+vector_store/
+
+# 📁 ПОЛЬЗОВАТЕЛЬСКИЕ ФАЙЛЫ
+files/
+uploads/
+temp/
+
+# 📝 ЛОГИ
+*.log
+security.log
+bot_errors.log
+
+# 🔧 СИСТЕМНЫЕ ФАЙЛЫ
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 🎯 IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 🖼️ ВРЕМЕННЫЕ ФАЙЛЫ
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# 📦 ЗАВИСИМОСТИ
+node_modules/
+.npm
+
+# 🧪 ТЕСТЫ
+.coverage
+htmlcov/
+.pytest_cache/
