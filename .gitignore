@@ -9,6 +9,8 @@
 *.sqlite3
 users.db
 vector_store/
+*.db-shm
+*.db-wal
 
 # 📁 ПОЛЬЗОВАТЕЛЬСКИЕ ФАЙЛЫ
 files/
