@@ -19,14 +19,25 @@ def language_keyboard():
     )
 
 def main_menu_keyboard(lang):
+    """Главное меню с кнопкой настроек"""
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text=t("main_upload_doc", lang)), KeyboardButton(text=t("main_upload_image", lang))],
             [KeyboardButton(text=t("main_note", lang)), KeyboardButton(text=t("main_documents", lang))],
-            [KeyboardButton(text=t("main_schedule", lang))]
+            [KeyboardButton(text=t("main_schedule", lang)), KeyboardButton(text=t("main_settings", lang))]  # 🔥 НОВАЯ СТРОКА
         ],
         resize_keyboard=True
     )
+
+def settings_keyboard(lang):
+    """Inline клавиатура меню настроек"""
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=t("settings_profile", lang), callback_data="settings_profile")],
+        [InlineKeyboardButton(text=t("settings_faq", lang), callback_data="settings_faq")],
+        [InlineKeyboardButton(text=t("settings_subscription", lang), callback_data="settings_subscription")]
+    ])
 
 def skip_keyboard(lang):
     return ReplyKeyboardMarkup(

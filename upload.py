@@ -248,7 +248,7 @@ async def handle_image_analysis(message: types.Message, bot):
 
         print("🔍 Проверяю медицинский контент...")
         if not await is_medical_text(vision_text):
-            await message.answer(t("not_medical_doc", lang))
+            await message.answer(t("not_medical_doc1", lang))
             return
         
         print("📝 Создаю резюме и заголовок...")

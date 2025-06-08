@@ -28,7 +28,7 @@ def safe_html_escape(text: str, max_length: int = 4000) -> str:
     # Экранируем HTML теги и спецсимволы
     return html.escape(text)
 
-async def safe_send_message(message, text: str, title: Optional[str] = None, parse_mode: str = "HTML"):
+async def safe_send_message(message, text: str, title: Optional[str] = None, parse_mode: str = "HTML", reply_markup=None):
     """
     Безопасная отправка сообщения с автоматическим экранированием
     
@@ -46,7 +46,7 @@ async def safe_send_message(message, text: str, title: Optional[str] = None, par
         else:
             final_text = safe_html_escape(text, 4000)
         
-        await message.answer(final_text, parse_mode=parse_mode)
+        await message.answer(final_text, parse_mode=parse_mode, reply_markup=reply_markup)
         
     except Exception as e:
         # Fallback - отправляем без HTML форматирования

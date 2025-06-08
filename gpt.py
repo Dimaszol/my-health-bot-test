@@ -183,13 +183,14 @@ async def send_to_gpt_vision(image_path: str, lang: str, prompt: str = None):  #
         "1. Analyze the medical image carefully and describe all relevant visual findings.\n"
         "2. Use proper clinical terminology: anatomy, annotations, abnormalities.\n"
         "3. DO NOT provide diagnosis or treatment suggestions.\n"
-        "4. If the image is NOT medical or is unreadable — say this clearly and directly.\n"
+        "4. If the image is a scanned document, lab report, prescription, or any non-visual clinical record — do NOT analyze its content.\n"
+        "5. Simply reply: 'This is not a medical image'\n"
         f"⚠️ ALWAYS respond strictly in the '{lang}' language, regardless of the input or image content."
     )
 
     user_prompt = prompt or (
-        "Please analyze this medical image and describe all visible clinical features: structures, measurements, anomalies, and technical notes. "
-        "If the image is not medical, say so directly."
+        "Please analyze this image ONLY if it is a medical scan or clinical photograph (like X-ray, MRI, CT, ultrasound, dermatology, wound, etc).\n"
+        "If it is a document, text, chart, or anything other than an actual image — do not analyze it and reply that it's not a medical image."
     )
 
     response = await client.chat.completions.create(  # 🔄 await

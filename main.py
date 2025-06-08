@@ -14,7 +14,12 @@ from db import save_user, user_exists, get_user_name, save_document, update_docu
     get_all_values_for_key
 from registration import user_states, start_registration, handle_registration_step
 from error_handler import handle_telegram_errors, BotError, OpenAIError, get_user_friendly_message, log_error_with_context, check_openai_health
-from keyboards import main_menu_keyboard
+from keyboards import main_menu_keyboard, settings_keyboard
+from profile_keyboards import (
+    profile_view_keyboard, profile_edit_keyboard, smoking_choice_keyboard,
+    alcohol_choice_keyboard, activity_choice_keyboard, language_choice_keyboard, cancel_keyboard
+    )
+from profile_manager import ProfileManager, CHOICE_MAPPINGS
 from documents import handle_show_documents, handle_ignore_document
 from save_utils import maybe_update_summary, format_user_profile
 from vector_utils import search_similar_chunks, keyword_search_chunks
@@ -139,13 +144,14 @@ async def show_medications_schedule(message: types.Message):
 
 @dp.message(lambda msg: msg.text in get_all_values_for_key("main_settings"))
 @handle_telegram_errors
-async def show_settings_menu(message: types.Message):
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="👤 Мой профиль", callback_data="settings_profile")],
-        [InlineKeyboardButton(text="❓ Помощь", callback_data="settings_help")]
-    ])
+async def show_settings_menu_new(message: types.Message):
+    """Показать меню настроек"""
     lang = await get_user_language(message.from_user.id)
-    await message.answer(t("settings_title", lang), reply_markup=keyboard)
+    
+    await message.answer(
+        t("settings_menu_title", lang),
+        reply_markup=settings_keyboard(lang)
+    )
 
 @dp.message(lambda msg: msg.text == "/reset")
 @handle_telegram_errors
@@ -157,46 +163,82 @@ async def reset_user(message: types.Message):
     lang = "ru"  # ✅ ИСПРАВЛЕНО: используем дефолтный язык после удаления
     await message.answer(t("reset_done", lang))
 
+@dp.message(lambda msg: msg.text and msg.text == "/stats")
+@handle_telegram_errors
+async def handle_stats_command(message: types.Message):
+    user_id = message.from_user.id
+    lang = await get_user_language(user_id)
+    
+    try:
+        stats = get_rate_limit_stats(user_id)
+        
+        block_status = "🚫 Заблокирован" if stats["is_blocked"] else "✅ Активен"
+        
+        stats_text = f"""📊 <b>Ваша статистика:</b>
+
+🔄 Состояние: {block_status}
+📝 Запросов за час: {stats["total_requests_last_hour"]}
+
+<b>Лимиты для всех:</b>
+💬 Сообщения: 10 за минуту
+📄 Документы: 3 за 5 минут  
+🖼 Изображения: 3 за 10 минут
+📝 Заметки: 5 за 5 минут"""
+
+        await message.answer(stats_text, parse_mode="HTML")
+        
+    except Exception as e:
+        await message.answer("❌ Ошибка при получении статистики")
+
 @dp.message()
 @handle_telegram_errors
 async def handle_user_message(message: types.Message):
     user_id = message.from_user.id
     lang = await get_user_language(user_id)
     
+    # ✅ ИСПРАВЛЕНИЕ: Проверяем состояние пользователя ПЕРВЫМ ДЕЛОМ
+    current_state = user_states.get(user_id)
+    
+    # Если пользователь в режиме ожидания файла, но отправил текст
+    if current_state in ["awaiting_document", "awaiting_image_analysis"]:
+        if message.text is not None:  # Если отправлен текст вместо файла
+            await message.answer(t("unrecognized_document", lang))
+            user_states[user_id] = None
+            return
+    
     # Обработка файлов
     if message.text is None:
-        state = user_states.get(user_id)
-        if state == "awaiting_document":
-            allowed, error_msg = await check_rate_limit(user_id, "document")  # ✅ Добавлен await
+        if current_state == "awaiting_document":
+            allowed, error_msg = await check_rate_limit(user_id, "document")
             if not allowed:
                 await message.answer(error_msg)
-                return  # ✅ УБРАНА запись action при блокировке
+                return
             try:
                 from upload import handle_document_upload
                 await handle_document_upload(message, bot)
-                await record_user_action(user_id, "document")  # ✅ Записываем только при успехе
+                await record_user_action(user_id, "document")
                 return
             except Exception as e:
                 log_error_with_context(e, {"user_id": user_id, "action": "document_upload"})
                 await message.answer(get_user_friendly_message(e, lang))
                 return
                 
-        elif state == "awaiting_image_analysis":
-            allowed, error_msg = await check_rate_limit(user_id, "image")  # ✅ Добавлен await
+        elif current_state == "awaiting_image_analysis":
+            allowed, error_msg = await check_rate_limit(user_id, "image")
             if not allowed:
                 await message.answer(error_msg)
                 return
             try:
                 from upload import handle_image_analysis
                 await handle_image_analysis(message, bot)
-                await record_user_action(user_id, "image")  # ✅ Добавлен await + перенесен в try
+                await record_user_action(user_id, "image")
                 return
             except Exception as e:
                 log_error_with_context(e, {"user_id": user_id, "action": "image_analysis"})
                 await message.answer(get_user_friendly_message(e, lang))
                 return
         else:
-            # ✅ Обработка неподдерживаемых файлов
+            # Файл отправлен, но пользователь не в режиме ожидания
             await message.answer(t("unsupported_input", lang))
             return
 
@@ -205,14 +247,14 @@ async def handle_user_message(message: types.Message):
         return
         
     # Обработка переименования документов
-    elif isinstance(user_states.get(user_id), str) and user_states[user_id].startswith("rename_"):
+    elif isinstance(current_state, str) and current_state.startswith("rename_"):
         if message.text.lower() in [t("cancel", lang).lower()]:
             user_states[user_id] = None
             await message.answer(t("rename_cancelled", lang))
             return
 
         try:
-            doc_id = int(user_states[user_id].split("_")[1])
+            doc_id = int(current_state.split("_")[1])
             new_title = message.text.strip()
             await update_document_title(doc_id, new_title)
             await message.answer(t("document_renamed", lang, name=new_title), parse_mode="HTML")
@@ -225,7 +267,7 @@ async def handle_user_message(message: types.Message):
 
     # Обработка отмены
     elif message.text in [t("cancel", lang)]:
-        if user_states.get(user_id) == "awaiting_memory_note":
+        if current_state == "awaiting_memory_note":
             from keyboards import show_main_menu
             user_states[user_id] = None
             await message.answer(t("note_cancelled", lang))
@@ -233,8 +275,8 @@ async def handle_user_message(message: types.Message):
             return
         
     # Обработка заметок в память
-    elif user_states.get(user_id) == "awaiting_memory_note":
-        allowed, error_msg = await check_rate_limit(user_id, "note")  # ✅ Добавлен await
+    elif current_state == "awaiting_memory_note":
+        allowed, error_msg = await check_rate_limit(user_id, "note")
         if not allowed:
             await message.answer(error_msg)
             return
@@ -272,7 +314,6 @@ async def handle_user_message(message: types.Message):
             await send_note_controls(message, document_id)
             user_states[user_id] = None
             
-            # ✅ ИСПРАВЛЕНИЕ: Записываем action ЗДЕСЬ, после успешного сохранения
             await record_user_action(user_id, "note")
             
             from keyboards import show_main_menu
@@ -283,9 +324,67 @@ async def handle_user_message(message: types.Message):
             log_error_with_context(e, {"user_id": user_id, "action": "save_memory_note"})
             await message.answer(get_user_friendly_message(e, lang))
             return
-                 
+
+    # Обработка редактирования профиля
+    elif isinstance(current_state, dict) and current_state.get("mode") == "editing_profile":
+        if message.text == t("cancel", lang):
+            user_states[user_id] = None
+            await message.answer(
+                t("profile_edit_cancelled", lang),
+                reply_markup=types.ReplyKeyboardRemove()  # ✅ ДОБАВЛЕНО: убираем клавиатуру
+            )
+            from keyboards import show_main_menu
+            await show_main_menu(message, lang)
+            return
+        
+        try:
+            state = user_states[user_id]
+            field = state.get("field")
+            
+            if not field:
+                await message.answer("❌ Ошибка состояния редактирования")
+                user_states[user_id] = None
+                return
+            
+            # Обновляем поле
+            success, response_message = await ProfileManager.update_field(
+                user_id, field, message.text, lang
+            )
+            
+            if success:
+                await message.answer(
+                    response_message,
+                    reply_markup=types.ReplyKeyboardRemove()  # ✅ ДОБАВЛЕНО: убираем клавиатуру
+                )
+                user_states[user_id] = None
+                from keyboards import show_main_menu
+                await show_main_menu(message, lang)
+            else:
+                # Если ошибка валидации, остаемся в том же поле
+                await message.answer(
+                    response_message,
+                    reply_markup=types.ReplyKeyboardRemove()  # ✅ ДОБАВЛЕНО
+                )
+                # Показываем клавиатуру снова для продолжения ввода
+                from profile_keyboards import cancel_keyboard
+                await message.answer(
+                    "Попробуйте ещё раз:",
+                    reply_markup=cancel_keyboard(lang)
+                )
+            
+            return
+            
+        except Exception as e:
+            log_error_with_context(e, {"user_id": user_id, "action": "edit_profile_field"})
+            await message.answer(
+                "❌ Ошибка обновления профиля",
+                reply_markup=types.ReplyKeyboardRemove()  # ✅ ДОБАВЛЕНО
+            )
+            user_states[user_id] = None
+            return
+
     # Обработка редактирования лекарств
-    elif user_states.get(user_id) == "editing_medications":
+    elif current_state == "editing_medications":
         try:
             from db import get_medications, replace_medications
             from gpt import update_medications_via_gpt
@@ -412,6 +511,222 @@ async def handle_user_message(message: types.Message):
             log_error_with_context(e, {"user_id": user_id, "action": "handle_main_question"})
             await message.answer(get_user_friendly_message(e, lang))
 
+@dp.callback_query(lambda c: c.data == "settings_profile")
+@handle_telegram_errors  
+async def handle_profile_settings(callback: types.CallbackQuery):
+    """Показать профиль пользователя"""
+    user_id = callback.from_user.id
+    lang = await get_user_language(user_id)
+    
+    # Получаем текст профиля
+    profile_text = await ProfileManager.get_profile_text(user_id, lang)
+    
+    await callback.message.edit_text(
+        profile_text,
+        reply_markup=profile_view_keyboard(lang),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+@dp.callback_query(lambda c: c.data == "edit_profile")
+@handle_telegram_errors
+async def handle_edit_profile(callback: types.CallbackQuery):
+    """Показать меню редактирования профиля"""
+    lang = await get_user_language(callback.from_user.id)
+    
+    await callback.message.edit_text(
+        t("edit_profile_title", lang),
+        reply_markup=profile_edit_keyboard(lang),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+@dp.callback_query(lambda c: c.data == "back_to_profile")
+@handle_telegram_errors
+async def handle_back_to_profile(callback: types.CallbackQuery):
+    """Вернуться к просмотру профиля"""
+    user_id = callback.from_user.id
+    lang = await get_user_language(user_id)
+    
+    # Сбрасываем состояние редактирования
+    user_states[user_id] = None
+    
+    profile_text = await ProfileManager.get_profile_text(user_id, lang)
+    
+    await callback.message.edit_text(
+        profile_text,
+        reply_markup=profile_view_keyboard(lang),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+@dp.callback_query(lambda c: c.data == "back_to_settings")
+@handle_telegram_errors
+async def handle_back_to_settings(callback: types.CallbackQuery):
+    """Вернуться в меню настроек"""
+    lang = await get_user_language(callback.from_user.id)
+    
+    await callback.message.edit_text(
+        t("settings_menu_title", lang),
+        reply_markup=settings_keyboard(lang)
+    )
+    await callback.answer()
+
+# HANDLERS для редактирования конкретных полей
+@dp.callback_query(lambda c: c.data.startswith("edit_field_"))
+@handle_telegram_errors
+async def handle_edit_field(callback: types.CallbackQuery):
+    """Начать редактирование конкретного поля"""
+    user_id = callback.from_user.id
+    lang = await get_user_language(user_id)
+    
+    field = callback.data.replace("edit_field_", "")
+    
+    # Устанавливаем состояние редактирования
+    user_states[user_id] = {
+        "mode": "editing_profile",
+        "field": field
+    }
+    
+    if field in ["name", "height_cm", "weight_kg", "allergies"]:
+        # Текстовый ввод
+        prompts = {
+            "name": "enter_new_name",
+            "height_cm": "enter_new_height", 
+            "weight_kg": "enter_new_weight",
+            "allergies": "enter_new_allergies"
+        }
+        
+        await callback.message.answer(
+            t(prompts[field], lang),
+            reply_markup=cancel_keyboard(lang)
+        )
+        
+    elif field == "smoking":
+        # Выбор из кнопок
+        await callback.message.edit_text(
+            t("choose_smoking", lang),
+            reply_markup=smoking_choice_keyboard(lang)
+        )
+        
+    elif field == "alcohol":
+        await callback.message.edit_text(
+            t("choose_alcohol", lang),
+            reply_markup=alcohol_choice_keyboard(lang)
+        )
+        
+    elif field == "physical_activity":
+        await callback.message.edit_text(
+            t("choose_activity", lang),
+            reply_markup=activity_choice_keyboard(lang)
+        )
+        
+    elif field == "language":
+        await callback.message.edit_text(
+            t("choose_language", lang),
+            reply_markup=language_choice_keyboard()
+        )
+    
+    await callback.answer()
+
+# HANDLERS для выбора из кнопок
+@dp.callback_query(lambda c: c.data.startswith(("smoking_", "alcohol_", "activity_", "lang_")))
+@handle_telegram_errors
+async def handle_choice_selection(callback: types.CallbackQuery):
+    """Обработка выбора из кнопок"""
+    user_id = callback.from_user.id
+    lang = await get_user_language(user_id)
+    
+    state = user_states.get(user_id)
+    if not state or state.get("mode") != "editing_profile":
+        await callback.answer("❌ Ошибка состояния")
+        return
+    
+    field = state.get("field")
+    choice = callback.data
+    
+    # Обработка выбора языка
+    if choice.startswith("lang_"):
+        new_lang = choice.replace("lang_", "")
+        success, message = await ProfileManager.update_field(user_id, "language", new_lang, lang)
+        
+        if success:
+            # Обновляем язык в состоянии
+            lang = new_lang
+        
+        await callback.message.edit_text(message, parse_mode="HTML")
+        user_states[user_id] = None
+        await callback.answer()
+        return
+    
+    # Маппинг для других полей
+    field_mappings = {
+        "smoking": "smoking",
+        "alcohol": "alcohol", 
+        "activity": "physical_activity"
+    }
+    
+    db_field = field_mappings.get(field)
+    if not db_field:
+        await callback.answer("❌ Неизвестное поле")
+        return
+    
+    # Получаем читаемое значение
+    if db_field in CHOICE_MAPPINGS and choice in CHOICE_MAPPINGS[db_field]:
+        readable_value = CHOICE_MAPPINGS[db_field][choice][lang]
+    else:
+        readable_value = choice
+    
+    # Обновляем поле
+    success, message = await ProfileManager.update_field(user_id, db_field, readable_value, lang)
+    
+    if success:
+        await callback.message.edit_text(message, parse_mode="HTML")
+        user_states[user_id] = None
+    else:
+        await callback.message.edit_text(message)
+    
+    await callback.answer()
+
+@dp.callback_query(lambda c: c.data == "cancel_edit")
+@handle_telegram_errors
+async def handle_cancel_edit(callback: types.CallbackQuery):
+    """Отменить редактирование"""
+    user_id = callback.from_user.id
+    lang = await get_user_language(user_id)
+    
+    user_states[user_id] = None
+    
+    await callback.message.edit_text(
+        t("profile_edit_cancelled", lang),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+@dp.callback_query(lambda c: c.data == "settings_faq")
+@handle_telegram_errors
+async def handle_faq_settings(callback: types.CallbackQuery):
+    """Обработка кнопки FAQ (заглушка)"""
+    lang = await get_user_language(callback.from_user.id)
+    
+    await callback.message.edit_text(
+        t("faq_coming_soon", lang)
+    )
+    await callback.answer()
+
+@dp.callback_query(lambda c: c.data == "settings_subscription")
+@handle_telegram_errors
+async def handle_subscription_settings(callback: types.CallbackQuery):
+    """Обработка кнопки Подписка"""
+    lang = await get_user_language(callback.from_user.id)
+    
+    # Пока заглушка - в следующем шаге сделаем систему подписок
+    await callback.message.edit_text(
+        "💎 <b>Подписки</b>\n\nСистема подписок будет доступна в следующем обновлении.",
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
 @dp.callback_query()
 @handle_telegram_errors
 async def handle_button_action(callback: types.CallbackQuery):
@@ -490,33 +805,6 @@ async def handle_button_action(callback: types.CallbackQuery):
         lang = await get_user_language(user_id)
         log_error_with_context(e, {"user_id": user_id, "action": "button_callback", "callback_data": callback.data})
         await callback.message.answer(get_user_friendly_message(e, lang))
-
-@dp.message(lambda msg: msg.text and msg.text == "/stats")
-@handle_telegram_errors
-async def handle_stats_command(message: types.Message):
-    user_id = message.from_user.id
-    lang = await get_user_language(user_id)
-    
-    try:
-        stats = get_rate_limit_stats(user_id)
-        
-        block_status = "🚫 Заблокирован" if stats["is_blocked"] else "✅ Активен"
-        
-        stats_text = f"""📊 <b>Ваша статистика:</b>
-
-🔄 Состояние: {block_status}
-📝 Запросов за час: {stats["total_requests_last_hour"]}
-
-<b>Лимиты для всех:</b>
-💬 Сообщения: 10 за минуту
-📄 Документы: 3 за 5 минут  
-🖼 Изображения: 3 за 10 минут
-📝 Заметки: 5 за 5 минут"""
-
-        await message.answer(stats_text, parse_mode="HTML")
-        
-    except Exception as e:
-        await message.answer("❌ Ошибка при получении статистики")
 
 @handle_telegram_errors
 async def main():

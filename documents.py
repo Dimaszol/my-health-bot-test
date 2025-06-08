@@ -36,7 +36,12 @@ async def handle_show_documents(target, user_id: int):
                 InlineKeyboardButton(text=t("btn_ignore", lang), callback_data=f"ignore_{doc_id}")
             ]])
         from utils.security import safe_send_message
-        await safe_send_message(target, f"🕒 {date[:10]}", title=f"📄 {title}")
+        await safe_send_message(
+            target,
+            f"🕒 {date[:10]}",
+            title=f"📄 {title}",
+            reply_markup=keyboard
+        )
 
     # Добавляем кнопку "Показать ещё", если есть больше документов
     if offset == 0 and len(documents) <= 5:
