@@ -2,6 +2,7 @@
 
 import os
 import html
+import logging  # ✅ ДОБАВЛЕНО
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from save_utils import send_to_gpt_vision, convert_pdf_to_images
@@ -9,9 +10,13 @@ from gpt import ask_gpt, ask_structured, is_medical_text, generate_medical_summa
 from db import save_document, get_user_language, t
 from registration import user_states
 from vector_utils import split_into_chunks, add_chunks_to_vector_db
+from subscription_manager import check_document_limit, check_gpt4o_limit, spend_document_limit, spend_gpt4o_limit, SubscriptionManager
 
 # ИСПРАВЛЕННЫЙ ИМПОРТ - используем простую функцию для отладки
 from file_utils import validate_file_size, validate_file_extension, create_simple_file_path
+
+# ✅ СОЗДАЕМ LOGGER
+logger = logging.getLogger(__name__)
 
 async def handle_document_upload(message: types.Message, bot):
     user_id = message.from_user.id
@@ -130,6 +135,10 @@ async def handle_document_upload(message: types.Message, bot):
             raw_text=raw_text,
             summary=summary
         )
+        
+        # ✅ СПИСЫВАЕМ ЛИМИТ НА ДОКУМЕНТ
+        await spend_document_limit(user_id)
+        logger.info(f"Списан лимит на документ для пользователя {user_id}")
         
         print("🧠 Добавляю в векторную базу...")
         chunks = await split_into_chunks(summary, document_id, user_id)
@@ -268,6 +277,10 @@ async def handle_image_analysis(message: types.Message, bot):
             summary=summary,
             confirmed=True
         )
+
+        # ✅ СПИСЫВАЕМ ЛИМИТ НА ДОКУМЕНТ
+        await spend_document_limit(user_id)
+        logger.info(f"Списан лимит на анализ изображения для пользователя {user_id}")
 
         print("🧠 Добавляю в векторную базу...")
         chunks = await split_into_chunks(summary, document_id, user_id)

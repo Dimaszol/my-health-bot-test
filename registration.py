@@ -145,15 +145,34 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
 
     if step == "physical_activity":
         if message.text != t("skip", lang):
+            # ✅ ИСПРАВЛЕННЫЙ маппинг активности
             activity_map = {
+                # Русские варианты
                 "❌ Нет активности": "Нет активности",
                 "🚶 Низкая": "Низкая",
-                "🏃 Средняя": "Средняя",
+                "🏃 Средняя": "Средняя", 
                 "💪 Высокая": "Высокая",
-                "🏆 Профессиональная": "Профессиональная"
+                "🏆 Профессиональная": "Профессиональная",
+                
+                # Украинские варианты
+                "❌ Відсутня активність": "Нет активности",
+                "🚶 Низька": "Низкая",
+                "🏃 Середня": "Средняя",
+                "💪 Висока": "Высокая", 
+                "🏆 Професійна": "Профессиональная",
+                
+                # Английские варианты
+                "❌ No activity": "No activity",
+                "🚶 Low": "Low",
+                "🏃 Medium": "Medium",
+                "💪 High": "High",
+                "🏆 Professional": "Professional"
             }
-            value = activity_map.get(message.text.strip(), message.text.strip())
-            await update_user_field(user_id, "physical_activity", value)
+            
+            # Получаем унифицированное значение
+            unified_value = activity_map.get(message.text.strip(), message.text.strip())
+            await update_user_field(user_id, "physical_activity", unified_value)
+        
         state["step"] = "family_history"
         await message.answer(t("family_prompt", lang), reply_markup=skip_keyboard(lang))
         return True

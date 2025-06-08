@@ -43,9 +43,14 @@ class ProfileManager:
             alcohol = profile.get("alcohol") or t("profile_not_specified", lang)
             profile_lines.append(t("profile_alcohol", lang, alcohol=alcohol))
             
-            # Активность
-            activity = profile.get("physical_activity") or t("profile_not_specified", lang)
-            profile_lines.append(t("profile_activity", lang, activity=activity))
+            # ✅ ИСПРАВЛЕНИЕ: Правильное отображение активности с эмодзи
+            activity = profile.get("physical_activity")
+            if activity:
+                # Добавляем эмодзи к значению активности для красивого отображения
+                activity_with_emoji = ProfileManager._add_activity_emoji(activity, lang)
+                profile_lines.append(t("profile_activity", lang, activity=activity_with_emoji))
+            else:
+                profile_lines.append(t("profile_activity", lang, activity=t("profile_not_specified", lang)))
             
             # Язык
             language_names = {"ru": "Русский", "uk": "Українська", "en": "English"}
@@ -57,6 +62,35 @@ class ProfileManager:
         except Exception as e:
             logger.error(f"Ошибка получения профиля для пользователя {user_id}: {e}")
             return f"❌ Ошибка загрузки профиля"
+
+    @staticmethod 
+    def _add_activity_emoji(activity: str, lang: str) -> str:
+        """Добавляет эмодзи к значению активности для красивого отображения"""
+        if not activity:
+            return activity
+        
+        print(f"🔧 DEBUG _add_activity_emoji: activity='{activity}', lang='{lang}'")
+        
+        # Маппинг активности к эмодзи (учитываем разные языки)
+        emoji_mapping = {
+            # Русские варианты
+            "Нет активности": "❌ Нет активности",
+            "Низкая": "🚶 Низкая",
+            "Средняя": "🏃 Средняя", 
+            "Высокая": "💪 Высокая",
+            "Профессиональная": "🏆 Профессиональная",
+            
+            # Английские варианты
+            "No activity": "❌ No activity",
+            "Low": "🚶 Low",
+            "Medium": "🏃 Medium",
+            "High": "💪 High", 
+            "Professional": "🏆 Professional"
+        }
+        
+        result = emoji_mapping.get(activity, activity)
+        print(f"🔧 DEBUG _add_activity_emoji result: '{result}'")
+        return result
     
     @staticmethod
     async def update_field(user_id: int, field: str, value: str, lang: str) -> tuple[bool, str]:
@@ -102,7 +136,7 @@ class ProfileManager:
                 return None
             return value
             
-        elif field == "height_cm":  # ✅ ИСПРАВЛЕНО: оставляем height_cm
+        elif field == "height_cm":
             try:
                 height = int(value)
                 if 100 <= height <= 250:
@@ -111,7 +145,7 @@ class ProfileManager:
             except ValueError:
                 return None
                 
-        elif field == "weight_kg":  # ✅ ИСПРАВЛЕНО: оставляем weight_kg
+        elif field == "weight_kg":
             try:
                 weight = float(value)
                 if 30 <= weight <= 300:
@@ -125,7 +159,11 @@ class ProfileManager:
                 return None
             return value
             
-        elif field in ["smoking", "alcohol", "physical_activity"]:
+        elif field == "physical_activity":
+            # ✅ ИСПРАВЛЕНИЕ: нормализуем активность
+            return ProfileManager._normalize_activity_value(value, lang)
+                
+        elif field in ["smoking", "alcohol"]:
             return value  # Эти поля приходят уже валидированными из кнопок
             
         elif field == "language":
@@ -144,6 +182,44 @@ class ProfileManager:
             return t("invalid_weight", lang)
         else:
             return "❌ Некорректное значение"
+
+    @staticmethod
+    def _normalize_activity_value(value: str, lang: str) -> str:
+        """Нормализует значение активности к единому формату"""
+        if not value:
+            return value
+        
+        # Убираем эмодзи и лишние пробелы
+        clean_value = value.strip()
+        for emoji in ["❌", "🚶", "🏃", "💪", "🏆"]:
+            clean_value = clean_value.replace(emoji, "").strip()
+        
+        # Маппинг различных вариантов к единому формату
+        activity_mapping = {
+            # Русские варианты
+            "нет активности": "Нет активности",
+            "низкая": "Низкая", 
+            "средняя": "Средняя",
+            "высокая": "Высокая",
+            "профессиональная": "Профессиональная",
+            
+            # Украинские варианты  
+            "відсутня активність": "Нет активности",
+            "низька": "Низкая",
+            "середня": "Средняя", 
+            "висока": "Высокая",
+            "професійна": "Профессиональная",
+            
+            # Английские варианты
+            "no activity": "No activity",
+            "low": "Low",
+            "medium": "Medium", 
+            "high": "High",
+            "professional": "Professional"
+        }
+        
+        normalized = activity_mapping.get(clean_value.lower(), clean_value)
+        return normalized
 
 # Маппинг значений для кнопок на читаемые значения
 CHOICE_MAPPINGS = {

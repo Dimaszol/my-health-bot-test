@@ -27,6 +27,7 @@ from vector_db import delete_document_from_vector_db
 from rate_limiter import check_rate_limit, record_user_action, get_rate_limit_stats
 from db_pool import initialize_db_pool, close_db_pool, get_db_stats, db_health_check
 from gpt import ask_gpt, ask_doctor, check_openai_status, fallback_response, fallback_summarize
+from subscription_manager import check_document_limit, SubscriptionManager
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -81,8 +82,23 @@ async def language_start(message: types.Message):
 @dp.message(lambda msg: msg.text in get_all_values_for_key("main_upload_doc"))
 @handle_telegram_errors
 async def prompt_document_upload(message: types.Message):
+    user_id = message.from_user.id
+    lang = await get_user_language(user_id)
+    
+    # ✅ ПРОВЕРЯЕМ ЛИМИТЫ ДО ЗАГРУЗКИ
+    if not await check_document_limit(user_id):
+        limits = await SubscriptionManager.get_user_limits(user_id)
+        await message.answer(
+            f"📄 У вас закончились лимиты на документы.\n\n"
+            f"📊 Текущие лимиты:\n"
+            f"• Документы: {limits['documents_left']}\n"
+            f"• GPT-4o запросы: {limits['gpt4o_queries_left']}\n\n"
+            f"💎 Купите дополнительные лимиты в разделе «Подписка»"
+        )
+        return
+    
+    # Если лимиты есть - разрешаем загрузку
     user_states[message.from_user.id] = "awaiting_document"
-    lang = await get_user_language(message.from_user.id)
     await message.answer(t("please_send_file", lang))
 
 @dp.message(lambda msg: msg.text in get_all_values_for_key("main_note"))
@@ -100,8 +116,23 @@ async def prompt_memory_note(message: types.Message):
 @dp.message(lambda msg: msg.text in get_all_values_for_key("main_upload_image"))
 @handle_telegram_errors
 async def ask_for_image(message: types.Message):
+    user_id = message.from_user.id
+    lang = await get_user_language(user_id)
+    
+    # ✅ ПРОВЕРЯЕМ ЛИМИТЫ ДО ЗАГРУЗКИ
+    if not await check_document_limit(user_id):
+        limits = await SubscriptionManager.get_user_limits(user_id)
+        await message.answer(
+            f"📸 У вас закончились лимиты на анализ изображений.\n\n"
+            f"📊 Текущие лимиты:\n"
+            f"• Документы: {limits['documents_left']}\n"
+            f"• GPT-4o запросы: {limits['gpt4o_queries_left']}\n\n"
+            f"💎 Купите дополнительные лимиты в разделе «Подписка»"
+        )
+        return
+    
+    # Если лимиты есть - разрешаем загрузку
     user_states[message.from_user.id] = "awaiting_image_analysis"
-    lang = await get_user_language(message.from_user.id)
     await message.answer(t("please_send_image", lang))
 
 @dp.message(lambda msg: msg.text in get_all_values_for_key("main_documents"))
@@ -196,7 +227,47 @@ async def handle_user_message(message: types.Message):
     user_id = message.from_user.id
     lang = await get_user_language(user_id)
     
-    # ✅ ИСПРАВЛЕНИЕ: Проверяем состояние пользователя ПЕРВЫМ ДЕЛОМ
+    # ✅ ИСПРАВЛЕНИЕ 1: Обработка отмены ПЕРВЫМ ДЕЛОМ (до всех других проверок)
+    if message.text and message.text in [t("cancel", lang)]:
+        current_state = user_states.get(user_id)
+        
+        # Сбрасываем состояние пользователя
+        user_states[user_id] = None
+        
+        # Определяем, какую отмену выполняем и отправляем соответствующее сообщение
+        if current_state == "awaiting_memory_note":
+            await message.answer(
+                t("note_cancelled", lang),
+                reply_markup=types.ReplyKeyboardRemove()  # ✅ Убираем клавиатуру
+            )
+        elif isinstance(current_state, dict) and current_state.get("mode") == "editing_profile":
+            await message.answer(
+                t("profile_edit_cancelled", lang),
+                reply_markup=types.ReplyKeyboardRemove()  # ✅ Убираем клавиатуру
+            )
+        elif current_state == "editing_medications":
+            await message.answer(
+                "❌ Редактирование лекарств отменено",
+                reply_markup=types.ReplyKeyboardRemove()  # ✅ Убираем клавиатуру
+            )
+        elif isinstance(current_state, str) and current_state.startswith("rename_"):
+            await message.answer(
+                t("rename_cancelled", lang),
+                reply_markup=types.ReplyKeyboardRemove()  # ✅ Убираем клавиатуру
+            )
+        else:
+            # Любая другая отмена
+            await message.answer(
+                "❌ Операция отменена",
+                reply_markup=types.ReplyKeyboardRemove()  # ✅ Убираем клавиатуру
+            )
+        
+        # ✅ ГЛАВНОЕ ИСПРАВЛЕНИЕ: ВСЕГДА показываем главное меню после отмены
+        from keyboards import show_main_menu
+        await show_main_menu(message, lang)
+        return  # ✅ Выходим из функции, больше ничего не обрабатываем
+
+    # ✅ Теперь получаем состояние пользователя ПОСЛЕ обработки отмены
     current_state = user_states.get(user_id)
     
     # Если пользователь в режиме ожидания файла, но отправил текст
@@ -248,34 +319,26 @@ async def handle_user_message(message: types.Message):
         
     # Обработка переименования документов
     elif isinstance(current_state, str) and current_state.startswith("rename_"):
-        if message.text.lower() in [t("cancel", lang).lower()]:
-            user_states[user_id] = None
-            await message.answer(t("rename_cancelled", lang))
-            return
-
+        # ✅ Отмена уже обработана выше, убираем дублирующую проверку
         try:
             doc_id = int(current_state.split("_")[1])
             new_title = message.text.strip()
             await update_document_title(doc_id, new_title)
             await message.answer(t("document_renamed", lang, name=new_title), parse_mode="HTML")
             user_states[user_id] = None
+            
+            # ✅ ИСПРАВЛЕНИЕ: показываем главное меню после переименования
+            from keyboards import show_main_menu
+            await show_main_menu(message, lang)
             return
         except Exception as e:
             log_error_with_context(e, {"user_id": user_id, "action": "rename_document"})
             await message.answer(get_user_friendly_message(e, lang))
             return
 
-    # Обработка отмены
-    elif message.text in [t("cancel", lang)]:
-        if current_state == "awaiting_memory_note":
-            from keyboards import show_main_menu
-            user_states[user_id] = None
-            await message.answer(t("note_cancelled", lang))
-            await show_main_menu(message, lang)
-            return
-        
     # Обработка заметок в память
     elif current_state == "awaiting_memory_note":
+        # ✅ Отмена уже обработана выше, убираем дублирующую проверку
         allowed, error_msg = await check_rate_limit(user_id, "note")
         if not allowed:
             await message.answer(error_msg)
@@ -327,16 +390,7 @@ async def handle_user_message(message: types.Message):
 
     # Обработка редактирования профиля
     elif isinstance(current_state, dict) and current_state.get("mode") == "editing_profile":
-        if message.text == t("cancel", lang):
-            user_states[user_id] = None
-            await message.answer(
-                t("profile_edit_cancelled", lang),
-                reply_markup=types.ReplyKeyboardRemove()  # ✅ ДОБАВЛЕНО: убираем клавиатуру
-            )
-            from keyboards import show_main_menu
-            await show_main_menu(message, lang)
-            return
-        
+        # ✅ Отмена уже обработана выше, убираем дублирующую проверку
         try:
             state = user_states[user_id]
             field = state.get("field")
@@ -354,17 +408,15 @@ async def handle_user_message(message: types.Message):
             if success:
                 await message.answer(
                     response_message,
-                    reply_markup=types.ReplyKeyboardRemove()  # ✅ ДОБАВЛЕНО: убираем клавиатуру
+                    reply_markup=types.ReplyKeyboardRemove()  # ✅ Убираем клавиатуру
                 )
                 user_states[user_id] = None
+                # ✅ ПОКАЗЫВАЕМ ГЛАВНОЕ МЕНЮ после успешного обновления
                 from keyboards import show_main_menu
                 await show_main_menu(message, lang)
             else:
                 # Если ошибка валидации, остаемся в том же поле
-                await message.answer(
-                    response_message,
-                    reply_markup=types.ReplyKeyboardRemove()  # ✅ ДОБАВЛЕНО
-                )
+                await message.answer(response_message)
                 # Показываем клавиатуру снова для продолжения ввода
                 from profile_keyboards import cancel_keyboard
                 await message.answer(
@@ -378,9 +430,12 @@ async def handle_user_message(message: types.Message):
             log_error_with_context(e, {"user_id": user_id, "action": "edit_profile_field"})
             await message.answer(
                 "❌ Ошибка обновления профиля",
-                reply_markup=types.ReplyKeyboardRemove()  # ✅ ДОБАВЛЕНО
+                reply_markup=types.ReplyKeyboardRemove()  # ✅ Убираем клавиатуру
             )
             user_states[user_id] = None
+            # ✅ ПОКАЗЫВАЕМ ГЛАВНОЕ МЕНЮ при ошибке
+            from keyboards import show_main_menu
+            await show_main_menu(message, lang)
             return
 
     # Обработка редактирования лекарств
@@ -400,6 +455,10 @@ async def handle_user_message(message: types.Message):
                     await update_user_profile_medications(user_id)
                     user_states[user_id] = None
                     await message.answer(t("schedule_updated", lang))
+                    
+                    # ✅ ИСПРАВЛЕНИЕ: показываем главное меню после обновления лекарств
+                    from keyboards import show_main_menu
+                    await show_main_menu(message, lang)
                 else:
                     await message.answer(t("schedule_update_failed", lang))
             except OpenAIError:
@@ -480,7 +539,8 @@ async def handle_user_message(message: types.Message):
                     chunks_text=chunks_text,
                     context_text=context_text,
                     user_question=message.text,
-                    lang=lang
+                    lang=lang,
+                    user_id=user_id
                 )
             except OpenAIError as e:
                 # Fallback ответ если GPT недоступен
@@ -645,6 +705,8 @@ async def handle_choice_selection(callback: types.CallbackQuery):
     field = state.get("field")
     choice = callback.data
     
+    print(f"🔧 DEBUG: field={field}, choice={choice}")  # Для отладки
+    
     # Обработка выбора языка
     if choice.startswith("lang_"):
         new_lang = choice.replace("lang_", "")
@@ -656,26 +718,34 @@ async def handle_choice_selection(callback: types.CallbackQuery):
         
         await callback.message.edit_text(message, parse_mode="HTML")
         user_states[user_id] = None
+        
+        # ✅ ДОБАВЛЕНО: показываем главное меню после смены языка
+        from keyboards import show_main_menu
+        await show_main_menu(callback.message, lang)
+        
         await callback.answer()
         return
     
-    # Маппинг для других полей
-    field_mappings = {
-        "smoking": "smoking",
-        "alcohol": "alcohol", 
-        "activity": "physical_activity"
-    }
-    
-    db_field = field_mappings.get(field)
-    if not db_field:
-        await callback.answer("❌ Неизвестное поле")
+    # ✅ ИСПРАВЛЕННЫЙ маппинг для других полей
+    # Определяем реальное поле в базе данных по callback data
+    if choice.startswith("smoking_"):
+        db_field = "smoking"
+    elif choice.startswith("alcohol_"):
+        db_field = "alcohol"
+    elif choice.startswith("activity_"):
+        db_field = "physical_activity"  # ✅ ВАЖНО: правильное имя поля в БД
+    else:
+        await callback.answer("❌ Неизвестный тип выбора")
         return
     
-    # Получаем читаемое значение
+    # ✅ ИСПРАВЛЕНО: получаем читаемое значение из CHOICE_MAPPINGS
     if db_field in CHOICE_MAPPINGS and choice in CHOICE_MAPPINGS[db_field]:
         readable_value = CHOICE_MAPPINGS[db_field][choice][lang]
+        print(f"🔧 DEBUG: readable_value={readable_value}")  # Для отладки
     else:
+        # Fallback на прямое значение
         readable_value = choice
+        print(f"⚠️ DEBUG: Fallback value={readable_value}")
     
     # Обновляем поле
     success, message = await ProfileManager.update_field(user_id, db_field, readable_value, lang)
@@ -683,6 +753,10 @@ async def handle_choice_selection(callback: types.CallbackQuery):
     if success:
         await callback.message.edit_text(message, parse_mode="HTML")
         user_states[user_id] = None
+        
+        # ✅ ДОБАВЛЕНО: показываем главное меню после успешного обновления
+        from keyboards import show_main_menu
+        await show_main_menu(callback.message, lang)
     else:
         await callback.message.edit_text(message)
     

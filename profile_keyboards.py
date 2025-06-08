@@ -67,5 +67,6 @@ def cancel_keyboard(lang: str) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text=t("cancel", lang))]],
         resize_keyboard=True,
-        one_time_keyboard=True
+        one_time_keyboard=True,  # ✅ ДОБАВЛЕНО: автоматически убирает клавиатуру после нажатия
+        input_field_placeholder="Введите значение или нажмите Отмена"  # ✅ ДОБАВЛЕНО: подсказка
     )

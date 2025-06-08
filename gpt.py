@@ -4,13 +4,15 @@
 import os
 import base64
 import asyncio
+import logging
 from openai import AsyncOpenAI  # 🔄 ИЗМЕНЕНИЕ: AsyncOpenAI вместо OpenAI
 from datetime import datetime
 from dotenv import load_dotenv
 from error_handler import safe_openai_call, OpenAIError, log_error_with_context, FileProcessingError
+from subscription_manager import check_gpt4o_limit, spend_gpt4o_limit
 
 load_dotenv()
-
+logger = logging.getLogger(__name__)
 # 🔄 ИЗМЕНЕНИЕ: AsyncOpenAI клиент
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -362,8 +364,12 @@ async def extract_keywords(text: str) -> list[str]:  # 🔄 async
 
 @async_safe_openai_call(max_retries=3, delay=2.0)
 async def ask_doctor(profile_text: str, summary_text: str, last_summary: str, 
-               chunks_text: str, context_text: str, user_question: str, lang: str) -> str:  # 🔄 async
-    """Безопасный вызов доктора-ассистента"""
+               chunks_text: str, context_text: str, user_question: str, 
+               lang: str, user_id: int = None) -> str:
+    """
+    Функция доктора с автовыбором модели GPT-4o/GPT-4o-mini
+    """
+    
     system_prompt = (
         "You are a compassionate and knowledgeable virtual physician who guides the user through their medical journey. "
         "You speak in a friendly, human tone and provide explanations when needed. "
@@ -390,14 +396,50 @@ async def ask_doctor(profile_text: str, summary_text: str, last_summary: str,
 
     full_prompt = f"{instruction_prompt}\n\n{context_block}\n\nPatient: {user_question}"
 
+    # ✅ ПРОСТАЯ ЛОГИКА ВЫБОРА МОДЕЛИ
+    if user_id and await check_gpt4o_limit(user_id):
+        # Есть лимиты - используем GPT-4o
+        model = "gpt-4o"
+        
+        try:
+            response = await client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": full_prompt}
+                ],
+                max_tokens=1500,
+                temperature=0.5
+            )
+            
+            # ✅ СПИСЫВАЕМ ЛИМИТ только при успешном ответе
+            await spend_gpt4o_limit(user_id)
+            logger.info(f"✅ GPT-4o использован для пользователя {user_id}")
+            
+            return response.choices[0].message.content.strip()
+            
+        except Exception as e:
+            # Если GPT-4o не работает - fallback на mini (НЕ списываем лимит)
+            logger.warning(f"⚠️ GPT-4o недоступен, fallback на mini: {e}")
+            model = "gpt-4o-mini"
+    else:
+        # Нет лимитов или user_id - используем GPT-4o-mini
+        model = "gpt-4o-mini"
+        
+        if user_id:
+            logger.info(f"🔹 GPT-4o-mini использован для пользователя {user_id} (нет лимитов)")
+        else:
+            logger.info("🔹 GPT-4o-mini использован (user_id не передан)")
+
+    # ✅ ЕДИНЫЙ ВЫЗОВ API (одинаковые параметры для обеих моделей)
     print("\n=== SYSTEM PROMPT ===\n")
     print(system_prompt)
     print("\n=== USER PROMPT ===\n")
     print(full_prompt)
     print("\n=====================\n")
 
-    response = await client.chat.completions.create(  # 🔄 await
-        model="gpt-4o-mini",
+    response = await client.chat.completions.create(
+        model=model,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": full_prompt}
@@ -405,6 +447,7 @@ async def ask_doctor(profile_text: str, summary_text: str, last_summary: str,
         max_tokens=1500,
         temperature=0.5
     )
+    
     return response.choices[0].message.content.strip()
 
 @async_safe_openai_call(max_retries=2, delay=1.0)
