@@ -28,6 +28,10 @@ from rate_limiter import check_rate_limit, record_user_action, get_rate_limit_st
 from db_pool import initialize_db_pool, close_db_pool, get_db_stats, db_health_check
 from gpt import ask_gpt, ask_doctor, check_openai_status, fallback_response, fallback_summarize
 from subscription_manager import check_document_limit, SubscriptionManager
+from stripe_config import check_stripe_setup
+from subscription_handlers import SubscriptionHandlers, upsell_tracker
+from notification_system import NotificationSystem
+from stripe_manager import StripeManager
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -85,17 +89,13 @@ async def prompt_document_upload(message: types.Message):
     user_id = message.from_user.id
     lang = await get_user_language(user_id)
     
-    # ✅ ПРОВЕРЯЕМ ЛИМИТЫ ДО ЗАГРУЗКИ
-    if not await check_document_limit(user_id):
-        limits = await SubscriptionManager.get_user_limits(user_id)
-        await message.answer(
-            f"📄 У вас закончились лимиты на документы.\n\n"
-            f"📊 Текущие лимиты:\n"
-            f"• Документы: {limits['documents_left']}\n"
-            f"• GPT-4o запросы: {limits['gpt4o_queries_left']}\n\n"
-            f"💎 Купите дополнительные лимиты в разделе «Подписка»"
-        )
-        return
+    # ✅ НОВАЯ ЛОГИКА: Проверяем лимиты и показываем уведомления
+    can_upload = await NotificationSystem.check_and_notify_limits(
+        message, user_id, action_type="document"
+    )
+    
+    if not can_upload:
+        return  # Лимиты исчерпаны, уведомление уже показано
     
     # Если лимиты есть - разрешаем загрузку
     user_states[message.from_user.id] = "awaiting_document"
@@ -119,17 +119,13 @@ async def ask_for_image(message: types.Message):
     user_id = message.from_user.id
     lang = await get_user_language(user_id)
     
-    # ✅ ПРОВЕРЯЕМ ЛИМИТЫ ДО ЗАГРУЗКИ
-    if not await check_document_limit(user_id):
-        limits = await SubscriptionManager.get_user_limits(user_id)
-        await message.answer(
-            f"📸 У вас закончились лимиты на анализ изображений.\n\n"
-            f"📊 Текущие лимиты:\n"
-            f"• Документы: {limits['documents_left']}\n"
-            f"• GPT-4o запросы: {limits['gpt4o_queries_left']}\n\n"
-            f"💎 Купите дополнительные лимиты в разделе «Подписка»"
-        )
-        return
+    # ✅ НОВАЯ ЛОГИКА: Проверяем лимиты и показываем уведомления
+    can_upload = await NotificationSystem.check_and_notify_limits(
+        message, user_id, action_type="image"
+    )
+    
+    if not can_upload:
+        return  # Лимиты исчерпаны, уведомление уже показано
     
     # Если лимиты есть - разрешаем загрузку
     user_states[message.from_user.id] = "awaiting_image_analysis"
@@ -220,6 +216,196 @@ async def handle_stats_command(message: types.Message):
         
     except Exception as e:
         await message.answer("❌ Ошибка при получении статистики")
+
+@dp.message(lambda msg: msg.text and msg.text.startswith("/test_payment"))
+@handle_telegram_errors
+async def test_payment_handler(message: types.Message):
+    """
+    Тестовый обработчик для симуляции успешного платежа
+    Использовать только в тестовом режиме!
+    Формат: /test_payment session_id
+    """
+    if not message.text.startswith("/test_payment "):
+        await message.answer("❌ Формат: /test_payment session_id")
+        return
+    
+    session_id = message.text.replace("/test_payment ", "").strip()
+    
+    try:
+        success, result_message = await StripeManager.handle_successful_payment(session_id)
+        
+        if success:
+            await message.answer(f"✅ Тестовый платеж обработан:\n{result_message}")
+        else:
+            await message.answer(f"❌ Ошибка обработки платежа:\n{result_message}")
+            
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {e}")
+
+
+# Добавьте этот обработчик в main.py для тестирования
+
+@dp.message(lambda msg: msg.text and msg.text.startswith("/check_payment"))
+@handle_telegram_errors
+async def check_payment_handler(message: types.Message):
+    """
+    Проверяет статус последнего платежа пользователя
+    Команда: /check_payment
+    """
+    user_id = message.from_user.id
+    lang = await get_user_language(user_id)
+    
+    try:
+        # Ищем последний pending платеж пользователя
+        from db_pool import fetch_one, fetch_all
+        
+        pending_payment = await fetch_one("""
+            SELECT stripe_session_id, package_id, created_at, amount_usd
+            FROM transactions 
+            WHERE user_id = ? AND status = 'pending'
+            ORDER BY created_at DESC 
+            LIMIT 1
+        """, (user_id,))
+        
+        if not pending_payment:
+            await message.answer(
+                "❌ Нет ожидающих платежей\n"
+                "💡 Сначала создайте ссылку для оплаты через меню подписок"
+            )
+            return
+        
+        session_id, package_id, created_at, amount = pending_payment
+        
+        # Проверяем статус в Stripe
+        import stripe
+        try:
+            session = stripe.checkout.Session.retrieve(session_id)
+            stripe_status = session.payment_status
+            
+            await message.answer(
+                f"📋 <b>Статус последнего платежа:</b>\n\n"
+                f"💳 Session ID: <code>{session_id}</code>\n"
+                f"📦 Пакет: {package_id}\n"
+                f"💰 Сумма: ${amount}\n"
+                f"📅 Создан: {created_at[:16]}\n"
+                f"🔍 Статус Stripe: <b>{stripe_status}</b>\n\n"
+                f"💡 Если статус 'paid' - нажмите /process_payment",
+                parse_mode="HTML"
+            )
+            
+        except Exception as stripe_error:
+            await message.answer(f"❌ Ошибка проверки Stripe: {stripe_error}")
+            
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {e}")
+
+@dp.message(lambda msg: msg.text and msg.text == "/process_payment")
+@handle_telegram_errors
+async def process_payment_handler(message: types.Message):
+    """
+    Обрабатывает последний успешный платеж пользователя
+    Команда: /process_payment
+    """
+    user_id = message.from_user.id
+    
+    try:
+        # Ищем последний pending платеж
+        from db_pool import fetch_one
+        
+        pending_payment = await fetch_one("""
+            SELECT stripe_session_id 
+            FROM transactions 
+            WHERE user_id = ? AND status = 'pending'
+            ORDER BY created_at DESC 
+            LIMIT 1
+        """, (user_id,))
+        
+        if not pending_payment:
+            await message.answer("❌ Нет платежей для обработки")
+            return
+        
+        session_id = pending_payment[0]
+        
+        # Обрабатываем платеж
+        success, result_message = await StripeManager.handle_successful_payment(session_id)
+        
+        if success:
+            await message.answer(f"✅ <b>Платеж обработан!</b>\n\n{result_message}", parse_mode="HTML")
+            
+            # Показываем обновленные лимиты
+            limits = await SubscriptionManager.get_user_limits(user_id)
+            await message.answer(
+                f"📊 <b>Ваши новые лимиты:</b>\n"
+                f"📄 Документы: <b>{limits['documents_left']}</b>\n"
+                f"🤖 GPT-4o запросы: <b>{limits['gpt4o_queries_left']}</b>",
+                parse_mode="HTML"
+            )
+        else:
+            await message.answer(f"❌ Ошибка обработки: {result_message}")
+            
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {e}")
+
+@dp.message(lambda msg: msg.text and msg.text == "/my_limits")
+@handle_telegram_errors
+async def show_my_limits_handler(message: types.Message):
+    """
+    Показывает текущие лимиты пользователя
+    Команда: /my_limits
+    """
+    user_id = message.from_user.id
+    
+    try:
+        limits = await SubscriptionManager.get_user_limits(user_id)
+        
+        if limits:
+            expiry_text = ""
+            if limits.get('expires_at'):
+                try:
+                    from datetime import datetime
+                    expiry_date = datetime.fromisoformat(limits['expires_at'])
+                    expiry_text = f"\n⏰ Истекает: <b>{expiry_date.strftime('%d.%m.%Y')}</b>"
+                except:
+                    pass
+            
+            await message.answer(
+                f"📊 <b>Ваши текущие лимиты:</b>\n\n"
+                f"📄 Документы: <b>{limits['documents_left']}</b>\n"
+                f"🤖 GPT-4o запросы: <b>{limits['gpt4o_queries_left']}</b>\n"
+                f"💳 Тип: <b>{limits['subscription_type']}</b>"
+                f"{expiry_text}",
+                parse_mode="HTML"
+            )
+        else:
+            await message.answer("❌ Не удалось загрузить лимиты")
+            
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {e}")
+
+# Добавьте также помощь по командам
+@dp.message(lambda msg: msg.text and msg.text == "/help_payments")
+@handle_telegram_errors
+async def help_payments_handler(message: types.Message):
+    """Помощь по тестированию платежей"""
+    
+    help_text = """
+🧪 <b>Команды для тестирования платежей:</b>
+
+<code>/check_payment</code> - проверить статус последнего платежа
+<code>/process_payment</code> - обработать успешный платеж  
+<code>/my_limits</code> - показать текущие лимиты
+
+📝 <b>Как тестировать:</b>
+1. Создайте ссылку через меню подписок
+2. Оплатите тестовой картой: 4242 4242 4242 4242
+3. Используйте /check_payment для проверки
+4. Если статус 'paid' - используйте /process_payment
+5. Проверьте лимиты через /my_limits
+
+⚠️ <b>Только для TEST режима!</b>
+"""
+    
+    await message.answer(help_text, parse_mode="HTML")
 
 @dp.message()
 @handle_telegram_errors
@@ -487,7 +673,13 @@ async def handle_user_message(message: types.Message):
             user_input = message.text
             await save_message(user_id, "user", user_input)
             
-            # Получаем данные для контекста
+            # ✅ НОВАЯ ЛОГИКА: Проверяем нужно ли показать upsell для сообщений
+            # (каждые 5 сообщений если нет GPT-4o лимитов)
+            await NotificationSystem.check_and_notify_limits(
+                message, user_id, action_type="message"
+            )
+            
+            # Получаем данные для контекста (код остается тот же)
             summary_text, _ = await get_conversation_summary(user_id)
             last_doc_id, last_summary = await get_last_summary(user_id)
             exclude_texts = last_summary.strip().split("\n\n")
@@ -498,11 +690,10 @@ async def handle_user_message(message: types.Message):
                 refined_query = await enrich_query_for_vector_search(user_input)
                 print(f"\n🧠 Переформулированный запрос: {refined_query}\n")
             except OpenAIError:
-                # Если GPT недоступен, используем оригинальный запрос
                 refined_query = user_input
                 print("⚠️ Использую оригинальный запрос из-за недоступности GPT")
 
-            # Поиск в векторной базе
+            # Поиск в векторной базе (код остается тот же)
             vector_chunks = search_similar_chunks(
                 user_id, refined_query, exclude_doc_id=last_doc_id,
                 exclude_texts=exclude_texts, limit=4
@@ -518,7 +709,7 @@ async def handle_user_message(message: types.Message):
             print("🔑 Ключевые чанки:", len(keyword_chunks))
             print("📦 Итоговые чанки:", len(all_chunks))
 
-            # Подготовка контекста
+            # Подготовка контекста (код остается тот же)
             MAX_LEN = 300
             last_messages = await get_last_messages(user_id, limit=7)
             if last_messages and last_messages[-1][0] == "user" and last_messages[-1][1] == message.text:
@@ -530,7 +721,7 @@ async def handle_user_message(message: types.Message):
             profile = await get_user_profile(user_id)
             profile_text = format_user_profile(profile)
 
-            # Безопасный вызов GPT доктора
+            # ✅ ОБНОВЛЕНО: ask_doctor уже содержит логику выбора модели на основе лимитов
             try:
                 gpt_response = await ask_doctor(
                     profile_text=profile_text,
@@ -540,16 +731,15 @@ async def handle_user_message(message: types.Message):
                     context_text=context_text,
                     user_question=message.text,
                     lang=lang,
-                    user_id=user_id
+                    user_id=user_id  # ✅ ВАЖНО: передаем user_id для проверки лимитов
                 )
             except OpenAIError as e:
-                # Fallback ответ если GPT недоступен
                 gpt_response = fallback_response(message.text, lang)
                 print(f"⚠️ Используется fallback ответ: {e}")
 
             await save_message(user_id, "bot", gpt_response)
 
-            # Безопасная отправка ответа
+            # Безопасная отправка ответа (код остается тот же)
             try:
                 await message.answer(gpt_response)
             except Exception as e:
@@ -560,12 +750,11 @@ async def handle_user_message(message: types.Message):
                 
             await record_user_action(user_id, "message")
 
-            # Обновление резюме разговора
+            # Обновление резюме разговора (код остается тот же)
             try:
                 await maybe_update_summary(user_id)
             except Exception as e:
                 log_error_with_context(e, {"user_id": user_id, "action": "update_summary"})
-                # Не показываем ошибку пользователю, это внутренняя операция
                 
         except Exception as e:
             log_error_with_context(e, {"user_id": user_id, "action": "handle_main_question"})
@@ -791,15 +980,61 @@ async def handle_faq_settings(callback: types.CallbackQuery):
 @dp.callback_query(lambda c: c.data == "settings_subscription")
 @handle_telegram_errors
 async def handle_subscription_settings(callback: types.CallbackQuery):
-    """Обработка кнопки Подписка"""
-    lang = await get_user_language(callback.from_user.id)
-    
-    # Пока заглушка - в следующем шаге сделаем систему подписок
-    await callback.message.edit_text(
-        "💎 <b>Подписки</b>\n\nСистема подписок будет доступна в следующем обновлении.",
-        parse_mode="HTML"
-    )
-    await callback.answer()
+    """Обработка кнопки Подписка в настройках"""
+    await SubscriptionHandlers.show_subscription_menu(callback)
+
+# 2. НОВЫЕ обработчики для покупки подписок
+@dp.callback_query(lambda c: c.data.startswith("buy_"))
+@handle_telegram_errors
+async def handle_purchase_request(callback: types.CallbackQuery):
+    """Обработка запросов на покупку пакетов"""
+    package_id = callback.data.replace("buy_", "")
+    await SubscriptionHandlers.handle_purchase_request(callback, package_id)
+
+@dp.callback_query(lambda c: c.data.startswith("confirm_purchase_"))
+@handle_telegram_errors
+async def handle_purchase_confirmation(callback: types.CallbackQuery):
+    """Обработка подтверждения покупки"""
+    package_id = callback.data.replace("confirm_purchase_", "")
+    await SubscriptionHandlers.handle_purchase_confirmation(callback, package_id)
+
+# 3. НОВЫЕ обработчики управления подписками
+@dp.callback_query(lambda c: c.data == "subscription_menu")
+@handle_telegram_errors
+async def handle_subscription_menu(callback: types.CallbackQuery):
+    """Возврат в меню подписок"""
+    await SubscriptionHandlers.show_subscription_menu(callback)
+
+@dp.callback_query(lambda c: c.data == "show_limits")
+@handle_telegram_errors
+async def handle_show_limits(callback: types.CallbackQuery):
+    """Показ подробной информации о лимитах"""
+    await SubscriptionHandlers.show_user_limits(callback)
+
+@dp.callback_query(lambda c: c.data == "cancel_subscription")
+@handle_telegram_errors
+async def handle_cancel_subscription_request(callback: types.CallbackQuery):
+    """Запрос на отмену подписки"""
+    await SubscriptionHandlers.handle_cancel_subscription_request(callback)
+
+@dp.callback_query(lambda c: c.data == "confirm_cancel_subscription")
+@handle_telegram_errors
+async def handle_cancel_subscription_confirmation(callback: types.CallbackQuery):
+    """Подтверждение отмены подписки"""
+    await SubscriptionHandlers.handle_cancel_subscription_confirmation(callback)
+
+# 4. НОВЫЕ обработчики upsell уведомлений
+@dp.callback_query(lambda c: c.data == "dismiss_upsell")
+@handle_telegram_errors
+async def handle_dismiss_upsell(callback: types.CallbackQuery):
+    """Закрытие upsell уведомления"""
+    await SubscriptionHandlers.dismiss_upsell(callback)
+
+@dp.callback_query(lambda c: c.data == "subscription_current")
+@handle_telegram_errors
+async def handle_current_subscription(callback: types.CallbackQuery):
+    """Обработка нажатия на текущую подписку"""
+    await callback.answer("✅ Это ваша текущая подписка", show_alert=True)
 
 @dp.callback_query()
 @handle_telegram_errors
@@ -883,9 +1118,18 @@ async def handle_button_action(callback: types.CallbackQuery):
 @handle_telegram_errors
 async def main():
     print("✅ Бот запущен. Ожидаю сообщения...")
+    
+    # ✅ НОВАЯ ПРОВЕРКА: Проверяем настройку Stripe
+    if not check_stripe_setup():
+        print("⚠️ Stripe не настроен - платежи будут недоступны")
+        print("💡 Добавьте STRIPE_PUBLISHABLE_KEY и STRIPE_SECRET_KEY в .env файл")
+    else:
+        print("💳 Stripe готов к работе")
+    
     from user_state_manager import user_state_manager
     await user_state_manager.start_cleanup_loop()
-    # 🔧 НОВОЕ: Инициализация пула базы данных
+    
+    # Инициализация пула базы данных (код остается тот же)
     try:
         await initialize_db_pool(max_connections=10)
         print("🗄️ Database pool готов")
@@ -893,13 +1137,13 @@ async def main():
         print(f"❌ Ошибка инициализации БД: {e}")
         return
     
-    # Проверяем состояние OpenAI при запуске
+    # Проверяем состояние OpenAI при запуске (код остается тот же)
     if await check_openai_status():
         print("✅ OpenAI API доступен")
     else:
         print("⚠️ OpenAI API недоступен - бот будет работать в ограниченном режиме")
     
-    # Инициализируем Rate Limiter
+    # Инициализируем Rate Limiter (код остается тот же)
     print("🚦 Rate Limiter активирован")
     print("   - Сообщения: 10/мин")
     print("   - Документы: 3/5мин") 
@@ -913,7 +1157,6 @@ async def main():
         print(f"❌ Критическая ошибка при запуске бота: {e}")
         raise
     finally:
-        # 🔧 НОВОЕ: Закрытие пула при завершении
         await user_state_manager.stop_cleanup_loop()
         await close_db_pool()
 

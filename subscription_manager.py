@@ -290,6 +290,52 @@ class SubscriptionManager:
             logger.error(f"Ошибка получения лимитов для пользователя {user_id}: {e}")
             return None
 
+    @staticmethod
+    async def cancel_stripe_subscription(user_id: int):
+        """Отменяет активную Stripe подписку"""
+        try:
+            # Находим активную подписку пользователя
+            subscription_data = await fetch_one("""
+                SELECT stripe_subscription_id, package_id FROM user_subscriptions 
+                WHERE user_id = ? AND status = 'active'
+                ORDER BY created_at DESC LIMIT 1
+            """, (user_id,))
+            
+            if not subscription_data:
+                return False, "Активная подписка не найдена"
+            
+            stripe_subscription_id, package_id = subscription_data
+            
+            # Отменяем подписку в Stripe
+            import stripe
+            subscription = stripe.Subscription.modify(
+                stripe_subscription_id,
+                cancel_at_period_end=True
+            )
+            
+            # Обновляем статус в БД
+            await execute_query("""
+                UPDATE user_subscriptions 
+                SET status = 'cancelled', cancelled_at = ?
+                WHERE stripe_subscription_id = ?
+            """, (datetime.now().isoformat(), stripe_subscription_id))
+            
+            # Обновляем тип подписки пользователя
+            await execute_query("""
+                UPDATE user_limits SET 
+                    subscription_type = 'free',
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = ?
+            """, (user_id,))
+            
+            logger.info(f"✅ Подписка {stripe_subscription_id} пользователя {user_id} отменена")
+            
+            return True, "Подписка отменена. Лимиты останутся до конца текущего периода."
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка отмены подписки для пользователя {user_id}: {e}")
+            return False, f"Ошибка отмены подписки: {e}"
+    
 # Вспомогательные функции для интеграции в существующий код
 async def check_document_limit(user_id: int) -> bool:
     """Проверяет, может ли пользователь загрузить документ"""
