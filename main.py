@@ -1126,6 +1126,9 @@ async def main():
     else:
         print("💳 Stripe готов к работе")
     
+    from webhook_subscription_handler import start_webhook_server
+    webhook_runner = await start_webhook_server(bot, port=8080)
+
     from user_state_manager import user_state_manager
     await user_state_manager.start_cleanup_loop()
     
@@ -1159,6 +1162,7 @@ async def main():
     finally:
         await user_state_manager.stop_cleanup_loop()
         await close_db_pool()
+        await webhook_runner.cleanup()
 
 if __name__ == "__main__":
     try:
