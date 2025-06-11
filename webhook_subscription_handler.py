@@ -21,16 +21,26 @@ class SubscriptionWebhookHandler:
         Обрабатывает webhook от Make.com с событиями Stripe
         
         Ожидаемые данные:
-        {
+        Подписки: {
             "event_type": "invoice.payment_succeeded",
             "user_id": "cus_...",
             "subscription_id": "sub_...", 
-            "amount": 399
+            "amount": "399"
+        }
+        
+        Разовые платежи: {
+            "event_type": "checkout.session.completed",
+            "session_id": "cs_...",
+            "user_id": "123456",
+            "amount": "199"
         }
         """
         try:
             # Получаем данные от Make.com
             data = await request.json()
+            
+            # ✅ ИСПРАВЛЕНО: Добавляем print для отладки
+            print(f"🎯 Получен webhook от Make.com: {json.dumps(data, indent=2)}")
             
             # Логируем полученные данные
             logger.info(f"🎯 Получен webhook от Make.com: {json.dumps(data, indent=2)}")
@@ -39,7 +49,14 @@ class SubscriptionWebhookHandler:
             event_type = data.get('event_type')
             stripe_customer_id = data.get('user_id')
             subscription_id = data.get('subscription_id')
-            amount = data.get('amount', 0)
+            
+            # ✅ ИСПРАВЛЕНИЕ 1: Конвертируем amount в число (Make.com передает строку)
+            amount_raw = data.get('amount', 0)
+            try:
+                amount = int(amount_raw) if amount_raw else 0
+            except (ValueError, TypeError):
+                print(f"⚠️ Ошибка конвертации amount: {amount_raw}")
+                amount = 0
             
             if not event_type:
                 return web.json_response(
@@ -60,6 +77,56 @@ class SubscriptionWebhookHandler:
                 result = await self._handle_invoice_created(
                     stripe_customer_id, subscription_id
                 )
+            elif event_type == 'checkout.session.completed':
+                # ✅ ИСПРАВЛЕНИЕ 2: Добавляем обработку разовых платежей
+                session_id = data.get('session_id')
+                user_id_from_metadata = data.get('user_id')
+                
+                if session_id:
+                    print(f"💳 Обработка разового платежа: {session_id}")
+                    
+                    # Автоматически обрабатываем через существующую логику
+                    try:
+                        from stripe_manager import StripeManager
+                        success, message = await StripeManager.handle_successful_payment(session_id)
+                        
+                        if success:
+                            result = {
+                                "status": "success",
+                                "message": f"One-time payment processed: {message}",
+                                "session_id": session_id
+                            }
+                            print(f"✅ Разовый платеж {session_id} обработан успешно")
+                            
+                            # Отправляем уведомление пользователю если есть user_id
+                            if user_id_from_metadata:
+                                try:
+                                    await self.bot.send_message(
+                                        int(user_id_from_metadata),
+                                        f"✅ <b>Платеж обработан автоматически!</b>\n\n"
+                                        f"💳 Разовая покупка завершена\n"
+                                        f"🎉 Ваши лимиты обновлены!\n\n"
+                                        f"📝 {message}",
+                                        parse_mode="HTML"
+                                    )
+                                    print(f"📧 Уведомление отправлено пользователю {user_id_from_metadata}")
+                                except Exception as notify_error:
+                                    print(f"❌ Ошибка отправки уведомления: {notify_error}")
+                        else:
+                            result = {
+                                "status": "error", 
+                                "message": f"Payment processing failed: {message}"
+                            }
+                            print(f"❌ Ошибка обработки разового платежа: {message}")
+                    except Exception as e:
+                        result = {
+                            "status": "error",
+                            "message": f"Exception during payment processing: {str(e)}"
+                        }
+                        print(f"❌ Исключение при обработке платежа: {e}")
+                else:
+                    result = {"status": "error", "message": "Missing session_id"}
+                    print("❌ Отсутствует session_id в данных webhook")
             else:
                 logger.warning(f"⚠️ Неизвестный тип события: {event_type}")
                 result = {"status": "ignored", "message": f"Event {event_type} ignored"}
@@ -74,6 +141,7 @@ class SubscriptionWebhookHandler:
             })
             
         except Exception as e:
+            print(f"❌ Критическая ошибка обработки webhook: {e}")
             logger.error(f"❌ Ошибка обработки webhook: {e}")
             return web.json_response(
                 {"status": "error", "message": str(e)}, 
@@ -83,11 +151,12 @@ class SubscriptionWebhookHandler:
     async def _handle_successful_payment(self, stripe_customer_id, subscription_id, amount):
         """Обрабатывает успешное продление подписки"""
         try:
+            # ✅ ИСПРАВЛЕНО: Убираем деление, так как amount уже в центах
+            print(f"💳 Успешное продление: customer={stripe_customer_id}, amount=${amount/100}")
             logger.info(f"💳 Успешное продление: customer={stripe_customer_id}, amount=${amount/100}")
             
             # TODO: Найти user_id по stripe_customer_id
-            # Пока используем заглушку - в реальности нужна таблица связи
-            user_id = await self._get_user_id_by_stripe_customer(stripe_customer_id)
+            user_id = int(stripe_customer_id)
             
             if not user_id:
                 logger.warning(f"⚠️ Пользователь не найден для customer {stripe_customer_id}")
@@ -100,10 +169,16 @@ class SubscriptionWebhookHandler:
             result = await SubscriptionManager.purchase_package(
                 user_id=user_id,
                 package_id=package_id,
-                payment_method='stripe_renewal'
+                payment_method='stripe_subscription'
             )
             
             if result['success']:
+                from db_pool import execute_query
+                await execute_query("""
+                    INSERT OR REPLACE INTO user_subscriptions 
+                    (user_id, stripe_subscription_id, package_id, status, created_at)
+                    VALUES (?, ?, ?, 'active', ?)
+                """, (user_id, subscription_id, package_id, datetime.now().isoformat()))
                 # Отправляем уведомление пользователю
                 await self._send_renewal_notification(user_id, package_id)
                 
@@ -176,7 +251,7 @@ class SubscriptionWebhookHandler:
         """
         # ЗАГЛУШКА: для тестирования возвращаем тестового пользователя
         if stripe_customer_id:
-            return 123456  # Замените на реальный поиск в БД
+            return int(stripe_customer_id)  # Используем переданный ID
         return None
     
     def _determine_package_by_amount(self, amount_cents):
@@ -264,6 +339,10 @@ async def start_webhook_server(bot, host='0.0.0.0', port=8080):
     
     site = web.TCPSite(runner, host, port)
     await site.start()
+    
+    # ✅ ИСПРАВЛЕНО: Добавляем print для отладки
+    print(f"🚀 Webhook сервер запущен на {host}:{port}")
+    print(f"📡 Endpoint: http://{host}:{port}/webhook")
     
     logger.info(f"🚀 Webhook сервер запущен на {host}:{port}")
     logger.info(f"📡 Endpoint: http://{host}:{port}/webhook")

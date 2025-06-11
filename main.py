@@ -998,6 +998,42 @@ async def handle_purchase_confirmation(callback: types.CallbackQuery):
     package_id = callback.data.replace("confirm_purchase_", "")
     await SubscriptionHandlers.handle_purchase_confirmation(callback, package_id)
 
+@dp.callback_query(lambda c: c.data.startswith("upgrade_to_"))
+@handle_telegram_errors
+async def handle_simple_upgrade(callback: types.CallbackQuery):
+    """✅ ПРОСТОЙ обработчик апгрейда - находим старую подписку сами"""
+    try:
+        user_id = callback.from_user.id
+        
+        # Получаем новый пакет из callback
+        new_package_id = callback.data.replace("upgrade_to_", "")
+        
+        # ✅ ПРОСТАЯ ЛОГИКА: Находим активную подписку в БД
+        from db_pool import fetch_one
+        active_subscription = await fetch_one("""
+            SELECT package_id FROM user_subscriptions 
+            WHERE user_id = ? AND status = 'active'
+            ORDER BY created_at DESC LIMIT 1
+        """, (user_id,))
+        
+        if not active_subscription:
+            await callback.answer("❌ Активная подписка не найдена", show_alert=True)
+            return
+            
+        current_package_id = active_subscription[0]
+        
+        # ✅ ПРОСТО: Отменяем старую, создаем новую
+        await SubscriptionHandlers.handle_subscription_upgrade(
+            callback, current_package_id, new_package_id
+        )
+        
+    except Exception as e:
+        log_error_with_context(e, {
+            "action": "simple_upgrade", 
+            "user_id": callback.from_user.id
+        })
+        await callback.answer("❌ Ошибка", show_alert=True)
+
 # 3. НОВЫЕ обработчики управления подписками
 @dp.callback_query(lambda c: c.data == "subscription_menu")
 @handle_telegram_errors

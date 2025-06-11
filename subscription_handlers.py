@@ -1,4 +1,4 @@
-# subscription_handlers.py - Обработчики для системы подписок
+# subscription_handlers.py - ОБНОВЛЕННАЯ ВЕРСИЯ с системой апгрейда подписок
 
 import logging
 from aiogram import types
@@ -12,6 +12,8 @@ from subscription_manager import SubscriptionManager
 from stripe_manager import StripeManager
 from db import get_user_language, get_user_name
 from datetime import datetime
+from db_pool import fetch_one  # ✅ ДОБАВЛЕНО для проверки активных подписок
+from error_handler import log_error_with_context
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +22,7 @@ class SubscriptionHandlers:
     
     @staticmethod
     async def show_subscription_menu(message_or_callback, user_id: int = None):
-        """
-        Показывает главное меню подписок
-        
-        Args:
-            message_or_callback: Сообщение или callback query
-            user_id: ID пользователя (если не передан, берется из message_or_callback)
-        """
+        """Показывает главное меню подписок (без изменений)"""
         try:
             # Определяем user_id если не передан
             if user_id is None:
@@ -44,7 +40,6 @@ class SubscriptionHandlers:
             current_subscription = None
             if limits and limits['subscription_type'] == 'subscription':
                 # Нужно определить какая именно подписка active
-                # Пока упрощенно - можно улучшить позже
                 if limits['documents_left'] >= 20:  # Premium
                     current_subscription = "premium_sub"
                 elif limits['documents_left'] >= 5:   # Basic
@@ -90,7 +85,7 @@ class SubscriptionHandlers:
     
     @staticmethod
     async def _get_subscription_menu_text(user_id: int, lang: str, limits: dict) -> str:
-        """Формирует текст для меню подписок"""
+        """Формирует текст для меню подписок (без изменений)"""
         
         texts = {
             "ru": {
@@ -156,13 +151,30 @@ class SubscriptionHandlers:
     
     @staticmethod
     async def handle_purchase_request(callback: types.CallbackQuery, package_id: str):
-        """Обрабатывает запрос на покупку пакета"""
+        """✅ ИСПРАВЛЕНО: Обрабатывает запрос на покупку с правильной проверкой активных подписок"""
         try:
             user_id = callback.from_user.id
             lang = await get_user_language(user_id)
             user_name = await get_user_name(user_id) or callback.from_user.first_name or "User"
             
-            # Получаем описание пакета
+            # ✅ ИСПРАВЛЕНО: Проверяем РЕАЛЬНЫЕ активные подписки в БД
+            active_subscription = await SubscriptionHandlers._get_active_subscription(user_id)
+            
+            # ✅ ВАЖНО: Показываем апгрейд только если:
+            # 1. Есть активная подписка в БД
+            # 2. И покупается другая подписка (не Extra Pack)
+            if (active_subscription and 
+                package_id in ['basic_sub', 'premium_sub'] and 
+                active_subscription['package_id'] != package_id):
+                
+                # У пользователя есть ДРУГАЯ активная подписка
+                await SubscriptionHandlers._show_upgrade_warning(
+                    callback, package_id, active_subscription
+                )
+                return
+            
+            # ✅ Если нет активной подписки ИЛИ покупается та же самая ИЛИ это Extra Pack
+            # - продолжаем как обычную покупку
             package_description = get_package_description(package_id, lang)
             
             # Показываем подтверждение покупки
@@ -180,12 +192,224 @@ class SubscriptionHandlers:
             await callback.answer()
             
         except Exception as e:
-            logger.error(f"Ошибка обработки запроса покупки {package_id} для пользователя {callback.from_user.id}: {e}")
+            # ✅ ИСПРАВЛЕНО: Используем существующую систему логирования
+            logger.error(f"Ошибка: {e}")
             await callback.answer("❌ Ошибка обработки запроса", show_alert=True)
     
     @staticmethod
+    async def _get_active_subscription(user_id: int) -> dict:
+        """✅ НОВАЯ ФУНКЦИЯ: Получает информацию об активной подписке пользователя"""
+        try:
+            subscription_data = await fetch_one("""
+                SELECT stripe_subscription_id, package_id, created_at 
+                FROM user_subscriptions 
+                WHERE user_id = ? AND status = 'active'
+                ORDER BY created_at DESC LIMIT 1
+            """, (user_id,))
+            
+            if subscription_data:
+                return {
+                    "stripe_subscription_id": subscription_data[0],
+                    "package_id": subscription_data[1],
+                    "created_at": subscription_data[2]
+                }
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Ошибка получения активной подписки для пользователя {user_id}: {e}")
+            return None
+    
+    @staticmethod
+    async def _show_upgrade_warning(callback: types.CallbackQuery, new_package_id: str, active_subscription: dict):
+        """✅ НОВАЯ ФУНКЦИЯ: Показывает предупреждение об апгрейде подписки"""
+        try:
+            user_id = callback.from_user.id
+            lang = await get_user_language(user_id)
+            
+            current_package = active_subscription['package_id']
+            
+            # Получаем информацию о пакетах для красивого отображения
+            from stripe_config import StripeConfig
+            current_info = StripeConfig.get_package_info(current_package)
+            new_info = StripeConfig.get_package_info(new_package_id)
+            
+            # Формируем текст предупреждения
+            warning_texts = {
+                "ru": f"⚠️ <b>Замена подписки</b>\n\n📋 <b>Текущая подписка:</b>\n{current_info['user_friendly_name']} ({current_info['price_display']}/месяц)\n\n🔄 <b>Новая подписка:</b>\n{new_info['user_friendly_name']} ({new_info['price_display']}/месяц)\n\n💡 <b>Что произойдет:</b>\n• Текущая подписка будет отменена немедленно\n• Новая подписка активируется сразу\n• Следующее списание по новой цене\n\n❓ Продолжить замену?",
+                "uk": f"⚠️ <b>Заміна підписки</b>\n\n📋 <b>Поточна підписка:</b>\n{current_info['user_friendly_name']} ({current_info['price_display']}/місяць)\n\n🔄 <b>Нова підписка:</b>\n{new_info['user_friendly_name']} ({new_info['price_display']}/місяць)\n\n💡 <b>Що станеться:</b>\n• Поточну підписку буде скасовано негайно\n• Нова підписка активується зараз\n• Наступне списання за новою ціною\n\n❓ Продовжити заміну?",
+                "en": f"⚠️ <b>Subscription upgrade</b>\n\n📋 <b>Current subscription:</b>\n{current_info['user_friendly_name']} ({current_info['price_display']}/month)\n\n🔄 <b>New subscription:</b>\n{new_info['user_friendly_name']} ({new_info['price_display']}/month)\n\n💡 <b>What will happen:</b>\n• Current subscription will be cancelled immediately\n• New subscription will activate right away\n• Next billing at new price\n\n❓ Continue with upgrade?"
+            }
+            
+            # Создаем клавиатуру подтверждения апгрейда
+            upgrade_keyboard = SubscriptionHandlers._create_upgrade_confirmation_keyboard(
+                new_package_id, current_package, lang
+            )
+            
+            await callback.message.edit_text(
+                warning_texts.get(lang, warning_texts["en"]),
+                reply_markup=upgrade_keyboard,
+                parse_mode="HTML"
+            )
+            await callback.answer()
+            
+        except Exception as e:
+            logger.error(f"Ошибка показа предупреждения об апгрейде: {e}")
+            await callback.answer("❌ Ошибка", show_alert=True)
+    
+    @staticmethod
+    def _create_upgrade_confirmation_keyboard(new_package_id: str, current_package_id: str, lang: str) -> InlineKeyboardMarkup:
+        """✅ УПРОЩЕНО: Передаем только новый пакет"""
+        
+        texts = {
+            "ru": {
+                "confirm": "✅ Да, заменить подписку",
+                "cancel": "❌ Отмена"
+            },
+            "uk": {
+                "confirm": "✅ Так, замінити підписку",
+                "cancel": "❌ Скасувати"
+            },
+            "en": {
+                "confirm": "✅ Yes, upgrade subscription",
+                "cancel": "❌ Cancel"
+            }
+        }
+        
+        t = texts.get(lang, texts["en"])
+        
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(
+                text=t["confirm"], 
+                callback_data=f"upgrade_to_{new_package_id}"  # ✅ ПРОСТО: только новый пакет
+            )],
+            [InlineKeyboardButton(
+                text=t["cancel"], 
+                callback_data="subscription_menu"
+            )]
+        ])
+        
+    @staticmethod
+    async def handle_subscription_upgrade(callback: types.CallbackQuery, current_package_id: str, new_package_id: str):
+        """✅ НОВАЯ ФУНКЦИЯ: Обрабатывает подтвержденный апгрейд подписки"""
+        try:
+            user_id = callback.from_user.id
+            lang = await get_user_language(user_id)
+            
+            # Показываем сообщение о процессе
+            processing_texts = {
+                "ru": "🔄 Отменяем старую подписку и создаем новую...",
+                "uk": "🔄 Скасовуємо стару підписку та створюємо нову...",
+                "en": "🔄 Cancelling old subscription and creating new one..."
+            }
+            
+            await callback.message.edit_text(
+                processing_texts.get(lang, processing_texts["en"]),
+                reply_markup=payment_processing_keyboard(lang)
+            )
+            await callback.answer()
+            
+            # 1. Отменяем старую подписку в Stripe
+            cancel_success = await SubscriptionHandlers._cancel_old_subscription(user_id)
+            
+            if not cancel_success:
+                error_texts = {
+                    "ru": "❌ Ошибка отмены старой подписки. Попробуйте позже.",
+                    "uk": "❌ Помилка скасування старої підписки. Спробуйте пізніше.",
+                    "en": "❌ Error cancelling old subscription. Please try later."
+                }
+                
+                await callback.message.edit_text(
+                    error_texts.get(lang, error_texts["en"]),
+                    reply_markup=payment_processing_keyboard(lang)
+                )
+                return
+            
+            # 2. Создаем новую подписку
+            user_name = await get_user_name(user_id) or callback.from_user.first_name or "User"
+            success, payment_url_or_error = await StripeManager.create_checkout_session(
+                user_id=user_id,
+                package_id=new_package_id,
+                user_name=user_name
+            )
+            
+            if success:
+                success_texts = {
+                    "ru": f"✅ <b>Старая подписка отменена!</b>\n\n💳 <b>Ссылка для новой подписки:</b>\n🔗 <a href='{payment_url_or_error}'>Нажмите для оплаты</a>\n\n⚠️ Ссылка действительна 30 минут",
+                    "uk": f"✅ <b>Стару підписку скасовано!</b>\n\n💳 <b>Посилання для нової підписки:</b>\n🔗 <a href='{payment_url_or_error}'>Натисніть для оплати</a>\n\n⚠️ Посилання дійсне 30 хвилин",
+                    "en": f"✅ <b>Old subscription cancelled!</b>\n\n💳 <b>New subscription link:</b>\n🔗 <a href='{payment_url_or_error}'>Click to pay</a>\n\n⚠️ Link expires in 30 minutes"
+                }
+                
+                await callback.message.edit_text(
+                    success_texts.get(lang, success_texts["en"]),
+                    reply_markup=payment_processing_keyboard(lang),
+                    parse_mode="HTML",
+                    disable_web_page_preview=True
+                )
+            else:
+                error_texts = {
+                    "ru": f"❌ <b>Старая подписка отменена, но ошибка создания новой:</b>\n\n{payment_url_or_error}\n\nВы можете создать новую подписку через меню.",
+                    "uk": f"❌ <b>Стару підписку скасовано, але помилка створення нової:</b>\n\n{payment_url_or_error}\n\nВи можете створити нову підписку через меню.",
+                    "en": f"❌ <b>Old subscription cancelled, but error creating new one:</b>\n\n{payment_url_or_error}\n\nYou can create a new subscription via menu."
+                }
+                
+                await callback.message.edit_text(
+                    error_texts.get(lang, error_texts["en"]),
+                    reply_markup=payment_processing_keyboard(lang),
+                    parse_mode="HTML"
+                )
+            
+        except Exception as e:
+            logger.error(f"Ошибка апгрейда подписки для пользователя {callback.from_user.id}: {e}")
+            
+            error_texts = {
+                "ru": "❌ Произошла ошибка при смене подписки",
+                "uk": "❌ Сталася помилка при зміні підписки",
+                "en": "❌ An error occurred while changing subscription"
+            }
+            
+            lang = await get_user_language(callback.from_user.id)
+            await callback.message.edit_text(
+                error_texts.get(lang, error_texts["en"]),
+                reply_markup=payment_processing_keyboard(lang)
+            )
+            await callback.answer()
+    
+    @staticmethod
+    async def _cancel_old_subscription(user_id: int) -> bool:
+        """✅ НОВАЯ ФУНКЦИЯ: Отменяет старую подписку пользователя"""
+        try:
+            # Получаем активную подписку
+            active_subscription = await SubscriptionHandlers._get_active_subscription(user_id)
+            
+            if not active_subscription:
+                logger.warning(f"Нет активной подписки для отмены у пользователя {user_id}")
+                return True  # Если нет подписки - считаем успехом
+            
+            stripe_subscription_id = active_subscription['stripe_subscription_id']
+            
+            # Отменяем в Stripe немедленно
+            import stripe
+            stripe.Subscription.delete(stripe_subscription_id)
+            
+            # Обновляем статус в нашей БД
+            from db_pool import execute_query
+            await execute_query("""
+                UPDATE user_subscriptions 
+                SET status = 'cancelled', cancelled_at = ?
+                WHERE stripe_subscription_id = ? AND user_id = ?
+            """, (datetime.now().isoformat(), stripe_subscription_id, user_id))
+            
+            logger.info(f"✅ Подписка {stripe_subscription_id} пользователя {user_id} отменена для апгрейда")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка отмены старой подписки для пользователя {user_id}: {e}")
+            return False
+    
+    @staticmethod
     async def handle_purchase_confirmation(callback: types.CallbackQuery, package_id: str):
-        """Обрабатывает подтверждение покупки и создает ссылку Stripe"""
+        """Обрабатывает подтверждение покупки (без изменений для обычных покупок)"""
         try:
             user_id = callback.from_user.id
             lang = await get_user_language(user_id)
@@ -256,9 +480,10 @@ class SubscriptionHandlers:
             )
             await callback.answer()
     
+    # Остальные методы остаются без изменений...
     @staticmethod
     async def show_user_limits(callback: types.CallbackQuery):
-        """Показывает подробную информацию о лимитах пользователя"""
+        """Показывает подробную информацию о лимитах пользователя (без изменений)"""
         try:
             user_id = callback.from_user.id
             lang = await get_user_language(user_id)
@@ -297,7 +522,7 @@ class SubscriptionHandlers:
     
     @staticmethod
     async def _get_detailed_limits_text(limits: dict, lang: str) -> str:
-        """Формирует подробный текст о лимитах пользователя"""
+        """Формирует подробный текст о лимитах пользователя (без изменений)"""
         
         texts = {
             "ru": {
@@ -395,7 +620,7 @@ class SubscriptionHandlers:
     
     @staticmethod
     async def handle_cancel_subscription_request(callback: types.CallbackQuery):
-        """Обрабатывает запрос на отмену подписки"""
+        """Обрабатывает запрос на отмену подписки (без изменений)"""
         try:
             user_id = callback.from_user.id
             lang = await get_user_language(user_id)
@@ -432,7 +657,7 @@ class SubscriptionHandlers:
     
     @staticmethod
     async def handle_cancel_subscription_confirmation(callback: types.CallbackQuery):
-        """Обрабатывает подтверждение отмены подписки"""
+        """Обрабатывает подтверждение отмены подписки (без изменений)"""
         try:
             user_id = callback.from_user.id
             lang = await get_user_language(user_id)
@@ -474,7 +699,7 @@ class SubscriptionHandlers:
     
     @staticmethod
     async def show_subscription_upsell(message, user_id: int, reason: str = "limits_exceeded"):
-        """Обновленные upsell сообщения"""
+        """Обновленные upsell сообщения (без изменений)"""
         try:
             lang = await get_user_language(user_id)
             
@@ -504,7 +729,7 @@ class SubscriptionHandlers:
     
     @staticmethod
     async def dismiss_upsell(callback: types.CallbackQuery):
-        """Закрывает upsell сообщение"""
+        """Закрывает upsell сообщение (без изменений)"""
         try:
             await callback.message.delete()
             await callback.answer()
@@ -512,7 +737,7 @@ class SubscriptionHandlers:
             logger.error(f"Ошибка закрытия upsell сообщения: {e}")
             await callback.answer()
 
-# Система отслеживания upsell сообщений (чтобы показывать не чаще чем каждые 5 сообщений)
+# Система отслеживания upsell сообщений (без изменений)
 class UpsellTracker:
     """Отслеживает показ upsell сообщений пользователям"""
     
@@ -521,15 +746,7 @@ class UpsellTracker:
         self.user_last_upsell = {}     # user_id: timestamp
     
     def should_show_upsell(self, user_id: int) -> bool:
-        """
-        Определяет, нужно ли показать upsell сообщение
-        
-        Args:
-            user_id: ID пользователя
-            
-        Returns:
-            bool: True если нужно показать upsell
-        """
+        """Определяет, нужно ли показать upsell сообщение"""
         current_count = self.user_message_counts.get(user_id, 0)
         
         # Показываем каждые 5 сообщений
