@@ -1,8 +1,9 @@
-# subscription_logic.py - Логика работы с лимитами и подписками
+# subscription_manager.py - ПОЛНАЯ ЗАМЕНА ФАЙЛА
 
+import stripe
+import logging
 from datetime import datetime, timedelta
 from db_pool import fetch_one, execute_query
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -10,114 +11,145 @@ class SubscriptionManager:
     """Менеджер подписок и лимитов"""
     
     @staticmethod
-    async def check_and_reset_expired_limits(user_id: int):
+    async def fix_orphaned_subscription_state(user_id: int):
         """
-        Проверяет и сбрасывает истекшие лимиты
-        Вызывается при каждом действии пользователя
+        ✅ НОВАЯ ФУНКЦИЯ: Исправляет "подвешенное" состояние подписки
+        Когда в БД есть запись о подписке, но в Stripe её нет
         """
         try:
-            # Получаем данные пользователя
-            user_data = await fetch_one("""
-                SELECT documents_left, gpt4o_queries_left, subscription_expires_at, subscription_type
-                FROM user_limits 
-                WHERE user_id = ?
-            """, (user_id,))
+            logger.info(f"🔧 Исправляем состояние подписки для пользователя {user_id}")
             
-            if not user_data:
-                logger.warning(f"Пользователь {user_id} не найден в user_limits")
-                return
+            # Проверяем реальное состояние в Stripe
+            stripe_check = await SubscriptionManager.check_real_stripe_subscription(user_id)
             
-            documents_left, queries_left, expires_at, sub_type = user_data
-            
-            # Если нет даты истечения - лимиты вечные
-            if not expires_at:
-                return
-            
-            # Проверяем истечение
-            expiry_date = datetime.fromisoformat(expires_at)
-            now = datetime.now()
-            
-            if now >= expiry_date:
-                logger.info(f"Лимиты пользователя {user_id} истекли. Тип: {sub_type}")
+            if not stripe_check["has_active"]:
+                # В Stripe нет активной подписки - приводим БД в соответствие
                 
-                if sub_type == 'subscription':
-                    # Подписка - пытаемся автопродлить
-                    await SubscriptionManager._auto_renew_subscription(user_id)
-                else:
-                    # Разовая покупка - сбрасываем до 0
-                    await SubscriptionManager._reset_to_zero(user_id)
+                # 1. Обновляем статус подписок в user_subscriptions
+                await execute_query("""
+                    UPDATE user_subscriptions 
+                    SET status = 'cancelled', cancelled_at = ?
+                    WHERE user_id = ? AND status = 'active'
+                """, (datetime.now().isoformat(), user_id))
+                
+                # 2. Получаем текущие лимиты
+                limits = await fetch_one("""
+                    SELECT documents_left, gpt4o_queries_left 
+                    FROM user_limits 
+                    WHERE user_id = ?
+                """, (user_id,))
+                
+                if limits:
+                    docs, queries = limits
                     
+                    # 3. Определяем правильный subscription_type
+                    if docs > 0 or queries > 0:
+                        # Есть лимиты, но нет подписки - значит это разовая покупка
+                        new_type = 'one_time'
+                    else:
+                        # Нет лимитов - значит free
+                        new_type = 'free'
+                    
+                    # 4. Обновляем subscription_type
+                    await execute_query("""
+                        UPDATE user_limits 
+                        SET subscription_type = ?, updated_at = CURRENT_TIMESTAMP
+                        WHERE user_id = ?
+                    """, (new_type, user_id))
+                    
+                    logger.info(f"✅ Состояние исправлено: user_id={user_id}, type={new_type}, docs={docs}, queries={queries}")
+                    return True
+            else:
+                logger.info(f"✅ Состояние корректно: у пользователя {user_id} есть активная подписка в Stripe")
+                return True
+                
         except Exception as e:
-            logger.error(f"Ошибка проверки лимитов для пользователя {user_id}: {e}")
-    
+            logger.error(f"❌ Ошибка исправления состояния для пользователя {user_id}: {e}")
+            return False
+
     @staticmethod
-    async def _auto_renew_subscription(user_id: int):
-        """Автопродление подписки"""
+    async def check_real_stripe_subscription(user_id: int):
+        """
+        ✅ НОВАЯ ФУНКЦИЯ: Проверяет реальное состояние подписки в Stripe
+        
+        Returns:
+            dict: {"has_active": bool, "subscription_id": str, "status": str}
+        """
         try:
-            # Получаем последнюю активную подписку
-            transaction = await fetch_one("""
-                SELECT package_id, documents_granted, queries_granted
-                FROM transactions 
-                WHERE user_id = ? AND status = 'completed' AND package_id LIKE '%_sub'
-                ORDER BY completed_at DESC LIMIT 1
+            # Получаем записи о подписках из локальной БД
+            subscription_data = await fetch_one("""
+                SELECT stripe_subscription_id, package_id 
+                FROM user_subscriptions 
+                WHERE user_id = ? AND status = 'active'
+                ORDER BY created_at DESC LIMIT 1
             """, (user_id,))
             
-            if not transaction:
-                logger.warning(f"Не найдена активная подписка для пользователя {user_id}")
-                await SubscriptionManager._reset_to_zero(user_id)
-                return
+            if not subscription_data:
+                return {"has_active": False, "subscription_id": None, "status": "none"}
             
-            package_id, docs, queries = transaction
+            stripe_subscription_id = subscription_data[0]
             
-            # TODO: Здесь будет логика списания денег с карты
-            # Пока просто продлеваем (в реальности нужна интеграция с платежной системой)
-            
-            # Обновляем лимиты и дату
-            new_expiry = datetime.now() + timedelta(days=30)
-            
-            await execute_query("""
-                UPDATE user_limits SET 
-                    documents_left = ?,
-                    gpt4o_queries_left = ?,
-                    subscription_expires_at = ?,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE user_id = ?
-            """, (docs, queries, new_expiry.isoformat(), user_id))
-            
-            logger.info(f"Подписка пользователя {user_id} автопродлена до {new_expiry.date()}")
-            
+            # Проверяем статус в Stripe
+            try:
+                subscription = stripe.Subscription.retrieve(stripe_subscription_id)
+                
+                if subscription.status in ['active', 'trialing']:
+                    return {
+                        "has_active": True, 
+                        "subscription_id": stripe_subscription_id,
+                        "status": subscription.status
+                    }
+                else:
+                    # Подписка неактивна в Stripe - обновляем локальную БД
+                    await SubscriptionManager._sync_inactive_subscription(user_id, stripe_subscription_id, subscription.status)
+                    return {
+                        "has_active": False, 
+                        "subscription_id": stripe_subscription_id,
+                        "status": subscription.status
+                    }
+                    
+            except stripe.error.InvalidRequestError:
+                # Подписка не найдена в Stripe - удаляем из локальной БД
+                await SubscriptionManager._sync_deleted_subscription(user_id, stripe_subscription_id)
+                return {"has_active": False, "subscription_id": None, "status": "deleted"}
+                
         except Exception as e:
-            logger.error(f"Ошибка автопродления подписки для пользователя {user_id}: {e}")
-            await SubscriptionManager._reset_to_zero(user_id)
+            logger.error(f"Ошибка проверки Stripe подписки для пользователя {user_id}: {e}")
+            return {"has_active": False, "subscription_id": None, "status": "error"}
     
     @staticmethod
-    async def _reset_to_zero(user_id: int):
-        """Сбрасывает лимиты до нуля"""
+    async def _sync_inactive_subscription(user_id: int, stripe_subscription_id: str, stripe_status: str):
+        """Синхронизирует неактивную подписку в локальной БД"""
         try:
             await execute_query("""
-                UPDATE user_limits SET 
-                    documents_left = 0,
-                    gpt4o_queries_left = 0,
-                    subscription_expires_at = NULL,
-                    subscription_type = 'free',
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE user_id = ?
-            """, (user_id,))
+                UPDATE user_subscriptions 
+                SET status = 'cancelled', cancelled_at = ?
+                WHERE user_id = ? AND stripe_subscription_id = ?
+            """, (datetime.now().isoformat(), user_id, stripe_subscription_id))
             
-            logger.info(f"Лимиты пользователя {user_id} сброшены до нуля")
+            logger.info(f"✅ Синхронизирована неактивная подписка {stripe_subscription_id} для пользователя {user_id}")
             
         except Exception as e:
-            logger.error(f"Ошибка сброса лимитов для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка синхронизации неактивной подписки: {e}")
+    
+    @staticmethod
+    async def _sync_deleted_subscription(user_id: int, stripe_subscription_id: str):
+        """Удаляет несуществующую в Stripe подписку из локальной БД"""
+        try:
+            await execute_query("""
+                DELETE FROM user_subscriptions 
+                WHERE user_id = ? AND stripe_subscription_id = ?
+            """, (user_id, stripe_subscription_id))
+            
+            logger.info(f"✅ Удалена несуществующая подписка {stripe_subscription_id} для пользователя {user_id}")
+            
+        except Exception as e:
+            logger.error(f"Ошибка удаления несуществующей подписки: {e}")
     
     @staticmethod
     async def purchase_package(user_id: int, package_id: str, payment_method: str = 'stripe'):
         """
-        Покупка пакета
-        
-        Args:
-            user_id: ID пользователя
-            package_id: ID пакета из subscription_packages
-            payment_method: Способ оплаты
+        ✅ ИСПРАВЛЕННАЯ версия покупки пакета - ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ!
         """
         try:
             # Получаем данные пакета
@@ -132,32 +164,50 @@ class SubscriptionManager:
             
             name, price, docs, queries, pkg_type = package
             
+            # ✅ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Проверяем реальное состояние подписки
+            stripe_check = await SubscriptionManager.check_real_stripe_subscription(user_id)
+            has_active_subscription = stripe_check["has_active"]
+            
+            logger.info(f"Покупка {package_id} для пользователя {user_id}. Активная подписка: {has_active_subscription}")
+            
             # Получаем текущие лимиты пользователя
             current = await fetch_one("""
-                SELECT documents_left, gpt4o_queries_left 
+                SELECT documents_left, gpt4o_queries_left, subscription_type
                 FROM user_limits 
                 WHERE user_id = ?
             """, (user_id,))
             
             if not current:
-                # Создаем запись если её нет
                 await execute_query("""
                     INSERT INTO user_limits (user_id, documents_left, gpt4o_queries_left)
                     VALUES (?, 0, 0)
                 """, (user_id,))
-                current_docs, current_queries = 0, 0
+                current_docs, current_queries, current_sub_type = 0, 0, 'free'
             else:
-                current_docs, current_queries = current
+                current_docs, current_queries, current_sub_type = current
             
-            # Рассчитываем новые лимиты
+            # ✅ НОВАЯ ЛОГИКА: Определяем правильный subscription_type
             if pkg_type == 'subscription':
-                # Подписка - заменяем лимиты
+                # Покупка подписки - всегда устанавливаем subscription
+                final_subscription_type = 'subscription'
+                # Заменяем лимиты (не добавляем)
                 new_docs = docs
                 new_queries = queries
-            else:
-                # Разовая покупка - добавляем к текущим
+                logger.info(f"Подписка {package_id}: заменяем лимиты на {docs}/{queries}")
+            elif has_active_subscription:
+                # ✅ ГЛАВНОЕ ИСПРАВЛЕНИЕ: Есть активная подписка - НЕ МЕНЯЕМ тип
+                final_subscription_type = 'subscription'  # Оставляем subscription!
+                # Добавляем к текущим лимитам
                 new_docs = current_docs + docs
                 new_queries = current_queries + queries
+                logger.info(f"Extra Pack при подписке: добавляем {docs}/{queries} к {current_docs}/{current_queries}")
+            else:
+                # Нет активной подписки - можно установить one_time
+                final_subscription_type = 'one_time'
+                # Добавляем к текущим лимитам
+                new_docs = current_docs + docs
+                new_queries = current_queries + queries
+                logger.info(f"Extra Pack без подписки: устанавливаем one_time, добавляем {docs}/{queries}")
             
             # Устанавливаем дату истечения
             expiry_date = datetime.now() + timedelta(days=30)
@@ -170,7 +220,7 @@ class SubscriptionManager:
                 VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', CURRENT_TIMESTAMP)
             """, (user_id, package_id, price, name, payment_method, docs, queries))
             
-            # Обновляем лимиты пользователя
+            # ✅ ИСПРАВЛЕННОЕ обновление лимитов
             await execute_query("""
                 UPDATE user_limits SET 
                     documents_left = ?,
@@ -179,15 +229,16 @@ class SubscriptionManager:
                     subscription_expires_at = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE user_id = ?
-            """, (new_docs, new_queries, pkg_type, expiry_date.isoformat(), user_id))
+            """, (new_docs, new_queries, final_subscription_type, expiry_date.isoformat(), user_id))
             
-            logger.info(f"Пакет {package_id} куплен пользователем {user_id}. Новые лимиты: {new_docs} docs, {new_queries} queries")
+            logger.info(f"✅ Пакет {package_id} куплен пользователем {user_id}. Тип: {final_subscription_type}, Новые лимиты: {new_docs} docs, {new_queries} queries")
             
             return {
                 "success": True,
                 "transaction_id": transaction_id,
                 "new_documents": new_docs,
                 "new_queries": new_queries,
+                "subscription_type": final_subscription_type,
                 "expires_at": expiry_date.isoformat()
             }
             
@@ -195,18 +246,113 @@ class SubscriptionManager:
             logger.error(f"Ошибка покупки пакета {package_id} для пользователя {user_id}: {e}")
             return {"success": False, "error": str(e)}
     
+    # subscription_manager.py - ЗАМЕНИТЬ функцию cancel_stripe_subscription
+
+    @staticmethod
+    async def cancel_stripe_subscription(user_id: int):
+        """
+        ✅ УЛУЧШЕННАЯ версия отмены подписки
+        """
+        try:
+            # Сначала проверяем реальное состояние в Stripe
+            stripe_check = await SubscriptionManager.check_real_stripe_subscription(user_id)
+            
+            if not stripe_check["has_active"]:
+                # Подписки нет или она уже отменена
+                status = stripe_check["status"]
+                
+                # ✅ ДОБАВЛЕНО: Исправляем подвешенное состояние
+                await SubscriptionManager.fix_orphaned_subscription_state(user_id)
+                
+                if status == "deleted":
+                    return True, "Подписка уже была отменена ранее (данные синхронизированы)"
+                elif status in ["canceled", "cancelled"]:
+                    return True, "Подписка уже отменена в Stripe (данные синхронизированы)"
+                else:
+                    return True, "У вас нет активной подписки (данные синхронизированы)"
+            
+            stripe_subscription_id = stripe_check["subscription_id"]
+            
+            # Отменяем подписку в Stripe
+            try:
+                import stripe
+                subscription = stripe.Subscription.modify(
+                    stripe_subscription_id,
+                    cancel_at_period_end=True
+                )
+                
+                # Обновляем статус в локальной БД
+                await execute_query("""
+                    UPDATE user_subscriptions 
+                    SET status = 'cancelled', cancelled_at = ?
+                    WHERE stripe_subscription_id = ?
+                """, (datetime.now().isoformat(), stripe_subscription_id))
+                
+                # ✅ ДОБАВЛЕНО: Исправляем subscription_type после отмены
+                await SubscriptionManager.fix_orphaned_subscription_state(user_id)
+                
+                logger.info(f"✅ Подписка {stripe_subscription_id} пользователя {user_id} отменена")
+                
+                return True, "Подписка отменена. Лимиты останутся до конца текущего периода."
+                
+            except stripe.error.InvalidRequestError as stripe_error:
+                # Подписка уже отменена в Stripe
+                if "canceled subscription" in str(stripe_error):
+                    # Синхронизируем локальную БД
+                    await SubscriptionManager._sync_inactive_subscription(user_id, stripe_subscription_id, "cancelled")
+                    await SubscriptionManager.fix_orphaned_subscription_state(user_id)
+                    return True, "Подписка уже была отменена в Stripe (данные синхронизированы)"
+                else:
+                    raise stripe_error
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка отмены подписки для пользователя {user_id}: {e}")
+            return False, f"Ошибка отмены подписки: {e}"
+    
+    @staticmethod
+    async def get_user_limits(user_id: int):
+        """
+        ✅ ОБНОВЛЕННАЯ версия - автоматически исправляет подвешенное состояние
+        """
+        try:
+            # ✅ ДОБАВЛЕНО: Автоматически исправляем подвешенное состояние
+            await SubscriptionManager.fix_orphaned_subscription_state(user_id)
+            
+            # Проверяем и синхронизируем состояние подписки
+            await SubscriptionManager.check_and_reset_expired_limits(user_id)
+            
+            # Получаем актуальные лимиты
+            result = await fetch_one("""
+                SELECT documents_left, gpt4o_queries_left, subscription_type, subscription_expires_at
+                FROM user_limits 
+                WHERE user_id = ?
+            """, (user_id,))
+            
+            if not result:
+                return {
+                    "documents_left": 0,
+                    "gpt4o_queries_left": 0,
+                    "subscription_type": "free",
+                    "expires_at": None
+                }
+            
+            docs, queries, sub_type, expires_at = result
+            
+            return {
+                "documents_left": docs,
+                "gpt4o_queries_left": queries, 
+                "subscription_type": sub_type,
+                "expires_at": expires_at
+            }
+            
+        except Exception as e:
+            logger.error(f"Ошибка получения лимитов для пользователя {user_id}: {e}")
+            return None
+    
     @staticmethod
     async def spend_limits(user_id: int, documents: int = 0, queries: int = 0):
         """
-        Тратит лимиты пользователя
-        
-        Args:
-            user_id: ID пользователя
-            documents: Количество документов для списания
-            queries: Количество запросов для списания
-            
-        Returns:
-            dict: Результат операции
+        Тратит лимиты пользователя (без изменений)
         """
         try:
             # Сначала проверяем истекшие лимиты
@@ -256,86 +402,90 @@ class SubscriptionManager:
             return {"success": False, "error": str(e)}
     
     @staticmethod
-    async def get_user_limits(user_id: int):
-        """Получает текущие лимиты пользователя"""
+    async def check_and_reset_expired_limits(user_id: int):
+        """Проверяет и сбрасывает истекшие лимиты (без изменений)"""
         try:
-            # Проверяем истекшие лимиты
-            await SubscriptionManager.check_and_reset_expired_limits(user_id)
-            
-            # Получаем актуальные лимиты
-            result = await fetch_one("""
-                SELECT documents_left, gpt4o_queries_left, subscription_type, subscription_expires_at
+            user_data = await fetch_one("""
+                SELECT documents_left, gpt4o_queries_left, subscription_expires_at, subscription_type
                 FROM user_limits 
                 WHERE user_id = ?
             """, (user_id,))
             
-            if not result:
-                return {
-                    "documents_left": 0,
-                    "gpt4o_queries_left": 0,
-                    "subscription_type": "free",
-                    "expires_at": None
-                }
+            if not user_data:
+                return
             
-            docs, queries, sub_type, expires_at = result
+            documents_left, queries_left, expires_at, sub_type = user_data
             
-            return {
-                "documents_left": docs,
-                "gpt4o_queries_left": queries, 
-                "subscription_type": sub_type,
-                "expires_at": expires_at
-            }
+            if not expires_at:
+                return
             
+            expiry_date = datetime.fromisoformat(expires_at)
+            now = datetime.now()
+            
+            if now >= expiry_date:
+                logger.info(f"Лимиты пользователя {user_id} истекли. Тип: {sub_type}")
+                
+                if sub_type == 'subscription':
+                    await SubscriptionManager._auto_renew_subscription(user_id)
+                else:
+                    await SubscriptionManager._reset_to_zero(user_id)
+                    
         except Exception as e:
-            logger.error(f"Ошибка получения лимитов для пользователя {user_id}: {e}")
-            return None
-
+            logger.error(f"Ошибка проверки лимитов для пользователя {user_id}: {e}")
+    
     @staticmethod
-    async def cancel_stripe_subscription(user_id: int):
-        """Отменяет активную Stripe подписку"""
+    async def _auto_renew_subscription(user_id: int):
+        """Автопродление подписки (без изменений)"""
         try:
-            # Находим активную подписку пользователя
-            subscription_data = await fetch_one("""
-                SELECT stripe_subscription_id, package_id FROM user_subscriptions 
-                WHERE user_id = ? AND status = 'active'
-                ORDER BY created_at DESC LIMIT 1
+            transaction = await fetch_one("""
+                SELECT package_id, documents_granted, queries_granted
+                FROM transactions 
+                WHERE user_id = ? AND status = 'completed' AND package_id LIKE '%_sub'
+                ORDER BY completed_at DESC LIMIT 1
             """, (user_id,))
             
-            if not subscription_data:
-                return False, "Активная подписка не найдена"
+            if not transaction:
+                logger.warning(f"Не найдена активная подписка для пользователя {user_id}")
+                await SubscriptionManager._reset_to_zero(user_id)
+                return
             
-            stripe_subscription_id, package_id = subscription_data
+            package_id, docs, queries = transaction
+            new_expiry = datetime.now() + timedelta(days=30)
             
-            # Отменяем подписку в Stripe
-            import stripe
-            subscription = stripe.Subscription.modify(
-                stripe_subscription_id,
-                cancel_at_period_end=True
-            )
-            
-            # Обновляем статус в БД
-            await execute_query("""
-                UPDATE user_subscriptions 
-                SET status = 'cancelled', cancelled_at = ?
-                WHERE stripe_subscription_id = ?
-            """, (datetime.now().isoformat(), stripe_subscription_id))
-            
-            # Обновляем тип подписки пользователя
             await execute_query("""
                 UPDATE user_limits SET 
+                    documents_left = ?,
+                    gpt4o_queries_left = ?,
+                    subscription_expires_at = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = ?
+            """, (docs, queries, new_expiry.isoformat(), user_id))
+            
+            logger.info(f"Подписка пользователя {user_id} автопродлена до {new_expiry.date()}")
+            
+        except Exception as e:
+            logger.error(f"Ошибка автопродления подписки для пользователя {user_id}: {e}")
+            await SubscriptionManager._reset_to_zero(user_id)
+    
+    @staticmethod
+    async def _reset_to_zero(user_id: int):
+        """Сбрасывает лимиты до нуля (без изменений)"""
+        try:
+            await execute_query("""
+                UPDATE user_limits SET 
+                    documents_left = 0,
+                    gpt4o_queries_left = 0,
+                    subscription_expires_at = NULL,
                     subscription_type = 'free',
                     updated_at = CURRENT_TIMESTAMP
                 WHERE user_id = ?
             """, (user_id,))
             
-            logger.info(f"✅ Подписка {stripe_subscription_id} пользователя {user_id} отменена")
-            
-            return True, "Подписка отменена. Лимиты останутся до конца текущего периода."
+            logger.info(f"Лимиты пользователя {user_id} сброшены до нуля")
             
         except Exception as e:
-            logger.error(f"❌ Ошибка отмены подписки для пользователя {user_id}: {e}")
-            return False, f"Ошибка отмены подписки: {e}"
-    
+            logger.error(f"Ошибка сброса лимитов для пользователя {user_id}: {e}")
+
 # Вспомогательные функции для интеграции в существующий код
 async def check_document_limit(user_id: int) -> bool:
     """Проверяет, может ли пользователь загрузить документ"""

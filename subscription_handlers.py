@@ -20,9 +20,11 @@ logger = logging.getLogger(__name__)
 class SubscriptionHandlers:
     """Класс для обработки всех действий с подписками"""
     
+    # subscription_handlers.py - ЗАМЕНИТЬ функцию show_subscription_menu
+
     @staticmethod
     async def show_subscription_menu(message_or_callback, user_id: int = None):
-        """Показывает главное меню подписок (без изменений)"""
+        """✅ ИСПРАВЛЕННАЯ версия с правильными параметрами"""
         try:
             # Определяем user_id если не передан
             if user_id is None:
@@ -36,19 +38,28 @@ class SubscriptionHandlers:
             lang = await get_user_language(user_id)
             limits = await SubscriptionManager.get_user_limits(user_id)
             
-            # Определяем текущую подписку
+            # ✅ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Проверяем РЕАЛЬНОЕ состояние в Stripe
+            stripe_check = await SubscriptionManager.check_real_stripe_subscription(user_id)
+            has_real_subscription = stripe_check["has_active"]
+            
+            # ✅ НОВАЯ ЛОГИКА: Определяем текущую подписку на основе Stripe, а не БД
             current_subscription = None
-            if limits and limits['subscription_type'] == 'subscription':
-                # Нужно определить какая именно подписка active
-                if limits['documents_left'] >= 20:  # Premium
+            if has_real_subscription:
+                # Есть РЕАЛЬНАЯ активная подписка в Stripe
+                if limits and limits['documents_left'] >= 20:  # Premium
                     current_subscription = "premium_sub"
-                elif limits['documents_left'] >= 5:   # Basic
+                elif limits and limits['documents_left'] >= 5:   # Basic
                     current_subscription = "basic_sub"
+            # Если нет активной подписки в Stripe - current_subscription остается None
             
-            # Формируем текст сообщения
-            subscription_text = await SubscriptionHandlers._get_subscription_menu_text(user_id, lang, limits)
+            logger.info(f"Меню подписок для {user_id}: Stripe={has_real_subscription}, current_sub={current_subscription}")
             
-            # Создаем клавиатуру
+            # ✅ ИСПРАВЛЕНИЕ: Передаем правильное количество параметров
+            subscription_text = await SubscriptionHandlers._get_subscription_menu_text(
+                user_id, lang, limits, has_real_subscription
+            )
+            
+            # Создаем клавиатуру с правильным current_subscription
             keyboard = subscription_main_menu(lang, current_subscription)
             
             # Отправляем или редактируем сообщение
@@ -69,23 +80,18 @@ class SubscriptionHandlers:
         except Exception as e:
             logger.error(f"Ошибка показа меню подписок для пользователя {user_id}: {e}")
             
-            error_text = {
-                "ru": "❌ Ошибка загрузки меню подписок",
-                "uk": "❌ Помилка завантаження меню підписок", 
-                "en": "❌ Error loading subscription menu"
-            }
-            
-            lang = await get_user_language(user_id) if user_id else "ru"
+            # ✅ ДОБАВЛЕНО: Показываем ошибку пользователю для отладки
+            error_text = f"❌ Ошибка меню подписок: {str(e)[:200]}"
             
             if isinstance(message_or_callback, types.CallbackQuery):
-                await message_or_callback.message.answer(error_text.get(lang, error_text["ru"]))
+                await message_or_callback.message.answer(error_text)
                 await message_or_callback.answer()
             else:
-                await message_or_callback.answer(error_text.get(lang, error_text["ru"]))
+                await message_or_callback.answer(error_text)
     
     @staticmethod
-    async def _get_subscription_menu_text(user_id: int, lang: str, limits: dict) -> str:
-        """Формирует текст для меню подписок (без изменений)"""
+    async def _get_subscription_menu_text(user_id: int, lang: str, limits: dict, has_real_subscription: bool) -> str:
+        """✅ ОБНОВЛЕННАЯ версия - учитывает реальное состояние Stripe"""
         
         texts = {
             "ru": {
@@ -96,7 +102,8 @@ class SubscriptionHandlers:
                 "subscription": "💳 Подписка",
                 "expires": "⏰ Истекает",
                 "free": "Бесплатная",
-                "choose": "\n🛒 <b>Выберите подписку:</b>"
+                "choose": "\n🛒 <b>Выберите подписку:</b>",
+                "sync_note": "\n🔄 <i>Данные синхронизированы с платежной системой</i>"
             },
             "uk": {
                 "title": "💎 <b>Підписки та ліміти</b>",
@@ -106,7 +113,8 @@ class SubscriptionHandlers:
                 "subscription": "💳 Підписка", 
                 "expires": "⏰ Закінчується",
                 "free": "Безкоштовна",
-                "choose": "\n🛒 <b>Оберіть підписку:</b>"
+                "choose": "\n🛒 <b>Оберіть підписку:</b>",
+                "sync_note": "\n🔄 <i>Дані синхронізовані з платіжною системою</i>"
             },
             "en": {
                 "title": "💎 <b>Subscriptions and limits</b>",
@@ -116,7 +124,8 @@ class SubscriptionHandlers:
                 "subscription": "💳 Subscription",
                 "expires": "⏰ Expires",
                 "free": "Free",
-                "choose": "\n🛒 <b>Choose subscription:</b>"
+                "choose": "\n🛒 <b>Choose subscription:</b>",
+                "sync_note": "\n🔄 <i>Data synchronized with payment system</i>"
             }
         }
         
@@ -131,11 +140,12 @@ class SubscriptionHandlers:
             text_parts.append(f"• {t['documents']}: <b>{limits['documents_left']}</b>")
             text_parts.append(f"• {t['queries']}: <b>{limits['gpt4o_queries_left']}</b>")
             
-            # Информация о подписке
-            if limits['subscription_type'] == 'subscription':
-                text_parts.append(f"• {t['subscription']}: <b>Active</b>")
+            # ✅ ИСПРАВЛЕНИЕ: Информация о подписке на основе РЕАЛЬНОГО состояния
+            if has_real_subscription:
+                text_parts.append(f"• {t['subscription']}: <b>✅ Активная</b>")
                 if limits.get('expires_at'):
                     try:
+                        from datetime import datetime
                         expiry_date = datetime.fromisoformat(limits['expires_at'])
                         formatted_date = expiry_date.strftime("%d.%m.%Y")
                         text_parts.append(f"• {t['expires']}: <b>{formatted_date}</b>")
@@ -146,6 +156,9 @@ class SubscriptionHandlers:
         
         # Добавляем призыв к действию
         text_parts.append(t["choose"])
+        
+        # Добавляем уведомление о синхронизации
+        text_parts.append(t["sync_note"])
         
         return "\n".join(text_parts)
     

@@ -5,7 +5,7 @@ from stripe_config import StripeConfig
 from typing import Optional
 
 def subscription_main_menu(lang: str, current_subscription: Optional[str] = None) -> InlineKeyboardMarkup:
-    """Главное меню подписок с пользовательскими описаниями"""
+    """✅ ИСПРАВЛЕННАЯ версия - правильно обрабатывает состояние подписки"""
     
     texts = {
         "ru": {
@@ -58,14 +58,16 @@ def subscription_main_menu(lang: str, current_subscription: Optional[str] = None
         # Итоговый текст кнопки
         button_text = f"**{package_info['user_friendly_name']} — {price_text}**\n{features_text}"
         
-        # Проверяем активную подписку
+        # ✅ ИСПРАВЛЕНИЕ: Проверяем активную подписку на основе current_subscription
         if current_subscription == package_id:
+            # У пользователя РЕАЛЬНО есть эта подписка в Stripe
             button_text = f"{t['current']} {package_info['user_friendly_name']}"
             buttons.append([InlineKeyboardButton(
                 text=button_text, 
                 callback_data="subscription_current"
             )])
         else:
+            # Обычная кнопка покупки
             buttons.append([InlineKeyboardButton(
                 text=button_text,
                 callback_data=f"buy_{package_id}"
@@ -75,6 +77,7 @@ def subscription_main_menu(lang: str, current_subscription: Optional[str] = None
     additional_buttons = []
     additional_buttons.append(InlineKeyboardButton(text=t["limits"], callback_data="show_limits"))
     
+    # ✅ ИСПРАВЛЕНИЕ: Показываем кнопку отмены ТОЛЬКО если current_subscription не None
     if current_subscription in ["basic_sub", "premium_sub"]:
         additional_buttons.append(InlineKeyboardButton(text=t["cancel"], callback_data="cancel_subscription"))
     
