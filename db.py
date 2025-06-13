@@ -5,7 +5,7 @@ import time
 import re
 import logging
 from datetime import datetime
-from vector_db import delete_document_from_vector_db, delete_all_chunks_by_user
+from vector_db_postgresql import delete_document_from_vector_db, delete_all_chunks_by_user
 from db_pool import get_db_connection, fetch_one, fetch_all, execute_query, insert_and_get_id
 from locales import translations
 
@@ -249,9 +249,8 @@ async def delete_document(document_id: int):
     """Асинхронное удаление документа"""
     if not isinstance(document_id, int) or document_id <= 0:
         raise ValueError("Некорректный document_id")
-    
-    from vector_db import delete_document_from_vector_db
-    delete_document_from_vector_db(document_id)  # Это остается синхронным
+     
+    await delete_document_from_vector_db(document_id)
     
     await execute_query("DELETE FROM documents WHERE id = ?", (document_id,))
 

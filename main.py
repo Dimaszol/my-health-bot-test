@@ -22,10 +22,9 @@ from profile_keyboards import (
 from profile_manager import ProfileManager, CHOICE_MAPPINGS
 from documents import handle_show_documents, handle_ignore_document
 from save_utils import maybe_update_summary, format_user_profile
-from vector_utils import search_similar_chunks, keyword_search_chunks
-from vector_db import delete_document_from_vector_db
 from rate_limiter import check_rate_limit, record_user_action, get_rate_limit_stats
-from db_pool import initialize_db_pool, close_db_pool, get_db_stats, db_health_check
+from vector_db_postgresql import initialize_vector_db, search_similar_chunks, keyword_search_chunks, delete_document_from_vector_db
+from db_postgresql import initialize_db_pool, close_db_pool, get_db_stats, db_health_check, db_pool
 from gpt import ask_gpt, ask_doctor, check_openai_status, fallback_response, fallback_summarize
 from subscription_manager import check_document_limit, SubscriptionManager, check_gpt4o_limit
 from stripe_config import check_stripe_setup
@@ -43,22 +42,60 @@ bot = Bot(
 dp = Dispatcher()
 
 @dp.message(CommandStart())
-@handle_telegram_errors
+# @handle_telegram_errors  # ← ОСТАВЬ ЗАКОММЕНТИРОВАННЫМ
 async def send_welcome(message: types.Message):
-    from db import is_fully_registered, get_user_language
-    from keyboards import show_main_menu, language_keyboard
     user_id = message.from_user.id
-
-    if await is_fully_registered(user_id):
-        name = await get_user_name(user_id)
-        lang = await get_user_language(user_id)
-        await message.answer(t("welcome_back", lang, name=name))
-        await show_main_menu(message, lang)
-    else:
-        await message.answer(
-            "🇺🇦 Обери мову інтерфейсу\n\n🇷🇺 Выбери язык интерфейса\n\n🇬🇧 Choose your language",
-            reply_markup=language_keyboard()
-        )
+    
+    print(f"\n🧪 === ОТЛАДКА /start для пользователя {user_id} ===")
+    
+    try:
+        print("1️⃣ Начинаю обработку команды /start")
+        
+        # Проверяем импорты
+        print("2️⃣ Импортирую функции БД...")
+        from db_postgresql import get_user, create_user
+        from registration import start_registration  # ✅ ДОБАВИЛИ ИМПОРТ
+        print("✅ Импорт функций БД успешен")
+        
+        # Проверяем подключение к БД
+        print("3️⃣ Проверяю пользователя в PostgreSQL...")
+        user_data = await get_user(user_id)
+        print(f"✅ Запрос к БД выполнен. Результат: {user_data}")
+        
+        if user_data:
+            print("4️⃣ Пользователь найден в БД")
+            name = user_data.get('name', 'Пользователь')
+            
+            # ✅ ПОКАЗЫВАЕМ ГЛАВНОЕ МЕНЮ
+            from keyboards import main_menu_keyboard
+            from db_postgresql import get_user_language, t
+            
+            lang = await get_user_language(user_id)
+            await message.answer(
+                t("welcome_back", lang, name=name), 
+                reply_markup=main_menu_keyboard(lang)
+            )
+        else:
+            print("4️⃣ Пользователя НЕТ в БД - начинаю регистрацию")
+            
+            # ✅ ЗАПУСКАЕМ РЕГИСТРАЦИЮ ПРАВИЛЬНО
+            await start_registration(user_id, message)
+            print("✅ Регистрация запущена!")
+            
+        print("5️⃣ Команда /start обработана успешно!")
+        
+    except Exception as e:
+        print(f"🚨 ОШИБКА НА ЭТАПЕ: {e}")
+        print(f"🔍 ТИП ОШИБКИ: {type(e).__name__}")
+        
+        import traceback
+        print("📋 ПОЛНЫЙ TRACEBACK:")
+        print(traceback.format_exc())
+        
+        # Отправляем детальную ошибку в чат
+        await message.answer(f"❌ Ошибка: {type(e).__name__}: {str(e)[:200]}")
+    
+    print("🏁 === КОНЕЦ ОТЛАДКИ ===\n")
 
 @dp.message(lambda msg: msg.text in ["🇷🇺 Русский", "🇺🇦 Українська", "🇬🇧 English"])
 @handle_telegram_errors
@@ -316,7 +353,7 @@ async def handle_user_message(message: types.Message):
             return
         try:
             from gpt import summarize_note_text, generate_title_for_note
-            from vector_utils import split_into_chunks, add_chunks_to_vector_db
+            from vector_db_postgresql import split_into_chunks, add_chunks_to_vector_db
             from db import save_document
             from documents import send_note_controls
 
@@ -342,7 +379,7 @@ async def handle_user_message(message: types.Message):
             )
 
             chunks = await split_into_chunks(summary, document_id, user_id)
-            add_chunks_to_vector_db(chunks)
+            await add_chunks_to_vector_db(document_id, user_id, chunks)
 
             await message.answer(t("note_saved", lang, title=title), parse_mode="HTML")
             await send_note_controls(message, document_id)
@@ -479,16 +516,39 @@ async def handle_user_message(message: types.Message):
                 print(f"🔍 Запрос: '{user_input}' (GPT недоступен)")
 
             # Поиск в векторной базе
-            vector_chunks = search_similar_chunks(
-                user_id, refined_query, exclude_doc_id=last_doc_id,
-                exclude_texts=exclude_texts, limit=4
+            vector_chunks = await search_similar_chunks(
+                user_id, refined_query, limit=10  # Больше лимит для фильтрации
             )
             keyword_chunks = await keyword_search_chunks(
-                user_id, user_input, exclude_doc_id=last_doc_id,
-                exclude_texts=exclude_texts, limit=2
+                user_id, user_input, limit=10     # Больше лимит для фильтрации
             )
 
-            all_chunks = list(dict.fromkeys(vector_chunks + keyword_chunks))
+            # 📊 Извлекаем текст и фильтруем результаты
+            def filter_chunks(chunks, exclude_doc_id=None, exclude_texts=None, limit=5):
+                """Фильтрует чанки по условиям"""
+                filtered_texts = []
+                for chunk in chunks:
+                    chunk_text = chunk.get("chunk_text", "")
+                    metadata = chunk.get("metadata", {})
+                    
+                    # Фильтр по document_id
+                    if exclude_doc_id and str(metadata.get("document_id")) == str(exclude_doc_id):
+                        continue
+                    # Фильтр по тексту
+                    if exclude_texts and chunk_text.strip() in exclude_texts:
+                        continue
+                        
+                    filtered_texts.append(chunk_text)
+                    if len(filtered_texts) >= limit:
+                        break
+                return filtered_texts
+
+            # Фильтруем результаты
+            vector_texts = filter_chunks(vector_chunks, exclude_doc_id=last_doc_id, exclude_texts=exclude_texts, limit=4)
+            keyword_texts = filter_chunks(keyword_chunks, exclude_doc_id=last_doc_id, exclude_texts=exclude_texts, limit=2)
+
+            # Объединяем и убираем дубликаты
+            all_chunks = list(dict.fromkeys(vector_texts + keyword_texts))
             chunks_text = "\n\n".join(all_chunks[:6])
             
             # ✅ КРАТКАЯ СВОДКА
@@ -929,7 +989,6 @@ async def handle_button_action(callback: types.CallbackQuery):
             await callback.message.answer(t("enter_new_name", lang))
         elif action == "delete":
             await delete_document(doc_id)
-            delete_document_from_vector_db(doc_id)
             await callback.message.answer(t("document_deleted", lang))
         elif action == "download":
             file_path = doc.get("file_path")
@@ -965,6 +1024,8 @@ async def main():
     try:
         await initialize_db_pool(max_connections=10)
         print("🗄️ Database pool готов")
+        await initialize_vector_db(db_pool)
+        print("🧠 Vector database готова")
     except Exception as e:
         print(f"❌ Ошибка инициализации БД: {e}")
         return
