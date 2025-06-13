@@ -106,56 +106,62 @@ def add_chunks_to_vector_db(chunks):
                     print(f"❌ Не удалось добавить чанк {i}: {single_error}")
 
 def search_similar_chunks(user_id, query, exclude_doc_id=None, exclude_texts=None, limit=5):
+    """✅ КРАТКАЯ версия векторного поиска"""
+    
+    search_limit = limit + 10
     results = collection.query(
         query_texts=[query],
-        n_results=limit + 10,
+        n_results=search_limit,
         where={"$and": [
-            {"user_id": str(user_id)},
-            {"confirmed": 1}
+            {"user_id": {"$eq": str(user_id)}},
+            {"confirmed": {"$eq": 1}}
         ]}
     )
+    
     documents = results.get("documents", [[]])[0]
     metadatas = results.get("metadatas", [[]])[0]
-
+    
     filtered = []
+    excluded_count = 0
+    
     for text, meta in zip(documents, metadatas):
         doc_id = meta.get("document_id")
-        print(f"🔍 Проверка мета: document_id = {doc_id}")
 
         if exclude_doc_id and str(doc_id) == str(exclude_doc_id):
-            print(f"⛔ Пропущен чанк из документа {doc_id}")
+            excluded_count += 1
             continue
+            
         if exclude_texts and text.strip() in exclude_texts:
-            print(f"⛔ Пропущен чанк по совпадению текста")
+            excluded_count += 1
             continue
 
         filtered.append((text.strip(), doc_id))
+        
         if len(filtered) == limit:
             break
 
-    print("\n🧠 Итоговые чанки, которые пойдут в промт:")
-    for i, (text, doc_id) in enumerate(filtered):
-        print(f"\n📄 CHUNK {i+1} (document_id = {doc_id}):\n{text.strip()[:500]}")
-
+    print(f"   🧠 Векторный: {len(documents)} → {len(filtered)} (исключено: {excluded_count})")
     return [text for text, _ in filtered]
 
 async def keyword_search_chunks(user_id: int, user_question: str, exclude_doc_id=None, exclude_texts=None, limit=5):
-    """✅ ИСПРАВЛЕНО: не загружаем все документы сразу"""
+    """✅ КРАТКАЯ версия поиска по ключевым словам"""
     from gpt import extract_keywords
+    
+    # Извлекаем ключевые слова (с кратким логом)
     keywords = await extract_keywords(user_question)
-    print(f"🔎 Ключевые слова из вопроса: {keywords}")
-
-    # Приводим ключевые слова запроса к нижнему регистру и убираем пробелы
     query_keywords = [k.strip().lower() for k in keywords]
 
-    # ✅ ИСПРАВЛЕНИЕ: используем where для фильтрации по user_id
     try:
+        # ✅ ИСПРАВЛЕНО: правильный синтаксис для ChromaDB
         raw = collection.get(
-            where={"user_id": str(user_id), "confirmed": 1},  # Фильтруем сразу
+            where={"$and": [
+                {"user_id": {"$eq": str(user_id)}},
+                {"confirmed": {"$eq": 1}}
+            ]},
             include=["documents", "metadatas"]
         )
     except Exception as e:
-        print(f"❌ Ошибка поиска в векторной базе: {e}")
+        print(f"   🔑 Ключевые: Ошибка - {e}")
         return []
 
     documents = raw.get("documents", [])
@@ -163,9 +169,12 @@ async def keyword_search_chunks(user_id: int, user_question: str, exclude_doc_id
 
     results = []
     seen_docs = set()
+    checked = 0
+    matched = 0
 
     for text, meta in zip(documents, metadatas):
-        # Дополнительные проверки (на случай если where не сработал)
+        checked += 1
+        
         if str(meta.get("user_id")) != str(user_id):
             continue
         if meta.get("confirmed") != 1:
@@ -184,6 +193,7 @@ async def keyword_search_chunks(user_id: int, user_question: str, exclude_doc_id
             chunk_keywords = []
 
         if any(qk in chunk_keywords for qk in query_keywords):
+            matched += 1
             doc_id = meta.get("document_id")
             if doc_id not in seen_docs:
                 results.append((text.strip(), doc_id))
@@ -191,5 +201,5 @@ async def keyword_search_chunks(user_id: int, user_question: str, exclude_doc_id
         if len(results) >= limit:
             break
 
-    print(f"📚 Keyword-поиск дал {len(results)} совпадений.")
+    print(f"   🔑 Ключевые: {checked} проверено → {matched} совпали → {len(results)} итого")
     return [text for text, _ in results]

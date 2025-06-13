@@ -323,8 +323,9 @@ async def ask_gpt_keywords(prompt: str) -> str:  # 🔄 async
     return response.choices[0].message.content.strip()
 
 @async_safe_openai_call(max_retries=2, delay=1.0)
-async def extract_keywords(text: str) -> list[str]:  # 🔄 async
-    """Безопасное извлечение ключевых слов из текста"""
+async def extract_keywords(text: str) -> list[str]:
+    """✅ КРАТКАЯ версия извлечения ключевых слов"""
+    
     prompt = f"""
         You are a medical expert. Extract **core medical terms** from the following text that best represent its clinical meaning and can be used for semantic search. Include only the most essential:
 
@@ -353,12 +354,16 @@ async def extract_keywords(text: str) -> list[str]:  # 🔄 async
 
         "{text}"
         """
+    
     try:
-        raw = await ask_gpt_keywords(prompt)  # 🔄 await
-        print("\n[🔎 GPT raw keywords]:")
-        print(raw)
-        return [w.strip().lower() for w in raw.split(",") if len(w.strip()) > 1]
+        raw = await ask_gpt_keywords(prompt)
+        keywords_list = [w.strip().lower() for w in raw.split(",") if len(w.strip()) > 1]
+        
+        print(f"   🔎 Ключевые слова: {keywords_list}")
+        return keywords_list
+        
     except Exception as e:
+        print(f"   🔎 Ключевые слова: Ошибка - {e}")
         log_error_with_context(e, {"function": "extract_keywords", "text_length": len(text)})
         return []
 
@@ -367,8 +372,18 @@ async def ask_doctor(profile_text: str, summary_text: str, last_summary: str,
                chunks_text: str, context_text: str, user_question: str, 
                lang: str, user_id: int = None) -> str:
     """
-    Функция доктора с автовыбором модели GPT-4o/GPT-4o-mini
+    ✅ УЛУЧШЕННАЯ версия — учитывает недавнее общение, не здоровается каждый раз
     """
+    
+    # ✅ АНАЛИЗИРУЕМ НЕДАВНЮЮ ИСТОРИЮ
+    recent_interaction = False
+    if context_text and len(context_text.strip()) > 0:
+        # Если есть недавние сообщения, значит общение продолжается
+        recent_interaction = True
+    
+    # ✅ ОПРЕДЕЛЯЕМ ТИП ОБЩЕНИЯ
+    greeting_words = ['привет', 'здравствуй', 'добро пожаловать', 'hello', 'hi', 'вітаю', 'добрий день']
+    is_greeting = any(word in user_question.lower() for word in greeting_words)
     
     system_prompt = (
         "You are a compassionate and knowledgeable virtual physician who guides the user through their medical journey. "
@@ -376,15 +391,31 @@ async def ask_doctor(profile_text: str, summary_text: str, last_summary: str,
         f"Always respond in the '{lang}' language."
     )
 
-    instruction_prompt = (
-        "You have access to the user's health profile, medical documents, imaging reports, conversation history, and memory notes. "
-        "Answer only questions related to the user's health — symptoms, diagnostics, treatment, risks, interpretation of reports, etc. "
-        "If the question is not directly related to medical symptoms, diagnostics, treatment, or documented findings — but still relevant to health (e.g., vitamins, lifestyle, prevention) — you may give helpful information."
-        "Only decline if the question is clearly off-topic (e.g., movies, politics).\n"
-        "Do not repeat that you're an AI. Do not ask follow-up questions unless critical.\n"
-        "Use the document summaries and analysis results as clinical findings. Do not say you can't see images.\n"
-        "If information is missing, offer a preliminary suggestion and explain what's lacking."
-    )
+    # ✅ ОБНОВЛЕННЫЕ ИНСТРУКЦИИ с учетом контекста общения
+    if recent_interaction and not is_greeting:
+        # Продолжаем разговор — НЕ здороваемся
+        instruction_prompt = (
+            "Continue the ongoing medical conversation naturally. Do NOT greet the patient again if you've already been talking. "
+            "You have access to the user's health profile, medical documents, imaging reports, conversation history, and memory notes. "
+            "Answer only questions related to the user's health — symptoms, diagnostics, treatment, risks, interpretation of reports, etc. "
+            "If the question is not directly related to medical symptoms, diagnostics, treatment, or documented findings — but still relevant to health (e.g., vitamins, lifestyle, prevention) — you may give helpful information. "
+            "Only decline if the question is clearly off-topic (e.g., movies, politics). "
+            "Do not repeat that you're an AI. Do not ask follow-up questions unless critical. "
+            "Use the document summaries and analysis results as clinical findings. Do not say you can't see images. "
+            "If information is missing, offer a preliminary suggestion and explain what's lacking. "
+            "⚠️ IMPORTANT: Since you've been talking recently, go straight to answering the question without greeting."
+        )
+    else:
+        # Первое сообщение или явное приветствие — можно поздороваться
+        instruction_prompt = (
+            "You have access to the user's health profile, medical documents, imaging reports, conversation history, and memory notes. "
+            "Answer only questions related to the user's health — symptoms, diagnostics, treatment, risks, interpretation of reports, etc. "
+            "If the question is not directly related to medical symptoms, diagnostics, treatment, or documented findings — but still relevant to health (e.g., vitamins, lifestyle, prevention) — you may give helpful information. "
+            "Only decline if the question is clearly off-topic (e.g., movies, politics). "
+            "Do not repeat that you're an AI. Do not ask follow-up questions unless critical. "
+            "Use the document summaries and analysis results as clinical findings. Do not say you can't see images. "
+            "If information is missing, offer a preliminary suggestion and explain what's lacking."
+        )
 
     context_block = (
         f"📌 Patient profile:\n{profile_text}\n\n"
@@ -396,11 +427,14 @@ async def ask_doctor(profile_text: str, summary_text: str, last_summary: str,
 
     full_prompt = f"{instruction_prompt}\n\n{context_block}\n\nPatient: {user_question}"
 
-    # ✅ ПРОСТАЯ ЛОГИКА ВЫБОРА МОДЕЛИ
+    # ✅ КРАТКИЙ ЛОГ с информацией о типе взаимодействия
+    from subscription_manager import check_gpt4o_limit, spend_gpt4o_limit
+    
+    interaction_type = "🔄 Продолжение" if recent_interaction and not is_greeting else "🆕 Новое/Приветствие"
+    print(f"💬 {interaction_type} | Вопрос: '{user_question[:50]}{'...' if len(user_question) > 50 else ''}'")
+    
     if user_id and await check_gpt4o_limit(user_id):
-        # Есть лимиты - используем GPT-4o
         model = "gpt-4o"
-        
         try:
             response = await client.chat.completions.create(
                 model=model,
@@ -412,32 +446,18 @@ async def ask_doctor(profile_text: str, summary_text: str, last_summary: str,
                 temperature=0.5
             )
             
-            # ✅ СПИСЫВАЕМ ЛИМИТ только при успешном ответе
             await spend_gpt4o_limit(user_id)
+            answer = response.choices[0].message.content.strip()
             logger.info(f"✅ GPT-4o использован для пользователя {user_id}")
-            
-            return response.choices[0].message.content.strip()
+            return answer
             
         except Exception as e:
-            # Если GPT-4o не работает - fallback на mini (НЕ списываем лимит)
             logger.warning(f"⚠️ GPT-4o недоступен, fallback на mini: {e}")
             model = "gpt-4o-mini"
     else:
-        # Нет лимитов или user_id - используем GPT-4o-mini
         model = "gpt-4o-mini"
-        
-        if user_id:
-            logger.info(f"🔹 GPT-4o-mini использован для пользователя {user_id} (нет лимитов)")
-        else:
-            logger.info("🔹 GPT-4o-mini использован (user_id не передан)")
 
-    # ✅ ЕДИНЫЙ ВЫЗОВ API (одинаковые параметры для обеих моделей)
-    print("\n=== SYSTEM PROMPT ===\n")
-    print(system_prompt)
-    print("\n=== USER PROMPT ===\n")
-    print(full_prompt)
-    print("\n=====================\n")
-
+    # ✅ Вызов API (GPT-4o-mini или fallback)
     response = await client.chat.completions.create(
         model=model,
         messages=[
@@ -448,7 +468,8 @@ async def ask_doctor(profile_text: str, summary_text: str, last_summary: str,
         temperature=0.5
     )
     
-    return response.choices[0].message.content.strip()
+    answer = response.choices[0].message.content.strip()
+    return answer
 
 @async_safe_openai_call(max_retries=2, delay=1.0)
 async def is_medical_text(text: str) -> bool:  # 🔄 async

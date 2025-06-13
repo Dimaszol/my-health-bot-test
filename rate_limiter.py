@@ -1,10 +1,11 @@
-# rate_limiter.py - ИСПРАВЛЕННАЯ ВЕРСИЯ с правильными async вызовами
+# rate_limiter.py - ОБНОВЛЕННАЯ ВЕРСИЯ с дневными лимитами
 
 import time
 import logging
 import asyncio
 from typing import Dict, Tuple
 from collections import defaultdict
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -21,28 +22,36 @@ def get_user_language_sync(user_id: int) -> str:
     except:
         return "ru"  # Fallback
 
-# ЗАМЕНИ ВЕСЬ КЛАСС RateLimiter в rate_limiter.py на этот:
-
 class RateLimiter:
     """
-    ✅ ИСПРАВЛЕННАЯ версия без race conditions
+    ✅ Расширенная версия с дневными лимитами
     """
     
     def __init__(self):
-        # Хранилище запросов
+        # Существующие хранилища (остаются как есть)
         self.user_requests: Dict[int, list] = defaultdict(list)
         self.blocked_users: Dict[int, float] = {}
-        
-        # ✅ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Отдельный lock для каждого пользователя
         self.user_locks: Dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
-        self.locks_lock = asyncio.Lock()  # Для безопасной работы с user_locks
+        self.locks_lock = asyncio.Lock()
         
-        # Настройки лимитов (те же что были)
+        # ✅ НОВОЕ: Дневные счетчики
+        self.daily_message_counts: Dict[int, Dict[str, int]] = defaultdict(dict)
+        # Формат: {user_id: {"2025-06-12": 45, "2025-06-11": 98}}
+        
+        # Настройки лимитов
         self.limits = {
             "message": {"count": 10, "window": 60, "cooldown": 30},
             "document": {"count": 3, "window": 300, "cooldown": 120},
             "image": {"count": 3, "window": 600, "cooldown": 300},
             "note": {"count": 5, "window": 300, "cooldown": 60}
+        }
+        
+        # ✅ НОВОЕ: Дневные лимиты
+        self.daily_limits = {
+            "message": 100,  # 100 сообщений в день
+            "document": 30,  # 30 документов в день
+            "image": 30,     # 30 изображений в день
+            "note": 50       # 50 заметок в день
         }
     
     async def _get_user_lock(self, user_id: int) -> asyncio.Lock:
@@ -52,13 +61,28 @@ class RateLimiter:
                 self.user_locks[user_id] = asyncio.Lock()
             return self.user_locks[user_id]
     
-    async def is_blocked(self, user_id: int) -> Tuple[bool, int]:
-        """
-        ✅ ASYNC версия проверки блокировки
-        """
-        current_time = time.time()
+    def _get_today_key(self) -> str:
+        """Получить ключ для сегодняшнего дня"""
+        return datetime.now().strftime("%Y-%m-%d")
+    
+    def _get_daily_count(self, user_id: int, action_type: str) -> int:
+        """Получить количество действий пользователя за сегодня"""
+        today = self._get_today_key()
+        user_daily = self.daily_message_counts.get(user_id, {})
+        return user_daily.get(f"{today}_{action_type}", 0)
+    
+    def _increment_daily_count(self, user_id: int, action_type: str):
+        """Увеличить счетчик действий за день"""
+        today = self._get_today_key()
+        if user_id not in self.daily_message_counts:
+            self.daily_message_counts[user_id] = {}
         
-        # Получаем lock для этого пользователя
+        key = f"{today}_{action_type}"
+        self.daily_message_counts[user_id][key] = self.daily_message_counts[user_id].get(key, 0) + 1
+    
+    async def is_blocked(self, user_id: int) -> Tuple[bool, int]:
+        """Проверка блокировки (без изменений)"""
+        current_time = time.time()
         user_lock = await self._get_user_lock(user_id)
         
         async with user_lock:
@@ -68,22 +92,19 @@ class RateLimiter:
                     remaining = int(unblock_time - current_time)
                     return True, remaining
                 else:
-                    # Время блокировки истекло
                     del self.blocked_users[user_id]
                     
             return False, 0
     
     async def check_limit(self, user_id: int, action_type: str = "message") -> Tuple[bool, str]:
         """
-        ✅ ИСПРАВЛЕННАЯ версия без race condition
+        ✅ ОБНОВЛЕННАЯ версия с проверкой дневных лимитов
         """
         current_time = time.time()
-        
-        # ✅ АТОМАРНАЯ ОПЕРАЦИЯ для каждого пользователя
         user_lock = await self._get_user_lock(user_id)
         
         async with user_lock:
-            # Проверяем блокировку
+            # 1. Проверяем существующую блокировку
             if user_id in self.blocked_users:
                 unblock_time = self.blocked_users[user_id]
                 if current_time < unblock_time:
@@ -102,7 +123,46 @@ class RateLimiter:
                 else:
                     del self.blocked_users[user_id]
             
-            # Получаем настройки
+            # ✅ 2. НОВАЯ ПРОВЕРКА: Дневной лимит
+            daily_count = self._get_daily_count(user_id, action_type)
+            daily_limit = self.daily_limits.get(action_type, 100)
+            
+            if daily_count >= daily_limit:
+                lang = get_user_language_sync(user_id)
+                
+                action_names = {
+                    "ru": {
+                        "message": "сообщений", 
+                        "document": "документов", 
+                        "image": "изображений", 
+                        "note": "заметок"
+                    },
+                    "en": {
+                        "message": "messages", 
+                        "document": "documents", 
+                        "image": "images", 
+                        "note": "notes"
+                    },
+                    "uk": {
+                        "message": "повідомлень", 
+                        "document": "документів", 
+                        "image": "зображень", 
+                        "note": "нотаток"
+                    }
+                }
+                
+                action_name = action_names.get(lang, action_names["ru"]).get(action_type, "запросов")
+                
+                messages = {
+                    "ru": f"😴 **Бот на отдыхе до завтра**\n\nВы достигли дневного лимита: {daily_limit} {action_name} в день.\n\n🌅 Завтра в 00:00 я снова буду готов вам помочь!\n💤 А пока можете отдохнуть — это полезно для здоровья.",
+                    "en": f"😴 **Bot is resting until tomorrow**\n\nYou've reached the daily limit: {daily_limit} {action_name} per day.\n\n🌅 Tomorrow at 00:00 I'll be ready to help again!\n💤 Meanwhile, you can rest too — it's good for your health.",
+                    "uk": f"😴 **Бот відпочиває до завтра**\n\nВи досягли денного ліміту: {daily_limit} {action_name} на день.\n\n🌅 Завтра о 00:00 я знову буду готовий допомогти!\n💤 А поки можете відпочити — це корисно для здоров'я."
+                }
+                
+                logger.warning(f"Daily limit exceeded for user {user_id}, action {action_type}: {daily_count}/{daily_limit}")
+                return False, messages.get(lang, messages["ru"])
+            
+            # 3. Проверяем минутные лимиты (существующий код)
             if action_type not in self.limits:
                 action_type = "message"
             
@@ -115,7 +175,7 @@ class RateLimiter:
                 if req_time > window_start
             ]
             
-            # Проверяем лимит
+            # Проверяем минутный лимит
             request_count = len(self.user_requests[user_id])
             
             if request_count >= limit_config["count"]:
@@ -140,26 +200,30 @@ class RateLimiter:
                     "uk": f"🚫 Перевищено ліміт: максимум {limit_config['count']} {action_name} за {window_min} хв. Спробуйте через {cooldown_min} хв."
                 }
                 
-                logger.warning(f"Rate limit exceeded for user {user_id}, action {action_type}")
+                logger.warning(f"Minute rate limit exceeded for user {user_id}, action {action_type}")
                 return False, messages.get(lang, messages["ru"])
             
             return True, ""
     
     async def record_request(self, user_id: int, action_type: str = "message"):
         """
-        ✅ ИСПРАВЛЕННАЯ версия записи запроса
+        ✅ ОБНОВЛЕННАЯ версия записи запроса
         """
         current_time = time.time()
-        
         user_lock = await self._get_user_lock(user_id)
         
         async with user_lock:
+            # Записываем для минутных лимитов
             self.user_requests[user_id].append(current_time)
+            
+            # ✅ НОВОЕ: Записываем для дневных лимитов
+            self._increment_daily_count(user_id, action_type)
+            
             logger.info(f"Request recorded: user {user_id}, action {action_type}")
     
     def get_user_stats(self, user_id: int) -> Dict[str, int]:
         """
-        Получает статистику пользователя (СИНХРОННАЯ - для простоты)
+        ✅ ОБНОВЛЕННАЯ версия статистики с дневными счетчиками
         """
         current_time = time.time()
         hour_ago = current_time - 3600
@@ -167,20 +231,28 @@ class RateLimiter:
         user_requests = self.user_requests.get(user_id, [])
         recent_requests = [req for req in user_requests if req > hour_ago]
         
+        # Получаем дневные счетчики
+        daily_stats = {}
+        for action_type in self.daily_limits.keys():
+            daily_count = self._get_daily_count(user_id, action_type)
+            daily_limit = self.daily_limits[action_type]
+            daily_stats[f"daily_{action_type}"] = f"{daily_count}/{daily_limit}"
+        
         return {
             "total_requests_last_hour": len(recent_requests),
             "is_blocked": user_id in self.blocked_users,
-            "requests_in_memory": len(user_requests)
+            "requests_in_memory": len(user_requests),
+            **daily_stats
         }
     
     async def cleanup_old_data(self):
         """
-        ✅ ASYNC версия очистки данных
+        ✅ ОБНОВЛЕННАЯ версия очистки с удалением старых дневных данных
         """
         current_time = time.time()
         day_ago = current_time - 86400
         
-        # Очищаем по одному пользователю за раз
+        # Очищаем минутные данные (как раньше)
         users_to_process = list(self.user_requests.keys())
         
         for user_id in users_to_process:
@@ -196,11 +268,29 @@ class RateLimiter:
                 if recent_requests:
                     self.user_requests[user_id] = recent_requests
                 else:
-                    # Удаляем пользователя без запросов
                     del self.user_requests[user_id]
-                    # Также удаляем его lock
                     async with self.locks_lock:
                         self.user_locks.pop(user_id, None)
+        
+        # ✅ НОВОЕ: Очищаем старые дневные данные (оставляем только последние 7 дней)
+        today = datetime.now()
+        cutoff_date = (today - timedelta(days=7)).strftime("%Y-%m-%d")
+        
+        for user_id in list(self.daily_message_counts.keys()):
+            user_daily = self.daily_message_counts[user_id]
+            
+            # Оставляем только последние 7 дней
+            filtered_daily = {}
+            for key, count in user_daily.items():
+                if "_" in key:  # Формат "2025-06-12_message"
+                    date_part = key.split("_")[0]
+                    if date_part >= cutoff_date:
+                        filtered_daily[key] = count
+            
+            if filtered_daily:
+                self.daily_message_counts[user_id] = filtered_daily
+            else:
+                del self.daily_message_counts[user_id]
         
         # Очищаем истёкшие блокировки
         expired_blocks = [
@@ -212,7 +302,7 @@ class RateLimiter:
             
         logger.info(f"Cleanup completed: removed expired data")
 
-# Создаём глобальный экземпляр
+# Создаём глобальный экземпляр (остается как есть)
 rate_limiter = RateLimiter()
 
 async def check_rate_limit(user_id: int, action_type: str = "message") -> Tuple[bool, str]:
@@ -228,27 +318,73 @@ def get_rate_limit_stats(user_id: int) -> Dict[str, int]:
     return rate_limiter.get_user_stats(user_id)
 
 # Функция для периодической очистки (можно вызывать раз в час)
-def cleanup_rate_limiter():
+async def cleanup_rate_limiter():
     """Очищает старые данные rate limiter"""
-    rate_limiter.cleanup_old_data()
+    await rate_limiter.cleanup_old_data()
 
-# Пример использования:
+# ✅ НОВАЯ ФУНКЦИЯ: Проверка дневного лимита отдельно
+async def check_daily_limit(user_id: int, action_type: str = "message") -> Tuple[bool, int, int]:
+    """
+    Проверяет только дневной лимит без блокировки
+    
+    Returns:
+        (можно_продолжить, текущий_счетчик, максимальный_лимит)
+    """
+    daily_count = rate_limiter._get_daily_count(user_id, action_type)
+    daily_limit = rate_limiter.daily_limits.get(action_type, 100)
+    
+    return daily_count < daily_limit, daily_count, daily_limit
+
+# ✅ НОВАЯ ФУНКЦИЯ: Получение дневной статистики
+def get_daily_stats(user_id: int) -> Dict[str, Dict[str, int]]:
+    """
+    Получает дневную статистику пользователя
+    
+    Returns:
+        {
+            "message": {"used": 45, "limit": 100},
+            "document": {"used": 2, "limit": 10},
+            ...
+        }
+    """
+    stats = {}
+    for action_type, limit in rate_limiter.daily_limits.items():
+        used = rate_limiter._get_daily_count(user_id, action_type)
+        stats[action_type] = {"used": used, "limit": limit}
+    
+    return stats
+
+# Пример использования и тестирования
 if __name__ == "__main__":
-    # Тест rate limiter
-    test_user = 123456
+    import asyncio
     
-    print("🧪 Тестирование rate limiter...")
-    
-    # Тест обычных сообщений (лимит 15)
-    for i in range(17):  # Больше лимита
-        allowed, message = check_rate_limit(test_user, "message")
-        if allowed:
-            record_user_action(test_user, "message")
-            print(f"✅ Сообщение {i+1}: разрешено")
-        else:
-            print(f"❌ Сообщение {i+1}: {message}")
-            break
-    
-    # Показываем статистику
-    stats = get_rate_limit_stats(test_user)
-    print(f"\n📊 Статистика: {stats}")
+    async def test_daily_limits():
+        """Тестирование дневных лимитов"""
+        print("🧪 Тестирование дневных лимитов...")
+        
+        test_user = 123456
+        
+        # Тест: отправляем много сообщений
+        print(f"📊 Тестируем лимит сообщений (100/день):")
+        
+        for i in range(105):  # Больше лимита
+            allowed, message = await check_rate_limit(test_user, "message")
+            if allowed:
+                await record_user_action(test_user, "message")
+                if i % 20 == 0:  # Показываем каждые 20 сообщений
+                    can_continue, used, limit = await check_daily_limit(test_user, "message")
+                    print(f"  Сообщение {i+1}: ✅ ({used}/{limit})")
+            else:
+                print(f"  Сообщение {i+1}: ❌ {message}")
+                break
+        
+        # Показываем финальную статистику
+        daily_stats = get_daily_stats(test_user)
+        print(f"\n📈 Финальная статистика:")
+        for action, stats in daily_stats.items():
+            print(f"  {action}: {stats['used']}/{stats['limit']}")
+        
+        print("✅ Тест завершен!")
+
+    # Запускаем тест
+    # asyncio.run(test_daily_limits())

@@ -34,4 +34,4 @@ def inspect_document_chunks(document_id: str, max_len: int = 400, show_all_metad
         print("🔑 KEYWORDS:", keyword_list)
         print("-" * 80)
 
-inspect_document_chunks("94", max_len=500, show_all_metadata=True)
+inspect_document_chunks("105", max_len=500, show_all_metadata=True)

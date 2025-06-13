@@ -27,7 +27,7 @@ from vector_db import delete_document_from_vector_db
 from rate_limiter import check_rate_limit, record_user_action, get_rate_limit_stats
 from db_pool import initialize_db_pool, close_db_pool, get_db_stats, db_health_check
 from gpt import ask_gpt, ask_doctor, check_openai_status, fallback_response, fallback_summarize
-from subscription_manager import check_document_limit, SubscriptionManager
+from subscription_manager import check_document_limit, SubscriptionManager, check_gpt4o_limit
 from stripe_config import check_stripe_setup
 from subscription_handlers import SubscriptionHandlers, upsell_tracker
 from notification_system import NotificationSystem
@@ -473,12 +473,12 @@ async def handle_user_message(message: types.Message):
             try:
                 from gpt import enrich_query_for_vector_search
                 refined_query = await enrich_query_for_vector_search(user_input)
-                print(f"\n🧠 Переформулированный запрос: {refined_query}\n")
+                print(f"\n🔍 Запрос: '{user_input}' → улучшен для поиска ({len(refined_query)} симв.)")
             except OpenAIError:
                 refined_query = user_input
-                print("⚠️ Использую оригинальный запрос из-за недоступности GPT")
+                print(f"🔍 Запрос: '{user_input}' (GPT недоступен)")
 
-            # Поиск в векторной базе (код остается тот же)
+            # Поиск в векторной базе
             vector_chunks = search_similar_chunks(
                 user_id, refined_query, exclude_doc_id=last_doc_id,
                 exclude_texts=exclude_texts, limit=4
@@ -490,11 +490,11 @@ async def handle_user_message(message: types.Message):
 
             all_chunks = list(dict.fromkeys(vector_chunks + keyword_chunks))
             chunks_text = "\n\n".join(all_chunks[:6])
-            print("🧠 Векторные чанки:", len(vector_chunks))
-            print("🔑 Ключевые чанки:", len(keyword_chunks))
-            print("📦 Итоговые чанки:", len(all_chunks))
+            
+            # ✅ КРАТКАЯ СВОДКА
+            print(f"🧠 Найдено: {len(vector_chunks)} векторных + {len(keyword_chunks)} ключевых = {len(all_chunks)} итого (исключен док.{last_doc_id})")
 
-            # Подготовка контекста (код остается тот же)
+            # Подготовка контекста
             MAX_LEN = 300
             last_messages = await get_last_messages(user_id, limit=7)
             if last_messages and last_messages[-1][0] == "user" and last_messages[-1][1] == message.text:
@@ -506,7 +506,14 @@ async def handle_user_message(message: types.Message):
             profile = await get_user_profile(user_id)
             profile_text = format_user_profile(profile)
 
-            # ✅ ОБНОВЛЕНО: ask_doctor уже содержит логику выбора модели на основе лимитов
+            # Определяем модель и отправляем запрос
+            if user_id and await check_gpt4o_limit(user_id):
+                model_name = "GPT-4o"
+                print(f"🤖 {model_name} | Профиль: {len(profile_text)}с, Контекст: {len(chunks_text)}с, История: {len(context_text)}с")
+            else:
+                model_name = "GPT-4o-mini" 
+                print(f"🤖 {model_name} (нет лимитов) | Профиль: {len(profile_text)}с, Контекст: {len(chunks_text)}с, История: {len(context_text)}с")
+
             try:
                 gpt_response = await ask_doctor(
                     profile_text=profile_text,
@@ -516,26 +523,27 @@ async def handle_user_message(message: types.Message):
                     context_text=context_text,
                     user_question=message.text,
                     lang=lang,
-                    user_id=user_id  # ✅ ВАЖНО: передаем user_id для проверки лимитов
+                    user_id=user_id
                 )
+                print(f"✅ Ответ получен: {len(gpt_response)} символов")
             except OpenAIError as e:
                 gpt_response = fallback_response(message.text, lang)
-                print(f"⚠️ Используется fallback ответ: {e}")
+                print(f"⚠️ Fallback ответ: {e}")
 
             await save_message(user_id, "bot", gpt_response)
 
-            # Безопасная отправка ответа (код остается тот же)
+            # Безопасная отправка ответа
             try:
                 await message.answer(gpt_response)
             except Exception as e:
-                print(f"⚠️ Ошибка отправки HTML, отправляю plain text: {e}")
+                print(f"⚠️ Отправка plain text из-за ошибки HTML")
                 from html import escape
                 safe_response = escape(gpt_response)
                 await message.answer(safe_response, parse_mode=None)
                 
             await record_user_action(user_id, "message")
 
-            # Обновление резюме разговора (код остается тот же)
+            # Обновление резюме разговора
             try:
                 await maybe_update_summary(user_id)
             except Exception as e:
