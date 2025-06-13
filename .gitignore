@@ -65,3 +65,10 @@ node_modules/
 .coverage
 htmlcov/
 .pytest_cache/
+
+# 🧪 ТЕСТОВЫЕ И DEBUG ФАЙЛЫ  
+1*.py
+test_*.py
+*_test.py
+*_debug.py
+debug_*.py
