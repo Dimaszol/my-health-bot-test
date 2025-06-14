@@ -1,5 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, Message
-from db_postgresql import get_user_language, t
+from db import get_user_language, t
 
 async def show_main_menu(message: Message, lang: str = None):
     if lang is None:

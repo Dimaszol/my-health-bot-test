@@ -440,3 +440,133 @@ async def batch_get_embeddings(texts: List[str]) -> List[List[float]]:
         else:
             embeddings.append([0.0] * 1536)  # Заглушка
     return embeddings
+
+# 🌐 ГЛОБАЛЬНЫЙ ДОСТУП К БД ПУЛУ
+async def initialize_vector_db(db_pool=None):
+    """Инициализирует векторную базу данных"""
+    global vector_db
+    
+    # Получаем пул из db_postgresql если не передан
+    if db_pool is None:
+        from db_postgresql import db_pool as main_db_pool
+        db_pool = main_db_pool
+    
+    vector_db = PostgreSQLVectorDB(db_pool)
+    await vector_db.initialize_vector_tables()
+    logger.info("✅ PostgreSQL Vector DB инициализирована")
+
+# 🔄 ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ СОВМЕСТИМОСТИ
+
+async def delete_all_chunks_by_user(user_id: int):
+    """Удаляет все векторы пользователя (совместимость с vector_db.py)"""
+    if vector_db:
+        return await vector_db.delete_user_vectors(user_id)
+    return False
+
+async def mark_chunks_unconfirmed(document_id: int):
+    """
+    Помечает чанки документа как неподтвержденные
+    (в PostgreSQL версии можно не реализовывать или сделать заглушку)
+    """
+    # В PostgreSQL версии эта функция может быть заглушкой
+    # так как у нас нет поля "confirmed" или оно не критично
+    logger.info(f"mark_chunks_unconfirmed({document_id}) - заглушка для PostgreSQL")
+    return True
+
+async def get_collection_stats():
+    """Получает статистику векторной базы (совместимость с vector_db.py)"""
+    if vector_db:
+        return await vector_db.get_vector_stats()
+    return {"total_documents": 0, "status": "error"}
+
+# ✅ ФУНКЦИИ ДЛЯ РАБОТЫ С ЭМБЕДДИНГАМИ (если нужны):
+
+def validate_embedding_dimensions(embedding: List[float]) -> bool:
+    """Проверяет размерность эмбеддинга"""
+    return len(embedding) == 1536  # OpenAI text-embedding-3-small
+
+async def batch_get_embeddings(texts: List[str]) -> List[List[float]]:
+    """Получает эмбеддинги для списка текстов (batch обработка)"""
+    embeddings = []
+    for text in texts:
+        if vector_db:
+            embedding = await vector_db.get_embedding(text)
+            embeddings.append(embedding)
+        else:
+            embeddings.append([0.0] * 1536)  # Заглушка
+    return embeddings
+
+# 🛠️ ИСПРАВЛЕНИЯ В СУЩЕСТВУЮЩИХ ФУНКЦИЯХ
+
+# Исправляем функцию split_into_chunks если есть проблемы с extract_keywords
+async def split_into_chunks(summary: str, document_id: int, user_id: int) -> List[Dict]:
+    """
+    Разбивает документ на чанки для векторизации
+    Перенесено из vector_utils.py и адаптировано для PostgreSQL
+    """
+    import tiktoken
+    
+    encoder = tiktoken.encoding_for_model("gpt-4")
+    paragraphs = summary.strip().split("\n\n")
+    now_str = datetime.now().strftime("%Y-%m-%d")
+
+    chunks = []
+    chunk_index = 0
+
+    for para in paragraphs:
+        clean_text = para.strip()
+        if len(clean_text) < 20:
+            continue
+
+        token_count = len(encoder.encode(clean_text))
+        
+        found_date = await extract_date_from_text(clean_text)
+        chunk_date = found_date if found_date else now_str
+
+        # 🔹 Извлекаем ключевые слова (безопасно)
+        try:
+            from gpt import extract_keywords
+            keywords = await extract_keywords(clean_text)
+        except Exception as e:
+            logger.warning(f"Ошибка извлечения ключевых слов: {e}")
+            keywords = []  # Используем пустой список при ошибке
+
+        chunks.append({
+            "chunk_text": clean_text,
+            "chunk_index": chunk_index,
+            "metadata": {
+                "user_id": str(user_id),
+                "document_id": str(document_id),
+                "confirmed": 1,
+                "source": "summary",
+                "token_count": token_count,
+                "created_at": chunk_date,
+                "date_inside": found_date or "",
+                "keywords": ", ".join(keywords) if keywords else ""
+            }
+        })
+        chunk_index += 1
+    
+    # ❗ Удаляем последний чанк, если их больше одного (логика из vector_utils)
+    if len(chunks) > 1:
+        chunks = chunks[:-1]
+
+    return chunks
+
+# 🔧 ИСПРАВЛЕНИЕ ФУНКЦИИ ИНИЦИАЛИЗАЦИИ
+
+async def initialize_vector_db_safe():
+    """Безопасная инициализация векторной базы с проверками"""
+    try:
+        from db_postgresql import db_pool
+        
+        if db_pool is None:
+            logger.error("❌ db_pool не инициализирован!")
+            return False
+            
+        await initialize_vector_db(db_pool)
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка инициализации векторной базы: {e}")
+        return False

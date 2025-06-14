@@ -1,6 +1,6 @@
 # profile_manager.py - НОВЫЙ ФАЙЛ, создать в корне проекта
 
-from db_postgresql import get_user_profile, update_user_field, t, set_user_language
+from db import get_user_profile, update_user_field, t, set_user_language
 import logging
 
 logger = logging.getLogger(__name__)

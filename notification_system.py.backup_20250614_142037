@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from subscription_manager import SubscriptionManager, check_document_limit, check_gpt4o_limit
 from subscription_handlers import SubscriptionHandlers, upsell_tracker
-from db_postgresql import get_user_language
+from db import get_user_language
 
 logger = logging.getLogger(__name__)
 

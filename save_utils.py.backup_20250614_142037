@@ -3,7 +3,7 @@ import base64
 import mimetypes
 import os
 from pdf2image import convert_from_path
-from db_postgresql import get_conversation_summary, get_messages_after, save_conversation_summary, \
+from db import get_conversation_summary, get_messages_after, save_conversation_summary, \
     get_user_medications_text, update_user_field
 
 from gpt import ask_gpt, extract_text_from_image

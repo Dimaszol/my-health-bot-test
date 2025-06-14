@@ -8,34 +8,23 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.client.default import DefaultBotProperties
-
-# ✅ ОБНОВЛЕННЫЕ ИМПОРТЫ - PostgreSQL версии
-from db_postgresql import (
-    get_user, create_user, save_document, update_document_title, is_fully_registered, get_user_name,
-    get_user_documents, get_document_by_id, delete_document, save_message, 
-    get_last_messages, get_conversation_summary, get_last_summary, 
-    get_user_profile, get_user_language, t, get_all_values_for_key,
-    initialize_db_pool, close_db_pool, get_db_stats, db_health_check, set_user_language
-)
-
+from db import save_user, user_exists, get_user_name, save_document, update_document_title, \
+    get_documents_by_user, get_document_by_id, delete_document, save_message, get_last_messages, \
+    get_conversation_summary, get_last_summary, get_user_profile, get_user_language, t, \
+    get_all_values_for_key
 from registration import user_states, start_registration, handle_registration_step
 from error_handler import handle_telegram_errors, BotError, OpenAIError, get_user_friendly_message, log_error_with_context, check_openai_health
 from keyboards import main_menu_keyboard, settings_keyboard
 from profile_keyboards import (
     profile_view_keyboard, profile_edit_keyboard, smoking_choice_keyboard,
     alcohol_choice_keyboard, activity_choice_keyboard, language_choice_keyboard, cancel_keyboard
-)
+    )
 from profile_manager import ProfileManager, CHOICE_MAPPINGS
 from documents import handle_show_documents, handle_ignore_document
 from save_utils import maybe_update_summary, format_user_profile
 from rate_limiter import check_rate_limit, record_user_action, get_rate_limit_stats
-
-# ✅ ОБНОВЛЕННЫЕ ИМПОРТЫ - Vector DB PostgreSQL
-from vector_db_postgresql import (
-    initialize_vector_db, search_similar_chunks, keyword_search_chunks, 
-    delete_document_from_vector_db
-)
-
+from vector_db_postgresql import initialize_vector_db, search_similar_chunks, keyword_search_chunks, delete_document_from_vector_db
+from db_postgresql import initialize_db_pool, close_db_pool, get_db_stats, db_health_check, db_pool
 from gpt import ask_gpt, ask_doctor, check_openai_status, fallback_response, fallback_summarize
 from subscription_manager import check_document_limit, SubscriptionManager, check_gpt4o_limit
 from stripe_config import check_stripe_setup
@@ -53,47 +42,65 @@ bot = Bot(
 dp = Dispatcher()
 
 @dp.message(CommandStart())
+# @handle_telegram_errors  # ← ОСТАВЬ ЗАКОММЕНТИРОВАННЫМ
 async def send_welcome(message: types.Message):
     user_id = message.from_user.id
     
+    print(f"\n🧪 === ОТЛАДКА /start для пользователя {user_id} ===")
+    
     try:
-        # ✅ СНАЧАЛА проверяем, есть ли пользователь ВООБЩЕ в базе
-        user_data = await get_user(user_id)
+        print("1️⃣ Начинаю обработку команды /start")
         
-        if user_data is None:
-            # 🆕 НОВЫЙ ПОЛЬЗОВАТЕЛЬ - показываем выбор языка
-            from keyboards import language_keyboard
-            await message.answer(
-                "🇺🇦 Обери мову інтерфейсу\n"
-                "🇷🇺 Выбери язык интерфейса\n"
-                "🇬🇧 Choose your language",
-                reply_markup=language_keyboard()
-            )
-            return
-            
-        # ✅ ПОЛЬЗОВАТЕЛЬ СУЩЕСТВУЕТ - проверяем полноту регистрации
-        if await is_fully_registered(user_id):
-            # 👤 ПОЛНОСТЬЮ ЗАРЕГИСТРИРОВАН - показываем главное меню
+        # Проверяем импорты
+        print("2️⃣ Импортирую функции БД...")
+        from db_postgresql import get_user, create_user
+        from registration import start_registration  # ✅ ДОБАВИЛИ ИМПОРТ
+        print("✅ Импорт функций БД успешен")
+        
+        # Проверяем подключение к БД
+        print("3️⃣ Проверяю пользователя в PostgreSQL...")
+        user_data = await get_user(user_id)
+        print(f"✅ Запрос к БД выполнен. Результат: {user_data}")
+        
+        if user_data:
+            print("4️⃣ Пользователь найден в БД")
             name = user_data.get('name', 'Пользователь')
-            lang = await get_user_language(user_id)
             
+            # ✅ ПОКАЗЫВАЕМ ГЛАВНОЕ МЕНЮ
             from keyboards import main_menu_keyboard
+            from db_postgresql import get_user_language, t
+            
+            lang = await get_user_language(user_id)
             await message.answer(
                 t("welcome_back", lang, name=name), 
                 reply_markup=main_menu_keyboard(lang)
             )
         else:
-            # 📝 ЧАСТИЧНО ЗАРЕГИСТРИРОВАН - продолжаем регистрацию
-            await start_registration(user_id, message)
+            print("4️⃣ Пользователя НЕТ в БД - начинаю регистрацию")
             
+            # ✅ ЗАПУСКАЕМ РЕГИСТРАЦИЮ ПРАВИЛЬНО
+            await start_registration(user_id, message)
+            print("✅ Регистрация запущена!")
+            
+        print("5️⃣ Команда /start обработана успешно!")
+        
     except Exception as e:
-        print(f"❌ Ошибка в команде /start: {e}")
-        await message.answer("❌ Произошла ошибка. Попробуйте еще раз.")
+        print(f"🚨 ОШИБКА НА ЭТАПЕ: {e}")
+        print(f"🔍 ТИП ОШИБКИ: {type(e).__name__}")
+        
+        import traceback
+        print("📋 ПОЛНЫЙ TRACEBACK:")
+        print(traceback.format_exc())
+        
+        # Отправляем детальную ошибку в чат
+        await message.answer(f"❌ Ошибка: {type(e).__name__}: {str(e)[:200]}")
+    
+    print("🏁 === КОНЕЦ ОТЛАДКИ ===\n")
 
 @dp.message(lambda msg: msg.text in ["🇷🇺 Русский", "🇺🇦 Українська", "🇬🇧 English"])
 @handle_telegram_errors
 async def language_start(message: types.Message):
-    from db_postgresql import set_user_language
+    from db import set_user_language
     user_id = message.from_user.id
 
     lang_map = {
@@ -103,7 +110,9 @@ async def language_start(message: types.Message):
     }
     lang_code = lang_map[message.text]
     await set_user_language(user_id, lang_code)
-   
+
+    from db import is_fully_registered
+
     if await is_fully_registered(user_id):
         name = await get_user_name(user_id)
         keyboard = main_menu_keyboard(lang_code)
@@ -170,7 +179,7 @@ async def show_documents_handler(message: types.Message):
 @handle_telegram_errors
 async def show_medications_schedule(message: types.Message):
     try:
-        from db_postgresql import format_medications_schedule, get_user_language
+        from db import format_medications_schedule, get_user_language
         from locales import translations
         from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -212,7 +221,7 @@ async def show_settings_menu_new(message: types.Message):
 @handle_telegram_errors
 async def reset_user(message: types.Message):
     user_id = message.from_user.id
-    from db_postgresql import delete_user_completely
+    from db import delete_user_completely
 
     await delete_user_completely(user_id)
     lang = "ru"  # ✅ ИСПРАВЛЕНО: используем дефолтный язык после удаления
@@ -345,7 +354,7 @@ async def handle_user_message(message: types.Message):
         try:
             from gpt import summarize_note_text, generate_title_for_note
             from vector_db_postgresql import split_into_chunks, add_chunks_to_vector_db
-            from db_postgresql import save_document
+            from db import save_document
             from documents import send_note_controls
 
             note_text = message.text.strip()
@@ -440,7 +449,7 @@ async def handle_user_message(message: types.Message):
     # Обработка редактирования лекарств
     elif current_state == "editing_medications":
         try:
-            from db_postgresql import get_medications, replace_medications
+            from db import get_medications, replace_medications
             from gpt import update_medications_via_gpt
             from save_utils import update_user_profile_medications
 
@@ -853,7 +862,7 @@ async def handle_simple_upgrade(callback: types.CallbackQuery):
         new_package_id = callback.data.replace("upgrade_to_", "")
         
         # ✅ ПРОСТАЯ ЛОГИКА: Находим активную подписку в БД
-        from db_postgresql import fetch_one
+        from db_pool import fetch_one
         active_subscription = await fetch_one("""
             SELECT package_id FROM user_subscriptions 
             WHERE user_id = ? AND status = 'active'
@@ -1015,7 +1024,7 @@ async def main():
     try:
         await initialize_db_pool(max_connections=10)
         print("🗄️ Database pool готов")
-        await initialize_vector_db()
+        await initialize_vector_db(db_pool)
         print("🧠 Vector database готова")
     except Exception as e:
         print(f"❌ Ошибка инициализации БД: {e}")

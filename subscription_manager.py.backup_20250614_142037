@@ -3,7 +3,7 @@
 import stripe
 import logging
 from datetime import datetime, timedelta
-from db_postgresql import fetch_one, execute_query
+from db_pool import fetch_one, execute_query
 
 logger = logging.getLogger(__name__)
 

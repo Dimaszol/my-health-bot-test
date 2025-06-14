@@ -218,16 +218,16 @@ async def get_user(user_id: int) -> Optional[Dict]:
     finally:
         await release_db_connection(conn)
 
-async def create_user(user_id: int, name: str) -> bool:
+async def create_user(user_id: int, name: str = "") -> bool:
     """Создать нового пользователя"""
     conn = await get_db_connection()
     try:
         await conn.execute(
             "INSERT INTO users (user_id, name) VALUES ($1, $2) ON CONFLICT (user_id) DO NOTHING",
-            user_id, name
+            user_id, name or None  # ← Пустое имя = NULL
         )
         
-        # 🎁 Создаем лимиты для нового пользователя
+        # Создаем лимиты для нового пользователя
         await conn.execute(
             "INSERT INTO user_limits (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING",
             user_id
@@ -254,14 +254,14 @@ async def update_user_profile(user_id: int, field: str, value: Any) -> bool:
 
 # 📄 ФУНКЦИИ ДЛЯ РАБОТЫ С ДОКУМЕНТАМИ
 async def save_document(user_id: int, title: str, file_path: str, file_type: str, 
-                       raw_text: str, summary: str, vector_id: str = None) -> Optional[int]:
-    """Сохранить документ"""
+                       raw_text: str, summary: str, confirmed: bool = True, vector_id: str = None) -> Optional[int]:
+    """Сохранить документ (исправленная версия)"""
     conn = await get_db_connection()
     try:
         doc_id = await conn.fetchval(
-            """INSERT INTO documents (user_id, title, file_path, file_type, raw_text, summary, vector_id)
-               VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id""",
-            user_id, title, file_path, file_type, raw_text, summary, vector_id
+            """INSERT INTO documents (user_id, title, file_path, file_type, raw_text, summary, confirmed, vector_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id""",
+            user_id, title, file_path, file_type, raw_text, summary, confirmed, vector_id
         )
         return doc_id
     except Exception as e:
@@ -431,3 +431,536 @@ async def db_health_check() -> bool:
         return False
     finally:
         await release_db_connection(conn)
+
+# 📄 ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С ДОКУМЕНТАМИ
+async def get_document_by_id(document_id: int) -> Optional[Dict]:
+    """Получить документ по ID"""
+    conn = await get_db_connection()
+    try:
+        row = await conn.fetchrow("SELECT * FROM documents WHERE id = $1", document_id)
+        return dict(row) if row else None
+    except Exception as e:
+        log_error_with_context(e, {"function": "get_document_by_id", "document_id": document_id})
+        return None
+    finally:
+        await release_db_connection(conn)
+
+async def update_document_title(document_id: int, new_title: str) -> bool:
+    """Обновить название документа"""
+    conn = await get_db_connection()
+    try:
+        result = await conn.execute(
+            "UPDATE documents SET title = $1 WHERE id = $2",
+            new_title, document_id
+        )
+        return result != "UPDATE 0"
+    except Exception as e:
+        log_error_with_context(e, {"function": "update_document_title", "document_id": document_id})
+        return False
+    finally:
+        await release_db_connection(conn)
+
+async def delete_document(document_id: int) -> bool:
+    """Удалить документ"""
+    conn = await get_db_connection()
+    try:
+        result = await conn.execute("DELETE FROM documents WHERE id = $1", document_id)
+        return result != "DELETE 0"
+    except Exception as e:
+        log_error_with_context(e, {"function": "delete_document", "document_id": document_id})
+        return False
+    finally:
+        await release_db_connection(conn)
+
+# 💬 ФУНКЦИИ ДЛЯ РАБОТЫ С СООБЩЕНИЯМИ
+async def save_message(user_id: int, role: str, message: str) -> bool:
+    """Сохранить сообщение в историю чата"""
+    conn = await get_db_connection()
+    try:
+        await conn.execute(
+            "INSERT INTO chat_history (user_id, role, message) VALUES ($1, $2, $3)",
+            user_id, role, message
+        )
+        return True
+    except Exception as e:
+        log_error_with_context(e, {"function": "save_message", "user_id": user_id})
+        return False
+    finally:
+        await release_db_connection(conn)
+
+async def get_last_messages(user_id: int, limit: int = 5) -> List[tuple]:
+    """Получить последние сообщения пользователя (совместимость - возврат tuples)"""
+    conn = await get_db_connection()
+    try:
+        rows = await conn.fetch(
+            """SELECT role, message FROM chat_history 
+               WHERE user_id = $1 
+               ORDER BY id DESC 
+               LIMIT $2""",
+            user_id, limit
+        )
+        # Возвращаем в хронологическом порядке как list of tuples
+        return [(row['role'], row['message']) for row in reversed(rows)]
+    except Exception as e:
+        log_error_with_context(e, {"function": "get_last_messages", "user_id": user_id})
+        return []
+    finally:
+        await release_db_connection(conn)
+
+# 📝 ФУНКЦИИ ДЛЯ РАБОТЫ С РЕЗЮМЕ РАЗГОВОРОВ
+async def get_conversation_summary(user_id: int) -> tuple:
+    """Получить резюме разговора (совместимость)"""
+    conn = await get_db_connection()
+    try:
+        row = await conn.fetchrow(
+            "SELECT summary_text, last_message_id FROM conversation_summary WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 1",
+            user_id
+        )
+        return (row['summary_text'], row['last_message_id']) if row else ("", 0)
+    except Exception as e:
+        log_error_with_context(e, {"function": "get_conversation_summary", "user_id": user_id})
+        return ("", 0)
+    finally:
+        await release_db_connection(conn)
+
+async def save_conversation_summary(user_id: int, summary: str, last_message_id: int) -> bool:
+    """Сохранить резюме разговора"""
+    conn = await get_db_connection()
+    try:
+        await conn.execute(
+            """INSERT INTO conversation_summary (user_id, summary_text, last_message_id, updated_at)
+               VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+               ON CONFLICT (user_id) DO UPDATE SET
+               summary_text = $2, last_message_id = $3, updated_at = CURRENT_TIMESTAMP""",
+            user_id, summary, last_message_id
+        )
+        return True
+    except Exception as e:
+        log_error_with_context(e, {"function": "save_conversation_summary", "user_id": user_id})
+        return False
+    finally:
+        await release_db_connection(conn)
+
+async def get_messages_after(user_id: int, message_id: int) -> List[Dict]:
+    """Получить сообщения после указанного ID"""
+    conn = await get_db_connection()
+    try:
+        rows = await conn.fetch(
+            """SELECT id, role, message, timestamp 
+               FROM chat_history 
+               WHERE user_id = $1 AND id > $2 
+               ORDER BY id ASC""",
+            user_id, message_id
+        )
+        return [dict(row) for row in rows]
+    except Exception as e:
+        log_error_with_context(e, {"function": "get_messages_after", "user_id": user_id})
+        return []
+    finally:
+        await release_db_connection(conn)
+
+async def get_last_summary(user_id: int) -> tuple:
+    """Получить последнее резюме документа (совместимость)"""
+    conn = await get_db_connection()
+    try:
+        row = await conn.fetchrow(
+            "SELECT id, summary FROM documents WHERE user_id = $1 AND confirmed = true ORDER BY uploaded_at DESC LIMIT 1",
+            user_id
+        )
+        return (row['id'], row['summary']) if row else (None, "")
+    except Exception as e:
+        log_error_with_context(e, {"function": "get_last_summary", "user_id": user_id})
+        return (None, "")
+    finally:
+        await release_db_connection(conn)
+
+# 🌐 ФУНКЦИИ ЛОКАЛИЗАЦИИ
+async def get_user_language(user_id: int) -> str:
+    """Получить язык пользователя"""
+    conn = await get_db_connection()
+    try:
+        row = await conn.fetchrow("SELECT language FROM users WHERE user_id = $1", user_id)
+        return row['language'] if row and row['language'] else 'ru'
+    except Exception as e:
+        log_error_with_context(e, {"function": "get_user_language", "user_id": user_id})
+        return 'ru'
+    finally:
+        await release_db_connection(conn)
+
+async def set_user_language(user_id: int, language: str) -> bool:
+    """Установить язык пользователя (создать если не существует)"""
+    conn = await get_db_connection()
+    try:
+        # ✅ СНАЧАЛА создаем пользователя, если его нет
+        await conn.execute(
+            "INSERT INTO users (user_id, language) VALUES ($1, $2) ON CONFLICT (user_id) DO NOTHING",
+            user_id, language
+        )
+        
+        # ✅ ПОТОМ обновляем язык (на случай, если пользователь уже существовал)
+        await conn.execute(
+            "UPDATE users SET language = $1 WHERE user_id = $2",
+            language, user_id
+        )
+        
+        # ✅ СОЗДАЕМ лимиты для нового пользователя
+        await conn.execute(
+            "INSERT INTO user_limits (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING",
+            user_id
+        )
+        
+        return True
+    except Exception as e:
+        log_error_with_context(e, {"function": "set_user_language", "user_id": user_id})
+        return False
+    finally:
+        await release_db_connection(conn)
+
+def t(key: str, lang: str = "ru", **kwargs) -> str:
+    """Функция локализации (исправленная)"""
+    try:
+        from locales import translations
+        
+        # Получаем переводы для указанного языка
+        lang_translations = translations.get(lang, translations.get('ru', {}))
+        text = lang_translations.get(key, key)
+        
+        # Форматируем с параметрами если они есть
+        return text.format(**kwargs) if kwargs else text
+    except Exception as e:
+        # Fallback в случае ошибки
+        return key
+
+def get_all_values_for_key(key: str) -> List[str]:
+    """Получить все значения для ключа локализации"""
+    from locales import translations
+    return [lang_data.get(key) for lang_data in translations.values() if key in lang_data]
+
+# 👤 ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ ПРОФИЛЯ
+async def get_user_profile(user_id: int) -> Dict:
+    """Получить полный профиль пользователя"""
+    conn = await get_db_connection()
+    try:
+        row = await conn.fetchrow("SELECT * FROM users WHERE user_id = $1", user_id)
+        return dict(row) if row else {}
+    except Exception as e:
+        log_error_with_context(e, {"function": "get_user_profile", "user_id": user_id})
+        return {}
+    finally:
+        await release_db_connection(conn)
+
+async def get_user_medications_text(user_id: int) -> str:
+    """Получить лекарства пользователя в текстовом виде"""
+    medications = await get_user_medications(user_id)
+    if not medications:
+        return "Не принимает лекарства"
+    
+    med_texts = []
+    for med in medications:
+        med_texts.append(f"{med['name']} ({med['label']})")
+    
+    return "; ".join(med_texts)
+
+# 🗑️ ФУНКЦИЯ УДАЛЕНИЯ ПОЛЬЗОВАТЕЛЯ
+async def delete_user_completely(user_id: int) -> bool:
+    """Полностью удалить пользователя и все его данные"""
+    conn = await get_db_connection()
+    try:
+        # Удаляем в правильном порядке (из-за внешних ключей)
+        await conn.execute("DELETE FROM chat_history WHERE user_id = $1", user_id)
+        await conn.execute("DELETE FROM conversation_summary WHERE user_id = $1", user_id)
+        await conn.execute("DELETE FROM medications WHERE user_id = $1", user_id)
+        await conn.execute("DELETE FROM documents WHERE user_id = $1", user_id)
+        await conn.execute("DELETE FROM user_limits WHERE user_id = $1", user_id)
+        await conn.execute("DELETE FROM transactions WHERE user_id = $1", user_id)
+        await conn.execute("DELETE FROM user_subscriptions WHERE user_id = $1", user_id)
+        await conn.execute("DELETE FROM users WHERE user_id = $1", user_id)
+        
+        # Удаляем из векторной базы
+        from vector_db_postgresql import delete_all_chunks_by_user
+        await delete_all_chunks_by_user(user_id)
+        
+        return True
+    except Exception as e:
+        log_error_with_context(e, {"function": "delete_user_completely", "user_id": user_id})
+        return False
+    finally:
+        await release_db_connection(conn)
+
+# 📊 ФУНКЦИИ СТАТИСТИКИ
+async def get_db_stats() -> Dict:
+    """Получить статистику базы данных"""
+    conn = await get_db_connection()
+    try:
+        users_count = await conn.fetchval("SELECT COUNT(*) FROM users")
+        docs_count = await conn.fetchval("SELECT COUNT(*) FROM documents")
+        messages_count = await conn.fetchval("SELECT COUNT(*) FROM chat_history")
+        
+        return {
+            "users": users_count,
+            "documents": docs_count,
+            "messages": messages_count,
+            "status": "healthy"
+        }
+    except Exception as e:
+        log_error_with_context(e, {"function": "get_db_stats"})
+        return {"status": "error", "error": str(e)}
+    finally:
+        await release_db_connection(conn)
+
+async def db_health_check() -> bool:
+    """Проверка здоровья базы данных"""
+    try:
+        conn = await get_db_connection()
+        await conn.fetchval("SELECT 1")
+        await release_db_connection(conn)
+        return True
+    except Exception:
+        return False
+
+# 🔄 СОВМЕСТИМОСТЬ СО СТАРЫМИ ИМЕНАМИ ФУНКЦИЙ
+async def get_documents_by_user(user_id: int, limit: int = 10) -> List[Dict]:
+    """Совместимость: get_documents_by_user -> get_user_documents"""
+    return await get_user_documents(user_id, limit)
+
+async def update_user_field(user_id: int, field: str, value: Any) -> bool:
+    """Совместимость: update_user_field -> update_user_profile"""
+    return await update_user_profile(user_id, field, value)
+
+async def save_user(user_id: int, name: str, birth_year: int = None) -> bool:
+    """Сохранить/обновить данные пользователя"""
+    conn = await get_db_connection()
+    try:
+        # Обновляем имя
+        if name:
+            await conn.execute(
+                "UPDATE users SET name = $1 WHERE user_id = $2",
+                name, user_id
+            )
+        
+        # Обновляем год рождения
+        if birth_year is not None:
+            await conn.execute(
+                "UPDATE users SET birth_year = $1 WHERE user_id = $2",
+                birth_year, user_id
+            )
+        
+        return True
+    except Exception as e:
+        log_error_with_context(e, {"function": "save_user", "user_id": user_id})
+        return False
+    finally:
+        await release_db_connection(conn)
+
+async def user_exists(user_id: int) -> bool:
+    """Совместимость: проверка существования пользователя"""
+    user_data = await get_user(user_id)
+    return user_data is not None
+
+async def get_user_name(user_id: int) -> Optional[str]:
+    """Совместимость: получение имени пользователя"""
+    user_data = await get_user(user_id)
+    return user_data.get('name') if user_data else None
+
+async def is_fully_registered(user_id: int) -> bool:
+    """Проверяет, полностью ли зарегистрирован пользователь"""
+    conn = await get_db_connection()
+    try:
+        row = await conn.fetchrow(
+            "SELECT name, birth_year FROM users WHERE user_id = $1", 
+            user_id
+        )
+        
+        if not row:
+            return False
+            
+        # Проверяем обязательные поля
+        name = row['name']
+        birth_year = row['birth_year']
+        
+        return bool(name and len(name.strip()) > 0 and birth_year)
+        
+    except Exception as e:
+        log_error_with_context(e, {"function": "is_fully_registered", "user_id": user_id})
+        return False
+    finally:
+        await release_db_connection(conn)
+
+async def get_user_name(user_id: int) -> Optional[str]:
+    """Получить имя пользователя (совместимость)"""
+    user_data = await get_user(user_id)
+    return user_data.get('name') if user_data else None
+
+async def update_document_confirmed(document_id: int, confirmed: int) -> bool:
+    """Обновить статус подтверждения документа"""
+    conn = await get_db_connection()
+    try:
+        result = await conn.execute(
+            "UPDATE documents SET confirmed = $1 WHERE id = $2",
+            bool(confirmed), document_id
+        )
+        return result != "UPDATE 0"
+    except Exception as e:
+        log_error_with_context(e, {"function": "update_document_confirmed", "document_id": document_id})
+        return False
+    finally:
+        await release_db_connection(conn)
+
+async def get_documents_by_user(user_id: int, limit: int = 10) -> List[Dict]:
+    """Совместимость: get_documents_by_user -> get_user_documents"""
+    return await get_user_documents(user_id, limit)
+
+# 🔧 ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ СОВМЕСТИМОСТИ
+
+async def execute_query(query: str, params: tuple = ()) -> int:
+    """
+    Выполнение простого запроса (INSERT, UPDATE, DELETE)
+    Возвращает количество затронутых строк
+    """
+    conn = await get_db_connection()
+    try:
+        # Преобразуем SQLite синтаксис в PostgreSQL
+        pg_query = query.replace('?', '${}').format(*[i+1 for i in range(len(params))])
+        result = await conn.execute(pg_query, *params)
+        
+        # Извлекаем количество строк из результата
+        if result.startswith('INSERT'):
+            return 1
+        elif result.startswith('UPDATE'):
+            return int(result.split()[-1]) if result.split()[-1].isdigit() else 1
+        elif result.startswith('DELETE'):
+            return int(result.split()[-1]) if result.split()[-1].isdigit() else 1
+        else:
+            return 0
+    except Exception as e:
+        log_error_with_context(e, {"function": "execute_query", "query": query[:100]})
+        return 0
+    finally:
+        await release_db_connection(conn)
+
+async def fetch_one(query: str, params: tuple = ()) -> Optional[tuple]:
+    """Выполнение SELECT запроса, возврат одной строки как tuple"""
+    conn = await get_db_connection()
+    try:
+        # Преобразуем SQLite синтаксис в PostgreSQL
+        pg_query = query.replace('?', '${}').format(*[i+1 for i in range(len(params))])
+        row = await conn.fetchrow(pg_query, *params)
+        return tuple(row) if row else None
+    except Exception as e:
+        log_error_with_context(e, {"function": "fetch_one", "query": query[:100]})
+        return None
+    finally:
+        await release_db_connection(conn)
+
+async def fetch_all(query: str, params: tuple = ()) -> List[tuple]:
+    """Выполнение SELECT запроса, возврат всех строк как list of tuples"""
+    conn = await get_db_connection()
+    try:
+        # Преобразуем SQLite синтаксис в PostgreSQL
+        pg_query = query.replace('?', '${}').format(*[i+1 for i in range(len(params))])
+        rows = await conn.fetch(pg_query, *params)
+        return [tuple(row) for row in rows]
+    except Exception as e:
+        log_error_with_context(e, {"function": "fetch_all", "query": query[:100]})
+        return []
+    finally:
+        await release_db_connection(conn)
+
+async def insert_and_get_id(query: str, params: tuple = ()) -> int:
+    """Выполнение INSERT и возврат ID новой записи"""
+    conn = await get_db_connection()
+    try:
+        # Преобразуем SQLite синтаксис в PostgreSQL и добавляем RETURNING id
+        pg_query = query.replace('?', '${}').format(*[i+1 for i in range(len(params))])
+        
+        if 'RETURNING' not in pg_query.upper():
+            # Находим название таблицы и добавляем RETURNING id
+            if 'INSERT INTO' in pg_query.upper():
+                pg_query = pg_query.rstrip(';') + ' RETURNING id'
+        
+        result = await conn.fetchval(pg_query, *params)
+        return result if result else 0
+    except Exception as e:
+        log_error_with_context(e, {"function": "insert_and_get_id", "query": query[:100]})
+        return 0
+    finally:
+        await release_db_connection(conn)
+
+async def get_medications(user_id: int) -> List[Dict]:
+    """Получить список лекарств пользователя (совместимость со старой версией)"""
+    conn = await get_db_connection()
+    try:
+        rows = await conn.fetch(
+            "SELECT name, time, label FROM medications WHERE user_id = $1 ORDER BY time",
+            user_id
+        )
+        return [{"name": row['name'], "time": row['time'], "label": row['label']} for row in rows]
+    except Exception as e:
+        log_error_with_context(e, {"function": "get_medications", "user_id": user_id})
+        return []
+    finally:
+        await release_db_connection(conn)
+
+async def replace_medications(user_id: int, new_list: List[Dict]) -> bool:
+    """Заменить список лекарств пользователя"""
+    conn = await get_db_connection()
+    try:
+        # Удаляем старые
+        await conn.execute("DELETE FROM medications WHERE user_id = $1", user_id)
+        
+        # Добавляем новые
+        for med in new_list:
+            await conn.execute(
+                "INSERT INTO medications (user_id, name, time, label) VALUES ($1, $2, $3, $4)",
+                user_id, med.get('name', ''), med.get('time', ''), med.get('label', '')
+            )
+        return True
+    except Exception as e:
+        log_error_with_context(e, {"function": "replace_medications", "user_id": user_id})
+        return False
+    finally:
+        await release_db_connection(conn)
+
+async def format_medications_schedule(user_id: int) -> str:
+    """Форматировать расписание лекарств для пользователя"""
+    conn = await get_db_connection()
+    try:
+        rows = await conn.fetch(
+            "SELECT name, time, label FROM medications WHERE user_id = $1 ORDER BY time",
+            user_id
+        )
+        
+        if not rows:
+            lang = await get_user_language(user_id)
+            return t("schedule_empty", lang)
+        
+        return "\n".join([f"{row['time']} — {row['name']} ({row['label']})" for row in rows])
+    except Exception as e:
+        log_error_with_context(e, {"function": "format_medications_schedule", "user_id": user_id})
+        try:
+            lang = await get_user_language(user_id)
+            return t("schedule_empty", lang)
+        except:
+            return "Расписание недоступно"
+    finally:
+        await release_db_connection(conn)
+
+def validate_user_id(user_id):
+    """Валидирует user_id"""
+    if not isinstance(user_id, int) or user_id <= 0:
+        raise ValueError("Некорректный user_id")
+    return user_id
+
+def validate_string(value, max_length=500, field_name="поле"):
+    """Валидирует строковые значения"""
+    if not isinstance(value, str):
+        raise ValueError(f"{field_name} должно быть строкой")
+    
+    value = value.strip()
+    if len(value) == 0:
+        raise ValueError(f"{field_name} не может быть пустым")
+    
+    if len(value) > max_length:
+        raise ValueError(f"{field_name} слишком длинное (максимум {max_length} символов)")
+    
+    return value
