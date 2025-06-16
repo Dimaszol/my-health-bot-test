@@ -180,7 +180,7 @@ async def safe_update_user_field(user_id: int, field: str, value: Any) -> bool:
         async with get_db_connection() as conn:
             cursor = await conn.execute(
                 query, 
-                (validated_value, datetime.now().isoformat(), user_id)
+                (validated_value, datetime.now(), user_id)
             )
             
             # Проверяем, что запись действительно обновилась
@@ -219,7 +219,7 @@ async def safe_save_user(user_id: int, name: str, birth_year: Optional[int] = No
             await conn.execute("""
                 INSERT OR REPLACE INTO users (user_id, name, birth_year, language, created_at)
                 VALUES (?, ?, ?, ?, ?)
-            """, (user_id, name, birth_year, current_language, datetime.now().isoformat()))
+            """, (user_id, name, birth_year, current_language, datetime.now()))
             
             logger.info(f"Сохранен пользователь {user_id}")
             return True
@@ -284,7 +284,7 @@ async def safe_bulk_update_user(user_id: int, updates: Dict[str, Any]) -> bool:
         
         # Добавляем last_updated
         set_clauses.append("last_updated = ?")
-        values.append(datetime.now().isoformat())
+        values.append(datetime.now())
         values.append(user_id)  # Для WHERE
         
         query = f"UPDATE users SET {', '.join(set_clauses)} WHERE user_id = ?"

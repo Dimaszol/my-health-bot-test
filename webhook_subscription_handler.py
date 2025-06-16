@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from aiohttp import web
 from subscription_manager import SubscriptionManager
-from db import get_user_name, get_user_language
+from db_postgresql import get_user_name, get_user_language
 from notification_system import NotificationSystem
 
 logger = logging.getLogger(__name__)
@@ -178,7 +178,7 @@ class SubscriptionWebhookHandler:
                     INSERT OR REPLACE INTO user_subscriptions 
                     (user_id, stripe_subscription_id, package_id, status, created_at)
                     VALUES (?, ?, ?, 'active', ?)
-                """, (user_id, subscription_id, package_id, datetime.now().isoformat()))
+                """, (user_id, subscription_id, package_id, datetime.now()))
                 # Отправляем уведомление пользователю
                 await self._send_renewal_notification(user_id, package_id)
                 

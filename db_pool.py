@@ -294,7 +294,7 @@ class DatabaseMonitor:
             self.slow_queries.append({
                 "query": query[:100] + "..." if len(query) > 100 else query,
                 "duration": round(duration, 3),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now()
             })
             logger.warning(f"🐌 Медленный запрос ({duration:.3f}s): {query[:100]}")
             

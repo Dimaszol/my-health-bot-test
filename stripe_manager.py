@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
 from stripe_config import StripeConfig
 from subscription_manager import SubscriptionManager
-from db_pool import execute_query, fetch_one
+from db_postgresql import execute_query, fetch_one
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +104,7 @@ class StripeManager:
                 StripeConfig.get_package_info(package_id)['name'],
                 'pending',
                 'stripe',
-                datetime.now().isoformat()
+                datetime.now()
             ))
             
             logger.info(f"💾 Сохранена информация о сессии {session_id}")
@@ -156,7 +156,7 @@ class StripeManager:
                     INSERT OR REPLACE INTO user_subscriptions 
                     (user_id, stripe_subscription_id, package_id, status, created_at)
                     VALUES (?, ?, ?, 'active', ?)
-                """, (user_id, subscription_id, package_id, datetime.now().isoformat()))
+                """, (user_id, subscription_id, package_id, datetime.now()))
                 
                 # Выдаем лимиты
                 result = await SubscriptionManager.purchase_package(
@@ -189,7 +189,7 @@ class StripeManager:
                     queries_granted = ?
                 WHERE stripe_session_id = ?
             """, (
-                datetime.now().isoformat(),
+                datetime.now(),
                 package_info['documents'],
                 package_info['gpt4o_queries'], 
                 session_id

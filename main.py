@@ -994,61 +994,81 @@ async def handle_button_action(callback: types.CallbackQuery):
         log_error_with_context(e, {"user_id": user_id, "action": "button_callback", "callback_data": callback.data})
         await callback.message.answer(get_user_friendly_message(e, lang))
 
+# 🚀 ЗАМЕНИТЕ ФУНКЦИЮ main() В КОНЦЕ ВАШЕГО main.py НА ЭТУ:
+
 @handle_telegram_errors
 async def main():
-    print("✅ Бот запущен. Ожидаю сообщения...")
+    """
+    🔧 ИСПРАВЛЕННАЯ функция main() с правильной инициализацией баз данных
+    """
+    print("🚀 Запуск медицинского бота...")
     
-    # ✅ НОВАЯ ПРОВЕРКА: Проверяем настройку Stripe
-    if not check_stripe_setup():
-        print("⚠️ Stripe не настроен - платежи будут недоступны")
-        print("💡 Добавьте STRIPE_PUBLISHABLE_KEY и STRIPE_SECRET_KEY в .env файл")
-    else:
-        print("💳 Stripe готов к работе")
-    
-    from webhook_subscription_handler import start_webhook_server
-    webhook_runner = await start_webhook_server(bot, port=8080)
-
-    from user_state_manager import user_state_manager
-    await user_state_manager.start_cleanup_loop()
-    
-    # Инициализация пула базы данных (код остается тот же)
     try:
+        # 🔧 1. ИНИЦИАЛИЗАЦИЯ СИСТЕМЫ USER STATE
+        from user_state_manager import UserStateManager
+        user_state_manager = UserStateManager(ttl_minutes=60)
+        print("✅ Бот запущен. Ожидаю сообщения...")
+        
+        # 💳 2. ПРОВЕРКА STRIPE
+        print("🔍 Проверка настройки Stripe...")
+        stripe_ok = check_stripe_setup()  # БЕЗ await - функция не async!
+        if stripe_ok:
+            print("✅ Соединение с Stripe API успешно")
+            print("💳 Stripe готов к работе")
+        
+        # 🌐 3. ЗАПУСК WEBHOOK СЕРВЕРА
+        from webhook_subscription_handler import start_webhook_server
+        webhook_runner = await start_webhook_server(bot, port=8080)
+        
+        # 🗄️ 4. ИНИЦИАЛИЗАЦИЯ POSTGRESQL (КРИТИЧНО!)
+        print("🔗 Подключение к PostgreSQL...")
         await initialize_db_pool(max_connections=10)
         print("🗄️ Database pool готов")
+        
+        # 🧠 5. ИНИЦИАЛИЗАЦИЯ VECTOR DB (ПОСЛЕ PostgreSQL!)
+        from vector_db_postgresql import initialize_vector_db
+                
         await initialize_vector_db()
         print("🧠 Vector database готова")
-    except Exception as e:
-        print(f"❌ Ошибка инициализации БД: {e}")
-        return
-    
-    # Проверяем состояние OpenAI при запуске (код остается тот же)
-    if await check_openai_status():
-        print("✅ OpenAI API доступен")
-    else:
-        print("⚠️ OpenAI API недоступен - бот будет работать в ограниченном режиме")
-    
-    # Инициализируем Rate Limiter (код остается тот же)
-    print("🚦 Rate Limiter активирован")
-    print("   - Сообщения: 10/мин")
-    print("   - Документы: 3/5мин") 
-    print("   - Изображения: 3/10мин")
-    print("   - Заметки: 5/5мин")
-
-    try:
+        
+        # 🤖 6. ПРОВЕРКА OPENAI
+        openai_status = await check_openai_status()
+        if openai_status:
+            print("✅ OpenAI API доступен")
+        else:
+            print("⚠️ Проблемы с OpenAI API")
+        
+       
+        print("🚦 Rate Limiter активирован")
+        print("   - Сообщения: 10/мин")
+        print("   - Документы: 3/5мин") 
+        print("   - Изображения: 3/10мин")
+        print("   - Заметки: 5/5мин")
+        
+        # 🚀 8. ЗАПУСК БОТА
         await dp.start_polling(bot)
+        
+    except KeyboardInterrupt:
+        print("\n🛑 Получен сигнал остановки...")
+        
     except Exception as e:
-        log_error_with_context(e, {"action": "bot_startup"})
-        print(f"❌ Критическая ошибка при запуске бота: {e}")
-        raise
+        print(f"❌ Критическая ошибка при запуске: {e}")
+        log_error_with_context(e, {"action": "main_startup"})
+        
     finally:
-        await user_state_manager.stop_cleanup_loop()
-        await close_db_pool()
-        await webhook_runner.cleanup()
+        # 🧹 ОЧИСТКА РЕСУРСОВ
+        print("🧹 Закрытие соединений...")
+        try:
+            await close_db_pool()
+            print("✅ Базы данных закрыты")
+        except Exception as e:
+            print(f"⚠️ Ошибка закрытия баз: {e}")
 
+# 🎯 ТОЧКА ВХОДА (в самом конце файла, замените существующую)
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("🛑 Бот остановлен пользователем")
+        print("\n👋 Бот остановлен пользователем")
     except Exception as e:
-        print("❌ Ошибка при запуске:", e)
+        print(f"💥 Фатальная ошибка: {e}")

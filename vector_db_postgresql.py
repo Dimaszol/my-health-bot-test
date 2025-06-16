@@ -73,7 +73,7 @@ class PostgreSQLVectorDB:
             # ✅ СОЗДАЕМ КЛИЕНТ ТОЛЬКО КОГДА НУЖЕН:
             client = get_openai_client()
             
-            response = await client.embeddings.create(
+            response = client.embeddings.create(
                 model="text-embedding-3-small",
                 input=text.replace("\n", " ")[:8000]
             )
@@ -102,7 +102,7 @@ class PostgreSQLVectorDB:
             # ➕ Добавляем новые векторы
             for chunk in chunks:
                 # 🧠 Получаем эмбеддинг
-                embedding = await self.get_embedding(chunk['chunk_text'])
+                embedding = self.get_embedding(chunk['chunk_text'])
                 
                 # 💾 Сохраняем в базу
                 await conn.execute("""
@@ -114,7 +114,7 @@ class PostgreSQLVectorDB:
                     user_id,
                     chunk['chunk_index'],
                     chunk['chunk_text'],
-                    embedding,
+                    f"[{','.join(map(str, embedding))}]",
                     json.dumps(chunk['metadata']),
                     chunk['metadata'].get('keywords', '')
                 )

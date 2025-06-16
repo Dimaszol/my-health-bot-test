@@ -30,7 +30,7 @@ class SubscriptionManager:
                     UPDATE user_subscriptions 
                     SET status = 'cancelled', cancelled_at = ?
                     WHERE user_id = ? AND status = 'active'
-                """, (datetime.now().isoformat(), user_id))
+                """, (datetime.now(), user_id))
                 
                 # 2. Получаем текущие лимиты
                 limits = await fetch_one("""
@@ -125,7 +125,7 @@ class SubscriptionManager:
                 UPDATE user_subscriptions 
                 SET status = 'cancelled', cancelled_at = ?
                 WHERE user_id = ? AND stripe_subscription_id = ?
-            """, (datetime.now().isoformat(), user_id, stripe_subscription_id))
+            """, (datetime.now(), user_id, stripe_subscription_id))
             
             logger.info(f"✅ Синхронизирована неактивная подписка {stripe_subscription_id} для пользователя {user_id}")
             
@@ -156,7 +156,7 @@ class SubscriptionManager:
             package = await fetch_one("""
                 SELECT name, price_usd, documents_included, gpt4o_queries_included, type
                 FROM subscription_packages 
-                WHERE id = ? AND is_active = 1
+                WHERE id = $1 AND is_active = TRUE
             """, (package_id,))
             
             if not package:
@@ -229,7 +229,7 @@ class SubscriptionManager:
                     subscription_expires_at = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE user_id = ?
-            """, (new_docs, new_queries, final_subscription_type, expiry_date.isoformat(), user_id))
+            """, (new_docs, new_queries, final_subscription_type, expiry_date, user_id))
             
             logger.info(f"✅ Пакет {package_id} куплен пользователем {user_id}. Тип: {final_subscription_type}, Новые лимиты: {new_docs} docs, {new_queries} queries")
             
@@ -239,7 +239,7 @@ class SubscriptionManager:
                 "new_documents": new_docs,
                 "new_queries": new_queries,
                 "subscription_type": final_subscription_type,
-                "expires_at": expiry_date.isoformat()
+                "expires_at": expiry_date
             }
             
         except Exception as e:
@@ -286,7 +286,7 @@ class SubscriptionManager:
                     UPDATE user_subscriptions 
                     SET status = 'cancelled', cancelled_at = ?
                     WHERE stripe_subscription_id = ?
-                """, (datetime.now().isoformat(), stripe_subscription_id))
+                """, (datetime.now(), stripe_subscription_id))
                 
                 # ✅ ДОБАВЛЕНО: Исправляем subscription_type после отмены
                 await SubscriptionManager.fix_orphaned_subscription_state(user_id)
@@ -459,7 +459,7 @@ class SubscriptionManager:
                     subscription_expires_at = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE user_id = ?
-            """, (docs, queries, new_expiry.isoformat(), user_id))
+            """, (docs, queries, new_expiry, user_id))
             
             logger.info(f"Подписка пользователя {user_id} автопродлена до {new_expiry.date()}")
             

@@ -1,7 +1,7 @@
 # profile_keyboards.py - НОВЫЙ ФАЙЛ, создать в корне проекта
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
-from db import t
+from db_postgresql import t
 
 def profile_view_keyboard(lang: str) -> InlineKeyboardMarkup:
     """Клавиатура для просмотра профиля"""

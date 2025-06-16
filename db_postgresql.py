@@ -12,7 +12,7 @@ from error_handler import log_error_with_context
 db_pool: Optional[asyncpg.Pool] = None
 
 async def get_db_connection():
-    """Получить соединение с базой данных"""
+    """Получить соединение с базой даннфх"""
     global db_pool
     if db_pool is None:
         raise Exception("❌ База данных не инициализирована")
@@ -964,3 +964,76 @@ def validate_string(value, max_length=500, field_name="поле"):
         raise ValueError(f"{field_name} слишком длинное (максимум {max_length} символов)")
     
     return value
+
+# Добавьте ЭТИ ФУНКЦИИ в КОНЕЦ вашего db_postgresql.py
+
+import re
+
+def convert_sql_to_postgresql(query: str, params: tuple) -> tuple:
+    """Конвертирует SQLite запрос в PostgreSQL"""
+    placeholder_count = 0
+    
+    def replace_placeholder(match):
+        nonlocal placeholder_count
+        placeholder_count += 1
+        return f"${placeholder_count}"
+    
+    converted_query = re.sub(r'\?', replace_placeholder, query)
+    return converted_query, params
+
+# ✅ СОВМЕСТИМЫЕ ФУНКЦИИ (добавить в конец db_postgresql.py)
+async def fetch_one(query: str, params: tuple = ()):
+    """Совместимая версия fetch_one с автоконвертацией SQLite → PostgreSQL"""
+    pg_query, pg_params = convert_sql_to_postgresql(query, params)
+    
+    conn = await get_db_connection()
+    try:
+        result = await conn.fetchrow(pg_query, *pg_params)
+        return tuple(result.values()) if result else None
+    finally:
+        await release_db_connection(conn)
+
+async def fetch_all(query: str, params: tuple = ()):
+    """Совместимая версия fetch_all с автоконвертацией SQLite → PostgreSQL"""
+    pg_query, pg_params = convert_sql_to_postgresql(query, params)
+    
+    conn = await get_db_connection()
+    try:
+        results = await conn.fetch(pg_query, *pg_params)
+        return [tuple(row.values()) for row in results]
+    finally:
+        await release_db_connection(conn)
+
+async def execute_query(query: str, params: tuple = ()):
+    """Совместимая версия execute_query с автоконвертацией SQLite → PostgreSQL"""
+    pg_query, pg_params = convert_sql_to_postgresql(query, params)
+    
+    conn = await get_db_connection()
+    try:
+        result = await conn.execute(pg_query, *pg_params)
+        # Возвращаем количество затронутых строк
+        if result.startswith(('INSERT', 'UPDATE', 'DELETE')):
+            return int(result.split()[-1])
+        return 0
+    finally:
+        await release_db_connection(conn)
+
+async def insert_and_get_id(query: str, params: tuple = ()):
+    """Совместимая версия INSERT с возвратом ID"""
+    pg_query, pg_params = convert_sql_to_postgresql(query, params)
+    
+    # Добавляем RETURNING id если его нет
+    if 'RETURNING' not in pg_query.upper():
+        pg_query += ' RETURNING id'
+    
+    conn = await get_db_connection()
+    try:
+        result = await conn.fetchval(pg_query, *pg_params)
+        return result
+    finally:
+        await release_db_connection(conn)
+
+# Переименовываем старые функции (если они есть)
+# async def fetch_one_native(query: str, params: tuple = ()):
+#     """Оригинальная PostgreSQL версия"""
+#     ...

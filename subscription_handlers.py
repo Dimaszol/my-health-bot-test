@@ -10,9 +10,8 @@ from subscription_keyboards import (
 )
 from subscription_manager import SubscriptionManager
 from stripe_manager import StripeManager
-from db import get_user_language, get_user_name
+from db_postgresql import get_user_language, get_user_name, fetch_one
 from datetime import datetime
-from db_pool import fetch_one  # ✅ ДОБАВЛЕНО для проверки активных подписок
 from error_handler import log_error_with_context
 
 logger = logging.getLogger(__name__)
@@ -411,7 +410,7 @@ class SubscriptionHandlers:
                 UPDATE user_subscriptions 
                 SET status = 'cancelled', cancelled_at = ?
                 WHERE stripe_subscription_id = ? AND user_id = ?
-            """, (datetime.now().isoformat(), stripe_subscription_id, user_id))
+            """, (datetime.now(), stripe_subscription_id, user_id))
             
             logger.info(f"✅ Подписка {stripe_subscription_id} пользователя {user_id} отменена для апгрейда")
             return True

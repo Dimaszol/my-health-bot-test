@@ -47,7 +47,7 @@ async def handle_stripe_webhook(payload: str, sig_header: str):
                 UPDATE user_subscriptions 
                 SET status = 'cancelled', cancelled_at = ?
                 WHERE stripe_subscription_id = ?
-            """, (datetime.now().isoformat(), subscription_id))
+            """, (datetime.now(), subscription_id))
             
             print(f"🗑️ Подписка {subscription_id} отменена")
         

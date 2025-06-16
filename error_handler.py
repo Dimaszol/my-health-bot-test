@@ -281,7 +281,7 @@ def log_error_with_context(error: Exception, context: dict = None):
     context = context or {}
     
     error_info = {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now(),
         "error_type": type(error).__name__,
         "error_message": str(error),
         "context": context
