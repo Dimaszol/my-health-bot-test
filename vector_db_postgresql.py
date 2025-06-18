@@ -102,7 +102,7 @@ class PostgreSQLVectorDB:
             # ➕ Добавляем новые векторы
             for chunk in chunks:
                 # 🧠 Получаем эмбеддинг
-                embedding = self.get_embedding(chunk['chunk_text'])
+                embedding = await self.get_embedding(chunk['chunk_text'])
                 
                 # 💾 Сохраняем в базу
                 await conn.execute("""
@@ -382,11 +382,7 @@ async def split_into_chunks(summary: str, document_id: int, user_id: int) -> Lis
             }
         })
         chunk_index += 1
-    
-    # ❗ Удаляем последний чанк, если их больше одного (логика из vector_utils)
-    if len(chunks) > 1:
-        chunks = chunks[:-1]
-
+   
     return chunks
 
 # ✅ ОБНОВЛЯЕМ функцию add_chunks_to_vector_db для совместимости:
