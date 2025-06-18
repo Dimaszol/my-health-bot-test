@@ -572,9 +572,12 @@ async def handle_user_message(message: types.Message):
                     # Форматируем недавние сообщения
                     context_lines = []
                     for msg in recent_messages:
-                        role = "USER" if msg.get('role') == 'user' else "BOT"
-                        content = msg.get('message', '')[:100]  # Ограничиваем длину
-                        context_lines.append(f"{role}: {content}")
+                        if isinstance(msg, (tuple, list)) and len(msg) >= 2:
+                            role = "USER" if msg[0] == 'user' else "BOT"
+                            content = str(msg[1])[:100]  # Ограничиваем длину
+                            context_lines.append(f"{role}: {content}")
+                        else:
+                            print(f"⚠️ Неожиданный формат сообщения: {msg}")
                     
                     context_text = "\n".join(context_lines)
                     

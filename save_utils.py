@@ -54,13 +54,56 @@ def convert_pdf_to_images(pdf_path: str, output_dir: str, max_pages: int = 5):
     return image_paths
 
 def format_dialogue(messages, max_len=300):
-    return "\n".join([f"{role.upper()}: {msg[:max_len]}" for _, role, msg in messages])
+    """
+    ✅ ИСПРАВЛЕННАЯ ВЕРСИЯ: Работает и со словарями (PostgreSQL) и с кортежами (SQLite)
+    """
+    result = []
+    
+    for msg in messages:
+        try:
+            if isinstance(msg, dict):
+                # ✅ Новый формат PostgreSQL: {'id': 123, 'role': 'user', 'message': 'текст'}
+                role = msg.get('role', 'unknown')
+                message_text = msg.get('message', '')
+                result.append(f"{role.upper()}: {message_text[:max_len]}")
+                
+            elif isinstance(msg, (list, tuple)) and len(msg) >= 3:
+                # ✅ Старый формат SQLite: (id, role, message)
+                role = msg[1]
+                message_text = msg[2]
+                result.append(f"{role.upper()}: {message_text[:max_len]}")
+                
+            elif isinstance(msg, (list, tuple)) and len(msg) >= 2:
+                # ✅ Упрощенный формат: (role, message)
+                role = msg[0]
+                message_text = msg[1]
+                result.append(f"{role.upper()}: {message_text[:max_len]}")
+                
+            else:
+                # ❌ Неизвестный формат - пропускаем
+                print(f"⚠️ Неизвестный формат сообщения: {type(msg)} - {msg}")
+                continue
+                
+        except (KeyError, IndexError, TypeError) as e:
+            # ❌ Ошибка доступа к данным - пропускаем это сообщение
+            print(f"⚠️ Ошибка обработки сообщения: {e} - {msg}")
+            continue
+    
+    return "\n".join(result)
 
 async def maybe_update_summary(user_id):
     old_summary, last_id = await get_conversation_summary(user_id)
-    new_messages = await get_messages_after(user_id, after_id=last_id)
+    new_messages = await get_messages_after(user_id, last_id)
 
-    user_messages = [m for m in new_messages if m[1] == "user"]
+    user_messages = []
+    for msg in new_messages:
+        if isinstance(msg, dict):
+            if msg.get('role') == 'user':
+                user_messages.append(msg)
+        elif isinstance(msg, (list, tuple)) and len(msg) >= 2:
+            if msg[1] == 'user':  # или msg[0] в зависимости от формата
+                user_messages.append(msg)
+    
     if len(user_messages) < 6:
         return  # ждём пока пользователь напишет хотя бы 6 новых сообщений
 
@@ -90,45 +133,69 @@ async def maybe_update_summary(user_id):
         last_message_id = new_messages[-1][0]
         await save_conversation_summary(user_id, new_summary, last_message_id)
 
-def format_user_profile(profile: dict) -> str:
-    parts = []
+async def format_user_profile(user_id: int) -> str:
+    """
+    ✅ ИСПРАВЛЕННАЯ ВЕРСИЯ: получает профиль по user_id
+    """
+    try:
+        from db_postgresql import get_user_profile
+        from datetime import datetime
+        
+        profile = await get_user_profile(user_id)
+        
+        # ❗ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: profile может быть None или пустой
+        if not profile:
+            return "Профиль пациента не заполнен"
+        
+        parts = []
 
-    # Базовая строка: имя, возраст, пол, рост и вес
-    base = []
-    if profile.get("name"):
-        base.append(profile["name"])
-    if profile.get("birth_year"):
-        age = datetime.now().year - profile["birth_year"]
-        base.append(f"{age} y/o")
-    if profile.get("gender"):
-        base.append(profile["gender"])
-    if profile.get("height_cm"):
-        base.append(f"{profile['height_cm']} cm")
-    if profile.get("weight_kg"):
-        base.append(f"{profile['weight_kg']} kg")
-    parts.append(", ".join(base))
+        # Базовая строка: имя, возраст, пол, рост и вес
+        base = []
+        if profile.get("name"):
+            base.append(str(profile["name"]))
+        if profile.get("birth_year"):
+            try:
+                age = datetime.now().year - int(profile["birth_year"])
+                base.append(f"{age} y/o")
+            except (ValueError, TypeError):
+                pass
+        if profile.get("gender"):
+            base.append(str(profile["gender"]))
+        if profile.get("height_cm"):
+            base.append(f"{profile['height_cm']} cm")
+        if profile.get("weight_kg"):
+            base.append(f"{profile['weight_kg']} kg")
+        
+        if base:
+            parts.append(", ".join(base))
 
-    # Остальные параметры в сжатой строке
-    extras = []
-    if profile.get("allergies"):
-        extras.append(f"Allergies: {profile['allergies']}")
-    if profile.get("alcohol"):
-        extras.append(f"Alcohol: {profile['alcohol']}")
-    if profile.get("physical_activity"):
-        extras.append(f"Physical activity: {profile['physical_activity']}")
-    if profile.get("chronic_conditions"):
-        extras.append(f"Chronic conditions: {profile['chronic_conditions']}")
-    if profile.get("smoking"):
-        extras.append(f"Smoking: {profile['smoking']}")
-    if profile.get("family_history"):
-        extras.append(f"Family history: {profile['family_history']}")
-    if profile.get("medications"):
-        extras.append(f"Medications: {profile['medications']}")    
+        # Остальные параметры в сжатой строке
+        extras = []
+        if profile.get("allergies"):
+            extras.append(f"Allergies: {profile['allergies']}")
+        if profile.get("alcohol"):
+            extras.append(f"Alcohol: {profile['alcohol']}")
+        if profile.get("physical_activity"):
+            extras.append(f"Physical activity: {profile['physical_activity']}")
+        if profile.get("chronic_conditions"):
+            extras.append(f"Chronic conditions: {profile['chronic_conditions']}")
+        if profile.get("smoking"):
+            extras.append(f"Smoking: {profile['smoking']}")
+        if profile.get("family_history"):
+            extras.append(f"Family history: {profile['family_history']}")
+        if profile.get("medications"):
+            extras.append(f"Medications: {profile['medications']}")    
 
-    if extras:
-        parts.append(" | ".join(extras))
+        if extras:
+            parts.append(" | ".join(extras))
 
-    return "\n".join(parts)
+        return "\n".join(parts) if parts else "Профиль пациента частично заполнен"
+        
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"❌ Ошибка формирования профиля для пользователя {user_id}: {e}")
+        return "Ошибка загрузки профиля пациента"
 
 async def update_user_profile_medications(user_id: int):
     text = await get_user_medications_text(user_id)

@@ -128,8 +128,7 @@ class PostgreSQLVectorDB:
         finally:
             await self.db_pool.release(conn)
     
-    async def search_similar_chunks(self, user_id: int, query: str, limit: int = 5, 
-                              similarity_threshold: float = 0.7) -> List[Dict]:
+    async def search_similar_chunks(self, user_id: int, query: str, limit: int = 5, similarity_threshold: float = 0.3) -> List[Dict]:
         """
         Векторный поиск с фильтрацией по порогу релевантности
         
@@ -156,9 +155,7 @@ class PostgreSQLVectorDB:
                 embedding_str = '[' + ','.join(map(str, query_embedding)) + ']'
             else:
                 embedding_str = query_embedding
-            
-            logger.info(f"🧠 Embedding получен: {len(query_embedding)} dimensions")
-            
+                                    
             # 🔍 Векторный поиск с фильтрацией по threshold
             # Ищем больше результатов для последующей фильтрации
             search_limit = min(limit * 3, 20)  # Не больше 20 для производительности
@@ -228,8 +225,7 @@ class PostgreSQLVectorDB:
                 best_similarity = chunks[0]['similarity']
                 worst_similarity = chunks[-1]['similarity']
                 logger.info(f"🔍 Найдено {len(chunks)} релевантных чанков для пользователя {user_id}")
-                logger.info(f"   📊 Similarity: {worst_similarity:.3f} - {best_similarity:.3f}")
-                
+                                
                 # 🚨 Предупреждение о низкой релевантности
                 if best_similarity < 0.6:
                     logger.warning(f"⚠️ Низкая релевантность запроса: '{query[:50]}...' (max={best_similarity:.3f})")
@@ -245,37 +241,66 @@ class PostgreSQLVectorDB:
             await self.db_pool.release(conn)
     
     async def keyword_search_chunks(self, user_id: int, keywords: str, limit: int = 5) -> List[Dict]:
-        """
-        Текстовый поиск по ключевым словам
-        
-        Args:
-            user_id: ID пользователя
-            keywords: Ключевые слова для поиска
-            limit: Количество результатов
-        """
+        """Текстовый поиск по ключевым словам с умным ранжированием"""
         conn = await self.db_pool.acquire()
         try:
-            # 🔍 Полнотекстовый поиск по PostgreSQL
-            results = await conn.fetch("""
+            logger.info(f"🔍 Поиск по ключевым словам: '{keywords}' для пользователя {user_id}")
+            
+            # 🔹 Разбиваем ключевые слова
+            keyword_list = [k.strip().lower() for k in keywords.split(',') if k.strip()]
+            
+            if not keyword_list:
+                logger.info("❌ Пустой список ключевых слов")
+                return []
+            
+            # 🔧 Создаем динамический SQL с подсчетом совпадений
+            conditions = []
+            match_counters = []
+            params = [user_id]
+            param_index = 2
+            
+            for keyword in keyword_list:
+                # Условие для WHERE
+                conditions.append(f"dv.keywords ILIKE ${param_index}")
+                # Счетчик для ранжирования
+                match_counters.append(f"CASE WHEN dv.keywords ILIKE ${param_index} THEN 1 ELSE 0 END")
+                params.append(f'%{keyword}%')
+                param_index += 1
+            
+            where_clause = " OR ".join(conditions)
+            rank_calculation = " + ".join(match_counters)
+            
+            sql = f"""
                 SELECT 
                     dv.chunk_text,
                     dv.metadata,
                     dv.keywords,
                     d.title as document_title,
                     d.uploaded_at,
-                    -- Используем английскую конфигурацию для английских ключевых слов
-                    ts_rank(to_tsvector('english', dv.keywords), 
-                        plainto_tsquery('english', $1)) as rank
+                    -- 📊 Универсальное ранжирование: количество совпадающих ключевых слов
+                    ({rank_calculation}) as matches_count,
+                    -- 📈 Ранк = количество совпадений + бонус за новизну
+                    (
+                        ({rank_calculation}) + 
+                        CASE 
+                            WHEN d.uploaded_at > NOW() - INTERVAL '30 days' THEN 0.5
+                            WHEN d.uploaded_at > NOW() - INTERVAL '90 days' THEN 0.2
+                            ELSE 0.0
+                        END
+                    ) as rank
                 FROM document_vectors dv
                 JOIN documents d ON d.id = dv.document_id
-                WHERE dv.user_id = $2
-                AND (to_tsvector('english', dv.keywords) @@ 
-                    plainto_tsquery('english', $1))
-                ORDER BY rank DESC
-                LIMIT $3
-            """, keywords, user_id, limit)
+                WHERE dv.user_id = $1
+                AND ({where_clause})
+                ORDER BY matches_count DESC, rank DESC, d.uploaded_at DESC
+                LIMIT {limit}
+            """
             
-            # 📊 Форматируем результаты
+            results = await conn.fetch(sql, *params)
+            
+            logger.info(f"📊 SQL вернул {len(results)} результатов")
+            
+            # Форматируем результаты
             chunks = []
             for row in results:
                 chunks.append({
@@ -284,7 +309,8 @@ class PostgreSQLVectorDB:
                     "keywords": row['keywords'],
                     "document_title": row['document_title'],
                     "uploaded_at": row['uploaded_at'],
-                    "rank": float(row['rank'])
+                    "rank": float(row['rank']),
+                    "matches_count": int(row['matches_count'])  # Для отладки
                 })
             
             logger.info(f"🔍 Найдено {len(chunks)} чанков по ключевым словам для пользователя {user_id}")

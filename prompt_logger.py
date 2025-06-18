@@ -155,7 +155,12 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
         
         try:
             from vector_db_postgresql import keyword_search_chunks
-            keyword_chunks = await keyword_search_chunks(user_id, user_input, limit=10)
+                       
+            # ✅ ИСПРАВЛЕНИЕ: передаем ключевые слова, а не исходный вопрос
+            keywords_string = ", ".join(keywords) if keywords else user_input
+            keyword_chunks = await keyword_search_chunks(user_id, keywords_string, limit=10)
+            
+            print(f"🔍 Поиск по ключевым словам: '{keywords_string}'")
             
             if keyword_chunks:
                 log_chunk_info(keyword_chunks, "КЛЮЧЕВЫЕ ЧАНКИ")

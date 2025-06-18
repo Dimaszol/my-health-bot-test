@@ -254,22 +254,55 @@ async def ask_structured(text: str, lang: str = "ru", max_tokens: int = 1200) ->
     return response.choices[0].message.content.strip()
 
 @async_safe_openai_call(max_retries=2, delay=1.0)
-async def enrich_query_for_vector_search(user_question: str) -> str:  # 🔄 async
-    """Безопасное улучшение запроса для векторного поиска"""
+async def enrich_query_for_vector_search(user_question: str) -> str:
+    """✅ ИСПРАВЛЕННАЯ ВЕРСИЯ: Прямой вызов без лишних функций"""
+    
     prompt = f"""
-    Пользователь задал вопрос: "{user_question}"
+User asked a medical question: "{user_question}"
 
-    Переформулируй его как расширенный медицинский запрос, чтобы лучше найти нужную информацию в медицинских записях.
-    Сделай его точным, но не меняй суть. Добавь термины: вид обследования, параметры, диагноз, части тела, симптомы — если они логично подразумеваются.
+Task: Create a CONCISE medical search query for vector database.
 
-    Примеры:
-    - "что по узи?" → "Результаты последнего УЗИ с описанием положения плода, параметров головы, срока беременности"
-    - "анализы крови?" → "Расшифровка последнего анализа крови: гемоглобин, лейкоциты, СОЭ, глюкоза"
-    - "что с почками?" → "Данные по почкам из анализов мочи и УЗИ: размеры, структура, эхогенность, отклонения"
+RULES:
+• Remove filler words ("what can you tell me", "please explain", "help me")
+• Add relevant medical terminology
+• DO NOT explain, DO NOT say "we can rephrase this"
+• Respond ONLY with the expanded query, no commentary
+• Respond in the SAME LANGUAGE as the user's question
 
-    Ответ:
-    """
-    return await ask_gpt(prompt.strip())  # 🔄 await
+EXAMPLES:
+Question: "что по узи?" → Answer: "Результаты УЗИ обследования с описанием структур органов, размеров, эхогенности"
+Question: "blood test results?" → Answer: "Blood test results: hemoglobin, leukocytes, ESR, glucose, biochemical parameters"
+Question: "що з МРТ?" → Answer: "Результати МРТ дослідження з описом змін у тканинах, структурах, можливі патології"
+
+Your answer for "{user_question}":
+"""
+    
+    # 🎯 ПРЯМОЙ ВЫЗОВ с правильными параметрами для технической задачи
+    response = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system", 
+                "content": "You are a medical query processor. Create concise search queries without explanations."
+            },
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=150,      # ✅ Достаточно для короткого запроса
+        temperature=0.2      # ✅ Низкая креативность для технической задачи
+    )
+    
+    # Простая очистка
+    cleaned_response = response.choices[0].message.content.strip().strip('"\'')
+    
+    # Ограничиваем длину
+    if len(cleaned_response) > 300:
+        cleaned_response = cleaned_response[:300].strip()
+    
+    # Fallback
+    if len(cleaned_response) < 10:
+        cleaned_response = user_question
+    
+    return cleaned_response
 
 @async_safe_openai_call(max_retries=2, delay=1.0)
 async def ask_gpt_keywords(prompt: str) -> str:  # 🔄 async
