@@ -42,6 +42,7 @@ from stripe_config import check_stripe_setup
 from subscription_handlers import SubscriptionHandlers, upsell_tracker
 from notification_system import NotificationSystem
 from stripe_manager import StripeManager
+from prompt_logger import process_user_question_detailed, log_search_summary
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -487,121 +488,129 @@ async def handle_user_message(message: types.Message):
             await save_message(user_id, "user", user_input)
             
             # ✅ НОВАЯ ЛОГИКА: Проверяем нужно ли показать upsell для сообщений
-            # (каждые 5 сообщений если нет GPT-4o лимитов)
             await NotificationSystem.check_and_notify_limits(
                 message, user_id, action_type="message"
             )
             
-            # Получаем данные для контекста (код остается тот же)
-            summary_text, _ = await get_conversation_summary(user_id)
-            last_doc_id, last_summary = await get_last_summary(user_id)
-            exclude_texts = last_summary.strip().split("\n\n")
-
-            # Безопасный вызов GPT для улучшения запроса
+            # 🔍 ДЕТАЛЬНАЯ ОБРАБОТКА ВОПРОСА С ЛОГИРОВАНИЕМ
             try:
+                prompt_data = await process_user_question_detailed(user_id, user_input)
+                
+                # Извлекаем данные из результата
+                profile_text = prompt_data["profile_text"]
+                summary_text = prompt_data["summary_text"]
+                last_summary = prompt_data["last_summary"]
+                chunks_text = prompt_data["chunks_text"]
+                chunks_found = prompt_data["chunks_found"]
+                lang = prompt_data["lang"]
+                
+            except Exception as e:
+                # Fallback на старую логику если что-то пошло не так
+                print(f"❌ Ошибка детального логирования: {e}")
+                print("🔄 Переключаемся на упрощенную обработку...")
+                
+                # Упрощенная версия (ваш старый код)
                 from gpt import enrich_query_for_vector_search
-                refined_query = await enrich_query_for_vector_search(user_input)
-                print(f"\n🔍 Запрос: '{user_input}' → улучшен для поиска ({len(refined_query)} симв.)")
-            except OpenAIError:
-                refined_query = user_input
-                print(f"🔍 Запрос: '{user_input}' (GPT недоступен)")
+                try:
+                    refined_query = await enrich_query_for_vector_search(user_input)
+                    print(f"🔍 Запрос: '{user_input}' → улучшен для поиска ({len(refined_query)} симв.)")
+                except OpenAIError:
+                    refined_query = user_input
+                    print(f"🔍 Запрос: '{user_input}' (GPT недоступен)")
 
-            # Поиск в векторной базе
-            vector_chunks = await search_similar_chunks(
-                user_id, refined_query, limit=10  # Больше лимит для фильтрации
-            )
-            keyword_chunks = await keyword_search_chunks(
-                user_id, user_input, limit=10     # Больше лимит для фильтрации
-            )
+                # Простой поиск
+                vector_chunks = await search_similar_chunks(user_id, refined_query, limit=10)
+                keyword_chunks = await keyword_search_chunks(user_id, user_input, limit=10)
+                
+                # Простая фильтрация (ваш старый код)
+                summary_text, _ = await get_conversation_summary(user_id)
+                last_doc_id, last_summary = await get_last_summary(user_id)
+                exclude_texts = last_summary.strip().split("\n\n") if last_summary else []
 
-            # 📊 Извлекаем текст и фильтруем результаты
-            def filter_chunks(chunks, exclude_doc_id=None, exclude_texts=None, limit=5):
-                """Фильтрует чанки по условиям"""
-                filtered_texts = []
-                for chunk in chunks:
-                    chunk_text = chunk.get("chunk_text", "")
-                    metadata = chunk.get("metadata", {})
-                    
-                    # Фильтр по document_id
-                    if exclude_doc_id and str(metadata.get("document_id")) == str(exclude_doc_id):
-                        continue
-                    # Фильтр по тексту
-                    if exclude_texts and chunk_text.strip() in exclude_texts:
-                        continue
+                def filter_chunks(chunks, exclude_doc_id=None, exclude_texts=None, limit=5):
+                    filtered_texts = []
+                    for chunk in chunks:
+                        chunk_text = chunk.get("chunk_text", "")
+                        metadata = chunk.get("metadata", {})
                         
-                    filtered_texts.append(chunk_text)
-                    if len(filtered_texts) >= limit:
-                        break
-                return filtered_texts
+                        if exclude_doc_id and str(metadata.get("document_id")) == str(exclude_doc_id):
+                            continue
+                        if exclude_texts and chunk_text.strip() in exclude_texts:
+                            continue
+                            
+                        filtered_texts.append(chunk_text)
+                        if len(filtered_texts) >= limit:
+                            break
+                    return filtered_texts
 
-            # Фильтруем результаты
-            vector_texts = filter_chunks(vector_chunks, exclude_doc_id=last_doc_id, exclude_texts=exclude_texts, limit=4)
-            keyword_texts = filter_chunks(keyword_chunks, exclude_doc_id=last_doc_id, exclude_texts=exclude_texts, limit=2)
+                vector_texts = filter_chunks(vector_chunks, exclude_doc_id=last_doc_id, exclude_texts=exclude_texts, limit=4)
+                keyword_texts = filter_chunks(keyword_chunks, exclude_doc_id=last_doc_id, exclude_texts=exclude_texts, limit=2)
+                all_chunks = list(dict.fromkeys(vector_texts + keyword_texts))
+                chunks_text = "\n\n".join(all_chunks[:6])
+                chunks_found = len(all_chunks)
+                
+                # Краткое логирование
+                log_search_summary(len(vector_chunks), len(keyword_chunks), chunks_found, last_doc_id)
+                
+                # Создаем данные для fallback
+                profile_text = await format_user_profile(user_id)
+                lang = await get_user_language(user_id)
 
-            # Объединяем и убираем дубликаты
-            all_chunks = list(dict.fromkeys(vector_texts + keyword_texts))
-            chunks_text = "\n\n".join(all_chunks[:6])
-            
-            # ✅ КРАТКАЯ СВОДКА
-            print(f"🧠 Найдено: {len(vector_chunks)} векторных + {len(keyword_chunks)} ключевых = {len(all_chunks)} итого (исключен док.{last_doc_id})")
+            # ==========================================
+            # ОТПРАВКА В GPT (исправленная версия)
+            # ==========================================
 
-            # Подготовка контекста
-            MAX_LEN = 300
-            last_messages = await get_last_messages(user_id, limit=7)
-            if last_messages and last_messages[-1][0] == "user" and last_messages[-1][1] == message.text:
-                last_messages = last_messages[:-1]
-            context_text = "\n".join([
-                f"{role.upper()}: {msg[:MAX_LEN]}" for role, msg in last_messages
-            ])
-
-            profile = await get_user_profile(user_id)
-            profile_text = format_user_profile(profile)
-
-            # Определяем модель и отправляем запрос
-            if user_id and await check_gpt4o_limit(user_id):
-                model_name = "GPT-4o"
-                print(f"🤖 {model_name} | Профиль: {len(profile_text)}с, Контекст: {len(chunks_text)}с, История: {len(context_text)}с")
-            else:
-                model_name = "GPT-4o-mini" 
-                print(f"🤖 {model_name} (нет лимитов) | Профиль: {len(profile_text)}с, Контекст: {len(chunks_text)}с, История: {len(context_text)}с")
+            # Проверка лимитов GPT-4o
+            use_gpt4o = await check_gpt4o_limit(user_id)
 
             try:
-                gpt_response = await ask_doctor(
+                # Получаем недавние сообщения для контекста
+                try:
+                    from db_postgresql import get_last_messages
+                    recent_messages = await get_last_messages(user_id, limit=6)
+                    
+                    # Форматируем недавние сообщения
+                    context_lines = []
+                    for msg in recent_messages:
+                        role = "USER" if msg.get('role') == 'user' else "BOT"
+                        content = msg.get('message', '')[:100]  # Ограничиваем длину
+                        context_lines.append(f"{role}: {content}")
+                    
+                    context_text = "\n".join(context_lines)
+                    
+                except Exception as e:
+                    context_text = ""
+                    print(f"⚠️ Не удалось получить контекст сообщений: {e}")
+
+                # Правильный вызов ask_doctor с вашими параметрами
+                response = await ask_doctor(
                     profile_text=profile_text,
-                    summary_text=summary_text,
+                    summary_text=summary_text, 
                     last_summary=last_summary,
                     chunks_text=chunks_text,
                     context_text=context_text,
-                    user_question=message.text,
+                    user_question=user_input,
                     lang=lang,
                     user_id=user_id
                 )
-                print(f"✅ Ответ получен: {len(gpt_response)} символов")
-            except OpenAIError as e:
-                gpt_response = fallback_response(message.text, lang)
-                print(f"⚠️ Fallback ответ: {e}")
-
-            await save_message(user_id, "bot", gpt_response)
-
-            # Безопасная отправка ответа
-            try:
-                await message.answer(gpt_response)
-            except Exception as e:
-                print(f"⚠️ Отправка plain text из-за ошибки HTML")
-                from html import escape
-                safe_response = escape(gpt_response)
-                await message.answer(safe_response, parse_mode=None)
                 
-            await record_user_action(user_id, "message")
-
-            # Обновление резюме разговора
-            try:
-                await maybe_update_summary(user_id)
-            except Exception as e:
-                log_error_with_context(e, {"user_id": user_id, "action": "update_summary"})
+                print(f"🤖 {'GPT-4o' if use_gpt4o else 'GPT-4o-mini'} | Чанков: {chunks_found}")
                 
+                # Остальная логика отправки ответа пользователю остается без изменений
+                if response:
+                    await message.answer(response, parse_mode=ParseMode.MARKDOWN)
+                    await save_message(user_id, "assistant", response)
+                    await maybe_update_summary(user_id)
+                    print(f"✅ Ответ отправлен: {len(response)} символов")
+                else:
+                    await message.answer(get_user_friendly_message("Не удалось получить ответ", lang))
+                    
+            except Exception as e:
+                log_error_with_context(e, {"user_id": user_id, "action": "gpt_request"})
+                await message.answer(get_user_friendly_message(e, lang))
+                    
         except Exception as e:
-            log_error_with_context(e, {"user_id": user_id, "action": "handle_main_question"})
+            log_error_with_context(e, {"user_id": user_id, "action": "message_processing"})
             await message.answer(get_user_friendly_message(e, lang))
 
 @dp.callback_query(lambda c: c.data == "settings_profile")

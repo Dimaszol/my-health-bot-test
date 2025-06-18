@@ -3,6 +3,7 @@
 import os
 import asyncio
 import asyncpg
+import re
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 import json
@@ -12,7 +13,7 @@ from error_handler import log_error_with_context
 db_pool: Optional[asyncpg.Pool] = None
 
 async def get_db_connection():
-    """Получить соединение с базой даннфх"""
+    """Получить соединение с базой данных"""
     global db_pool
     if db_pool is None:
         raise Exception("❌ База данных не инициализирована")
@@ -270,14 +271,14 @@ async def save_document(user_id: int, title: str, file_path: str, file_type: str
     finally:
         await release_db_connection(conn)
 
-async def get_user_documents(user_id: int, limit: int = 10) -> List[Dict]:
+async def get_user_documents(user_id: int, limit: int = 999) -> List[Dict]:
     """Получить документы пользователя"""
     conn = await get_db_connection()
     try:
         rows = await conn.fetch(
             """SELECT id, title, file_type, uploaded_at as date 
                FROM documents 
-               WHERE user_id = $1 
+               WHERE user_id = $1 AND confirmed = TRUE
                ORDER BY uploaded_at DESC 
                LIMIT $2""",
             user_id, limit
@@ -360,74 +361,6 @@ async def decrease_user_limit(user_id: int, limit_type: str, amount: int = 1) ->
         return True
     except Exception as e:
         log_error_with_context(e, {"function": "decrease_user_limit", "user_id": user_id})
-        return False
-    finally:
-        await release_db_connection(conn)
-
-async def get_db_stats() -> Dict:
-    """Получает статистику базы данных"""
-    import logging
-    logger = logging.getLogger(__name__)  # ✅ ДОБАВИЛИ
-    
-    global db_pool
-    if not db_pool:
-        return {"status": "error", "message": "DB pool not initialized"}
-    
-    conn = await get_db_connection()
-    try:
-        # Статистика подключений
-        pool_stats = {
-            "pool_size": db_pool.get_size(),
-            "pool_min_size": db_pool.get_min_size(),
-            "pool_max_size": db_pool.get_max_size(),
-            "pool_idle": db_pool.get_idle_size(),
-        }
-        
-        # Статистика таблиц
-        tables_stats = await conn.fetch("""
-            SELECT 
-                schemaname,
-                tablename,
-                n_tup_ins as inserts,
-                n_tup_upd as updates,
-                n_tup_del as deletes
-            FROM pg_stat_user_tables 
-            ORDER BY n_tup_ins DESC
-            LIMIT 10
-        """)
-        
-        # Общая статистика БД
-        db_size = await conn.fetchval("SELECT pg_database_size(current_database())")
-        db_version = await conn.fetchval("SELECT version()")
-        
-        return {
-            "status": "healthy",
-            "database_size": db_size,
-            "database_version": db_version[:50] + "..." if len(db_version) > 50 else db_version,
-            "pool_stats": pool_stats,
-            "tables_count": len(tables_stats),
-            "tables_stats": [dict(row) for row in tables_stats]
-        }
-        
-    except Exception as e:
-        print(f"❌ Ошибка получения статистики БД: {e}")  # ✅ ЗАМЕНИЛИ НА print
-        return {"status": "error", "message": str(e)}
-    finally:
-        await release_db_connection(conn)
-
-async def db_health_check() -> bool:
-    """Проверяет здоровье базы данных"""
-    global db_pool
-    if not db_pool:
-        return False
-    
-    conn = await get_db_connection()
-    try:
-        # Простой тест подключения
-        result = await conn.fetchval("SELECT 1")
-        return result == 1
-    except Exception as e:
-        print(f"❌ Health check failed: {e}")  # ✅ ЗАМЕНИЛИ НА print
         return False
     finally:
         await release_db_connection(conn)
@@ -718,26 +651,6 @@ async def db_health_check() -> bool:
     except Exception:
         return False
 
-# 🔄 СОВМЕСТИМОСТЬ СО СТАРЫМИ ИМЕНАМИ ФУНКЦИЙ
-async def get_user_documents(user_id: int, limit: int = 10) -> List[Dict]:
-    """Получить документы пользователя"""
-    conn = await get_db_connection()
-    try:
-        rows = await conn.fetch(
-            """SELECT id, title, file_type, uploaded_at as date 
-               FROM documents 
-               WHERE user_id = $1 AND confirmed = TRUE
-               ORDER BY uploaded_at DESC 
-               LIMIT $2""",
-            user_id, limit
-        )
-        return [dict(row) for row in rows]
-    except Exception as e:
-        log_error_with_context(e, {"function": "get_user_documents", "user_id": user_id})
-        return []
-    finally:
-        await release_db_connection(conn)
-
 async def update_user_field(user_id: int, field: str, value: Any) -> bool:
     """Совместимость: update_user_field -> update_user_profile"""
     return await update_user_profile(user_id, field, value)
@@ -801,11 +714,6 @@ async def is_fully_registered(user_id: int) -> bool:
     finally:
         await release_db_connection(conn)
 
-async def get_user_name(user_id: int) -> Optional[str]:
-    """Получить имя пользователя (совместимость)"""
-    user_data = await get_user(user_id)
-    return user_data.get('name') if user_data else None
-
 async def update_document_confirmed(document_id: int, confirmed: int) -> bool:
     """Обновить статус подтверждения документа"""
     conn = await get_db_connection()
@@ -821,85 +729,10 @@ async def update_document_confirmed(document_id: int, confirmed: int) -> bool:
     finally:
         await release_db_connection(conn)
 
-async def get_documents_by_user(user_id: int, limit: int = 10) -> List[Dict]:
-    """Совместимость: get_documents_by_user -> get_user_documents"""
+async def get_documents_by_user(user_id: int, limit: int = 999) -> List[Dict]:
     return await get_user_documents(user_id, limit)
 
 # 🔧 ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ СОВМЕСТИМОСТИ
-
-async def execute_query(query: str, params: tuple = ()) -> int:
-    """
-    Выполнение простого запроса (INSERT, UPDATE, DELETE)
-    Возвращает количество затронутых строк
-    """
-    conn = await get_db_connection()
-    try:
-        # Преобразуем SQLite синтаксис в PostgreSQL
-        pg_query = query.replace('?', '${}').format(*[i+1 for i in range(len(params))])
-        result = await conn.execute(pg_query, *params)
-        
-        # Извлекаем количество строк из результата
-        if result.startswith('INSERT'):
-            return 1
-        elif result.startswith('UPDATE'):
-            return int(result.split()[-1]) if result.split()[-1].isdigit() else 1
-        elif result.startswith('DELETE'):
-            return int(result.split()[-1]) if result.split()[-1].isdigit() else 1
-        else:
-            return 0
-    except Exception as e:
-        log_error_with_context(e, {"function": "execute_query", "query": query[:100]})
-        return 0
-    finally:
-        await release_db_connection(conn)
-
-async def fetch_one(query: str, params: tuple = ()) -> Optional[tuple]:
-    """Выполнение SELECT запроса, возврат одной строки как tuple"""
-    conn = await get_db_connection()
-    try:
-        # Преобразуем SQLite синтаксис в PostgreSQL
-        pg_query = query.replace('?', '${}').format(*[i+1 for i in range(len(params))])
-        row = await conn.fetchrow(pg_query, *params)
-        return tuple(row) if row else None
-    except Exception as e:
-        log_error_with_context(e, {"function": "fetch_one", "query": query[:100]})
-        return None
-    finally:
-        await release_db_connection(conn)
-
-async def fetch_all(query: str, params: tuple = ()) -> List[tuple]:
-    """Выполнение SELECT запроса, возврат всех строк как list of tuples"""
-    conn = await get_db_connection()
-    try:
-        # Преобразуем SQLite синтаксис в PostgreSQL
-        pg_query = query.replace('?', '${}').format(*[i+1 for i in range(len(params))])
-        rows = await conn.fetch(pg_query, *params)
-        return [tuple(row) for row in rows]
-    except Exception as e:
-        log_error_with_context(e, {"function": "fetch_all", "query": query[:100]})
-        return []
-    finally:
-        await release_db_connection(conn)
-
-async def insert_and_get_id(query: str, params: tuple = ()) -> int:
-    """Выполнение INSERT и возврат ID новой записи"""
-    conn = await get_db_connection()
-    try:
-        # Преобразуем SQLite синтаксис в PostgreSQL и добавляем RETURNING id
-        pg_query = query.replace('?', '${}').format(*[i+1 for i in range(len(params))])
-        
-        if 'RETURNING' not in pg_query.upper():
-            # Находим название таблицы и добавляем RETURNING id
-            if 'INSERT INTO' in pg_query.upper():
-                pg_query = pg_query.rstrip(';') + ' RETURNING id'
-        
-        result = await conn.fetchval(pg_query, *params)
-        return result if result else 0
-    except Exception as e:
-        log_error_with_context(e, {"function": "insert_and_get_id", "query": query[:100]})
-        return 0
-    finally:
-        await release_db_connection(conn)
 
 async def get_medications(user_id: int) -> List[Dict]:
     """Получить список лекарств пользователя (совместимость со старой версией)"""
@@ -980,10 +813,6 @@ def validate_string(value, max_length=500, field_name="поле"):
     
     return value
 
-# Добавьте ЭТИ ФУНКЦИИ в КОНЕЦ вашего db_postgresql.py
-
-import re
-
 def convert_sql_to_postgresql(query: str, params: tuple) -> tuple:
     """Конвертирует SQLite запрос в PostgreSQL"""
     placeholder_count = 0
@@ -996,7 +825,6 @@ def convert_sql_to_postgresql(query: str, params: tuple) -> tuple:
     converted_query = re.sub(r'\?', replace_placeholder, query)
     return converted_query, params
 
-# ✅ СОВМЕСТИМЫЕ ФУНКЦИИ (добавить в конец db_postgresql.py)
 async def fetch_one(query: str, params: tuple = ()):
     """Совместимая версия fetch_one с автоконвертацией SQLite → PostgreSQL"""
     pg_query, pg_params = convert_sql_to_postgresql(query, params)

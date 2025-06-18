@@ -24,53 +24,10 @@ def encode_file_to_base64(file_path, user_id):
     mime_type, _ = mimetypes.guess_type(file_path)
     return f"data:{mime_type};base64,{encoded}"
 
-async def send_to_gpt_vision(file_path: str):  # ✅ ИСПРАВЛЕНО: добавлен async
-    """Обёртка для Vision, использующая обновлённый промт с удалением персональных данных"""
-    with open(file_path, "rb") as f:
-        image_bytes = f.read()
-
-    image_base64 = base64.b64encode(image_bytes).decode("utf-8")
-
-    system_prompt = (
-        "You are a medical assistant specialized in extracting text from scanned documents and images. "
-        "⚠️ Your task is to accurately extract all readable medical text **in the original language** of the document. "
-        "⚠️ However, you must remove all personal and identifying information — including full names of patients or doctors, age, gender, addresses, card numbers, clinic or hospital names. "
-        "Do not summarize, skip, or interpret the content. Do not add explanations."
-        "Just extract the pure medical content, keeping only one key date (the most relevant or latest) if multiple dates are present."
-    )
-
-    user_prompt = (
-        "This is a scanned medical document (e.g., discharge summary, lab report, consultation, prescription, or form). "
-        "Extract the entire readable text **in the same language as in the image**, but remove all of the following:\n"
-        "- Full names of any individuals (patients, doctors, lab staff)\n"
-        "- Age, gender\n"
-        "- Addresses, contact details, ID or card numbers\n"
-        "- Clinic, hospital, laboratory names or logos\n\n"
-        "Return only the medical text with just one key date — the date of the conclusion or result. Ignore and remove all other dates."
-        "Do NOT explain your actions or mention what was removed. Do NOT translate the content. Just return the clean medical text."
-    )
-
-    # ✅ ИСПРАВЛЕНО: используем асинхронный клиент
-    from gpt import client
-    response = await client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": [
-                {"type": "text", "text": user_prompt},
-                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
-            ]}
-        ],
-        max_tokens=1500,
-        temperature=0
-    )
-
-    raw_text = response.choices[0].message.content.strip()
-    print("\n[Vision Output]:")
-    print(raw_text)
-
-    summary = raw_text  # временно оставляем одинаково
-    return raw_text, summary
+async def send_to_gpt_vision(image_path: str, lang: str = "ru", prompt: str = None):
+    """Перенаправляем на Gemini вместо GPT Vision"""
+    from gemini_analyzer import send_to_gemini_vision
+    return await send_to_gemini_vision(image_path, lang, prompt)
 
 
 def convert_pdf_to_images(pdf_path: str, output_dir: str, max_pages: int = 5):

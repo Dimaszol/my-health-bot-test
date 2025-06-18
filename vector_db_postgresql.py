@@ -128,52 +128,114 @@ class PostgreSQLVectorDB:
         finally:
             await self.db_pool.release(conn)
     
-    async def search_similar_chunks(self, user_id: int, query: str, limit: int = 5) -> List[Dict]:
+    async def search_similar_chunks(self, user_id: int, query: str, limit: int = 5, 
+                              similarity_threshold: float = 0.7) -> List[Dict]:
         """
-        Векторный поиск по чанкам пользователя
+        Векторный поиск с фильтрацией по порогу релевантности
         
         Args:
             user_id: ID пользователя
             query: Поисковый запрос
-            limit: Количество результатов
-            
+            limit: Максимальное количество результатов
+            similarity_threshold: Минимальный порог сходства (0.0-1.0)
+                - 0.85+ = очень релевантные результаты
+                - 0.7+ = релевантные результаты  
+                - 0.5+ = умеренно релевантные
+                - <0.5 = слабо релевантные (лучше исключить)
+                
         Returns:
-            Список релевантных чанков
+            Список релевантных чанков, отсортированных по similarity
         """
         conn = await self.db_pool.acquire()
         try:
             # 🧠 Получаем эмбеддинг запроса
             query_embedding = await self.get_embedding(query)
             
-            # 🔍 Векторный поиск
-            results = await conn.fetch("""
-                SELECT 
-                    dv.chunk_text,
-                    dv.metadata,
-                    dv.keywords,
-                    d.title as document_title,
-                    d.uploaded_at,
-                    (dv.embedding <=> $1::vector) as distance
-                FROM document_vectors dv
-                JOIN documents d ON d.id = dv.document_id
-                WHERE dv.user_id = $2
-                ORDER BY dv.embedding <=> $1::vector
-                LIMIT $3
-            """, query_embedding, user_id, limit)
+            # 🔧 ИСПРАВЛЕНИЕ: Конвертируем list в строку для PostgreSQL
+            if isinstance(query_embedding, list):
+                embedding_str = '[' + ','.join(map(str, query_embedding)) + ']'
+            else:
+                embedding_str = query_embedding
             
-            # 📊 Форматируем результаты
+            logger.info(f"🧠 Embedding получен: {len(query_embedding)} dimensions")
+            
+            # 🔍 Векторный поиск с фильтрацией по threshold
+            # Ищем больше результатов для последующей фильтрации
+            search_limit = min(limit * 3, 20)  # Не больше 20 для производительности
+            
+            results = await conn.fetch("""
+                WITH ranked_chunks AS (
+                    SELECT 
+                        dv.chunk_text,
+                        dv.metadata,
+                        dv.keywords,
+                        d.title as document_title,
+                        d.uploaded_at,
+                        (dv.embedding <=> $1::vector) as distance,
+                        (1 - (dv.embedding <=> $1::vector)) as similarity,
+                        -- 📊 Дополнительные факторы ранжирования
+                        CASE 
+                            WHEN d.uploaded_at > NOW() - INTERVAL '30 days' THEN 0.1
+                            WHEN d.uploaded_at > NOW() - INTERVAL '90 days' THEN 0.05
+                            ELSE 0.0
+                        END as recency_boost,
+                        LENGTH(dv.chunk_text) as chunk_length
+                    FROM document_vectors dv
+                    JOIN documents d ON d.id = dv.document_id
+                    WHERE dv.user_id = $2
+                    ORDER BY dv.embedding <=> $1::vector
+                    LIMIT $3
+                )
+                SELECT 
+                    chunk_text,
+                    metadata,
+                    keywords,
+                    document_title,
+                    uploaded_at,
+                    distance,
+                    similarity,
+                    (similarity + recency_boost) as final_score,
+                    chunk_length
+                FROM ranked_chunks
+                WHERE similarity >= $4  -- 🎯 ФИЛЬТРАЦИЯ ПО THRESHOLD
+                ORDER BY final_score DESC, similarity DESC
+                LIMIT $5
+            """, embedding_str, user_id, search_limit, similarity_threshold, limit)
+            
+            # 📊 Форматируем результаты с подробной информацией
             chunks = []
             for row in results:
-                chunks.append({
+                # Безопасная обработка metadata
+                try:
+                    metadata = json.loads(row['metadata']) if row['metadata'] else {}
+                except (json.JSONDecodeError, TypeError):
+                    metadata = {}
+                
+                chunk_data = {
                     "chunk_text": row['chunk_text'],
-                    "metadata": json.loads(row['metadata']),
+                    "metadata": metadata,
                     "keywords": row['keywords'],
                     "document_title": row['document_title'],
                     "uploaded_at": row['uploaded_at'],
-                    "similarity": 1 - row['distance']  # Конвертируем distance в similarity
-                })
+                    "similarity": round(float(row['similarity']), 3),
+                    "final_score": round(float(row['final_score']), 3),
+                    "chunk_length": row['chunk_length']
+                }
+                chunks.append(chunk_data)
             
-            logger.info(f"🔍 Найдено {len(chunks)} релевантных чанков для пользователя {user_id}")
+            # 📈 Логирование для отладки
+            if chunks:
+                best_similarity = chunks[0]['similarity']
+                worst_similarity = chunks[-1]['similarity']
+                logger.info(f"🔍 Найдено {len(chunks)} релевантных чанков для пользователя {user_id}")
+                logger.info(f"   📊 Similarity: {worst_similarity:.3f} - {best_similarity:.3f}")
+                
+                # 🚨 Предупреждение о низкой релевантности
+                if best_similarity < 0.6:
+                    logger.warning(f"⚠️ Низкая релевантность запроса: '{query[:50]}...' (max={best_similarity:.3f})")
+            else:
+                logger.info(f"❌ Не найдено релевантных чанков для запроса: '{query[:50]}...' (threshold={similarity_threshold})")
+                
             return chunks
             
         except Exception as e:
@@ -201,13 +263,14 @@ class PostgreSQLVectorDB:
                     dv.keywords,
                     d.title as document_title,
                     d.uploaded_at,
-                    ts_rank(to_tsvector('russian', dv.chunk_text || ' ' || dv.keywords), 
-                           plainto_tsquery('russian', $1)) as rank
+                    -- Используем английскую конфигурацию для английских ключевых слов
+                    ts_rank(to_tsvector('english', dv.keywords), 
+                        plainto_tsquery('english', $1)) as rank
                 FROM document_vectors dv
                 JOIN documents d ON d.id = dv.document_id
                 WHERE dv.user_id = $2
-                  AND (to_tsvector('russian', dv.chunk_text || ' ' || dv.keywords) @@ 
-                       plainto_tsquery('russian', $1))
+                AND (to_tsvector('english', dv.keywords) @@ 
+                    plainto_tsquery('english', $1))
                 ORDER BY rank DESC
                 LIMIT $3
             """, keywords, user_id, limit)
