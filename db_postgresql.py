@@ -275,7 +275,7 @@ async def get_user_documents(user_id: int, limit: int = 10) -> List[Dict]:
     conn = await get_db_connection()
     try:
         rows = await conn.fetch(
-            """SELECT id, title, file_type, uploaded_at 
+            """SELECT id, title, file_type, uploaded_at as date 
                FROM documents 
                WHERE user_id = $1 
                ORDER BY uploaded_at DESC 
@@ -719,9 +719,24 @@ async def db_health_check() -> bool:
         return False
 
 # 🔄 СОВМЕСТИМОСТЬ СО СТАРЫМИ ИМЕНАМИ ФУНКЦИЙ
-async def get_documents_by_user(user_id: int, limit: int = 10) -> List[Dict]:
-    """Совместимость: get_documents_by_user -> get_user_documents"""
-    return await get_user_documents(user_id, limit)
+async def get_user_documents(user_id: int, limit: int = 10) -> List[Dict]:
+    """Получить документы пользователя"""
+    conn = await get_db_connection()
+    try:
+        rows = await conn.fetch(
+            """SELECT id, title, file_type, uploaded_at as date 
+               FROM documents 
+               WHERE user_id = $1 AND confirmed = TRUE
+               ORDER BY uploaded_at DESC 
+               LIMIT $2""",
+            user_id, limit
+        )
+        return [dict(row) for row in rows]
+    except Exception as e:
+        log_error_with_context(e, {"function": "get_user_documents", "user_id": user_id})
+        return []
+    finally:
+        await release_db_connection(conn)
 
 async def update_user_field(user_id: int, field: str, value: Any) -> bool:
     """Совместимость: update_user_field -> update_user_profile"""

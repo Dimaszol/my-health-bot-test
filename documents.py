@@ -38,7 +38,7 @@ async def handle_show_documents(target, user_id: int):
         from utils.security import safe_send_message
         await safe_send_message(
             target,
-            f"🕒 {date[:10]}",
+            f"🕒 {str(date)[:10]}",
             title=f"📄 {title}",
             reply_markup=keyboard
         )
@@ -67,7 +67,7 @@ async def handle_ignore_document(callback: types.CallbackQuery, doc_id: int):
         await callback.message.answer(t("document_not_found", lang))
         return
 
-    await update_document_confirmed(doc_id, confirmed=0)
+    await update_document_confirmed(doc_id, confirmed=False)
     mark_chunks_unconfirmed(doc_id)
     await callback.message.delete()
     await callback.answer(t("excluded", lang))

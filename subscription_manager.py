@@ -419,7 +419,10 @@ class SubscriptionManager:
             if not expires_at:
                 return
             
-            expiry_date = datetime.fromisoformat(expires_at)
+            if isinstance(expires_at, str):
+                expiry_date = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+            else:
+                expiry_date = expires_at
             now = datetime.now()
             
             if now >= expiry_date:

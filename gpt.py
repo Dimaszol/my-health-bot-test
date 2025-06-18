@@ -10,6 +10,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from error_handler import safe_openai_call, OpenAIError, log_error_with_context, FileProcessingError
 from subscription_manager import check_gpt4o_limit, spend_gpt4o_limit
+from gemini_analyzer import send_to_gemini_vision
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -168,46 +169,8 @@ async def extract_text_from_image(image_path: str) -> str:  # 🔄 async
     return response.choices[0].message.content.strip()
 
 @async_safe_openai_call(max_retries=2, delay=3.0)
-async def send_to_gpt_vision(image_path: str, lang: str, prompt: str = None):  # 🔄 async
-    """Безопасный анализ медицинского снимка"""
-    try:
-        with open(image_path, "rb") as f:
-            image_bytes = f.read()
-    except FileNotFoundError:
-        raise FileProcessingError(f"Файл {image_path} не найден", "Файл не найден для обработки")
-
-    image_base64 = base64.b64encode(image_bytes).decode("utf-8")
-
-    system_prompt = (
-        "You are a senior radiologist with 15+ years of experience in interpreting all types of medical imaging — "
-        "including X-rays, MRI, CT, ultrasound, endoscopic photos, dermatological photos, and wound images.\n\n"
-        "Your task:\n"
-        "1. Analyze the medical image carefully and describe all relevant visual findings.\n"
-        "2. Use proper clinical terminology: anatomy, annotations, abnormalities.\n"
-        "3. DO NOT provide diagnosis or treatment suggestions.\n"
-        "4. If the image is a scanned document, lab report, prescription, or any non-visual clinical record — do NOT analyze its content.\n"
-        "5. Simply reply: 'This is not a medical image'\n"
-        f"⚠️ ALWAYS respond strictly in the '{lang}' language, regardless of the input or image content."
-    )
-
-    user_prompt = prompt or (
-        "Please analyze this image ONLY if it is a medical scan or clinical photograph (like X-ray, MRI, CT, ultrasound, dermatology, wound, etc).\n"
-        "If it is a document, text, chart, or anything other than an actual image — do not analyze it and reply that it's not a medical image."
-    )
-
-    response = await client.chat.completions.create(  # 🔄 await
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": [
-                {"type": "text", "text": user_prompt},
-                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
-            ]}
-        ],
-        max_tokens=1500,
-        temperature=0.4
-    )
-    return response.choices[0].message.content.strip(), ""
+async def send_to_gpt_vision(image_path: str, lang: str, prompt: str = None):
+    return await send_to_gemini_vision(image_path, lang, prompt)
 
 @async_safe_openai_call(max_retries=2, delay=1.0)
 async def update_medications_via_gpt(user_input: str, current_list: list) -> list:  # 🔄 async

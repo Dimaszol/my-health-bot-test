@@ -145,7 +145,11 @@ class SubscriptionHandlers:
                 if limits.get('expires_at'):
                     try:
                         from datetime import datetime
-                        expiry_date = datetime.fromisoformat(limits['expires_at'])
+                        expires_at_value = limits['expires_at']
+                        if isinstance(expires_at_value, str):
+                            expiry_date = datetime.fromisoformat(expires_at_value.replace('Z', '+00:00'))
+                        else:
+                            expiry_date = expires_at_value
                         formatted_date = expiry_date.strftime("%d.%m.%Y")
                         text_parts.append(f"• {t['expires']}: <b>{formatted_date}</b>")
                     except:
@@ -616,7 +620,10 @@ class SubscriptionHandlers:
         expires_at = limits.get('expires_at')
         if expires_at:
             try:
-                expiry_date = datetime.fromisoformat(expires_at)
+                if isinstance(expires_at, str):
+                    expiry_date = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+                else:
+                    expiry_date = expires_at
                 if expiry_date > datetime.now():
                     formatted_date = expiry_date.strftime("%d.%m.%Y")
                     text_parts.append(f"{t['expires']}: <b>{formatted_date}</b>")
