@@ -1,162 +1,128 @@
-Структура БД: 
-
-📋 Таблица: users
-  - user_id (INTEGER)
-  - name (TEXT)
-  - created_at (DATETIME)
-  - birth_year (INTEGER)
-  - gender (TEXT)
-  - height_cm (INTEGER)
-  - weight_kg (REAL)
-  - chronic_conditions (TEXT)
-  - medications (TEXT)
-  - allergies (TEXT)
-  - smoking (TEXT)
-  - alcohol (TEXT)
-  - physical_activity (TEXT)
-  - family_history (TEXT)
-  - last_updated (DATETIME)
-  - language (TEXT)
-
-📋 Таблица: sqlite_sequence
-  - name ()
-  - seq ()
-
-📋 Таблица: chat_history
-  - id (INTEGER)
-  - user_id (INTEGER)
-  - role (TEXT)
-  - message (TEXT)
-  - timestamp (DATETIME)
-
-📋 Таблица: conversation_summary
-  - id (INTEGER)
-  - user_id (INTEGER)
-  - summary_text (TEXT)
-  - last_message_id (INTEGER)
-  - updated_at (DATETIME)
-
-📋 Таблица: documents
-  - id (INTEGER)
-  - user_id (INTEGER)
-  - title (TEXT)
-  - file_path (TEXT)
-  - file_type (TEXT)
-  - raw_text (TEXT)
-  - summary (TEXT)
-  - confirmed (BOOLEAN)
-  - uploaded_at (DATETIME)
-  - vector_id (TEXT)
-
-📋 Таблица: medications
-  - id (INTEGER)
-  - user_id (INTEGER)
-  - name (TEXT)
-  - time (TEXT)
-  - label (TEXT)
-
-📋 Таблица: user_limits
-  - user_id (INTEGER)
-  - documents_left (INTEGER)
-  - gpt4o_queries_left (INTEGER)
-  - subscription_type (TEXT)
-  - subscription_expires_at (DATETIME)
-  - created_at (DATETIME)
-  - updated_at (DATETIME)
-
-📋 Таблица: transactions
-  - id (INTEGER)
-  - user_id (INTEGER)
-  - stripe_session_id (TEXT)
-  - amount_usd (REAL)
-  - package_type (TEXT)
-  - status (TEXT)
-  - payment_method (TEXT)
-  - created_at (DATETIME)
-  - completed_at (DATETIME)
-  - package_id (TEXT)
-  - documents_granted (INTEGER)
-  - queries_granted (INTEGER)
-
-📋 Таблица: subscription_packages
-  - id (TEXT)
-  - name (TEXT)
-  - price_usd (REAL)
-  - documents_included (INTEGER)
-  - gpt4o_queries_included (INTEGER)
-  - type (TEXT)
-  - is_active (BOOLEAN)
-  - created_at (DATETIME)
-
-📋 Таблица: user_subscriptions
-  - id (INTEGER)
-  - user_id (INTEGER)
-  - stripe_subscription_id (TEXT)
-  - package_id (TEXT)
-  - status (TEXT)
-  - created_at (DATETIME)
-  - cancelled_at (DATETIME)
-
 # 🧠 Health Assistant Bot
 
-Телеграм-бот, который анализирует медицинские документы, извлекает важную информацию и позволяет пользователю задавать вопросы своему "виртуальному врачу", powered by GPT-4.
+Телеграм-бот для анализа медицинских документов с использованием GPT-4, построенный на PostgreSQL и pgvector для векторного поиска.
 
 ## 🚀 Возможности
 
-- 📄 Загрузка PDF, DOCX, TXT и других медицинских файлов
-- 🤖 Интеграция с OpenAI GPT-4 и GPT-4o-mini
-- 🔍 Векторный поиск по истории пользователя (ChromaDB)
-- 🧾 Профили пациентов, анализ истории, интерпретация отчётов
-- 🧠 Поддержка персонализированных ответов на медицинские вопросы
-- 💳 Подписка на расширенные функции (GPT-4)
+- 📄 Загрузка и анализ медицинских документов (PDF, DOCX, TXT, изображения)
+- 🤖 Интеграция с OpenAI GPT-4o для медицинских консультаций
+- 🔍 Векторный поиск по истории пользователя через PostgreSQL + pgvector
+- 👤 Детальные профили пациентов с медицинской историей
+- 💬 Автоматические сводки разговоров каждые 5 сообщений
+- 💳 Система подписок и лимитов через Stripe
+- 🖼️ Анализ медицинских изображений через Google Gemini
+- 🌐 Мультиязычная поддержка (русский/украинский/английский)
 
-## 🛠️ Установка
+## 🛠️ Технологический стек
 
-1. Клонируй репозиторий:
-```bash
-git clone https://github.com/your_username/your_repo_name.git
-cd your_repo_name
-Установи зависимости:
+- **Backend**: Python 3.8+, aiogram 3.x
+- **База данных**: PostgreSQL с pgvector расширением
+- **AI**: OpenAI GPT-4o, Google Gemini Vision
+- **Платежи**: Stripe Integration
+- **Деплой**: Готов для Docker/Kubernetes
 
-bash
-Копировать
-Редактировать
-pip install -r requirements.txt
-Создай файл .env на основе .env.example и добавь свои ключи.
+## ⚙️ Переменные окружения
 
-Запусти бота:
+Создайте файл `.env` на основе `.env.example`:
 
-bash
-Копировать
-Редактировать
-python main.py
-⚙️ .env переменные
-Создай .env с такими переменными:
-
-env
-Копировать
-Редактировать
+```env
+# 🤖 Telegram
 BOT_TOKEN=your_telegram_bot_token
+
+# 🧠 OpenAI
 OPENAI_API_KEY=your_openai_api_key
-CHROMA_OPENAI_API_KEY=your_chroma_api_key
-📦 Структура проекта
-main.py — запуск бота
 
-upload.py — загрузка и разбор файлов
+# 🗄️ PostgreSQL (Supabase)
+DATABASE_URL=postgresql://user:password@host:port/database
 
-gpt.py — вызов GPT-4 / GPT-4o
+# 💳 Stripe (опционально)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 
-db.py и db_pool.py — работа с SQLite
+# 🔍 Gemini Vision (опционально)
+GEMINI_API_KEY=your_gemini_api_key
+```
 
-vector_db.py и vector_utils.py — ChromaDB для поиска
+## 🗄️ Структура базы данных (PostgreSQL)
 
-registration.py, documents.py — работа с пользователями и файлами
+### Основные таблицы:
+- **users** - профили пользователей и медицинская анкета
+- **documents** - загруженные медицинские документы
+- **document_vectors** - векторные эмбеддинги для поиска
+- **chat_history** - история сообщений
+- **conversation_summary** - автоматические сводки разговоров
+- **user_limits** - лимиты и подписки пользователей
+- **transactions** - история платежей через Stripe
 
-error_handler.py — централизованная обработка ошибок
+## 🚀 Установка и запуск
 
-🛡️ Безопасность
-Токены и ключи не хранятся в репозитории
+1. **Клонирование:**
+```bash
+git clone https://github.com/your_username/health-assistant-bot.git
+cd health-assistant-bot
+```
 
-Базы и логи исключены через .gitignore
+2. **Виртуальное окружение:**
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
+```
 
-Валидация файлов и ограничение расширений
+3. **Зависимости:**
+```bash
+pip install -r requirements.txt
+```
+
+4. **Конфигурация:**
+- Создайте PostgreSQL базу (рекомендуется Supabase)
+- Скопируйте `.env.example` в `.env`
+- Заполните все необходимые API ключи
+
+5. **Запуск:**
+```bash
+python main.py
+```
+
+## 📦 Основные модули
+
+- `main.py` - точка входа и Telegram handlers
+- `db_postgresql.py` - работа с PostgreSQL
+- `vector_db_postgresql.py` - векторный поиск через pgvector
+- `gpt.py` - интеграция с OpenAI API
+- `upload.py` - обработка загруженных файлов
+- `subscription_manager.py` - система подписок и лимитов
+- `error_handler.py` - централизованная обработка ошибок
+
+## 🛡️ Безопасность
+
+- ✅ Секретные ключи в `.env` (исключены из Git)
+- ✅ Валидация загружаемых файлов
+- ✅ Rate limiting для предотвращения злоупотреблений
+- ✅ Безопасная работа с пользовательскими данными
+- ✅ Логирование всех операций
+
+## 🔄 Миграция с предыдущих версий
+
+Проект перенесен с SQLite/ChromaDB на PostgreSQL/pgvector для лучшей масштабируемости.
+
+## 🎯 Планы развития
+
+- 🌐 Web-интерфейс (FastAPI + React)
+- 📱 Мобильное приложение
+- 🐳 Docker контейнеризация
+- ☁️ Облачное развертывание
+- 📊 Analytics dashboard
+- 🔗 API для интеграций
+
+## 📄 Лицензия
+
+MIT License - см. файл LICENSE
+
+## 🤝 Контрибуция
+
+1. Fork проекта
+2. Создайте feature branch
+3. Commit изменения
+4. Push в branch
+5. Создайте Pull Request

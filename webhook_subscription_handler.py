@@ -173,7 +173,7 @@ class SubscriptionWebhookHandler:
             )
             
             if result['success']:
-                from db_pool import execute_query
+                from db_postgresql import execute_query
                 await execute_query("""
                     INSERT OR REPLACE INTO user_subscriptions 
                     (user_id, stripe_subscription_id, package_id, status, created_at)

@@ -6,13 +6,9 @@ python-dotenv==1.1.0
 openai==1.78.1
 tiktoken==0.9.0
 
-# 🗄️ БАЗА ДАННЫХ (ДОБАВЛЕНЫ PostgreSQL)
+# 🗄️ БАЗА ДАННЫХ PostgreSQL
 asyncpg==0.29.0
 psycopg2-binary==2.9.9
-
-# 🔍 ВЕКТОРНЫЙ ПОИСК
-chromadb==1.0.9
-sentence-transformers==2.7.0
 
 # 📄 ОБРАБОТКА ФАЙЛОВ
 pdf2image==1.17.0

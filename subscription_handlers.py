@@ -409,7 +409,7 @@ class SubscriptionHandlers:
             stripe.Subscription.delete(stripe_subscription_id)
             
             # Обновляем статус в нашей БД
-            from db_pool import execute_query
+            from db_postgresql import execute_query
             await execute_query("""
                 UPDATE user_subscriptions 
                 SET status = 'cancelled', cancelled_at = ?

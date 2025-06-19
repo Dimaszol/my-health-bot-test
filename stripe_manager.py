@@ -239,7 +239,7 @@ class StripeManager:
     async def get_user_payment_history(user_id: int, limit: int = 10) -> list:
         """Получает историю платежей пользователя"""
         try:
-            from db_pool import fetch_all
+            from db_postgresql import fetch_all
             
             transactions = await fetch_all("""
                 SELECT package_type, amount_usd, status, created_at, completed_at

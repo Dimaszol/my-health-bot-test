@@ -44,6 +44,13 @@ wheels/
 .installed.cfg
 *.egg
 
+# 🐍 ВИРТУАЛЬНОЕ ОКРУЖЕНИЕ (ДОБАВИТЬ!)
+venv/
+env/
+ENV/
+.venv/
+.env/
+
 # 🎯 IDE
 .vscode/
 .idea/
@@ -72,3 +79,36 @@ test_*.py
 *_test.py
 *_debug.py
 debug_*.py
+
+# 🧹 УСТАРЕВШИЕ ФАЙЛЫ И BACKUP (ДОБАВИТЬ!)
+*.backup_*
+*_backup_*
+cleanup_vector_db.py
+migrate_imports.py
+clear_vector_db.py
+
+# 🔐 ДОПОЛНИТЕЛЬНАЯ БЕЗОПАСНОСТЬ (ДОБАВИТЬ!)
+config.py
+secrets.json
+*.key
+*.pem
+*.crt
+
+# 📊 СПЕЦИФИЧНЫЕ ДЛЯ МЕДИЦИНСКОГО БОТА (ДОБАВИТЬ!)
+poppler/
+*.pdf
+*.doc
+*.docx
+*.jpg
+*.jpeg
+*.png
+*.gif
+
+# 🚫 СИСТЕМНЫЕ ФАЙЛЫ WINDOWS/MAC (ДОБАВИТЬ!)
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.AppleDouble
+.LSOverride

@@ -5,7 +5,7 @@ import asyncio
 from datetime import datetime
 from stripe_config import StripeConfig
 from subscription_manager import SubscriptionManager
-from db_pool import execute_query, fetch_one
+from db_postgresql import execute_query, fetch_one
 
 async def handle_stripe_webhook(payload: str, sig_header: str):
     """Обрабатывает webhook события для подписок"""
