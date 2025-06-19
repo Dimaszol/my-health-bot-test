@@ -97,12 +97,25 @@ async def maybe_update_summary(user_id):
 
     user_messages = []
     for msg in new_messages:
-        if isinstance(msg, dict):
-            if msg.get('role') == 'user':
-                user_messages.append(msg)
-        elif isinstance(msg, (list, tuple)) and len(msg) >= 2:
-            if msg[1] == 'user':  # или msg[0] в зависимости от формата
-                user_messages.append(msg)
+        try:
+            if isinstance(msg, dict):
+                if msg.get('role') == 'user':
+                    user_messages.append(msg)
+            elif isinstance(msg, (list, tuple)) and len(msg) >= 2:
+                # ❗ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: проверяем правильный индекс
+                # get_messages_after возвращает: [{'id': 123, 'role': 'user', 'message': 'текст'}, ...]
+                # НО get_last_messages возвращает: [('user', 'текст'), ...]
+                
+                # Если это словарь из get_messages_after:
+                if isinstance(msg, dict) and msg.get('role') == 'user':
+                    user_messages.append(msg)
+                # Если это кортеж из get_last_messages:
+                elif isinstance(msg, (tuple, list)) and len(msg) >= 2 and msg[0] == 'user':
+                    user_messages.append(msg)
+                    
+        except (KeyError, IndexError, TypeError) as e:
+            print(f"⚠️ Ошибка обработки сообщения в maybe_update_summary: {e} - {msg}")
+            continue
     
     if len(user_messages) < 6:
         return  # ждём пока пользователь напишет хотя бы 6 новых сообщений
@@ -130,7 +143,26 @@ async def maybe_update_summary(user_id):
     new_summary = await ask_gpt(prompt)
 
     if new_summary.strip() != old_summary.strip():
-        last_message_id = new_messages[-1][0]
+        # ✅ БЕЗОПАСНОЕ получение last_message_id
+        try:
+            if new_messages:
+                last_msg = new_messages[-1]
+                if isinstance(last_msg, dict):
+                    # Формат: {'id': 123, 'role': 'user', 'message': 'текст'}
+                    last_message_id = last_msg.get('id', 0)
+                elif isinstance(last_msg, (tuple, list)) and len(last_msg) >= 3:
+                    # Формат: (id, role, message)
+                    last_message_id = last_msg[0]
+                else:
+                    # Формат: (role, message) - без ID
+                    last_message_id = 0
+            else:
+                last_message_id = 0
+                
+        except Exception as e:
+            print(f"⚠️ Ошибка получения last_message_id: {e}")
+            last_message_id = 0
+            
         await save_conversation_summary(user_id, new_summary, last_message_id)
 
 async def format_user_profile(user_id: int) -> str:

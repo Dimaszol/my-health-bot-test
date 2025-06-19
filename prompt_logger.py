@@ -267,9 +267,45 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
             last_summary = "Нет недавних документов"
         
         # ==========================================
+        # ШАГ 11: ПОЛУЧЕНИЕ RECENT MESSAGES  ← НОВЫЙ ШАГ
+        # ==========================================
+        log_step(12, "ПОЛУЧЕНИЕ RECENT MESSAGES")
+        
+        try:
+            from db_postgresql import get_last_messages
+            recent_messages = await get_last_messages(user_id, limit=6)
+            
+            # Форматируем recent messages (используем ту же логику что в main.py)
+            context_lines = []
+            for msg in recent_messages:
+                if isinstance(msg, (tuple, list)) and len(msg) >= 2:
+                    role = "USER" if msg[0] == 'user' else "BOT"
+                    content = str(msg[1])[:100]  # Ограничиваем длину
+                    context_lines.append(f"{role}: {content}")
+                else:
+                    print(f"⚠️ Неожиданный формат сообщения: {msg}")
+            
+            context_text = "\n".join(context_lines)
+            
+            print(f"💬 Recent messages:")
+            print(f"   📏 Длина: {len(context_text)} символов")
+            if context_text:
+                print(f"   📋 Превью:")
+                for line in context_lines[:3]:  # Показываем первые 3
+                    print(f"      {line}")
+                if len(context_lines) > 3:
+                    print(f"      ... и еще {len(context_lines) - 3} сообщений")
+            else:
+                print("   📋 Нет недавних сообщений")
+            
+        except Exception as e:
+            context_text = ""
+            print(f"❌ Ошибка получения recent messages: {e}")
+
+        # ==========================================
         # ШАГ 11: ФИНАЛЬНАЯ СБОРКА ПРОМТА
         # ==========================================
-        log_step(12, "ФИНАЛЬНАЯ СБОРКА ПРОМТА")
+        log_step(13, "ФИНАЛЬНАЯ СБОРКА ПРОМТА")
         
         # Собираем финальный промт
         user_prompt_parts = [
@@ -305,7 +341,8 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
             "last_summary": last_summary or "Нет недавних документов",
             "chunks_text": chunks_text or "Релевантная информация не найдена",
             "chunks_found": len(all_chunks),
-            "lang": lang if 'lang' in locals() else 'ru'
+            "lang": lang if 'lang' in locals() else 'ru',
+            "context_text": context_text
         }
         
     except Exception as e:
