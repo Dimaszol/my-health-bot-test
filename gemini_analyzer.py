@@ -116,7 +116,7 @@ class GeminiMedicalAnalyzer:
             print("\n" + "="*80)
             print("🎓 ОБРАЗОВАТЕЛЬНЫЙ АНАЛИЗ GEMINI:")
             print("="*80)
-            print(analysis_text[:300] + "..." if len(analysis_text) > 300 else analysis_text)
+            print(analysis_text)
             print("="*80 + "\n")
             
             return analysis_text, ""
@@ -147,21 +147,29 @@ class GeminiMedicalAnalyzer:
 
 IMPORTANT: Please respond in {response_language} language.
 
-Analyze this medical image as a doctor:
+First, determine what type of image this is:
 
-1. **Type of study** - what is this (ECG, EEG, X-ray, MRI, ultrasound, tests, etc.)?
+**If this is a medical TEXT document** (medical records, lab results, prescriptions, discharge summaries, etc.) - transcribe ALL visible text EXACTLY as written, including:
+- All numerical values with their units
+- All reference ranges in parentheses  
+- All medical terminology exactly as shown
+- All handwritten notes
+- Do NOT interpret, analyze, or change any medical assessments
+- Do NOT add phrases like "within normal range" - copy the exact text
+- Simply return what you see written
 
-2. **Technical data** - visible patient parameters and settings
+**If this is NOT a medical image** (photos, non-medical documents, random images) - respond: "This is not a medical image or document."
 
-3. **Detailed findings** - what specifically is visible, measurements, indicators
+**If this is a medical IMAGING study** (ECG, EEG, X-ray, MRI, ultrasound, CT scan, etc.) - analyze it professionally:
 
+1. **Type of study** - what is this?
+2. **Technical data** - visible parameters and settings  
+3. **Detailed findings** - what specifically is visible, measurements
 4. **Pathological changes** - deviations from the norm, if any
-
 5. **Diagnostic conclusion** - what this means clinically
-
 6. **Recommendations** - what to do next, which doctor to consult
 
-Be as specific and professional as possible. Indicate if a specialist consultation is needed.
+CRITICAL: For TEXT documents - be a transcriber, not a doctor. For IMAGING studies - be a doctor.
 
 IMPORTANT: Respond in {response_language} language."""
 

@@ -219,37 +219,69 @@ async def update_medications_via_gpt(user_input: str, current_list: list) -> lis
         return []
 
 @async_safe_openai_call(max_retries=2, delay=1.0)
-async def ask_structured(text: str, lang: str = "ru", max_tokens: int = 1200) -> str:  # 🔄 async
-    """Безопасное создание структурированного ответа"""
+async def ask_structured(text: str, lang: str = "ru", max_tokens: int = 2500) -> str:  # 🔄 async
+    """Создание красивого отображения медицинского документа для пользователя"""
+    
     system_prompt = (
-        "You are a medical assistant helping the patient understand the content of a medical document. "
-        "You must convey all medical facts accurately, preserving all clinical values, terminology, and findings. "
-        f"⚠️ Always respond strictly in the '{lang}' language, regardless of the input language."
+        "You are a medical information designer who creates clear, beautiful, and patient-friendly "
+        "medical document summaries. Your goal is to make medical information easily readable and "
+        "well-organized for patients while preserving all important clinical details. "
+        f"⚠️ Always respond strictly in '{lang}' language, regardless of input language."
     )
 
     user_prompt = (
-        "⚠️ STRICT INSTRUCTIONS:\n"
-        "Read the medical document and create a concise and clear summary that a patient can understand.\n\n"
+        "⚠️ DOCUMENT FORMATTING TASK:\n"
+        "Transform this medical information into a beautiful, clear summary that a patient can easily read and reference.\n\n"
         
-        "• Preserve all clinically important information: document date, lab values, diagnoses, findings, procedures, medications, dosages, medical terms, scales, parameters, anomalies, and names of tests or exams.\n"
-        "• Do NOT add your own interpretations or conclusions. Do NOT summarize beyond what is in the document.\n"
-        "• Remove all personal data: full names, age, gender, addresses, clinic names, doctor names.\n"
-        "• If the document includes structured data (e.g. lab results), present them as lists or clearly formatted sections.\n"
-        "• Otherwise, write in logical paragraphs, grouped by meaning.\n"
-        "• Avoid phrases like «the patient was advised» or «the patient came in with...» — focus on the document content itself.\n"
-        "• Your goal is to preserve clarity and structure, as if a doctor were explaining the document to a patient, without simplifications.\n\n"
+        "🔒 PRIVACY & CONTENT RULES:\n"
+        "• REMOVE ALL personal identifiers: patient names, doctor names, medical record numbers, addresses, phone numbers\n"
+        "• REMOVE phrases like 'the patient', 'patient reports', 'patient was advised' - focus on medical content only\n"
+        "• REMOVE administrative text, disclaimers, legal notices, and non-medical formal phrases\n"
+        "• KEEP the document date prominently at the top\n"
+        "• KEEP all medical data: diagnoses, test results, measurements, medications, recommendations\n\n"
         
-        f"{text}"
+        "📋 STRUCTURE & FORMATTING:\n"
+        "• Start with a clear document title describing what this is (e.g., 'Результаты анализа крови', 'МРТ заключение')\n"
+        "• Use **bold headers** for main sections\n"
+        "• Use bullet points (•) for lists of findings, medications, or recommendations\n"
+        "• Group related information logically (lab results by system, imaging by organ, etc.)\n"
+        "• Highlight abnormal values with 🔍 emoji when values are outside normal ranges\n"
+        "• Use clear, scannable formatting that's easy to read on mobile devices\n\n"
+        
+        "🏥 MEDICAL CONTENT GUIDELINES:\n"
+        "• Include ALL numerical values with units and reference ranges when available\n"
+        "• Clearly indicate when values are elevated, decreased, or normal\n"
+        "• Preserve exact medical terminology but add brief explanations in parentheses when helpful\n"
+        "• Maintain diagnostic codes (ICD, medical classifications) when present\n"
+        "• Group medications with dosages and frequencies clearly\n"
+        "• Make recommendations actionable and specific\n\n"
+        
+        "✨ READABILITY OPTIMIZATION:\n"
+        "• Use short paragraphs and clear sections\n"
+        "• Make key findings easy to spot and understand\n"
+        "• Organize information from most important to supporting details\n"
+        "• Use consistent formatting throughout\n"
+        "• Ensure the summary serves as a complete reference the patient can save and review\n\n"
+        
+        "🚫 AVOID:\n"
+        "• Complex medical tables (convert to readable lists)\n"
+        "• Redundant information or unnecessary repetition\n"
+        "• Overly technical explanations without context\n"
+        "• Poor formatting that's hard to read on small screens\n\n"
+        
+        "GOAL: Create a document that patients will want to save, reference, and easily understand while preserving complete medical accuracy.\n\n"
+        
+        f"MEDICAL DOCUMENT TO FORMAT:\n{text}"
     )
 
-    response = await client.chat.completions.create(  # 🔄 await
+    response = await client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
         max_tokens=max_tokens,
-        temperature=0.4
+        temperature=0.2  # Низкая для консистентности форматирования
     )
     return response.choices[0].message.content.strip()
 
@@ -532,7 +564,7 @@ async def generate_medical_summary(text: str, lang: str) -> str:  # 🔄 async
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        max_tokens=1200,
+        max_tokens=1500,
         temperature=0.3
     )
     return response.choices[0].message.content.strip()

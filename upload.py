@@ -113,8 +113,8 @@ async def handle_document_upload(message: types.Message, bot):
             return
 
         print("📝 Создаю структурированный текст и резюме...")
-        raw_text = await ask_structured(vision_text[:3000], lang=lang)
-        summary = await generate_medical_summary(vision_text[:3000], lang)
+        raw_text = await ask_structured(vision_text[:8000], lang=lang)
+        summary = await generate_medical_summary(vision_text[:8000], lang)
 
         if raw_text:
             clean_text = html.escape(raw_text[:2000])
