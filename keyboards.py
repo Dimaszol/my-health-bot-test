@@ -22,9 +22,9 @@ def main_menu_keyboard(lang):
     """Главное меню с кнопкой настроек"""
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=t("main_upload_doc", lang)), KeyboardButton(text=t("main_upload_image", lang))],
-            [KeyboardButton(text=t("main_note", lang)), KeyboardButton(text=t("main_documents", lang))],
-            [KeyboardButton(text=t("main_schedule", lang)), KeyboardButton(text=t("main_settings", lang))]  # 🔥 НОВАЯ СТРОКА
+            [KeyboardButton(text=t("main_upload_doc", lang)), KeyboardButton(text=t("main_note", lang))],
+            [KeyboardButton(text=t("main_documents", lang)), KeyboardButton(text=t("main_schedule", lang))],
+            [KeyboardButton(text=t("main_settings", lang))]
         ],
         resize_keyboard=True
     )

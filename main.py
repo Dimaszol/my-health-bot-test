@@ -142,24 +142,6 @@ async def prompt_memory_note(message: types.Message):
     )
     await message.answer(t("write_note", lang), reply_markup=keyboard)
 
-@dp.message(lambda msg: msg.text in get_all_values_for_key("main_upload_image"))
-@handle_telegram_errors
-async def ask_for_image(message: types.Message):
-    user_id = message.from_user.id
-    lang = await get_user_language(user_id)
-    
-    # ✅ НОВАЯ ЛОГИКА: Проверяем лимиты и показываем уведомления
-    can_upload = await NotificationSystem.check_and_notify_limits(
-        message, user_id, action_type="image"
-    )
-    
-    if not can_upload:
-        return  # Лимиты исчерпаны, уведомление уже показано
-    
-    # Если лимиты есть - разрешаем загрузку
-    user_states[message.from_user.id] = "awaiting_image_analysis"
-    await message.answer(t("please_send_image", lang))
-
 @dp.message(lambda msg: msg.text in get_all_values_for_key("main_documents"))
 @handle_telegram_errors
 async def show_documents_handler(message: types.Message):
@@ -271,7 +253,7 @@ async def handle_user_message(message: types.Message):
     current_state = user_states.get(user_id)
     
     # Если пользователь в режиме ожидания файла, но отправил текст
-    if current_state in ["awaiting_document", "awaiting_image_analysis"]:
+    if current_state == "awaiting_document":
         if message.text is not None:  # Если отправлен текст вместо файла
             await message.answer(t("unrecognized_document", lang))
             user_states[user_id] = None
@@ -293,21 +275,7 @@ async def handle_user_message(message: types.Message):
                 log_error_with_context(e, {"user_id": user_id, "action": "document_upload"})
                 await message.answer(get_user_friendly_message(e, lang))
                 return
-                
-        elif current_state == "awaiting_image_analysis":
-            allowed, error_msg = await check_rate_limit(user_id, "image")
-            if not allowed:
-                await message.answer(error_msg)
-                return
-            try:
-                from upload import handle_image_analysis
-                await handle_image_analysis(message, bot)
-                await record_user_action(user_id, "image")
-                return
-            except Exception as e:
-                log_error_with_context(e, {"user_id": user_id, "action": "image_analysis"})
-                await message.answer(get_user_friendly_message(e, lang))
-                return
+        
         else:
             # Файл отправлен, но пользователь не в режиме ожидания
             await message.answer(t("unsupported_input", lang))
