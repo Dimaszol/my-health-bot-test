@@ -634,6 +634,7 @@ async def delete_user_completely(user_id: int) -> bool:
         await conn.execute("DELETE FROM transactions WHERE user_id = $1", user_id)
         await conn.execute("DELETE FROM user_subscriptions WHERE user_id = $1", user_id)
         await conn.execute("DELETE FROM users WHERE user_id = $1", user_id)
+        await conn.execute("DELETE FROM medical_timeline WHERE user_id = $1", user_id)
         
         # Удаляем из векторной базы
         from vector_db_postgresql import delete_all_chunks_by_user

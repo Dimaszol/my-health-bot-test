@@ -191,7 +191,7 @@ async def show_settings_menu_new(message: types.Message):
         reply_markup=settings_keyboard(lang)
     )
 
-@dp.message(lambda msg: msg.text == "/reset")
+@dp.message(lambda msg: msg.text == "/reset123456")
 @handle_telegram_errors
 async def reset_user(message: types.Message):
     user_id = message.from_user.id

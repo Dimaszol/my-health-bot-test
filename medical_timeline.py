@@ -118,7 +118,7 @@ async def save_medical_timeline_entries(user_id: int, entries: List[Dict], sourc
 # ==========================================
 
 async def extract_medical_events_gpt(document_text: str, existing_timeline: List[Dict], lang: str = "ru") -> List[Dict]:
-    """Извлечение медицинских событий через GPT-4o-mini (чистая версия без хардкода)"""
+    """Извлечение КРИТИЧЕСКИ ВАЖНЫХ медицинских событий через GPT-4o-mini"""
     
     # Форматируем существующую медкарту
     timeline_text = ""
@@ -138,43 +138,48 @@ async def extract_medical_events_gpt(document_text: str, existing_timeline: List
     }
     response_lang = lang_names.get(lang, 'Russian')
     
-    system_prompt = f"""You are a medical data extraction specialist. Extract ONLY concrete, measurable medical facts from documents.
+    system_prompt = f"""You are a medical timeline curator. Extract ONLY the most CRITICAL medical events that would be essential for any future doctor to know.
 
-TASK: Analyze the new document and update the medical timeline. Return ONLY changed/new entries or "NO_CHANGES".
+TASK: From the new document, extract MAXIMUM 1-2 most important medical facts and ADD them to existing timeline.
 
-EXTRACTION CRITERIA - Include ONLY if the information contains:
-• Specific medical measurements (blood pressure, lab values, sizes, etc.)
-• Concrete diagnoses with medical terminology
-• Specific medications with dosages or frequencies  
-• Completed medical procedures with findings
-• Objective physical examination findings with measurements
+STRICT CRITERIA - Extract ONLY:
+• Life-threatening diagnoses (heart attack, stroke, cancer, etc.)
+• Major surgical procedures (operations, stent implantations, etc.)
+• Critical medication changes (new chronic medications)
+• Severe complications or hospitalizations
+• Major diagnostic findings that change treatment approach
 
-EXCLUSION CRITERIA - DO NOT include:
-• General recommendations or advice
-• Future appointments or follow-ups
-• Referrals to other doctors
-• Lifestyle recommendations (diet, exercise, etc.)
-• Administrative instructions
-• Vague or non-specific statements
+CRITICAL IMPORTANCE RANKING:
+• "critical" = Life-threatening conditions, major surgery, emergency situations
+• "important" = Chronic conditions, significant procedures, key medications
+• "normal" = Routine findings (DO NOT EXTRACT unless exceptional)
 
-QUALITY CHECK: Each extracted item must answer "What specific medical fact was documented?" 
-If you cannot answer this with concrete data, DO NOT extract it.
+EXAMPLES OF WHAT TO EXTRACT:
+✅ "Инфаркт миокарда, стентирование ПКА" (critical)
+✅ "Сахарный диабет 2 типа впервые выявлен" (important) 
+✅ "Хроническая сердечная недостаточность" (important)
+
+EXAMPLES OF WHAT NOT TO EXTRACT:
+❌ Individual medication names unless it's a major new chronic treatment
+❌ Routine test results within normal ranges
+❌ Standard procedure details
+❌ Blood pressure readings unless extremely abnormal
+❌ Heart rate measurements
 
 Rules:
-1. Extract dates from document text (if present) or use current date as fallback
+1. Extract dates from document text or use current date
 2. Categories: diagnosis, treatment, test, procedure, general
-3. Importance: critical (life-threatening), important (significant), normal (routine)
-4. Description: 5-15 words max, CONCRETE facts only
-5. If information duplicates existing timeline → DON'T add
-6. If information updates existing entry → return updated version
+3. Maximum 1-2 events per document - only the most critical
+4. Description: 3-8 words, focus on medical essence
+5. If nothing is critically important, return "NO_CHANGES"
 
 FORMAT:
 [
   {{
     "event_date": "DD.MM.YYYY",
-    "category": "diagnosis|treatment|test|procedure|general", 
-    "importance": "critical|important|normal",
-    "description": "Concrete medical fact"
+    "category": "diagnosis|treatment|procedure", 
+    "importance": "critical|important",
+    "description": "Brief critical fact (3-8 words)"
   }}
 ]
 
@@ -186,45 +191,38 @@ LANGUAGE: Respond in {response_lang} language only."""
 NEW DOCUMENT:
 {document_text}
 
-Extract ONLY concrete medical facts. If no measurable/concrete facts found, return "NO_CHANGES"."""
+Extract ONLY 1-2 most critical medical facts. If nothing is critically important, return "NO_CHANGES"."""
 
     try:
         async with OPENAI_SEMAPHORE:
-            # Первый запрос - извлечение событий
             response = await client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_tokens=1500,
-                temperature=0.05
+                max_tokens=500,  # Меньше токенов = короче ответ
+                temperature=0.1
             )
             
             result = response.choices[0].message.content.strip()
             
             # Проверяем на "NO_CHANGES"
             if result.upper() in ['NO_CHANGES', 'БЕЗ ИЗМЕНЕНИЙ', 'БЕЗ_ИЗМЕНЕНИЙ']:
-                print("📋 GPT: Нет конкретных медицинских фактов для медкарты")
+                print("📋 GPT: Нет критически важных событий для медкарты")
                 return []
             
             # Пробуем парсить JSON
             try:
                 events = json.loads(result)
-                if not isinstance(events, list):
+                if isinstance(events, list):
+                    # Ограничиваем до 2 событий максимум
+                    events = events[:2]
+                    print(f"📋 GPT извлек {len(events)} критических событий")
+                    return events
+                else:
                     print(f"⚠️ GPT вернул не массив: {result[:100]}")
                     return []
-                
-                if not events:  # Пустой массив
-                    print("📋 GPT вернул пустой список событий")
-                    return []
-                
-                # Второй запрос - валидация качества извлеченных событий
-                validated_events = await _validate_extracted_events(events, response_lang)
-                
-                print(f"📋 GPT извлек {len(events)} событий, прошло валидацию: {len(validated_events)}")
-                return validated_events
-                
             except json.JSONDecodeError:
                 print(f"⚠️ GPT вернул некорректный JSON: {result[:200]}")
                 return []
@@ -335,26 +333,17 @@ async def extract_medical_events_gemini(document_text: str, existing_timeline: L
 
 async def update_medical_timeline_on_document_upload(user_id: int, document_id: int, document_text: str, use_gemini: bool = False) -> bool:
     """
-    Основная функция обновления медкарты при загрузке документа
-    
-    Args:
-        user_id: ID пользователя
-        document_id: ID загруженного документа  
-        document_text: Текст документа
-        use_gemini: Использовать Gemini вместо GPT (для тестирования)
-    
-    Returns:
-        bool: Успешность обновления
+    ИСПРАВЛЕННАЯ функция обновления медкарты - ДОБАВЛЯЕТ новые события, НЕ удаляет старые
     """
     
     print(f"\n🏥 Обновление медкарты пользователя {user_id} для документа {document_id}")
     
     try:
-        # Шаг 1: Получаем последние 10 записей медкарты
-        existing_timeline = await get_latest_medical_timeline(user_id, limit=10)
+        # Шаг 1: Получаем последние 15 записей медкарты для контекста
+        existing_timeline = await get_latest_medical_timeline(user_id, limit=15)
         print(f"📋 Текущих записей в медкарте: {len(existing_timeline)}")
         
-        # Шаг 2: Извлекаем события из документа
+        # Шаг 2: Извлекаем ТОЛЬКО критические события из нового документа
         from db_postgresql import get_user_language
         lang = await get_user_language(user_id)
         
@@ -364,19 +353,17 @@ async def update_medical_timeline_on_document_upload(user_id: int, document_id: 
             new_events = await extract_medical_events_gpt(document_text, existing_timeline, lang)
         
         if not new_events:
-            print("📋 Нет новых медицинских событий для добавления")
+            print("📋 Нет критически важных событий для добавления в медкарту")
             return True
         
-        # Шаг 3: Удаляем старые записи (если они были)
-        if existing_timeline:
-            old_ids = [entry['id'] for entry in existing_timeline]
-            await delete_medical_timeline_entries(user_id, old_ids)
-        
-        # Шаг 4: Сохраняем новые события
+        # Шаг 3: ДОБАВЛЯЕМ новые события (НЕ удаляем старые!)
         success = await save_medical_timeline_entries(user_id, new_events, document_id)
         
+        # Шаг 4: Если медкарта стала слишком большой (>20 записей), удаляем самые старые
+        await cleanup_old_timeline_entries(user_id, max_entries=20)
+        
         if success:
-            print(f"✅ Медкарта обновлена: {len(new_events)} записей")
+            print(f"✅ В медкарту добавлено {len(new_events)} критических событий")
         else:
             print("❌ Ошибка сохранения медкарты")
         
@@ -434,3 +421,39 @@ async def format_medical_timeline_for_user(user_id: int, limit: int = 10) -> str
         lines.append(f"{emoji} {importance_mark} **{entry['event_date']}** - {entry['description']}")
     
     return "\n".join(lines)
+
+async def cleanup_old_timeline_entries(user_id: int, max_entries: int = 20) -> bool:
+    """Удаляет старые записи медкарты, оставляя только последние max_entries"""
+    
+    conn = await get_db_connection()
+    try:
+        # Подсчитываем общее количество записей
+        count_query = "SELECT COUNT(*) FROM medical_timeline WHERE user_id = $1"
+        total_count = await conn.fetchval(count_query, user_id)
+        
+        if total_count <= max_entries:
+            return True  # Чистка не нужна
+        
+        # Удаляем старые записи, оставляя только последние max_entries
+        cleanup_query = """
+        DELETE FROM medical_timeline 
+        WHERE user_id = $1 
+        AND id NOT IN (
+            SELECT id FROM medical_timeline 
+            WHERE user_id = $1 
+            ORDER BY event_date DESC, created_at DESC 
+            LIMIT $2
+        )
+        """
+        
+        result = await conn.execute(cleanup_query, user_id, max_entries)
+        deleted_count = total_count - max_entries
+        print(f"🧹 Удалено {deleted_count} старых записей медкарты для пользователя {user_id}")
+        
+        return True
+        
+    except Exception as e:
+        log_error_with_context(e, {"function": "cleanup_old_timeline_entries", "user_id": user_id})
+        return False
+    finally:
+        await release_db_connection(conn)
