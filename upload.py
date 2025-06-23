@@ -144,6 +144,34 @@ async def handle_document_upload(message: types.Message, bot):
         chunks = await split_into_chunks(summary, document_id, user_id)
         await add_chunks_to_vector_db(document_id, user_id, chunks)
 
+        try:
+            print(f"\n🏥 Обновление медицинской карты для документа {document_id}")
+            
+            from medical_timeline import update_medical_timeline_on_document_upload
+            
+            # Используем полный текст документа для извлечения медицинских событий
+            medical_timeline_success = await update_medical_timeline_on_document_upload(
+                user_id=user_id,
+                document_id=document_id,
+                document_text=raw_text,  # Используем исходный текст
+                use_gemini=False  # По умолчанию GPT, можно переключить для тестирования
+            )
+            
+            if medical_timeline_success:
+                print(f"✅ Медицинская карта обновлена для документа {document_id}")
+            else:
+                print(f"⚠️ Не удалось обновить медицинскую карту для документа {document_id}")
+                
+        except Exception as e:
+            print(f"❌ Ошибка обновления медицинской карты: {e}")
+            # Не прерываем процесс загрузки документа из-за ошибки медкарты
+            from error_handler import log_error_with_context
+            log_error_with_context(e, {
+                "function": "medical_timeline_update", 
+                "user_id": user_id, 
+                "document_id": document_id
+            })
+
         await message.answer(t("document_saved", lang, title=auto_title), parse_mode="HTML")
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=[

@@ -1,10 +1,11 @@
 # gemini_analyzer.py - Очищенная версия для медицинского анализа
 
 import os
+import json
 import google.generativeai as genai
 import asyncio
 from PIL import Image
-from typing import Tuple
+from typing import Tuple, List, Dict
 
 class GeminiMedicalAnalyzer:
     """Анализатор медицинских изображений через Gemini API"""
@@ -211,3 +212,156 @@ async def send_to_gemini_vision(image_path: str, lang: str = "ru", prompt: str =
         return await analyzer.analyze_medical_image(image_path, lang, prompt)
     except Exception as e:
         return "", f"Ошибка анализа изображения: {str(e)}"
+    
+async def extract_medical_timeline_gemini(document_text: str, existing_timeline: List[Dict], lang: str = "ru") -> List[Dict]:
+    """
+    Извлечение медицинских событий через Gemini
+    
+    Args:
+        document_text: Текст медицинского документа
+        existing_timeline: Существующая медкарта (последние 10 записей)
+        lang: Язык ответа (ru, uk, en)
+    
+    Returns:
+        List[Dict]: Список новых/обновленных медицинских событий
+    """
+    
+    try:
+        import google.generativeai as genai
+        import os
+        
+        # Проверяем API ключ
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            print("⚠️ GEMINI_API_KEY не установлен")
+            return []
+        
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # Форматируем существующую медкарту
+        timeline_text = ""
+        if existing_timeline:
+            timeline_text = "\n".join([
+                f"{entry['event_date']} | {entry['category']} | {entry['importance']} | \"{entry['description']}\""
+                for entry in existing_timeline
+            ])
+        else:
+            timeline_text = "Медкарта пустая"
+        
+        # Определяем язык ответа
+        lang_names = {
+            'ru': 'Russian',
+            'uk': 'Ukrainian',
+            'en': 'English'
+        }
+        response_lang = lang_names.get(lang, 'Russian')
+        
+        prompt = f"""You are a medical data extraction specialist. Extract key medical events from documents and update patient timeline.
+
+TASK: Analyze the new document and update the medical timeline. Return ONLY changed/new entries or "NO_CHANGES".
+
+RULES:
+1. Extract dates from document text (if present) or use current date as fallback
+2. Categories: diagnosis, treatment, test, procedure, general
+3. Importance: critical (life-threatening), important (significant), normal (routine)  
+4. Description: 10-20 words max, key medical facts only
+5. If information duplicates existing timeline → DON'T add
+6. If information updates existing entry → return updated version
+7. Return ONLY valid JSON array or "NO_CHANGES"
+
+OUTPUT FORMAT (JSON array):
+[
+  {{
+    "event_date": "DD.MM.YYYY",
+    "category": "diagnosis|treatment|test|procedure|general",
+    "importance": "critical|important|normal", 
+    "description": "Brief medical description"
+  }}
+]
+
+EXISTING MEDICAL TIMELINE:
+{timeline_text}
+
+NEW DOCUMENT:
+{document_text}
+
+IMPORTANT: 
+- Respond in {response_lang} language only
+- Return ONLY JSON array or "NO_CHANGES" 
+- NO explanations, NO additional text
+- If no new medical information found, return "NO_CHANGES"
+
+Extract and update medical timeline:"""
+
+        # Отправляем запрос к Gemini
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.1,  # Низкая для точности
+                max_output_tokens=1500,
+                candidate_count=1
+            ),
+            safety_settings=[
+                {
+                    "category": "HARM_CATEGORY_MEDICAL",
+                    "threshold": "BLOCK_NONE"
+                }
+            ]
+        )
+        
+        # Обрабатываем ответ
+        if not response.candidates:
+            print("⚠️ Gemini не вернул кандидатов ответа")
+            return []
+        
+        result_text = ""
+        for candidate in response.candidates:
+            if hasattr(candidate, 'content') and candidate.content.parts:
+                try:
+                    result_text = candidate.content.parts[0].text.strip()
+                    break
+                except:
+                    continue
+        
+        if not result_text:
+            print("⚠️ Gemini вернул пустой ответ")
+            return []
+        
+        print(f"🔮 Gemini ответ: {result_text[:200]}...")
+        
+        # Проверяем на "NO_CHANGES"
+        if result_text.upper() in ['NO_CHANGES', 'БЕЗ ИЗМЕНЕНИЙ', 'БЕЗ_ИЗМЕНЕНИЙ']:
+            print("📋 Gemini: Нет изменений в медкарте")
+            return []
+        
+        # Пробуем парсить JSON
+        try:
+            # Очищаем ответ от лишнего текста (могут быть ``` или объяснения)
+            json_start = result_text.find('[')
+            json_end = result_text.rfind(']') + 1
+            
+            if json_start >= 0 and json_end > json_start:
+                json_text = result_text[json_start:json_end]
+                events = json.loads(json_text)
+                
+                if isinstance(events, list):
+                    print(f"📋 Gemini извлек {len(events)} медицинских событий")
+                    return events
+                else:
+                    print(f"⚠️ Gemini вернул не массив: {result_text[:100]}")
+                    return []
+            else:
+                print(f"⚠️ Gemini: JSON не найден в ответе: {result_text[:200]}")
+                return []
+                
+        except json.JSONDecodeError as e:
+            print(f"⚠️ Gemini вернул некорректный JSON: {e}")
+            print(f"Ответ: {result_text[:300]}")
+            return []
+        
+    except Exception as e:
+        print(f"❌ Ошибка извлечения медкарты через Gemini: {e}")
+        from error_handler import log_error_with_context
+        log_error_with_context(e, {"function": "extract_medical_timeline_gemini"})
+        return []

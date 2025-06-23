@@ -187,6 +187,47 @@ async def create_tables():
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- 📋 ТАБЛИЦА МЕДИЦИНСКОЙ КАРТЫ ПАЦИЕНТА
+    CREATE TABLE IF NOT EXISTS medical_timeline (
+        id SERIAL PRIMARY KEY,
+        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+        source_document_id INTEGER REFERENCES documents(id) ON DELETE CASCADE,
+        event_date DATE NOT NULL,
+        category TEXT DEFAULT 'general' CHECK (category IN ('diagnosis', 'treatment', 'test', 'procedure', 'general')),
+        importance TEXT DEFAULT 'normal' CHECK (importance IN ('critical', 'important', 'normal')),
+        description TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- 📊 ИНДЕКСЫ ДЛЯ ОПТИМИЗАЦИИ
+    CREATE INDEX IF NOT EXISTS idx_medical_timeline_user_date ON medical_timeline(user_id, event_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_medical_timeline_user_importance ON medical_timeline(user_id, importance);
+    CREATE INDEX IF NOT EXISTS idx_medical_timeline_category ON medical_timeline(user_id, category);
+
+    -- 🔄 ФУНКЦИЯ ДЛЯ ТРИГГЕРА (создаем только если не существует)
+    CREATE OR REPLACE FUNCTION update_medical_timeline_timestamp()
+    RETURNS TRIGGER AS $$
+    BEGIN
+        NEW.updated_at = CURRENT_TIMESTAMP;
+        RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    -- 🔄 ТРИГГЕР С ПРОВЕРКОЙ СУЩЕСТВОВАНИЯ
+    DO $$ 
+    BEGIN
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_trigger 
+            WHERE tgname = 'medical_timeline_update_timestamp'
+        ) THEN
+            CREATE TRIGGER medical_timeline_update_timestamp
+                BEFORE UPDATE ON medical_timeline
+                FOR EACH ROW
+                EXECUTE FUNCTION update_medical_timeline_timestamp();
+        END IF;
+    END $$;
+
     -- 📚 ИНДЕКСЫ ДЛЯ ПРОИЗВОДИТЕЛЬНОСТИ
     CREATE INDEX IF NOT EXISTS idx_chat_history_user_id ON chat_history(user_id);
     CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id);
