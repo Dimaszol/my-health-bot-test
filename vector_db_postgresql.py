@@ -241,79 +241,146 @@ class PostgreSQLVectorDB:
             await self.db_pool.release(conn)
     
     async def keyword_search_chunks(self, user_id: int, keywords: str, limit: int = 5) -> List[Dict]:
-        """Текстовый поиск по ключевым словам с умным ранжированием"""
+        """
+        🔍 УЛУЧШЕННЫЙ поиск по ключевым словам с точным подсчетом совпадений
+        
+        Теперь точно считает совпавшие ключевые слова:
+        - "УЗИ печени" найдет чанки с обоими словами выше чем с одним
+        - Автоматически ранжирует по количеству совпадений
+        """
         conn = await self.db_pool.acquire()
         try:
             logger.info(f"🔍 Поиск по ключевым словам: '{keywords}' для пользователя {user_id}")
             
-            # 🔹 Разбиваем ключевые слова
+            # 🔹 Разбиваем и очищаем ключевые слова
             keyword_list = [k.strip().lower() for k in keywords.split(',') if k.strip()]
             
             if not keyword_list:
                 logger.info("❌ Пустой список ключевых слов")
                 return []
             
-            # 🔧 Создаем динамический SQL с подсчетом совпадений
-            conditions = []
-            match_counters = []
+            print(f"🔑 Ищем совпадения для: {keyword_list}")
+            
+            # 🔧 Создаем SQL с точным подсчетом каждого ключевого слова
             params = [user_id]
             param_index = 2
             
+            # Создаем отдельные условия для каждого ключевого слова
+            match_conditions = []
+            
             for keyword in keyword_list:
-                # Условие для WHERE
-                conditions.append(f"dv.keywords ILIKE ${param_index}")
-                # Счетчик для ранжирования
-                match_counters.append(f"CASE WHEN dv.keywords ILIKE ${param_index} THEN 1 ELSE 0 END")
+                match_conditions.append(f"dv.keywords ILIKE ${param_index}")
                 params.append(f'%{keyword}%')
                 param_index += 1
             
-            where_clause = " OR ".join(conditions)
-            rank_calculation = " + ".join(match_counters)
+            # Общее условие поиска (любое совпадение)
+            where_clause = " OR ".join(match_conditions)
+            
+            # Подсчет общего количества совпадений
+            total_matches = " + ".join([f"CASE WHEN dv.keywords ILIKE ${i+2} THEN 1 ELSE 0 END" 
+                                    for i, _ in enumerate(keyword_list)])
             
             sql = f"""
+                WITH keyword_analysis AS (
+                    SELECT 
+                        dv.chunk_text,
+                        dv.metadata,
+                        dv.keywords,
+                        d.title as document_title,
+                        d.uploaded_at,
+                        
+                        -- 📊 ТОЧНЫЙ ПОДСЧЕТ СОВПАДЕНИЙ
+                        ({total_matches}) as exact_matches_count,
+                        
+                        -- 📏 ДЛИНА ТЕКСТА (для нормализации)
+                        LENGTH(dv.keywords) as keywords_length
+                        
+                    FROM document_vectors dv
+                    JOIN documents d ON d.id = dv.document_id
+                    WHERE dv.user_id = $1
+                    AND ({where_clause})
+                ),
+                scored_chunks AS (
+                    SELECT *,
+                        -- 🏆 УЛУЧШЕННЫЙ SCORE:
+                        (
+                            -- Количество совпадений * 10 (основной фактор)
+                            exact_matches_count * 10.0 +
+                            
+                            -- Бонус за полное совпадение всех ключевых слов
+                            CASE WHEN exact_matches_count = {len(keyword_list)} THEN 5.0 ELSE 0.0 END +
+                            
+                            -- Плотность ключевых слов
+                            CASE WHEN keywords_length > 0 THEN 
+                                (exact_matches_count::float / keywords_length * 100) * 2.0 
+                            ELSE 0.0 END +
+                            
+                            -- Бонус за новизну документа
+                            CASE 
+                                WHEN uploaded_at > NOW() - INTERVAL '7 days' THEN 3.0
+                                WHEN uploaded_at > NOW() - INTERVAL '30 days' THEN 1.5
+                                WHEN uploaded_at > NOW() - INTERVAL '90 days' THEN 0.5
+                                ELSE 0.0
+                            END
+                        ) as advanced_score
+                        
+                    FROM keyword_analysis
+                    WHERE exact_matches_count > 0
+                )
                 SELECT 
-                    dv.chunk_text,
-                    dv.metadata,
-                    dv.keywords,
-                    d.title as document_title,
-                    d.uploaded_at,
-                    -- 📊 Универсальное ранжирование: количество совпадающих ключевых слов
-                    ({rank_calculation}) as matches_count,
-                    -- 📈 Ранк = количество совпадений + бонус за новизну
-                    (
-                        ({rank_calculation}) + 
-                        CASE 
-                            WHEN d.uploaded_at > NOW() - INTERVAL '30 days' THEN 0.5
-                            WHEN d.uploaded_at > NOW() - INTERVAL '90 days' THEN 0.2
-                            ELSE 0.0
-                        END
-                    ) as rank
-                FROM document_vectors dv
-                JOIN documents d ON d.id = dv.document_id
-                WHERE dv.user_id = $1
-                AND ({where_clause})
-                ORDER BY matches_count DESC, rank DESC, d.uploaded_at DESC
+                    chunk_text,
+                    metadata,
+                    keywords,
+                    document_title,
+                    uploaded_at,
+                    exact_matches_count,
+                    advanced_score,
+                    -- ✅ ДЛЯ СОВМЕСТИМОСТИ с существующим кодом:
+                    advanced_score as rank,
+                    exact_matches_count as matches_count
+                FROM scored_chunks
+                ORDER BY 
+                    exact_matches_count DESC,      -- 🥇 Сначала по количеству совпадений
+                    advanced_score DESC,           -- 🥈 Потом по продвинутому score  
+                    uploaded_at DESC               -- 🥉 Потом по новизне
                 LIMIT {limit}
             """
             
             results = await conn.fetch(sql, *params)
             
-            logger.info(f"📊 SQL вернул {len(results)} результатов")
-            
-            # Форматируем результаты
+            # 📊 Форматируем результаты (совместимо с существующим кодом)
             chunks = []
             for row in results:
-                chunks.append({
+                try:
+                    metadata = json.loads(row['metadata']) if row['metadata'] else {}
+                except (json.JSONDecodeError, TypeError):
+                    metadata = {}
+                
+                chunk_data = {
                     "chunk_text": row['chunk_text'],
-                    "metadata": json.loads(row['metadata']),
+                    "metadata": metadata,
                     "keywords": row['keywords'],
                     "document_title": row['document_title'],
                     "uploaded_at": row['uploaded_at'],
-                    "rank": float(row['rank']),
-                    "matches_count": int(row['matches_count'])  # Для отладки
-                })
+                    "rank": round(float(row['rank']), 3),                    # ✅ Совместимость
+                    "matches_count": int(row['matches_count']),              # ✅ Совместимость
+                    "exact_matches_count": int(row['exact_matches_count']),  # 🆕 Новое поле
+                    "advanced_score": round(float(row['advanced_score']), 3) # 🆕 Новое поле
+                }
+                chunks.append(chunk_data)
             
-            logger.info(f"🔍 Найдено {len(chunks)} чанков по ключевым словам для пользователя {user_id}")
+            # 📈 Улучшенное логирование
+            logger.info(f"🔍 Найдено {len(chunks)} чанков по ключевым словам")
+            
+            if chunks:
+                print(f"\n📊 РЕЗУЛЬТАТЫ УЛУЧШЕННОГО КЛЮЧЕВОГО ПОИСКА:")
+                print(f"   🔑 Искали слова: {keyword_list}")
+                for i, chunk in enumerate(chunks[:3]):  # Показываем топ-3
+                    matches = chunk['exact_matches_count']
+                    score = chunk['advanced_score']
+                    preview = chunk['chunk_text'][:50] + "..."
+                    print(f"   {i+1}. ✅ {matches}/{len(keyword_list)} совпадений | Score: {score} | {preview}")
+            
             return chunks
             
         except Exception as e:
@@ -385,31 +452,10 @@ class PostgreSQLVectorDB:
 # 🌐 ГЛОБАЛЬНЫЙ ЭКЗЕМПЛЯР (будет инициализирован в main.py)
 vector_db: Optional[PostgreSQLVectorDB] = None
 
-async def initialize_vector_db(db_pool):
-    from db_postgresql import db_pool  # Импортируем внутри функции
-    """Инициализирует векторную базу данных"""
-    global vector_db
-    vector_db = PostgreSQLVectorDB(db_pool)
-    await vector_db.initialize_vector_tables()
-    logger.info("✅ PostgreSQL Vector DB инициализирована")
-
-# 🔄 ФУНКЦИИ СОВМЕСТИМОСТИ (чтобы не менять весь код)
-async def add_chunks_to_vector_db(document_id: int, user_id: int, chunks: List[Dict]):
-    """Добавляет чанки в векторную базу (совместимость с ChromaDB)"""
-    if vector_db:
-        return await vector_db.add_document_chunks(document_id, user_id, chunks)
-    return False
-
 async def search_similar_chunks(user_id: int, query: str, limit: int = 5) -> List[Dict]:
     """Поиск похожих чанков (совместимость с ChromaDB)"""
     if vector_db:
         return await vector_db.search_similar_chunks(user_id, query, limit)
-    return []
-
-async def keyword_search_chunks(user_id: int, keywords: str, limit: int = 5) -> List[Dict]:
-    """Поиск по ключевым словам (совместимость с ChromaDB)"""
-    if vector_db:
-        return await vector_db.keyword_search_chunks(user_id, keywords, limit)
     return []
 
 async def delete_document_from_vector_db(document_id: int):
@@ -428,51 +474,6 @@ async def extract_date_from_text(text: str) -> str:
         except:
             pass
     return None
-
-async def split_into_chunks(summary: str, document_id: int, user_id: int) -> List[Dict]:
-    """
-    Разбивает документ на чанки для векторизации
-    Перенесено из vector_utils.py и адаптировано для PostgreSQL
-    """
-    from gpt import extract_keywords  # Импорт внутри функции
-    
-    encoder = tiktoken.encoding_for_model("gpt-4")
-    paragraphs = summary.strip().split("\n\n")
-    now_str = datetime.now().strftime("%Y-%m-%d")
-
-    chunks = []
-    chunk_index = 0
-
-    for para in paragraphs:
-        clean_text = para.strip()
-        if len(clean_text) < 20:
-            continue
-
-        token_count = len(encoder.encode(clean_text))
-        
-        found_date = await extract_date_from_text(clean_text)
-        chunk_date = found_date if found_date else now_str
-
-        # 🔹 Извлекаем ключевые слова для этого абзаца
-        keywords = await extract_keywords(clean_text)
-
-        chunks.append({
-            "chunk_text": clean_text,
-            "chunk_index": chunk_index,
-            "metadata": {
-                "user_id": str(user_id),
-                "document_id": str(document_id),
-                "confirmed": 1,
-                "source": "summary",
-                "token_count": token_count,
-                "created_at": chunk_date,
-                "date_inside": found_date or "",
-                "keywords": ", ".join(keywords)
-            }
-        })
-        chunk_index += 1
-   
-    return chunks
 
 # ✅ ОБНОВЛЯЕМ функцию add_chunks_to_vector_db для совместимости:
 
@@ -540,47 +541,6 @@ async def initialize_vector_db(db_pool=None):
     await vector_db.initialize_vector_tables()
     logger.info("✅ PostgreSQL Vector DB инициализирована")
 
-# 🔄 ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ СОВМЕСТИМОСТИ
-
-async def delete_all_chunks_by_user(user_id: int):
-    """Удаляет все векторы пользователя (совместимость с vector_db.py)"""
-    if vector_db:
-        return await vector_db.delete_user_vectors(user_id)
-    return False
-
-async def mark_chunks_unconfirmed(document_id: int):
-    """
-    Помечает чанки документа как неподтвержденные
-    (в PostgreSQL версии можно не реализовывать или сделать заглушку)
-    """
-    # В PostgreSQL версии эта функция может быть заглушкой
-    # так как у нас нет поля "confirmed" или оно не критично
-    logger.info(f"mark_chunks_unconfirmed({document_id}) - заглушка для PostgreSQL")
-    return True
-
-async def get_collection_stats():
-    """Получает статистику векторной базы (совместимость с vector_db.py)"""
-    if vector_db:
-        return await vector_db.get_vector_stats()
-    return {"total_documents": 0, "status": "error"}
-
-# ✅ ФУНКЦИИ ДЛЯ РАБОТЫ С ЭМБЕДДИНГАМИ (если нужны):
-
-def validate_embedding_dimensions(embedding: List[float]) -> bool:
-    """Проверяет размерность эмбеддинга"""
-    return len(embedding) == 1536  # OpenAI text-embedding-3-small
-
-async def batch_get_embeddings(texts: List[str]) -> List[List[float]]:
-    """Получает эмбеддинги для списка текстов (batch обработка)"""
-    embeddings = []
-    for text in texts:
-        if vector_db:
-            embedding = await vector_db.get_embedding(text)
-            embeddings.append(embedding)
-        else:
-            embeddings.append([0.0] * 1536)  # Заглушка
-    return embeddings
-
 # 🛠️ ИСПРАВЛЕНИЯ В СУЩЕСТВУЮЩИХ ФУНКЦИЯХ
 
 # Исправляем функцию split_into_chunks если есть проблемы с extract_keywords
@@ -631,10 +591,7 @@ async def split_into_chunks(summary: str, document_id: int, user_id: int) -> Lis
             }
         })
         chunk_index += 1
-    
-    # ❗ Удаляем последний чанк, если их больше одного (логика из vector_utils)
-    if len(chunks) > 1:
-        chunks = chunks[:-1]
+     
 
     return chunks
 

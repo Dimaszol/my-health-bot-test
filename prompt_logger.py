@@ -1,4 +1,4 @@
-# prompt_logger.py - Детальное логирование процесса создания промта
+# prompt_logger.py - ИСПРАВЛЕННАЯ ВЕРСИЯ без last_summary
 
 import logging
 import json
@@ -29,35 +29,22 @@ def log_chunk_info(chunks: list, chunk_type: str):
     if len(chunks) > 3:
         print(f"   ... и еще {len(chunks) - 3} чанков")
 
-def filter_chunks_with_logging(chunks: list, chunk_type: str, exclude_doc_id=None, 
-                             exclude_texts=None, limit=5) -> list:
-    """Фильтрует чанки с детальным логированием"""
+def filter_chunks_with_logging(chunks: list, chunk_type: str, limit=5) -> list:
+    """✅ УПРОЩЕННАЯ фильтрация чанков без исключений документов"""
     print(f"\n🔍 Фильтрация {chunk_type}:")
     print(f"   📥 Входящих чанков: {len(chunks)}")
     
     filtered_texts = []
-    excluded_by_doc = 0
-    excluded_by_text = 0
     
     for chunk in chunks:
         chunk_text = chunk.get("chunk_text", "")
-        metadata = chunk.get("metadata", {})
         
-        # Фильтр по document_id
-        if exclude_doc_id and str(metadata.get("document_id")) == str(exclude_doc_id):
-            excluded_by_doc += 1
-            continue
-        # Фильтр по тексту
-        if exclude_texts and chunk_text.strip() in exclude_texts:
-            excluded_by_text += 1
-            continue
-            
-        filtered_texts.append(chunk_text)
-        if len(filtered_texts) >= limit:
-            break
+        # Простая проверка на непустой текст
+        if chunk_text.strip():
+            filtered_texts.append(chunk_text)
+            if len(filtered_texts) >= limit:
+                break
     
-    print(f"   🚫 Исключено по документу: {excluded_by_doc}")
-    print(f"   🚫 Исключено по тексту: {excluded_by_text}")
     print(f"   ✅ Финальных чанков: {len(filtered_texts)}")
     
     return filtered_texts
@@ -65,6 +52,7 @@ def filter_chunks_with_logging(chunks: list, chunk_type: str, exclude_doc_id=Non
 async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
     """
     🔍 ГЛАВНАЯ ФУНКЦИЯ: Обрабатывает вопрос пользователя с подробным логированием
+    ✅ ИСПРАВЛЕННАЯ ВЕРСИЯ без last_summary
     
     Returns:
         Dict с данными для финального промта
@@ -78,57 +66,60 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
     
     try:
         # ==========================================
-        # ШАГ 2: РАСШИРЕНИЕ ВОПРОСА ЧЕРЕЗ GPT
+        # ШАГ 2: ПОЛУЧЕНИЕ ПРОФИЛЯ ПОЛЬЗОВАТЕЛЯ
         # ==========================================
-        log_step(2, "РАСШИРЕНИЕ ВОПРОСА ЧЕРЕЗ GPT")
+        log_step(2, "ПОЛУЧЕНИЕ ПРОФИЛЯ ПОЛЬЗОВАТЕЛЯ")
         
         try:
-            from gpt import enrich_query_for_vector_search
-            refined_query = await enrich_query_for_vector_search(user_input)
+            from save_utils import format_user_profile
+            profile_text = await format_user_profile(user_id)
+            print(f"👤 Профиль получен: {len(profile_text)} символов")
+        except Exception as e:
+            profile_text = "Профиль пациента не заполнен"
+            print(f"❌ Ошибка получения профиля: {e}")
+        
+        # ==========================================
+        # ШАГ 3: ПОЛУЧЕНИЕ СВОДКИ РАЗГОВОРА
+        # ==========================================
+        log_step(3, "ПОЛУЧЕНИЕ СВОДКИ РАЗГОВОРА")
+        
+        try:
+            from db_postgresql import get_conversation_summary
+            summary_text, _ = await get_conversation_summary(user_id)
             
-            print(f"🔍 Исходный вопрос: '{user_input}'")
-            print(f"🧠 Расширенный запрос: '{refined_query}'")
-            print(f"📏 Длина: {len(user_input)} → {len(refined_query)} символов")
+            # Безопасная обработка
+            if not summary_text:
+                summary_text = "Новый пациент, предыдущих бесед нет"
+                
+            print(f"🧠 Сводка получена: {len(summary_text)} символов")
+        except Exception as e:
+            summary_text = "Ошибка получения сводки разговора"
+            print(f"❌ Ошибка получения сводки: {e}")
+        
+        # ==========================================
+        # ШАГ 4: УЛУЧШЕНИЕ ЗАПРОСА ДЛЯ ПОИСКА
+        # ==========================================
+        log_step(4, "УЛУЧШЕНИЕ ЗАПРОСА ДЛЯ ВЕКТОРНОГО ПОИСКА")
+        
+        try:
+            from gpt import enrich_query_for_vector_search, extract_keywords
+            
+            # Улучшаем запрос для векторного поиска
+            refined_query = await enrich_query_for_vector_search(user_input)
+            print(f"🔍 Исходный: '{user_input}'")
+            print(f"🎯 Улучшенный: '{refined_query}'")
+            
+            # Извлекаем ключевые слова
+            keywords = await extract_keywords(user_input)
+            print(f"🔑 Ключевые слова: {keywords}")
             
         except Exception as e:
             refined_query = user_input
-            print(f"❌ Ошибка GPT расширения: {e}")
-            print(f"🔄 Используем исходный вопрос: '{user_input}'")
-        
-        # ==========================================
-        # ШАГ 3: ИЗВЛЕЧЕНИЕ КЛЮЧЕВЫХ СЛОВ
-        # ==========================================
-        log_step(3, "ИЗВЛЕЧЕНИЕ КЛЮЧЕВЫХ СЛОВ НА АНГЛИЙСКОМ")
-        
-        try:
-            from gpt import extract_keywords
-            keywords = await extract_keywords(user_input)
-            
-            print(f"🔑 Ключевые слова из вопроса: {keywords}")
-            print(f"📊 Количество: {len(keywords)}")
-            
-        except Exception as e:
             keywords = []
-            print(f"❌ Ошибка извлечения ключевых слов: {e}")
+            print(f"❌ Ошибка обработки запроса, используем исходный: {e}")
         
-        # ==========================================
-        # ШАГ 4: ПОДГОТОВКА К ПОИСКУ
-        # ==========================================
-        log_step(4, "ПОДГОТОВКА К ПОИСКУ В ВЕКТОРНОЙ БАЗЕ")
-        
-        # Получаем данные для фильтрации
-        try:
-            from db_postgresql import get_last_summary
-            last_doc_id, last_summary = await get_last_summary(user_id)
-            exclude_texts = last_summary.strip().split("\n\n") if last_summary else []
-            
-            print(f"🚫 Исключаем документ ID: {last_doc_id}")
-            print(f"🚫 Исключаем текстов из последнего документа: {len(exclude_texts)}")
-            
-        except Exception as e:
-            last_doc_id, last_summary = None, ""
-            exclude_texts = []
-            print(f"❌ Ошибка получения данных для исключения: {e}")
+        # ❌ УБИРАЕМ ШАГ С ПОЛУЧЕНИЕМ last_summary
+        # Больше НЕ получаем и НЕ исключаем последний документ
         
         # ==========================================
         # ШАГ 5A: СЕМАНТИЧЕСКИЙ ПОИСК
@@ -137,6 +128,7 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
         
         try:
             from vector_db_postgresql import search_similar_chunks
+            # ✅ ИЩЕМ ПО ВСЕМ ДОКУМЕНТАМ без исключений
             vector_chunks = await search_similar_chunks(user_id, refined_query, limit=10)
             
             if vector_chunks:
@@ -156,8 +148,9 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
         try:
             from vector_db_postgresql import keyword_search_chunks
                        
-            # ✅ ИСПРАВЛЕНИЕ: передаем ключевые слова, а не исходный вопрос
+            # Передаем ключевые слова, а не исходный вопрос
             keywords_string = ", ".join(keywords) if keywords else user_input
+            # ✅ ИЩЕМ ПО ВСЕМ ДОКУМЕНТАМ без исключений
             keyword_chunks = await keyword_search_chunks(user_id, keywords_string, limit=10)
             
             print(f"🔍 Поиск по ключевым словам: '{keywords_string}'")
@@ -176,15 +169,13 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
         # ==========================================
         log_step(7, "ФИЛЬТРАЦИЯ И ОБЪЕДИНЕНИЕ РЕЗУЛЬТАТОВ")
         
-        # Фильтруем результаты
+        # ✅ ФИЛЬТРУЕМ БЕЗ ИСКЛЮЧЕНИЙ по документам
         vector_texts = filter_chunks_with_logging(
-            vector_chunks, "СЕМАНТИЧЕСКИХ", 
-            exclude_doc_id=last_doc_id, exclude_texts=exclude_texts, limit=4
+            vector_chunks, "СЕМАНТИЧЕСКИХ", limit=4
         )
         
         keyword_texts = filter_chunks_with_logging(
-            keyword_chunks, "КЛЮЧЕВЫХ", 
-            exclude_doc_id=last_doc_id, exclude_texts=exclude_texts, limit=2
+            keyword_chunks, "КЛЮЧЕВЫХ", limit=2
         )
         
         # Объединяем и убираем дубликаты
@@ -217,107 +208,23 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
             
         except Exception as e:
             system_prompt = "You are a helpful medical assistant."
+            lang = 'ru'
             print(f"❌ Ошибка создания системного промта: {e}")
         
         # ==========================================
-        # ШАГ 8: ДАННЫЕ ПАЦИЕНТА
+        # ШАГ 8: СОЗДАНИЕ ФИНАЛЬНОГО ПРОМТА
         # ==========================================
-        log_step(9, "ЗАГРУЗКА ДАННЫХ ПАЦИЕНТА ИЗ АНКЕТЫ")
+        log_step(9, "СОЗДАНИЕ ФИНАЛЬНОГО ПРОМТА")
         
-        try:
-            from save_utils import format_user_profile
-            profile_text = await format_user_profile(user_id)
-            
-            print(f"👤 Профиль пациента загружен:")
-            print(f"   📏 Длина: {len(profile_text)} символов")
-            print(f"   📋 Превью: {profile_text[:150]}...")
-            
-        except Exception as e:
-            profile_text = "Профиль пациента недоступен"
-            print(f"❌ Ошибка загрузки профиля: {e}")
-        
-        # ==========================================
-        # ШАГ 9: СВОДКА РАЗГОВОРА
-        # ==========================================
-        log_step(10, "СВОДКА КОНТЕКСТА РАЗГОВОРА")
-        
-        try:
-            from db_postgresql import get_conversation_summary
-            summary_text, _ = await get_conversation_summary(user_id)
-            
-            print(f"💭 Сводка разговора:")
-            print(f"   📏 Длина: {len(summary_text)} символов")
-            print(f"   📋 Превью: {summary_text[:150]}...")
-            
-        except Exception as e:
-            summary_text = "Сводка разговора недоступна"
-            print(f"❌ Ошибка загрузки сводки: {e}")
-        
-        # ==========================================
-        # ШАГ 10: ПОСЛЕДНИЙ ДОКУМЕНТ
-        # ==========================================
-        log_step(11, "ИНФОРМАЦИЯ ИЗ ПОСЛЕДНЕГО ДОКУМЕНТА")
-        
-        if last_summary:
-            print(f"📄 Последний документ (ID: {last_doc_id}):")
-            print(f"   📏 Длина: {len(last_summary)} символов")
-            print(f"   📋 Превью: {last_summary[:150]}...")
-        else:
-            print("❌ Последний документ не найден")
-            last_summary = "Нет недавних документов"
-        
-        # ==========================================
-        # ШАГ 11: ПОЛУЧЕНИЕ RECENT MESSAGES  ← НОВЫЙ ШАГ
-        # ==========================================
-        log_step(12, "ПОЛУЧЕНИЕ RECENT MESSAGES")
-        
-        try:
-            from db_postgresql import get_last_messages
-            recent_messages = await get_last_messages(user_id, limit=6)
-            
-            # Форматируем recent messages (используем ту же логику что в main.py)
-            context_lines = []
-            for msg in recent_messages:
-                if isinstance(msg, (tuple, list)) and len(msg) >= 2:
-                    role = "USER" if msg[0] == 'user' else "BOT"
-                    content = str(msg[1])[:100]  # Ограничиваем длину
-                    context_lines.append(f"{role}: {content}")
-                else:
-                    print(f"⚠️ Неожиданный формат сообщения: {msg}")
-            
-            context_text = "\n".join(context_lines)
-            
-            print(f"💬 Recent messages:")
-            print(f"   📏 Длина: {len(context_text)} символов")
-            if context_text:
-                print(f"   📋 Превью:")
-                for line in context_lines[:3]:  # Показываем первые 3
-                    print(f"      {line}")
-                if len(context_lines) > 3:
-                    print(f"      ... и еще {len(context_lines) - 3} сообщений")
-            else:
-                print("   📋 Нет недавних сообщений")
-            
-        except Exception as e:
-            context_text = ""
-            print(f"❌ Ошибка получения recent messages: {e}")
-
-        # ==========================================
-        # ШАГ 11: ФИНАЛЬНАЯ СБОРКА ПРОМТА
-        # ==========================================
-        log_step(13, "ФИНАЛЬНАЯ СБОРКА ПРОМТА")
-        
-        # Собираем финальный промт
+        # ✅ СОЗДАЕМ ПРОМТ БЕЗ last_summary
         user_prompt_parts = [
-            "You have access to the user's health profile, medical documents, imaging reports, conversation history, and memory notes.",
             "Answer only questions related to the user's health. Do not repeat that you're an AI. Do not ask follow-up questions unless critical.",
             "",
             f"📌 Patient profile:\n{profile_text}",
             "",
             f"🧠 Conversation summary:\n{summary_text}",
             "",
-            f"📄 Recent document interpretations:\n{last_summary}",
-            "",
+            # ❌ УБРАЛИ: f"📄 Recent document interpretations:\n{last_summary}",
             f"🔎 Related historical data:\n{chunks_text or 'Релевантная информация не найдена'}",
             "",
             f"Patient: {user_input}"
@@ -329,32 +236,27 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
         print(f"   🔧 Системный промт: {len(system_prompt)} символов")
         print(f"   👤 Профиль: {len(profile_text)} символов")
         print(f"   💭 Сводка: {len(summary_text)} символов")
-        print(f"   📄 Последний документ: {len(last_summary)} символов")
+        # ❌ УБРАЛИ: print(f"   📄 Последний документ: {len(last_summary)} символов")
         print(f"   🔎 Исторические данные: {len(chunks_text)} символов")
         print(f"   📏 ОБЩАЯ ДЛИНА: {len(final_user_prompt)} символов")
         print(f"   🎯 Примерно токенов: {len(final_user_prompt) // 4}")
         
-        # Возвращаем все данные для использования в main.py
+        # ✅ ВОЗВРАЩАЕМ ДАННЫЕ БЕЗ last_summary
         return {
             "profile_text": profile_text,
             "summary_text": summary_text, 
-            "last_summary": last_summary or "Нет недавних документов",
+            # ❌ УБРАЛИ: "last_summary": last_summary or "Нет недавних документов",
             "chunks_text": chunks_text or "Релевантная информация не найдена",
             "chunks_found": len(all_chunks),
             "lang": lang if 'lang' in locals() else 'ru',
-            "context_text": context_text
+            "context_text": final_user_prompt  # Добавляем для совместимости
         }
         
     except Exception as e:
         log_step(0, "КРИТИЧЕСКАЯ ОШИБКА", f"❌ {e}", success=False)
         raise
 
-# 🔧 ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ КРАТКОГО ЛОГИРОВАНИЯ
-def log_search_summary(vector_count: int, keyword_count: int, final_count: int, 
-                      excluded_doc_id: Optional[int] = None):
-    """Краткая сводка поиска (для обратной совместимости)"""
-    print(f"🧠 Найдено: {vector_count} векторных + {keyword_count} ключевых = {final_count} итого", end="")
-    if excluded_doc_id:
-        print(f" (исключен док.{excluded_doc_id})")
-    else:
-        print()
+# 🔧 ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ КРАТКОГО ЛОГИРОВАНИЯ (упрощенная)
+def log_search_summary(vector_count: int, keyword_count: int, final_count: int):
+    """Краткая сводка поиска БЕЗ excluded_doc_id"""
+    print(f"🧠 Найдено: {vector_count} векторных + {keyword_count} ключевых = {final_count} итого")

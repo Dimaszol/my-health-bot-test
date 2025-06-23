@@ -377,7 +377,7 @@ async def extract_keywords(text: str) -> list[str]:
         return []
 
 @async_safe_openai_call(max_retries=3, delay=2.0)
-async def ask_doctor(profile_text: str, summary_text: str, last_summary: str, 
+async def ask_doctor(profile_text: str, summary_text: str, 
                chunks_text: str, context_text: str, user_question: str, 
                lang: str, user_id: int = None) -> str:
     """
@@ -429,7 +429,6 @@ async def ask_doctor(profile_text: str, summary_text: str, last_summary: str,
     context_block = (
         f"📌 Patient profile:\n{profile_text}\n\n"
         f"🧠 Conversation summary:\n{summary_text}\n\n"
-        f"📄 Recent document interpretations:\n{last_summary}\n\n"
         f"🔎 Related historical data:\n{chunks_text}\n\n"
         f"💬 Recent messages:\n{context_text}\n\n"
     )

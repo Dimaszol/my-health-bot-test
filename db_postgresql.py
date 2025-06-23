@@ -492,21 +492,6 @@ async def get_messages_after(user_id: int, message_id: int) -> List[Dict]:
     finally:
         await release_db_connection(conn)
 
-async def get_last_summary(user_id: int) -> tuple:
-    """Получить последнее резюме документа (совместимость)"""
-    conn = await get_db_connection()
-    try:
-        row = await conn.fetchrow(
-            "SELECT id, summary FROM documents WHERE user_id = $1 AND confirmed = true ORDER BY uploaded_at DESC LIMIT 1",
-            user_id
-        )
-        return (row['id'], row['summary']) if row else (None, "")
-    except Exception as e:
-        log_error_with_context(e, {"function": "get_last_summary", "user_id": user_id})
-        return (None, "")
-    finally:
-        await release_db_connection(conn)
-
 # 🌐 ФУНКЦИИ ЛОКАЛИЗАЦИИ
 async def get_user_language(user_id: int) -> str:
     """Получить язык пользователя"""

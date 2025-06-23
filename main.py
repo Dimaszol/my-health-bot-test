@@ -13,7 +13,7 @@ from aiogram.client.default import DefaultBotProperties
 from db_postgresql import (
     get_user, create_user, save_document, update_document_title, is_fully_registered, get_user_name,
     get_user_documents, get_document_by_id, delete_document, save_message, 
-    get_last_messages, get_conversation_summary, get_last_summary, 
+    get_last_messages, get_conversation_summary,
     get_user_profile, get_user_language, t, get_all_values_for_key,
     initialize_db_pool, close_db_pool, get_db_stats, db_health_check, set_user_language
 )
@@ -467,7 +467,6 @@ async def handle_user_message(message: types.Message):
                 # Извлекаем данные из результата
                 profile_text = prompt_data["profile_text"]
                 summary_text = prompt_data["summary_text"]
-                last_summary = prompt_data["last_summary"]
                 chunks_text = prompt_data["chunks_text"]
                 chunks_found = prompt_data["chunks_found"]
                 lang = prompt_data["lang"]
@@ -486,39 +485,32 @@ async def handle_user_message(message: types.Message):
                     refined_query = user_input
                     print(f"🔍 Запрос: '{user_input}' (GPT недоступен)")
 
-                # Простой поиск
+                # Простой поиск БЕЗ исключений
                 vector_chunks = await search_similar_chunks(user_id, refined_query, limit=10)
                 keyword_chunks = await keyword_search_chunks(user_id, user_input, limit=10)
                 
-                # Простая фильтрация (ваш старый код)
+                # Получаем только сводку разговора
                 summary_text, _ = await get_conversation_summary(user_id)
-                last_doc_id, last_summary = await get_last_summary(user_id)
-                exclude_texts = last_summary.strip().split("\n\n") if last_summary else []
 
-                def filter_chunks(chunks, exclude_doc_id=None, exclude_texts=None, limit=5):
+                def filter_chunks_simple(chunks, limit=5):
+                    """Простая фильтрация без исключений документов"""
                     filtered_texts = []
                     for chunk in chunks:
                         chunk_text = chunk.get("chunk_text", "")
-                        metadata = chunk.get("metadata", {})
-                        
-                        if exclude_doc_id and str(metadata.get("document_id")) == str(exclude_doc_id):
-                            continue
-                        if exclude_texts and chunk_text.strip() in exclude_texts:
-                            continue
-                            
-                        filtered_texts.append(chunk_text)
-                        if len(filtered_texts) >= limit:
-                            break
+                        if chunk_text.strip():  # Только непустые чанки
+                            filtered_texts.append(chunk_text)
+                            if len(filtered_texts) >= limit:
+                                break
                     return filtered_texts
 
-                vector_texts = filter_chunks(vector_chunks, exclude_doc_id=last_doc_id, exclude_texts=exclude_texts, limit=4)
-                keyword_texts = filter_chunks(keyword_chunks, exclude_doc_id=last_doc_id, exclude_texts=exclude_texts, limit=2)
+                vector_texts = filter_chunks_simple(vector_chunks, limit=4)
+                keyword_texts = filter_chunks_simple(keyword_chunks, limit=2)
                 all_chunks = list(dict.fromkeys(vector_texts + keyword_texts))
                 chunks_text = "\n\n".join(all_chunks[:6])
                 chunks_found = len(all_chunks)
                 
-                # Краткое логирование
-                log_search_summary(len(vector_chunks), len(keyword_chunks), chunks_found, last_doc_id)
+                # Краткое логирование БЕЗ excluded_doc_id
+                print(f"🧠 Найдено: {len(vector_chunks)} векторных + {len(keyword_chunks)} ключевых = {chunks_found} итого")
                 
                 # Создаем данные для fallback
                 profile_text = await format_user_profile(user_id)
@@ -557,7 +549,6 @@ async def handle_user_message(message: types.Message):
                 response = await ask_doctor(
                     profile_text=profile_text,
                     summary_text=summary_text, 
-                    last_summary=last_summary,
                     chunks_text=chunks_text,
                     context_text=context_text,
                     user_question=user_input,
