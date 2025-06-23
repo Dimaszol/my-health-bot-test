@@ -29,26 +29,6 @@ def log_chunk_info(chunks: list, chunk_type: str):
     if len(chunks) > 3:
         print(f"   ... и еще {len(chunks) - 3} чанков")
 
-def filter_chunks_with_logging(chunks: list, chunk_type: str, limit=5) -> list:
-    """✅ УПРОЩЕННАЯ фильтрация чанков без исключений документов"""
-    print(f"\n🔍 Фильтрация {chunk_type}:")
-    print(f"   📥 Входящих чанков: {len(chunks)}")
-    
-    filtered_texts = []
-    
-    for chunk in chunks:
-        chunk_text = chunk.get("chunk_text", "")
-        
-        # Простая проверка на непустой текст
-        if chunk_text.strip():
-            filtered_texts.append(chunk_text)
-            if len(filtered_texts) >= limit:
-                break
-    
-    print(f"   ✅ Финальных чанков: {len(filtered_texts)}")
-    
-    return filtered_texts
-
 async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
     """
     🔍 ГЛАВНАЯ ФУНКЦИЯ: Обрабатывает вопрос пользователя с подробным логированием
@@ -165,28 +145,52 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
             print(f"❌ Ошибка поиска по ключевым словам: {e}")
         
         # ==========================================
-        # ШАГ 6: ФИЛЬТРАЦИЯ И ОБЪЕДИНЕНИЕ
+        # ШАГ 6: ГИБРИДНОЕ РАНЖИРОВАНИЕ
         # ==========================================
-        log_step(7, "ФИЛЬТРАЦИЯ И ОБЪЕДИНЕНИЕ РЕЗУЛЬТАТОВ")
+        log_step(7, "ГИБРИДНОЕ РАНЖИРОВАНИЕ РЕЗУЛЬТАТОВ")
         
-        # ✅ ФИЛЬТРУЕМ БЕЗ ИСКЛЮЧЕНИЙ по документам
-        vector_texts = filter_chunks_with_logging(
-            vector_chunks, "СЕМАНТИЧЕСКИХ", limit=4
-        )
-        
-        keyword_texts = filter_chunks_with_logging(
-            keyword_chunks, "КЛЮЧЕВЫХ", limit=2
-        )
-        
-        # Объединяем и убираем дубликаты
-        all_chunks = list(dict.fromkeys(vector_texts + keyword_texts))
-        chunks_text = "\n\n".join(all_chunks[:6])
-        
-        print(f"\n📦 ИТОГОВЫЙ РЕЗУЛЬТАТ ПОИСКА:")
-        print(f"   🧠 Семантических чанков: {len(vector_texts)}")
-        print(f"   🔑 Ключевых чанков: {len(keyword_texts)}")
-        print(f"   📋 Уникальных чанков: {len(all_chunks)}")
-        print(f"   📄 Символов контекста: {len(chunks_text)}")
+        try:
+            # 🧠 Используем гибридное ранжирование
+            from vector_db_postgresql import create_hybrid_ranking
+            
+            # Создаем умное ранжирование с boost для чанков из обоих поисков
+            ranked_chunk_texts = create_hybrid_ranking(
+                vector_chunks, 
+                keyword_chunks, 
+                boost_factor=1.8  # Чанки из обоих поисков получают +80% к score
+            )
+            
+            # Берем топ-5 результатов для промпта
+            selected_chunks = ranked_chunk_texts[:5]
+            chunks_text = "\n\n".join(selected_chunks)
+            chunks_found = len(selected_chunks)
+            
+            print(f"\n📦 ИТОГОВЫЙ РЕЗУЛЬТАТ ГИБРИДНОГО ПОИСКА:")
+            print(f"   🔥 Ранжированных чанков: {len(ranked_chunk_texts)}")
+            print(f"   🎯 Отобрано для промпта: {chunks_found}")
+            print(f"   📄 Символов контекста: {len(chunks_text)}")
+            
+        except Exception as e:
+            print(f"❌ Ошибка гибридного ранжирования: {e}")
+            # Fallback на старую логику при ошибке
+            
+            def filter_chunks_simple(chunks, limit=5):
+                filtered_texts = []
+                for chunk in chunks:
+                    chunk_text = chunk.get("chunk_text", "")
+                    if chunk_text.strip():
+                        filtered_texts.append(chunk_text)
+                        if len(filtered_texts) >= limit:
+                            break
+                return filtered_texts
+
+            vector_texts = filter_chunks_simple(vector_chunks, limit=3)
+            keyword_texts = filter_chunks_simple(keyword_chunks, limit=2)
+            all_chunks = list(dict.fromkeys(vector_texts + keyword_texts))  # ← Определяем all_chunks
+            chunks_text = "\n\n".join(all_chunks[:5])
+            chunks_found = len(all_chunks)
+            
+            print(f"📦 FALLBACK: {chunks_found} чанков (простое объединение)")
         
         # ==========================================
         # ШАГ 7: СИСТЕМНЫЙ ПРОМТ
@@ -247,7 +251,7 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
             "summary_text": summary_text, 
             # ❌ УБРАЛИ: "last_summary": last_summary or "Нет недавних документов",
             "chunks_text": chunks_text or "Релевантная информация не найдена",
-            "chunks_found": len(all_chunks),
+            "chunks_found": chunks_found,
             "lang": lang if 'lang' in locals() else 'ru',
             "context_text": final_user_prompt  # Добавляем для совместимости
         }

@@ -458,6 +458,12 @@ async def search_similar_chunks(user_id: int, query: str, limit: int = 5) -> Lis
         return await vector_db.search_similar_chunks(user_id, query, limit)
     return []
 
+async def keyword_search_chunks(user_id: int, keywords: str, limit: int = 5) -> List[Dict]:
+    """Поиск по ключевым словам (совместимость с ChromaDB)"""
+    if vector_db:
+        return await vector_db.keyword_search_chunks(user_id, keywords, limit)
+    return []
+
 async def delete_document_from_vector_db(document_id: int):
     """Удаляет документ из векторной базы (совместимость с ChromaDB)"""
     if vector_db:
@@ -612,3 +618,140 @@ async def initialize_vector_db_safe():
     except Exception as e:
         logger.error(f"❌ Ошибка инициализации векторной базы: {e}")
         return False
+    
+def create_hybrid_ranking(vector_chunks: List[Dict], keyword_chunks: List[Dict], 
+                         boost_factor: float = 1.8) -> List[str]:
+    """
+    🧠 ГИБРИДНЫЙ ПОИСК с boost-фактором для чанков, найденных в обоих поисках
+    
+    Args:
+        vector_chunks: Результаты векторного поиска
+        keyword_chunks: Результаты поиска по ключевым словам  
+        boost_factor: Множитель для чанков из обоих поисков (1.8 = +80%)
+    
+    Returns:
+        Список текстов чанков, отсортированных по гибридному score
+    """
+    
+    chunk_scores = {}  # chunk_text -> score_data
+    
+    print(f"\n🔍 ГИБРИДНОЕ РАНЖИРОВАНИЕ:")
+    print(f"   📊 Векторных результатов: {len(vector_chunks)}")
+    print(f"   🔑 Ключевых результатов: {len(keyword_chunks)}")
+    print(f"   ⚡ Boost-фактор: {boost_factor}")
+    
+    # ==========================================
+    # ШАГ 1: ОБРАБАТЫВАЕМ ВЕКТОРНЫЕ РЕЗУЛЬТАТЫ
+    # ==========================================
+    for i, chunk in enumerate(vector_chunks):
+        chunk_text = chunk.get("chunk_text", "").strip()
+        if not chunk_text:
+            continue
+            
+        # Нормализуем similarity (0.0-1.0) в score (0.0-10.0)
+        vector_score = chunk.get("similarity", 0.0) * 10
+        
+        # Бонус за позицию в векторном поиске (топ результаты важнее)
+        position_bonus = max(0, (len(vector_chunks) - i) * 0.1)
+        
+        chunk_scores[chunk_text] = {
+            "vector_score": vector_score + position_bonus,
+            "keyword_score": 0.0,
+            "keyword_matches": 0,
+            "found_in_vector": True,
+            "found_in_keywords": False
+        }
+    
+    # ==========================================
+    # ШАГ 2: ОБРАБАТЫВАЕМ КЛЮЧЕВЫЕ РЕЗУЛЬТАТЫ
+    # ==========================================
+    for i, chunk in enumerate(keyword_chunks):
+        chunk_text = chunk.get("chunk_text", "").strip()
+        if not chunk_text:
+            continue
+            
+        # Используем улучшенный score из новой функции keyword_search_chunks
+        keyword_score = chunk.get("rank", 0.0)
+        keyword_matches = chunk.get("matches_count", 0)
+        
+        # Бонус за позицию в ключевом поиске
+        position_bonus = max(0, (len(keyword_chunks) - i) * 0.2)
+        
+        if chunk_text in chunk_scores:
+            # 🔥 НАЙДЕН В ОБОИХ ПОИСКАХ - ПРИМЕНЯЕМ BOOST!
+            chunk_scores[chunk_text]["keyword_score"] = keyword_score + position_bonus
+            chunk_scores[chunk_text]["keyword_matches"] = keyword_matches
+            chunk_scores[chunk_text]["found_in_keywords"] = True
+            print(f"   🔥 BOOST: {keyword_matches} совпадений | '{chunk_text[:40]}...'")
+        else:
+            # Найден только в ключевом поиске
+            chunk_scores[chunk_text] = {
+                "vector_score": 0.0,
+                "keyword_score": keyword_score + position_bonus,
+                "keyword_matches": keyword_matches,
+                "found_in_vector": False,
+                "found_in_keywords": True
+            }
+    
+    # ==========================================
+    # ШАГ 3: ВЫЧИСЛЯЕМ ФИНАЛЬНЫЕ SCORES
+    # ==========================================
+    scored_chunks = []
+    
+    for chunk_text, data in chunk_scores.items():
+        vector_score = data["vector_score"]
+        keyword_score = data["keyword_score"] 
+        keyword_matches = data["keyword_matches"]
+        
+        if data["found_in_vector"] and data["found_in_keywords"]:
+            # 🚀 ГИБРИДНЫЙ РЕЗУЛЬТАТ с boost
+            base_score = (vector_score + keyword_score) / 2
+            
+            # Дополнительный boost за количество совпавших ключевых слов
+            matches_multiplier = 1.0 + (keyword_matches * 0.15)  # +15% за каждое совпадение
+            
+            final_score = base_score * boost_factor * matches_multiplier
+            search_type = f"🔥 HYBRID({keyword_matches})"
+            
+        elif data["found_in_vector"]:
+            final_score = vector_score
+            search_type = "🧠 VECTOR"
+        else:
+            # Ключевой результат с бонусом за совпадения
+            matches_multiplier = 1.0 + (keyword_matches * 0.1)
+            final_score = keyword_score * matches_multiplier
+            search_type = f"🔑 KEYWORD({keyword_matches})"
+        
+        scored_chunks.append({
+            "chunk_text": chunk_text,
+            "final_score": final_score,
+            "search_type": search_type,
+            "keyword_matches": keyword_matches,
+            "is_hybrid": data["found_in_vector"] and data["found_in_keywords"]
+        })
+    
+    # ==========================================
+    # ШАГ 4: СОРТИРОВКА ПО ПРИОРИТЕТУ
+    # ==========================================
+    def sort_key(item):
+        # Приоритет: гибридные > количество совпадений > финальный score
+        return (item["is_hybrid"], item["keyword_matches"], item["final_score"])
+    
+    scored_chunks.sort(key=sort_key, reverse=True)
+    
+    # 📊 Подробное логирование
+    hybrid_count = sum(1 for c in scored_chunks if c["is_hybrid"])
+    print(f"\n📊 РЕЗУЛЬТАТЫ ГИБРИДНОГО РАНЖИРОВАНИЯ:")
+    print(f"   🔥 Гибридных результатов: {hybrid_count}")
+    print(f"   📋 Всего уникальных: {len(scored_chunks)}")
+    
+    # Показываем топ-5 результатов
+    print(f"\n🏆 ТОП-5 РЕЗУЛЬТАТОВ:")
+    for i, item in enumerate(scored_chunks[:5]):
+        score = item["final_score"]
+        search_type = item["search_type"]
+        preview = item["chunk_text"][:50] + "..."
+        print(f"   {i+1}. [{search_type}] Score: {score:.1f} | {preview}")
+    
+    # Возвращаем только тексты чанков (для совместимости)
+    return [item["chunk_text"] for item in scored_chunks]
