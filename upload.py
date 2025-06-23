@@ -6,7 +6,7 @@ import logging  # ✅ ДОБАВЛЕНО
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from save_utils import send_to_gpt_vision, convert_pdf_to_images
-from gpt import ask_gpt, ask_structured, is_medical_text, generate_medical_summary, generate_title_from_text, extract_text_from_image
+from gpt import ask_structured, is_medical_text, generate_medical_summary, generate_title_from_text, extract_text_from_image
 from db_postgresql import save_document, get_user_language, t
 from registration import user_states
 from vector_db_postgresql import split_into_chunks, add_chunks_to_vector_db

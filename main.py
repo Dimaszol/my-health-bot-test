@@ -36,7 +36,7 @@ from vector_db_postgresql import (
     delete_document_from_vector_db
 )
 
-from gpt import ask_gpt, ask_doctor, check_openai_status, fallback_response, fallback_summarize
+from gpt import ask_doctor, check_openai_status, fallback_response, fallback_summarize
 from subscription_manager import check_document_limit, SubscriptionManager, check_gpt4o_limit
 from stripe_config import check_stripe_setup
 from subscription_handlers import SubscriptionHandlers, upsell_tracker

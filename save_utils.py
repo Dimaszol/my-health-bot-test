@@ -1,15 +1,20 @@
 import openai
+import asyncio
 import base64
 import mimetypes
 import os
+from dotenv import load_dotenv
 from pdf2image import convert_from_path
 from db_postgresql import get_conversation_summary, get_messages_after, save_conversation_summary, \
-    get_user_medications_text, update_user_field
+    get_user_medications_text, update_user_field, get_user_language
 
-from gpt import ask_gpt, extract_text_from_image
+from gpt import client, OPENAI_SEMAPHORE
 from datetime import datetime
 
+load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
+# Семафор для ограничения одновременных запросов
+OPENAI_SEMAPHORE = asyncio.Semaphore(5)
 
 def encode_file_to_base64(file_path, user_id):
     """Безопасное кодирование файла в base64"""
@@ -92,8 +97,29 @@ def format_dialogue(messages, max_len=300):
     return "\n".join(result)
 
 async def maybe_update_summary(user_id):
+    """
+    ✅ МУЛЬТИЯЗЫЧНАЯ версия без использования ask_gpt
+    Создает сводки разговоров с прямым вызовом OpenAI API
+    """
+    # Получаем язык пользователя
+    try:
+        user_lang = await get_user_language(user_id)
+        
+        # Проверяем корректность языка
+        if user_lang not in ['ru', 'uk', 'en']:
+            user_lang = 'ru'  # fallback для неподдерживаемых языков
+            
+        print(f"🌐 Язык пользователя {user_id}: {user_lang}")
+    except Exception as e:
+        user_lang = "ru"  # fallback
+        print(f"❌ Ошибка получения языка, используем русский: {e}")
+    
     old_summary, last_id = await get_conversation_summary(user_id)
     new_messages = await get_messages_after(user_id, last_id)
+    
+    # ✅ БЕЗОПАСНАЯ ПРОВЕРКА: убеждаемся что old_summary не None
+    if not old_summary:
+        old_summary = ""  # Пустая строка вместо None
 
     user_messages = []
     for msg in new_messages:
@@ -123,26 +149,78 @@ async def maybe_update_summary(user_id):
     dialogue = format_dialogue(new_messages)
     today = datetime.now().strftime("%d.%m.%Y")
 
+    # 🌐 МУЛЬТИЯЗЫЧНЫЙ ПРОМПТ (English prompt, user language response)
+    lang_names = {
+        'ru': 'Russian',
+        'uk': 'Ukrainian', 
+        'en': 'English'
+    }
+    
     prompt = (
-        f"Ниже приведена краткая сводка общения между врачом и пациентом, составленная ранее. "
-        f"Также представлены новые сообщения. Сегодняшняя дата: {today}.\n\n"
-        f"🛠 Твоя задача — обновить summary, строго следуя правилам:\n"
-        f"- Каждая жалоба, симптом или рекомендация в сводке должна иметь дату первого или последнего упоминания.\n"
-        f"- Если в новых сообщениях снова говорится об уже существующей проблеме — обнови дату на текущую ({today}).\n"
-        f"- Если тема **не упоминалась** в новых сообщениях, **оставь её с предыдущей датой**.\n"
-        f"- Если какая-то проблема **не обновлялась более 7 дней**, и в новых сообщениях она не упоминается — **удали её**.\n"
-        f"- Итоговая сводка должна быть краткой, с датами, 2–3 абзаца максимум. Не дублируй и не усложняй.\n\n"
-        f"📘 Предыдущая сводка:\n{old_summary}\n\n"
-        f"💬 Новые сообщения:\n{dialogue}\n\n"
-        f"Обнови сводку с учётом дат:"
+        f"Below is a brief summary of communication between a doctor and patient, compiled earlier. "
+        f"Also provided are new messages. Today's date: {today}.\n\n"
+        f"🛠 Your task — update the summary, strictly following the rules:\n"
+        f"- Each complaint, symptom or recommendation in the summary should have a date of first or last mention.\n"
+        f"- If new messages mention an existing problem again — update the date to current ({today}).\n"
+        f"- If a topic was **not mentioned** in new messages, **keep it with the previous date**.\n"
+        f"- If any problem **hasn't been updated for more than 7 days** and is not mentioned in new messages — **delete it**.\n"
+        f"- The final summary should be brief, with dates, maximum 2-3 paragraphs. Don't duplicate or complicate.\n\n"
+        f"📘 Previous summary:\n{old_summary}\n\n"
+        f"💬 New messages:\n{dialogue}\n\n"
+        f"Update the summary considering dates. IMPORTANT: Respond ONLY in {lang_names.get(user_lang, 'Russian')} language:"
     )
 
     # ⚠️ Ограничиваем объём промта по символам (~токены)
     if len(prompt) > 5000:
         prompt = prompt[:5000]
-    new_summary = await ask_gpt(prompt)
 
-    if new_summary.strip() != old_summary.strip():
+    # ✅ ПРЯМОЙ ВЫЗОВ OpenAI API ВМЕСТО ask_gpt
+    try:
+        async with OPENAI_SEMAPHORE:
+            response = await client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system", 
+                        "content": (
+                            "You are a medical conversation summarizer. Create concise, accurate summaries "
+                            "of doctor-patient conversations with dates. Focus on symptoms, diagnoses, "
+                            "treatments, and recommendations mentioned in the conversation. "
+                            f"Always respond ONLY in {lang_names.get(user_lang, 'Russian')} language, "
+                            f"regardless of the input language."
+                        )
+                    },
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=1500,
+                temperature=0.3  # Низкая температура для точности сводок
+            )
+            
+            # ✅ БЕЗОПАСНОЕ получение ответа
+            response_content = response.choices[0].message.content
+            if not response_content:
+                print(f"⚠️ GPT вернул None для пользователя {user_id}")
+                return
+                
+            new_summary = response_content.strip()
+            
+            # ✅ ПРОВЕРКА: убеждаемся что получили корректный ответ
+            if not new_summary:
+                print(f"⚠️ GPT вернул пустую сводку для пользователя {user_id}")
+                return
+                
+            print(f"✅ Сводка успешно обновлена для пользователя {user_id} на языке {user_lang}")
+            print(f"📄 Превью сводки: {new_summary[:100]}...")
+            
+    except Exception as e:
+        print(f"❌ Ошибка создания сводки для пользователя {user_id}: {e}")
+        return  # Не обновляем сводку при ошибке
+
+    # Сохраняем сводку только если она отличается от предыдущей
+    # ✅ БЕЗОПАСНАЯ ПРОВЕРКА: убеждаемся что переменные не None
+    if (new_summary and old_summary and 
+        str(new_summary).strip() != str(old_summary).strip()) or \
+       (new_summary and not old_summary):  # Или если старой сводки нет, а новая есть
         # ✅ БЕЗОПАСНОЕ получение last_message_id
         try:
             if new_messages:
@@ -164,6 +242,9 @@ async def maybe_update_summary(user_id):
             last_message_id = 0
             
         await save_conversation_summary(user_id, new_summary, last_message_id)
+        print(f"💾 Сводка сохранена для пользователя {user_id}")
+    else:
+        print(f"📝 Сводка не изменилась для пользователя {user_id}")
 
 async def format_user_profile(user_id: int) -> str:
     """
