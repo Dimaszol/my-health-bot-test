@@ -157,17 +157,17 @@ async def maybe_update_summary(user_id):
     }
     
     prompt = (
-        f"Below is a brief summary of communication between a doctor and patient, compiled earlier. "
-        f"Also provided are new messages. Today's date: {today}.\n\n"
-        f"🛠 Your task — update the summary, strictly following the rules:\n"
-        f"- Each complaint, symptom or recommendation in the summary should have a date of first or last mention.\n"
-        f"- If new messages mention an existing problem again — update the date to current ({today}).\n"
-        f"- If a topic was **not mentioned** in new messages, **keep it with the previous date**.\n"
-        f"- If any problem **hasn't been updated for more than 7 days** and is not mentioned in new messages — **delete it**.\n"
-        f"- The final summary should be brief, with dates, maximum 2-3 paragraphs. Don't duplicate or complicate.\n\n"
-        f"📘 Previous summary:\n{old_summary}\n\n"
-        f"💬 New messages:\n{dialogue}\n\n"
-        f"Update the summary considering dates. IMPORTANT: Respond ONLY in {lang_names.get(user_lang, 'Russian')} language:"
+        f"Update medical conversation summary. Date: {today}.\n\n"
+        f"Rules:\n"
+        f"- Keep only KEY symptoms, diagnoses, medications\n"
+        f"- Each item: DATE + brief description (5-10 words max)\n"
+        f"- Update dates if mentioned again\n"
+        f"- Delete items older than 7 days if not mentioned\n"
+        f"- Maximum 100 words total\n"
+        f"- No explanations or extra text\n\n"
+        f"Previous: {old_summary}\n\n"
+        f"New: {dialogue}\n\n"
+        f"Updated summary in {lang_names.get(user_lang, 'Russian')}:"
     )
 
     # ⚠️ Ограничиваем объём промта по символам (~токены)
@@ -183,16 +183,15 @@ async def maybe_update_summary(user_id):
                     {
                         "role": "system", 
                         "content": (
-                            "You are a medical conversation summarizer. Create concise, accurate summaries "
-                            "of doctor-patient conversations with dates. Focus on symptoms, diagnoses, "
-                            "treatments, and recommendations mentioned in the conversation. "
-                            f"Always respond ONLY in {lang_names.get(user_lang, 'Russian')} language, "
-                            f"regardless of the input language."
+                            "You are a medical summarizer. Create ULTRA-BRIEF summaries in bullet format. "
+                            "Use format: [DATE] Symptom/diagnosis/medication - brief note. "
+                            "Maximum 5-7 items, 10 words per item. No explanations. "
+                            f"Respond ONLY in {lang_names.get(user_lang, 'Russian')} language."
                         )
                     },
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=1500,
+                max_tokens=800,
                 temperature=0.3  # Низкая температура для точности сводок
             )
             

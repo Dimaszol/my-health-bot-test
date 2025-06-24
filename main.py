@@ -553,14 +553,15 @@ async def handle_user_message(message: types.Message):
                     context_text=context_text,
                     user_question=user_input,
                     lang=lang,
-                    user_id=user_id
+                    user_id=user_id,
+                    use_gemini=True
                 )
                 
                 print(f"🤖 {'GPT-4o' if use_gpt4o else 'GPT-4o-mini'} | Чанков: {chunks_found}")
                 
                 # Остальная логика отправки ответа пользователю остается без изменений
                 if response:
-                    await message.answer(response, parse_mode=ParseMode.MARKDOWN)
+                    await message.answer(response)
                     await save_message(user_id, "assistant", response)
                     await maybe_update_summary(user_id)
                     print(f"✅ Ответ отправлен: {len(response)} символов")

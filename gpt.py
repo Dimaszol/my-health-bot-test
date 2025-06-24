@@ -20,6 +20,66 @@ client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # 📊 Семафор для ограничения одновременных запросов
 OPENAI_SEMAPHORE = asyncio.Semaphore(5)
 
+def safe_telegram_text(text: str) -> str:
+    """
+    ИСПРАВЛЕННАЯ версия: защищает от ошибок, но сохраняет базовое форматирование
+    """
+    if not text:
+        return ""
+    
+    # Исправляем только "сломанные" символы, которые вызывают ошибки
+    # НЕ трогаем нормальное markdown форматирование
+    
+    # 1. Исправляем сломанные скобки и специальные символы
+    text = text.replace('(', '\\(')
+    text = text.replace(')', '\\)')
+    text = text.replace('[', '\\[')
+    text = text.replace(']', '\\]')
+    text = text.replace('~', '\\~')
+    text = text.replace('>', '\\>')
+    text = text.replace('#', '\\#')
+    text = text.replace('+', '\\+')
+    text = text.replace('-', '\\-')
+    text = text.replace('=', '\\=')
+    text = text.replace('|', '\\|')
+    text = text.replace('{', '\\{')
+    text = text.replace('}', '\\}')
+    text = text.replace('.', '\\.')
+    text = text.replace('!', '\\!')
+    
+    # 2. НЕ трогаем * и _ для сохранения жирного/курсивного текста
+    # 3. НЕ трогаем ` для сохранения кода
+    
+    return text
+
+def split_long_message(text: str, max_length: int = 4000) -> list:
+    """
+    Разбивает длинные сообщения на части для Telegram
+    """
+    if len(text) <= max_length:
+        return [text]
+    
+    # Разбиваем по абзацам (двойной перенос строки)
+    paragraphs = text.split('\n\n')
+    messages = []
+    current_message = ""
+    
+    for paragraph in paragraphs:
+        # Если абзац помещается в текущее сообщение
+        if len(current_message + paragraph + '\n\n') <= max_length:
+            current_message += paragraph + '\n\n'
+        else:
+            # Сохраняем текущее сообщение и начинаем новое
+            if current_message:
+                messages.append(current_message.strip())
+            current_message = paragraph + '\n\n'
+    
+    # Добавляем последнее сообщение
+    if current_message:
+        messages.append(current_message.strip())
+    
+    return messages
+
 def async_safe_openai_call(max_retries: int = 3, delay: float = 2.0):
     """Асинхронный декоратор для безопасных вызовов OpenAI API"""
     def decorator(func):
@@ -379,9 +439,10 @@ async def extract_keywords(text: str) -> list[str]:
 @async_safe_openai_call(max_retries=3, delay=2.0)
 async def ask_doctor(profile_text: str, summary_text: str, 
                chunks_text: str, context_text: str, user_question: str, 
-               lang: str, user_id: int = None) -> str:
+               lang: str, user_id: int = None, use_gemini: bool = False) -> str:
     """
     ✅ УЛУЧШЕННАЯ версия — учитывает недавнее общение, не здоровается каждый раз
+    Добавлена поддержка Gemini 2.5 Flash
     """
     
     # ✅ АНАЛИЗИРУЕМ НЕДАВНЮЮ ИСТОРИЮ
@@ -435,7 +496,11 @@ async def ask_doctor(profile_text: str, summary_text: str,
 
     full_prompt = f"{instruction_prompt}\n\n{context_block}\n\nPatient: {user_question}"
 
-    # ✅ КРАТКИЙ ЛОГ с информацией о типе взаимодействия
+    # ✅ НОВАЯ ЛОГИКА: Gemini или GPT
+    if use_gemini:
+        return await ask_doctor_gemini(system_prompt, full_prompt, lang)
+    
+    # ✅ ОРИГИНАЛЬНАЯ ЛОГИКА GPT (без изменений)
     from subscription_manager import check_gpt4o_limit, spend_gpt4o_limit
     
     interaction_type = "🔄 Продолжение" if recent_interaction and not is_greeting else "🆕 Новое/Приветствие"
@@ -456,8 +521,7 @@ async def ask_doctor(profile_text: str, summary_text: str,
             
             await spend_gpt4o_limit(user_id)
             answer = response.choices[0].message.content.strip()
-            logger.info(f"✅ GPT-4o использован для пользователя {user_id}")
-            return answer
+            return safe_telegram_text(answer)
             
         except Exception as e:
             logger.warning(f"⚠️ GPT-4o недоступен, fallback на mini: {e}")
@@ -472,12 +536,126 @@ async def ask_doctor(profile_text: str, summary_text: str,
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": full_prompt}
         ],
-        max_tokens=1500,
+        max_tokens=2500,
         temperature=0.5
     )
     
     answer = response.choices[0].message.content.strip()
-    return answer
+    return safe_telegram_text(answer)
+
+
+async def ask_doctor_gemini(system_prompt: str, full_prompt: str, lang: str = "ru") -> str:
+    """
+    Отдельная функция для Gemini 2.5 Flash - С ЖЕСТКОЙ ФИКСАЦИЕЙ ЯЗЫКА
+    """
+    try:
+        import google.generativeai as genai
+        import os
+        
+        # Получаем API ключ из .env
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise Exception("GEMINI_API_KEY не найден в .env")
+        
+        # Настраиваем Gemini
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        
+        # 🔧 УСИЛЕННАЯ ЯЗЫКОВАЯ ФИКСАЦИЯ на основе переданного lang
+        if lang == "ru":
+            lang_instruction = "КРИТИЧЕСКИ ВАЖНО: Отвечай ТОЛЬКО на русском языке. Никогда не переключайся на украинский или английский."
+        elif lang == "uk":
+            lang_instruction = "КРИТИЧНО ВАЖЛИВО: Відповідай ТІЛЬКИ українською мовою. Ніколи не переключайся на російську чи англійську."
+        elif lang == "en":
+            lang_instruction = "CRITICAL: Respond ONLY in English. Never switch to Russian or Ukrainian."
+        else:
+            lang_instruction = "КРИТИЧЕСКИ ВАЖНО: Отвечай ТОЛЬКО на русском языке."
+        
+        # 🔧 МОДИФИЦИРУЕМ ПРОМПТ с жесткой языковой фиксацией
+        enhanced_system_prompt = f"""
+{system_prompt}
+
+🚨 LANGUAGE ENFORCEMENT RULES:
+{lang_instruction}
+
+If you start responding in the wrong language, immediately stop and restart in the correct language.
+The user expects consistency in language throughout the entire response.
+Never mix languages within a single response.
+"""
+        
+        # Объединяем enhanced system и user промпты
+        combined_prompt = f"{enhanced_system_prompt}\n\n{full_prompt}"
+        
+        # 🔧 ДИАГНОСТИКА
+        prompt_length = len(combined_prompt)
+        estimated_tokens = prompt_length // 2
+        print(f"📊 Gemini промпт: {prompt_length} символов ≈ {estimated_tokens} токенов (язык: {lang})")
+        
+        # Отправляем запрос
+        response = model.generate_content(
+            combined_prompt,
+            generation_config=genai.types.GenerationConfig(
+                max_output_tokens=2500,
+                temperature=0.5,  # 🔧 Немного снижаем для более стабильного языка
+                candidate_count=1
+            ),
+            safety_settings=[
+                {
+                    "category": "HARM_CATEGORY_HARASSMENT",
+                    "threshold": "BLOCK_NONE"
+                },
+                {
+                    "category": "HARM_CATEGORY_HATE_SPEECH", 
+                    "threshold": "BLOCK_NONE"
+                },
+                {
+                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    "threshold": "BLOCK_NONE"
+                },
+                {
+                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    "threshold": "BLOCK_NONE"
+                }
+            ]
+        )
+        
+        # Обработка ответа
+        if response.candidates and len(response.candidates) > 0:
+            candidate = response.candidates[0]
+            
+            # Диагностика finish_reason
+            if hasattr(candidate, 'finish_reason'):
+                finish_reason = candidate.finish_reason
+                print(f"🔍 Gemini finish_reason: {finish_reason}")
+                
+                if finish_reason == 2:
+                    print("⚠️ Ответ заблокирован системой безопасности")
+                elif finish_reason == 3:
+                    print("⚠️ Ответ заблокирован из-за авторских прав")
+                elif finish_reason == 4:
+                    print("⚠️ Ответ заблокирован по другим причинам")
+            
+            if hasattr(candidate, 'content') and candidate.content.parts:
+                answer = candidate.content.parts[0].text.strip()
+                
+                # 🔧 ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА ЯЗЫКА
+                print(f"✅ Gemini ответ получен: {len(answer)} символов")
+                
+                # Проверяем первые 100 символов на соответствие языку
+                answer_start = answer[:100].lower()
+                if lang == "ru" and any(word in answer_start for word in ["що", "відповідь", "зверніться", "рекомендую"]):
+                    print("⚠️ Gemini ответил на украинском вместо русского!")
+                elif lang == "uk" and any(word in answer_start for word in ["что", "ответ", "обратитесь", "рекомендую"]):
+                    print("⚠️ Gemini ответил на русском вместо украинского!")
+                
+                return safe_telegram_text(answer)
+        
+        raise Exception("Gemini не вернул валидный ответ")
+        
+    except Exception as e:
+        print(f"❌ Ошибка Gemini: {e}")
+        error_msg = "Извините, временная техническая ошибка. Попробуйте повторить запрос."
+        return safe_telegram_text(error_msg)
 
 @async_safe_openai_call(max_retries=2, delay=1.0)
 async def is_medical_text(text: str) -> bool:  # 🔄 async
