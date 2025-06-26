@@ -29,10 +29,19 @@ async def handle_photo_analysis(message: types.Message, bot):
     try:
         print(f"\n📸 Начало анализа фото для пользователя {user_id}")
         
-        # Проверяем лимиты
-        if not await check_gpt4o_limit(user_id):
-            await NotificationSystem.check_and_notify_limits(message, user_id, "image")
+        # ✅ НАПРЯМУЮ проверяем лимиты из базы (без лишних вызовов)
+        from db_postgresql import get_user_limits
+        limits = await get_user_limits(user_id)
+        gpt4o_limit = limits.get('gpt4o_queries_left', 0)
+        
+        print(f"🔍 Лимиты gpt4o_queries_left: {gpt4o_limit}")
+        
+        if gpt4o_limit <= 0:
+            print(f"🆓 Нет лимитов на анализ фото для пользователя {user_id}")
+            await message.answer("**Лимиты исчерпаны**")
             return
+        
+        print(f"💎 У пользователя {user_id} есть лимиты ({gpt4o_limit}), начинаем анализ фото")
         
         # Получаем фото (берем самое большое разрешение)
         if not message.photo:
@@ -148,9 +157,10 @@ async def handle_photo_question(message: types.Message, bot):
             await message.answer("⚠️ Не удалось проанализировать изображение. Попробуйте другое фото.")
             return
         
-        # Списываем лимит
-        await spend_gpt4o_limit(user_id)
-        logger.info(f"Списан лимит на анализ изображения для пользователя {user_id}")
+        # ✅ ВАЖНО: Тратим лимит после успешного ответа (напрямую в базе)
+        from db_postgresql import decrease_user_limit
+        await decrease_user_limit(user_id, "gpt4o_queries", 1)
+        print(f"💎 Лимит потрачен для пользователя {user_id} (анализ фото)")
         
         # ✅ ВАЖНО: Очищаем состояние ДО отправки ответа
         await cleanup_photo_analysis(user_id, photo_path)
