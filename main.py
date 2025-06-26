@@ -65,9 +65,9 @@ async def send_welcome(message: types.Message):
         if user_data is None:
             # 🆕 НОВЫЙ ПОЛЬЗОВАТЕЛЬ - показываем выбор языка
             from keyboards import language_keyboard
-            await message.answer(
+            await message.answer(                
                 "🇺🇦 Обери мову інтерфейсу\n"
-                "🇷🇺 Выбери язык интерфейса\n"
+                "🇷 Выбери язык интерфейса\n"
                 "🇬🇧 Choose your language",
                 reply_markup=language_keyboard()
             )
@@ -92,14 +92,14 @@ async def send_welcome(message: types.Message):
         print(f"❌ Ошибка в команде /start: {e}")
         await message.answer("❌ Произошла ошибка. Попробуйте еще раз.")
 
-@dp.message(lambda msg: msg.text in ["🇷🇺 Русский", "🇺🇦 Українська", "🇬🇧 English"])
+@dp.message(lambda msg: msg.text in ["🇷 Русский", "🇺🇦 Українська", "🇬🇧 English"])
 @handle_telegram_errors
 async def language_start(message: types.Message):
     from db_postgresql import set_user_language
     user_id = message.from_user.id
 
     lang_map = {
-        "🇷🇺 Русский": "ru",
+        "🇷 Русский": "ru",
         "🇺🇦 Українська": "uk",
         "🇬🇧 English": "en"
     }

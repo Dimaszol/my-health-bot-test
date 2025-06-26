@@ -374,8 +374,8 @@ async def get_user_limits(user_id: int) -> Dict:
     try:
         row = await conn.fetchrow("SELECT * FROM user_limits WHERE user_id = $1", user_id)
         return dict(row) if row else {
-            "documents_left": 3,
-            "gpt4o_queries_left": 5,
+            "documents_left": 2,
+            "gpt4o_queries_left": 10,
             "subscription_type": "free"
         }
     except Exception as e:

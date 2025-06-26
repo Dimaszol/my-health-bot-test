@@ -12,8 +12,8 @@ async def show_main_menu(message: Message, lang: str = None):
 def language_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="🇷🇺 Русский"), KeyboardButton(text="🇺🇦 Українська")],
-            [KeyboardButton(text="🇬🇧 English")]
+            [KeyboardButton(text="🇺🇦 Українська"), KeyboardButton(text="🇷 Русский")],
+            [KeyboardButton(text="🇬🇧 English")]            
         ],
         resize_keyboard=True
     )

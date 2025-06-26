@@ -46,14 +46,6 @@ class RateLimiter:
             "note": {"count": 5, "window": 300, "cooldown": 60}
         }
         
-        # ✅ НОВОЕ: Дневные лимиты
-        self.daily_limits = {
-            "message": 100,  # 100 сообщений в день
-            "document": 30,  # 30 документов в день
-            "image": 20,     # 30 изображений в день
-            "note": 50       # 50 заметок в день
-        }
-    
     async def _get_user_lock(self, user_id: int) -> asyncio.Lock:
         """Получить lock для пользователя (thread-safe)"""
         async with self.locks_lock:
@@ -98,7 +90,7 @@ class RateLimiter:
     
     async def check_limit(self, user_id: int, action_type: str = "message") -> Tuple[bool, str]:
         """
-        ✅ ОБНОВЛЕННАЯ версия с проверкой дневных лимитов
+        ✅ ОБНОВЛЕННАЯ версия с динамическими дневными лимитами на основе подписки
         """
         current_time = time.time()
         user_lock = await self._get_user_lock(user_id)
@@ -123,9 +115,9 @@ class RateLimiter:
                 else:
                     del self.blocked_users[user_id]
             
-            # ✅ 2. НОВАЯ ПРОВЕРКА: Дневной лимит
+            # ✅ 2. НОВАЯ ПРОВЕРКА: Динамический дневной лимит на основе подписки
             daily_count = self._get_daily_count(user_id, action_type)
-            daily_limit = self.daily_limits.get(action_type, 100)
+            daily_limit = await self._get_daily_limit_for_user(user_id, action_type)
             
             if daily_count >= daily_limit:
                 lang = get_user_language_sync(user_id)
@@ -153,16 +145,28 @@ class RateLimiter:
                 
                 action_name = action_names.get(lang, action_names["ru"]).get(action_type, "запросов")
                 
-                messages = {
-                    "ru": f"😴 **Бот на отдыхе до завтра**\n\nВы достигли дневного лимита: {daily_limit} {action_name} в день.\n\n🌅 Завтра в 00:00 я снова буду готов вам помочь!\n💤 А пока можете отдохнуть — это полезно для здоровья.",
-                    "en": f"😴 **Bot is resting until tomorrow**\n\nYou've reached the daily limit: {daily_limit} {action_name} per day.\n\n🌅 Tomorrow at 00:00 I'll be ready to help again!\n💤 Meanwhile, you can rest too — it's good for your health.",
-                    "uk": f"😴 **Бот відпочиває до завтра**\n\nВи досягли денного ліміту: {daily_limit} {action_name} на день.\n\n🌅 Завтра о 00:00 я знову буду готовий допомогти!\n💤 А поки можете відпочити — це корисно для здоров'я."
-                }
+                # ✅ НОВОЕ: Проверяем тип подписки для разных сообщений
+                subscription_type = await self._get_user_subscription_type(user_id)
+                
+                if subscription_type == 'subscription':
+                    # Для подписчиков - обычное сообщение о лимите
+                    messages = {
+                        "ru": f"😴 **Достигнут дневной лимит**\n\nВы использовали максимум: {daily_limit} {action_name} в день.\n\n🌅 Завтра в 00:00 лимиты обновятся!",
+                        "en": f"😴 **Daily limit reached**\n\nYou've used the maximum: {daily_limit} {action_name} per day.\n\n🌅 Tomorrow at 00:00 limits will reset!",
+                        "uk": f"😴 **Досягнуто денний ліміт**\n\nВи використали максимум: {daily_limit} {action_name} на день.\n\n🌅 Завтра о 00:00 ліміти оновляться!"
+                    }
+                else:
+                    # Для бесплатных пользователей - с предложением подписки
+                    messages = {
+                        "ru": f"😴 **Дневной лимит исчерпан**\n\nВы достигли лимита: {daily_limit} {action_name} в день.\n\n🌅 Завтра в 00:00 я снова буду готов помочь!\n💎 Или оформите подписку для увеличения лимитов до 100 сообщений в день",
+                        "en": f"😴 **Daily limit exceeded**\n\nYou've reached the limit: {daily_limit} {action_name} per day.\n\n🌅 Tomorrow at 00:00 I'll be ready to help again!\n💎 Or get a subscription to increase limits to 100 messages per day",
+                        "uk": f"😴 **Денний ліміт вичерпано**\n\nВи досягли ліміту: {daily_limit} {action_name} на день.\n\n🌅 Завтра о 00:00 я знову буду готовий допомогти!\n💎 Або оформіть підписку для збільшення лімітів до 100 повідомлень на день"
+                    }
                 
                 logger.warning(f"Daily limit exceeded for user {user_id}, action {action_type}: {daily_count}/{daily_limit}")
                 return False, messages.get(lang, messages["ru"])
             
-            # 3. Проверяем минутные лимиты (существующий код)
+            # 3. Проверяем минутные лимиты (существующий код без изменений)
             if action_type not in self.limits:
                 action_type = "message"
             
@@ -204,6 +208,55 @@ class RateLimiter:
                 return False, messages.get(lang, messages["ru"])
             
             return True, ""
+
+    async def _get_daily_limit_for_user(self, user_id: int, action_type: str) -> int:
+        """
+        Получает дневной лимит для конкретного пользователя на основе его подписки
+        """
+        try:
+            # Импортируем здесь, чтобы избежать циклических импортов
+            from subscription_manager import SubscriptionManager
+            
+            # Получаем информацию о подписке пользователя
+            limits_info = await SubscriptionManager.get_user_limits(user_id)
+            subscription_type = limits_info.get('subscription_type', 'free')
+            
+            # Определяем лимиты в зависимости от подписки
+            if subscription_type == 'subscription':
+                # Подписчики - щедрые лимиты
+                subscription_limits = {
+                    "message": 100,   # 100 сообщений в день
+                    "document": 50,   # 50 документов в день  
+                    "image": 50,      # 50 изображений в день
+                    "note": 30        # 30 заметок в день
+                }
+            else:
+                # Бесплатные пользователи - ограниченные лимиты
+                subscription_limits = {
+                    "message": 20,    # 20 сообщений в день
+                    "document": 5,    # 5 документов в день
+                    "image": 5,       # 5 изображений в день
+                    "note": 10        # 10 заметок в день
+                }
+                
+            return subscription_limits.get(action_type, 20)  # 20 по умолчанию
+            
+        except Exception as e:
+            logger.error(f"Ошибка получения дневного лимита для пользователя {user_id}: {e}")
+            # В случае ошибки возвращаем консервативный лимит
+            return 20
+
+    async def _get_user_subscription_type(self, user_id: int) -> str:
+        """
+        Получает тип подписки пользователя
+        """
+        try:
+            from subscription_manager import SubscriptionManager
+            limits_info = await SubscriptionManager.get_user_limits(user_id)
+            return limits_info.get('subscription_type', 'free')
+        except Exception as e:
+            logger.error(f"Ошибка получения типа подписки для пользователя {user_id}: {e}")
+            return 'free'
     
     async def record_request(self, user_id: int, action_type: str = "message"):
         """
