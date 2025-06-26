@@ -312,13 +312,13 @@ class SubscriptionManager:
     @staticmethod
     async def get_user_limits(user_id: int):
         """
-        ✅ ОБНОВЛЕННАЯ версия - автоматически исправляет подвешенное состояние
+        ✅ ИСПРАВЛЕННАЯ версия - БЕЗ автоматического исправления состояния
         """
         try:
-            # ✅ ДОБАВЛЕНО: Автоматически исправляем подвешенное состояние
-            await SubscriptionManager.fix_orphaned_subscription_state(user_id)
+            # ✅ УБИРАЕМ ЭТУ СТРОКУ:
+            # await SubscriptionManager.fix_orphaned_subscription_state(user_id)
             
-            # Проверяем и синхронизируем состояние подписки
+            # Проверяем и синхронизируем состояние подписки (оставляем как есть)
             await SubscriptionManager.check_and_reset_expired_limits(user_id)
             
             # Получаем актуальные лимиты

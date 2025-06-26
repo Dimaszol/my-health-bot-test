@@ -23,7 +23,7 @@ class SubscriptionHandlers:
 
     @staticmethod
     async def show_subscription_menu(message_or_callback, user_id: int = None):
-        """✅ ИСПРАВЛЕННАЯ версия с правильными параметрами"""
+        """✅ ИСПРАВЛЕННАЯ версия - проверяет локальную БД вместо Stripe"""
         try:
             # Определяем user_id если не передан
             if user_id is None:
@@ -37,25 +37,23 @@ class SubscriptionHandlers:
             lang = await get_user_language(user_id)
             limits = await SubscriptionManager.get_user_limits(user_id)
             
-            # ✅ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Проверяем РЕАЛЬНОЕ состояние в Stripe
-            stripe_check = await SubscriptionManager.check_real_stripe_subscription(user_id)
-            has_real_subscription = stripe_check["has_active"]
-            
-            # ✅ НОВАЯ ЛОГИКА: Определяем текущую подписку на основе Stripe, а не БД
+            # ✅ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Проверяем ЛОКАЛЬНУЮ БД вместо Stripe
             current_subscription = None
-            if has_real_subscription:
-                # Есть РЕАЛЬНАЯ активная подписка в Stripe
-                if limits and limits['documents_left'] >= 20:  # Premium
-                    current_subscription = "premium_sub"
-                elif limits and limits['documents_left'] >= 5:   # Basic
-                    current_subscription = "basic_sub"
-            # Если нет активной подписки в Stripe - current_subscription остается None
+            has_active_subscription = False
             
-            logger.info(f"Меню подписок для {user_id}: Stripe={has_real_subscription}, current_sub={current_subscription}")
+            # Проверяем активные подписки в локальной БД
+            active_subscription = await SubscriptionHandlers._get_active_subscription(user_id)
             
-            # ✅ ИСПРАВЛЕНИЕ: Передаем правильное количество параметров
+            if active_subscription:
+                # Есть активная подписка в БД
+                has_active_subscription = True
+                package_id = active_subscription['package_id']
+                current_subscription = package_id  # basic_sub, premium_sub
+                logger.info(f"Найдена активная подписка в БД: {package_id}")
+            
+            # Получаем текст меню
             subscription_text = await SubscriptionHandlers._get_subscription_menu_text(
-                user_id, lang, limits, has_real_subscription
+                user_id, lang, limits, has_active_subscription
             )
             
             # Создаем клавиатуру с правильным current_subscription
@@ -79,9 +77,7 @@ class SubscriptionHandlers:
         except Exception as e:
             logger.error(f"Ошибка показа меню подписок для пользователя {user_id}: {e}")
             
-            # ✅ ДОБАВЛЕНО: Показываем ошибку пользователю для отладки
-            error_text = f"❌ Ошибка меню подписок: {str(e)[:200]}"
-            
+            error_text = "❌ Ошибка загрузки меню подписок"
             if isinstance(message_or_callback, types.CallbackQuery):
                 await message_or_callback.message.answer(error_text)
                 await message_or_callback.answer()

@@ -5,7 +5,7 @@ from stripe_config import StripeConfig
 from typing import Optional
 
 def subscription_main_menu(lang: str, current_subscription: Optional[str] = None) -> InlineKeyboardMarkup:
-    """✅ ИСПРАВЛЕННАЯ версия - правильно обрабатывает состояние подписки"""
+    """✅ УПРОЩЕННАЯ версия - показывает кнопку отмены если есть ЛЮБАЯ подписка"""
     
     texts = {
         "ru": {
@@ -51,17 +51,12 @@ def subscription_main_menu(lang: str, current_subscription: Optional[str] = None
         else:
             price_text = f"{package_info['price_display']} {t['one_time']}"
         
-        # Получаем features для языка
-        features = package_info.get('features', {}).get(lang, [])
-        features_text = "\n".join([f"▸ {feature}" for feature in features])
+        button_text = f"{package_info['user_friendly_name']} — {price_text}"
         
-        # Итоговый текст кнопки
-        button_text = f"**{package_info['user_friendly_name']} — {price_text}**\n{features_text}"
-        
-        # ✅ ИСПРАВЛЕНИЕ: Проверяем активную подписку на основе current_subscription
+        # ✅ УПРОЩЕНИЕ: Проверяем активную подписку
         if current_subscription == package_id:
-            # У пользователя РЕАЛЬНО есть эта подписка в Stripe
-            button_text = f"{t['current']} {package_info['user_friendly_name']}"
+            # У пользователя есть эта подписка
+            button_text = f"✅ {button_text}"
             buttons.append([InlineKeyboardButton(
                 text=button_text, 
                 callback_data="subscription_current"
@@ -77,8 +72,8 @@ def subscription_main_menu(lang: str, current_subscription: Optional[str] = None
     additional_buttons = []
     additional_buttons.append(InlineKeyboardButton(text=t["limits"], callback_data="show_limits"))
     
-    # ✅ ИСПРАВЛЕНИЕ: Показываем кнопку отмены ТОЛЬКО если current_subscription не None
-    if current_subscription in ["basic_sub", "premium_sub"]:
+    # ✅ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Показываем кнопку отмены если есть ЛЮБАЯ активная подписка
+    if current_subscription is not None:
         additional_buttons.append(InlineKeyboardButton(text=t["cancel"], callback_data="cancel_subscription"))
     
     if len(additional_buttons) == 2:
