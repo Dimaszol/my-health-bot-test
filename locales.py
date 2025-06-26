@@ -162,7 +162,25 @@ translations = {
         "unsupported_input": "⚠️ Я пока не умею обрабатывать изображения или документы без команды.\n\n📄 Если хочешь сохранить файл  — выбери «📄 Загрузить документ» из меню.",
         "unknown_state": "⚠️ Неизвестное состояние. Попробуй снова нажать 📂 Показать документы.",
         "empty_document": "📄 Документ пустой.",
-        "full_doc_text": "📄 Полный текст документа <b>«{title}»</b>:\n\n{text}"
+        "full_doc_text": "📄 Полный текст документа <b>«{title}»</b>:\n\n{text}",
+        "photo_saved_for_analysis": "📸 Фото сохранено для анализа!",
+        "photo_question_prompt": "❓ <b>Какой у вас вопрос по этому изображению?</b>",
+        "photo_question_examples": (
+            "Примеры:\n"
+            "• Что это может быть?\n"
+            "• Опасно ли это?\n"
+            "• Как это лечить?\n"
+            "• Стоит ли обратиться к врачу?"
+        ),
+        "photo_analyzing": "🧠 Анализирую изображение, это может занять до 30 секунд...",
+        "photo_analysis_result": "📸 <b>Анализ изображения:</b>",
+        "photo_analysis_cancelled": "❌ Анализ фото отменен.",
+        "photo_analysis_disclaimer": "⚠️ <i>Это не замена консультации врача. При серьезных симптомах обратитесь к специалисту.</i>",
+        "photo_too_large": "❌ Фото слишком большое. Максимальный размер: 5 МБ",
+        "photo_analysis_error": "❌ Произошла ошибка при анализе. Попробуйте еще раз.",
+        "photo_state_not_found": "⚠️ Состояние анализа фото не найдено. Загрузите фото заново.",
+        "photo_file_not_found": "⚠️ Фото не найдено. Загрузите фото заново.",
+        "cancel_analysis": "❌ Отменить"
 
     },
     "uk": {
@@ -329,7 +347,25 @@ translations = {
         "unsupported_input": "⚠️ Я поки не вмію обробляти зображення чи документи без команди.\n\n📄 Щоб зберегти файл — обери «📄 Завантажити документ» у меню.",
         "unknown_state": "⚠️ Невідомий стан. Спробуй ще раз натиснути 📂 Показати документи.",
         "empty_document": "📄 Документ порожній.",
-        "full_doc_text": "📄 Повний текст документа <b>«{title}»</b>:\n\n{text}"
+        "full_doc_text": "📄 Повний текст документа <b>«{title}»</b>:\n\n{text}",
+        "photo_saved_for_analysis": "📸 Фото збережено для аналізу!",
+        "photo_question_prompt": "❓ <b>Яке у вас питання щодо цього зображення?</b>",
+        "photo_question_examples": (
+            "Приклади:\n"
+            "• Що це може бути?\n"
+            "• Чи це небезпечно?\n"
+            "• Як це лікувати?\n"
+            "• Чи варто звернутися до лікаря?"
+        ),
+        "photo_analyzing": "🧠 Аналізую зображення, це може зайняти до 30 секунд...",
+        "photo_analysis_result": "📸 <b>Аналіз зображення:</b>",
+        "photo_analysis_cancelled": "❌ Аналіз фото скасовано.",
+        "photo_analysis_disclaimer": "⚠️ <i>Це не замінює консультацію лікаря. При серйозних симптомах зверніться до спеціаліста.</i>",
+        "photo_too_large": "❌ Фото занадто велике. Максимальний розмір: 5 МБ",
+        "photo_analysis_error": "❌ Сталася помилка під час аналізу. Спробуйте ще раз.",
+        "photo_state_not_found": "⚠️ Стан аналізу фото не знайдено. Завантажте фото знову.",
+        "photo_file_not_found": "⚠️ Фото не знайдено. Завантажте фото знову.",
+        "cancel_analysis": "❌ Скасувати"
 
     },
     "en": {
@@ -495,7 +531,25 @@ translations = {
         "unsupported_input": "⚠️ I can't process images or documents without a command.\n\n📄 To save a file — choose \"📄 Upload Document\" from the menu.",
         "unknown_state": "⚠️ Unknown state. Please try clicking 📂 Show Documents again.",
         "empty_document": "📄 Document is empty.",
-        "full_doc_text": "📄 Full text of the document <b>“{title}”</b>:\n\n{text}"
+        "full_doc_text": "📄 Full text of the document <b>“{title}”</b>:\n\n{text}",
+        "photo_saved_for_analysis": "📸 Photo saved for analysis!",
+        "photo_question_prompt": "❓ <b>What is your question about this image?</b>",
+        "photo_question_examples": (
+            "Examples:\n"
+            "• What could this be?\n"
+            "• Is this dangerous?\n"
+            "• How to treat this?\n"
+            "• Should I see a doctor?"
+        ),
+        "photo_analyzing": "🧠 Analyzing image, this may take up to 30 seconds...",
+        "photo_analysis_result": "📸 <b>Image Analysis:</b>",
+        "photo_analysis_cancelled": "❌ Photo analysis cancelled.",
+        "photo_analysis_disclaimer": "⚠️ <i>This is not a substitute for medical consultation. For serious symptoms, consult a specialist.</i>",
+        "photo_too_large": "❌ Photo too large. Maximum size: 5 MB",
+        "photo_analysis_error": "❌ An error occurred during analysis. Please try again.",
+        "photo_state_not_found": "⚠️ Photo analysis state not found. Upload photo again.",
+        "photo_file_not_found": "⚠️ Photo not found. Upload photo again.",
+        "cancel_analysis": "❌ Cancel"
 
     }
 }

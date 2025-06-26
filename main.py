@@ -43,6 +43,7 @@ from subscription_handlers import SubscriptionHandlers, upsell_tracker
 from notification_system import NotificationSystem
 from stripe_manager import StripeManager
 from prompt_logger import process_user_question_detailed, log_search_summary
+from photo_analyzer import handle_photo_analysis, handle_photo_question, cancel_photo_analysis
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -276,6 +277,21 @@ async def handle_user_message(message: types.Message):
                 await message.answer(get_user_friendly_message(e, lang))
                 return
         
+        elif message.content_type == types.ContentType.PHOTO:
+            # ✅ НОВАЯ ЛОГИКА: Обработка фото для анализа
+            allowed, error_msg = await check_rate_limit(user_id, "image")
+            if not allowed:
+                await message.answer(error_msg)
+                return
+            try:
+                await handle_photo_analysis(message, bot)
+                await record_user_action(user_id, "image")
+                return
+            except Exception as e:
+                log_error_with_context(e, {"user_id": user_id, "action": "photo_analysis"})
+                await message.answer(get_user_friendly_message(e, lang))
+                return
+
         else:
             # Файл отправлен, но пользователь не в режиме ожидания
             await message.answer(t("unsupported_input", lang))
@@ -284,6 +300,16 @@ async def handle_user_message(message: types.Message):
     # Обработка регистрации
     if await handle_registration_step(user_id, message):
         return
+    
+    # ✅ НОВОЕ: Обработка вопроса к фото
+    elif isinstance(current_state, dict) and current_state.get("type") == "awaiting_photo_question":
+        try:
+            await handle_photo_question(message, bot)
+            return
+        except Exception as e:
+            log_error_with_context(e, {"user_id": user_id, "action": "photo_question"})
+            await message.answer(get_user_friendly_message(e, lang))
+            return
         
     # Обработка переименования документов
     elif isinstance(current_state, str) and current_state.startswith("rename_"):
@@ -903,6 +929,11 @@ async def handle_dismiss_upsell(callback: types.CallbackQuery):
 async def handle_current_subscription(callback: types.CallbackQuery):
     """Обработка нажатия на текущую подписку"""
     await callback.answer("✅ Это ваша текущая подписка", show_alert=True)
+
+@dp.callback_query(lambda c: c.data == "cancel_photo_analysis")
+async def process_cancel_photo_analysis(callback_query: types.CallbackQuery):
+    """Отмена анализа фото"""
+    await cancel_photo_analysis(callback_query)
 
 @dp.callback_query()
 @handle_telegram_errors

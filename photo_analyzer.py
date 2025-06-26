@@ -54,7 +54,7 @@ async def handle_photo_analysis(message: types.Message, bot):
         # Проверяем размер
         if not validate_file_size(local_file):
             os.remove(local_file)
-            await message.answer("❌ Фото слишком большое. Максимальный размер: 5 МБ")
+            await message.answer(t("photo_too_large", lang))
             return
         
         # Сохраняем путь к фото в состоянии пользователя
@@ -66,16 +66,12 @@ async def handle_photo_analysis(message: types.Message, bot):
         
         # Спрашиваем вопрос
         await message.answer(
-            "📸 Фото сохранено для анализа!\n\n"
-            "❓ <b>Какой у вас вопрос по этому изображению?</b>\n\n"
-            "Примеры:\n"
-            "• Что это может быть?\n"
-            "• Опасно ли это?\n"
-            "• Как это лечить?\n"
-            "• Стоит ли обратиться к врачу?",
+            f"{t('photo_saved_for_analysis', lang)}\n\n"
+            f"{t('photo_question_prompt', lang)}\n\n"
+            f"{t('photo_question_examples', lang)}",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="❌ Отменить", callback_data="cancel_photo_analysis")]
+                [InlineKeyboardButton(text=t("cancel_analysis", lang), callback_data="cancel_photo_analysis")]
             ])
         )
         
@@ -83,7 +79,7 @@ async def handle_photo_analysis(message: types.Message, bot):
         
     except Exception as e:
         logger.error(f"Ошибка при обработке фото: {e}")
-        await message.answer("❌ Произошла ошибка при загрузке фото. Попробуйте еще раз.")
+        await message.answer(t("photo_analysis_error", lang))
         # Очищаем состояние
         if user_id in user_states:
             user_states[user_id] = None
@@ -119,7 +115,7 @@ async def handle_photo_question(message: types.Message, bot):
         
         # Отправляем сообщение о начале анализа
         processing_msg = await message.answer(
-            "🧠 Анализирую изображение, это может занять до 30 секунд...",
+            t("photo_analyzing", lang),
             reply_markup=types.ReplyKeyboardRemove()
         )
         
@@ -267,7 +263,7 @@ async def send_analysis_result(message: types.Message, analysis_result: str, lan
     """
     try:
         # Добавляем заголовок к результату
-        result_text = f"📸 <b>Анализ изображения:</b>\n\n{analysis_result}"
+        result_text = f"{t('photo_analysis_result', lang)}\n\n{analysis_result}"
         
         # Если текст слишком длинный, разбиваем на части
         if len(result_text) > 4000:
@@ -284,13 +280,7 @@ async def send_analysis_result(message: types.Message, analysis_result: str, lan
             await message.answer(result_text, parse_mode="HTML")
         
         # Добавляем предупреждение
-        disclaimer = {
-            'ru': "⚠️ <i>Это не замена консультации врача. При серьезных симптомах обратитесь к специалисту.</i>",
-            'uk': "⚠️ <i>Це не замінює консультацію лікаря. При серйозних симптомах зверніться до спеціаліста.</i>",
-            'en': "⚠️ <i>This is not a substitute for medical consultation. For serious symptoms, consult a specialist.</i>"
-        }
-        
-        await message.answer(disclaimer.get(lang, disclaimer['ru']), parse_mode="HTML")
+        await message.answer(t("photo_analysis_disclaimer", lang), parse_mode="HTML")
         
     except Exception as e:
         logger.error(f"Ошибка отправки результата анализа: {e}")
