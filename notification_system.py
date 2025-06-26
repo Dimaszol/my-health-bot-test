@@ -12,26 +12,36 @@ class NotificationSystem:
     """Система уведомлений о подписке и лимитах"""
     
     @staticmethod
-    async def check_and_notify_limits(message, user_id: int, action_type: str = "message") -> bool:
+    async def check_and_notify_limits(message, user_id: int, action_type: str) -> bool:
         """
-        Проверяет лимиты и показывает уведомления при необходимости
+        ✅ ИСПРАВЛЕННАЯ версия: Правильно проверяет лимиты в зависимости от типа действия
         
         Args:
-            message: Объект сообщения для отправки уведомлений
+            message: Объект сообщения
             user_id: ID пользователя
-            action_type: Тип действия ("message", "document", "image")
+            action_type: Тип действия ("document" или "image")
             
         Returns:
-            bool: True если можно продолжить действие, False если лимиты исчерпаны
+            bool: True если лимиты есть, False если исчерпаны
         """
         try:
-            # Для обычных сообщений - проверяем счетчик upsell
-            if action_type == "message":
-                return await NotificationSystem._handle_message_upsell(message, user_id)
+            if action_type == "document":
+                # Для документов проверяем лимиты на документы
+                has_limits = await check_document_limit(user_id)
+            elif action_type == "image":
+                # ✅ ИСПРАВЛЕНИЕ: Для изображений проверяем лимиты GPT-4o
+                from subscription_manager import check_gpt4o_limit
+                has_limits = await check_gpt4o_limit(user_id)
+            else:
+                # Неизвестный тип - проверяем документы по умолчанию
+                has_limits = await check_document_limit(user_id)
             
-            # Для документов и изображений - проверяем лимиты
-            elif action_type in ["document", "image"]:
-                return await NotificationSystem._handle_document_limits(message, user_id, action_type)
+            if not has_limits:
+                # Показываем уведомление о нехватке лимитов
+                await NotificationSystem._show_limits_exceeded_notification(
+                    message, user_id, action_type
+                )
+                return False
             
             return True
             

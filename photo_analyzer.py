@@ -38,13 +38,12 @@ async def handle_photo_analysis(message: types.Message, bot):
         
         if gpt4o_limit <= 0:
             print(f"🆓 Нет лимитов на анализ фото для пользователя {user_id}")
-            # ✅ ВАЖНО: Сохраняем результат в переменную, как в main.py
-            can_analyze = await NotificationSystem.check_and_notify_limits(
+            
+            # ✅ ИСПРАВЛЕНИЕ: Показываем уведомление и останавливаемся
+            await NotificationSystem._show_limits_exceeded_notification(
                 message, user_id, action_type="image"
             )
-            
-            if not can_analyze:
-                return
+            return  # ✅ Останавливаемся сразу
         
         print(f"💎 У пользователя {user_id} есть лимиты ({gpt4o_limit}), начинаем анализ фото")
         
