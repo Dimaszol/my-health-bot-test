@@ -175,9 +175,15 @@ class SubscriptionWebhookHandler:
             if result['success']:
                 from db_postgresql import execute_query
                 await execute_query("""
-                    INSERT OR REPLACE INTO user_subscriptions 
+                    INSERT INTO user_subscriptions 
                     (user_id, stripe_subscription_id, package_id, status, created_at)
-                    VALUES (?, ?, ?, 'active', ?)
+                    VALUES ($1, $2, $3, 'active', $4)
+                    ON CONFLICT (user_id) 
+                    DO UPDATE SET 
+                        stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+                        package_id = EXCLUDED.package_id,
+                        status = 'active',
+                        created_at = EXCLUDED.created_at
                 """, (user_id, subscription_id, package_id, datetime.now()))
                 # Отправляем уведомление пользователю
                 await self._send_renewal_notification(user_id, package_id)

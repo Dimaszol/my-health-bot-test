@@ -7,7 +7,7 @@ from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from gemini_analyzer import send_to_gemini_vision
-from db_postgresql import get_user_language, t, get_user_profile, get_recent_messages
+from db_postgresql import get_user_language, t
 from subscription_manager import check_gpt4o_limit, spend_gpt4o_limit
 from file_utils import create_simple_file_path, validate_file_size
 from notification_system import NotificationSystem
@@ -113,10 +113,14 @@ async def handle_photo_question(message: types.Message, bot):
         print(f"\n🤔 Вопрос пользователя: {user_question}")
         print(f"📸 Путь к фото: {photo_path}")
         
+        # ✅ ВАЖНО: Сохраняем вопрос пользователя в историю сообщений
+        from db_postgresql import save_message
+        await save_message(user_id, "user", user_question)
+        
         # Отправляем сообщение о начале анализа
         processing_msg = await message.answer(
-            t("photo_analyzing", lang),
-            reply_markup=types.ReplyKeyboardRemove()
+            t("photo_analyzing", lang)
+            # ✅ УБИРАЕМ reply_markup=types.ReplyKeyboardRemove() чтобы клавиатура не пропадала
         )
         
         # Собираем контекст пользователя
@@ -148,11 +152,15 @@ async def handle_photo_question(message: types.Message, bot):
         await spend_gpt4o_limit(user_id)
         logger.info(f"Списан лимит на анализ изображения для пользователя {user_id}")
         
+        # ✅ ВАЖНО: Очищаем состояние ДО отправки ответа
+        await cleanup_photo_analysis(user_id, photo_path)
+        
         # Отправляем результат анализа
         await send_analysis_result(message, analysis_result, lang)
         
-        # Очищаем временное состояние и файл
-        await cleanup_photo_analysis(user_id, photo_path)
+        # ✅ ВАЖНО: Сохраняем ответ бота в историю чата
+        from db_postgresql import save_message
+        await save_message(user_id, "assistant", f"Анализ изображения: {analysis_result[:500]}...")
         
         print("✅ Анализ фото завершен успешно")
         
@@ -164,51 +172,35 @@ async def handle_photo_question(message: types.Message, bot):
 async def prepare_user_context(user_id: int, lang: str) -> str:
     """
     Подготавливает контекст пользователя для анализа
-    
-    Args:
-        user_id: ID пользователя
-        lang: Язык пользователя
-        
-    Returns:
-        str: Контекст пользователя
     """
     try:
-        # Получаем профиль пользователя
-        profile = await get_user_profile(user_id)
+        # ✅ ИСПОЛЬЗУЕМ СУЩЕСТВУЮЩИЕ ФУНКЦИИ
+        from save_utils import format_user_profile
+        from db_postgresql import get_last_messages
         
-        # Получаем последние сообщения (контекст разговора)
-        recent_messages = await get_recent_messages(user_id, limit=10)
+        # Получаем профиль пользователя (как в основном чате)
+        profile_text = await format_user_profile(user_id)
         
+        # Получаем последние сообщения (как в основном чате)
+        recent_messages = await get_last_messages(user_id, limit=6)
+        
+        # Форматируем недавние сообщения
+        context_lines = []
+        for msg in recent_messages:
+            if isinstance(msg, (tuple, list)) and len(msg) >= 2:
+                role = "USER" if msg[0] == 'user' else "BOT"
+                content = str(msg[1])[:100]  # Ограничиваем длину
+                context_lines.append(f"{role}: {content}")
+        
+        context_text = "\n".join(context_lines) if context_lines else "Нет недавних сообщений"
+        
+        # Объединяем профиль и контекст
         context_parts = []
+        if profile_text and profile_text != "Профиль пациента не заполнен":
+            context_parts.append(f"📌 Профиль пациента:\n{profile_text}")
         
-        # Добавляем информацию о пользователе
-        if profile:
-            user_info = []
-            if profile.get('name'):
-                user_info.append(f"Имя: {profile['name']}")
-            if profile.get('birth_year'):
-                from datetime import datetime
-                age = datetime.now().year - profile['birth_year']
-                user_info.append(f"Возраст: {age} лет")
-            if profile.get('gender'):
-                user_info.append(f"Пол: {profile['gender']}")
-            if profile.get('chronic_diseases'):
-                user_info.append(f"Хронические заболевания: {profile['chronic_diseases']}")
-            if profile.get('allergies'):
-                user_info.append(f"Аллергии: {profile['allergies']}")
-            
-            if user_info:
-                context_parts.append("Информация о пациенте:\n" + "\n".join(user_info))
-        
-        # Добавляем контекст последних сообщений
-        if recent_messages:
-            messages_text = []
-            for msg in recent_messages[-5:]:  # Последние 5 сообщений
-                if msg.get('message_text'):
-                    messages_text.append(f"- {msg['message_text'][:100]}...")
-            
-            if messages_text:
-                context_parts.append("Контекст разговора:\n" + "\n".join(messages_text))
+        if context_text and context_text != "Нет недавних сообщений":
+            context_parts.append(f"💬 Недавние сообщения:\n{context_text}")
         
         return "\n\n".join(context_parts) if context_parts else "Нет дополнительного контекста"
         
@@ -279,8 +271,7 @@ async def send_analysis_result(message: types.Message, analysis_result: str, lan
         else:
             await message.answer(result_text, parse_mode="HTML")
         
-        # Добавляем предупреждение
-        await message.answer(t("photo_analysis_disclaimer", lang), parse_mode="HTML")
+        # ✅ Убираем disclaimer - ИИ и так пишет про консультацию врача
         
     except Exception as e:
         logger.error(f"Ошибка отправки результата анализа: {e}")
