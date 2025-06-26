@@ -545,6 +545,22 @@ async def handle_user_message(message: types.Message):
                     context_text = ""
                     print(f"⚠️ Не удалось получить контекст сообщений: {e}")
 
+                 # ✅ НОВАЯ ЛОГИКА ВЫБОРА МОДЕЛИ
+                # Проверяем есть ли у пользователя лимиты
+                has_premium_limits = await check_gpt4o_limit(user_id)
+                
+                # ✅ ОПРЕДЕЛЯЕМ КАКУЮ МОДЕЛЬ ИСПОЛЬЗОВАТЬ
+                if has_premium_limits:
+                    # У пользователя есть лимиты → используем Gemini
+                    use_gemini = True
+                    model_name = "Gemini 2.5 Flash"
+                    print(f"💎 Пользователь {user_id} имеет лимиты → используем {model_name}")
+                else:
+                    # У пользователя нет лимитов → используем GPT-4o mini
+                    use_gemini = False
+                    model_name = "GPT-4o-mini"
+                    print(f"🆓 Пользователь {user_id} без лимитов → используем {model_name}")
+
                 # Правильный вызов ask_doctor с вашими параметрами
                 response = await ask_doctor(
                     profile_text=profile_text,
@@ -554,7 +570,7 @@ async def handle_user_message(message: types.Message):
                     user_question=user_input,
                     lang=lang,
                     user_id=user_id,
-                    use_gemini=True
+                    use_gemini=use_gemini
                 )
                 
                 print(f"🤖 {'GPT-4o' if use_gpt4o else 'GPT-4o-mini'} | Чанков: {chunks_found}")

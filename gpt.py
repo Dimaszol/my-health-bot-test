@@ -22,35 +22,36 @@ OPENAI_SEMAPHORE = asyncio.Semaphore(5)
 
 def safe_telegram_text(text: str) -> str:
     """
-    ИСПРАВЛЕННАЯ версия: защищает от ошибок, но сохраняет базовое форматирование
+    ЧИТАЕМАЯ версия: убираем markdown, но сохраняем структуру
     """
     if not text:
         return ""
     
-    # Исправляем только "сломанные" символы, которые вызывают ошибки
-    # НЕ трогаем нормальное markdown форматирование
+    # Убираем markdown символы, но сохраняем переносы строк
+    text = text.replace('**', '')  # Убираем жирный
+    text = text.replace('*', '')   # Убираем курсив 
+    text = text.replace('_', '')   # Убираем подчеркивание
+    text = text.replace('`', '')   # Убираем код
+    text = text.replace('~', '')   # Убираем зачеркнутый
+    text = text.replace('\\', '')  # Убираем экранирование
     
-    # 1. Исправляем сломанные скобки и специальные символы
-    text = text.replace('(', '\\(')
-    text = text.replace(')', '\\)')
-    text = text.replace('[', '\\[')
-    text = text.replace(']', '\\]')
-    text = text.replace('~', '\\~')
-    text = text.replace('>', '\\>')
-    text = text.replace('#', '\\#')
-    text = text.replace('+', '\\+')
-    text = text.replace('-', '\\-')
-    text = text.replace('=', '\\=')
-    text = text.replace('|', '\\|')
-    text = text.replace('{', '\\{')
-    text = text.replace('}', '\\}')
-    text = text.replace('.', '\\.')
-    text = text.replace('!', '\\!')
+    # Улучшаем читаемость
+    lines = text.split('\n')
+    cleaned_lines = []
     
-    # 2. НЕ трогаем * и _ для сохранения жирного/курсивного текста
-    # 3. НЕ трогаем ` для сохранения кода
+    for line in lines:
+        # Очищаем каждую строку от лишних пробелов, но сохраняем структуру
+        cleaned_line = ' '.join(line.split())
+        cleaned_lines.append(cleaned_line)
     
-    return text
+    # Собираем обратно, сохраняя переносы строк
+    result = '\n'.join(cleaned_lines)
+    
+    # Убираем лишние пустые строки (больше 2 подряд)
+    while '\n\n\n' in result:
+        result = result.replace('\n\n\n', '\n\n')
+    
+    return result.strip()
 
 def split_long_message(text: str, max_length: int = 4000) -> list:
     """
@@ -498,7 +499,28 @@ async def ask_doctor(profile_text: str, summary_text: str,
 
     # ✅ НОВАЯ ЛОГИКА: Gemini или GPT
     if use_gemini:
-        return await ask_doctor_gemini(system_prompt, full_prompt, lang)
+        # Импортируем функции для работы с лимитами
+        from subscription_manager import check_gpt4o_limit, spend_gpt4o_limit
+        
+        # Проверяем лимиты перед вызовом
+        if user_id and await check_gpt4o_limit(user_id):
+            try:
+                # Вызываем Gemini
+                response = await ask_doctor_gemini(system_prompt, full_prompt, lang)
+                
+                # ✅ ВАЖНО: Тратим лимит после успешного ответа
+                await spend_gpt4o_limit(user_id)
+                print(f"💎 Лимит потрачен для пользователя {user_id} (Gemini)")
+                
+                return response
+                
+            except Exception as e:
+                logger.warning(f"⚠️ Gemini недоступен, fallback на GPT-4o-mini: {e}")
+                # При ошибке Gemini переходим на GPT-4o-mini (без трат лимитов)
+                print(f"🔄 Fallback на GPT-4o-mini для пользователя {user_id}")
+        else:
+            # Нет лимитов → используем GPT-4o-mini
+            print(f"🆓 Нет лимитов, используем GPT-4o-mini для пользователя {user_id}")
     
     # ✅ ОРИГИНАЛЬНАЯ ЛОГИКА GPT (без изменений)
     from subscription_manager import check_gpt4o_limit, spend_gpt4o_limit
@@ -506,7 +528,7 @@ async def ask_doctor(profile_text: str, summary_text: str,
     interaction_type = "🔄 Продолжение" if recent_interaction and not is_greeting else "🆕 Новое/Приветствие"
     print(f"💬 {interaction_type} | Вопрос: '{user_question[:50]}{'...' if len(user_question) > 50 else ''}'")
     
-    if user_id and await check_gpt4o_limit(user_id):
+    if not use_gemini and user_id and await check_gpt4o_limit(user_id):
         model = "gpt-4o"
         try:
             response = await client.chat.completions.create(
@@ -515,7 +537,7 @@ async def ask_doctor(profile_text: str, summary_text: str,
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": full_prompt}
                 ],
-                max_tokens=1500,
+                max_tokens=2500,
                 temperature=0.5
             )
             
