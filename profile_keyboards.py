@@ -56,9 +56,9 @@ def activity_choice_keyboard(lang: str) -> InlineKeyboardMarkup:
 def language_choice_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура для выбора языка"""
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🇷🇺 Русский", callback_data="lang_ru")],
         [InlineKeyboardButton(text="🇺🇦 Українська", callback_data="lang_uk")],
         [InlineKeyboardButton(text="🇬🇧 English", callback_data="lang_en")],
+        [InlineKeyboardButton(text="🇷 Русский", callback_data="lang_ru")],
         [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_edit")]
     ])
 

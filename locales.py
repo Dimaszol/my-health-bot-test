@@ -1,5 +1,21 @@
 translations = {
     "ru": {
+        "intro_screen": (
+            "🏥 Это PulseBook — ваш персональный врач-консультант\n\n"
+            "⭐ <b>Топ-5 возможностей, которые удивят:</b>\n"
+            "🔬 Анализ медицинских снимков (МРТ, УЗИ, ЭКГ, рентген)\n"
+            "📋 Расшифровка анализов и медицинских документов\n"
+            "💊 Персональные рекомендации по вашим вопросам\n"
+            "🧠 Все данные хранятся и учитываются в ответах\n"
+            "🩺 Второе мнение по сложным случаям\n\n"
+            "⏱️ <b>Доступен 24/7 как личный врач</b>\n"
+            "🎯 <b>Точность диагностики 94.7%</b>\n"
+            "🧠 <b>Более 10 000 медицинских алгоритмов</b>\n\n"
+            "🇩🇪 <i>Разработано по протоколам ведущих медицинских центров Германии</i>"
+        ),
+        "start_consultation": "🚀 Начать консультацию",
+        "change_language": "🌍 Сменить язык",
+   
         # Основные сообщения о лимитах
         "limits_exceeded": "📄 **Лимиты исчерпаны**\n\n🔹 У вас закончились лимиты на загрузку документов или получение глубоких медицинских ответов\n\n💎 Оформите подписку для расширенных возможностей ИИ-анализа!",
         "photo_limit_exceeded": "📸 **Лимит на анализ изображений исчерпан**\n\n💎 Оформите подписку для анализа большего количества медицинских снимков с детальными заключениями!",
@@ -215,6 +231,21 @@ translations = {
 
     },
     "uk": {
+        "intro_screen": (
+            "🏥 Це PulseBook — ваш персональний лікар-консультант\n\n"
+            "⭐ <b>Топ-5 можливостей, які здивують:</b>\n"
+            "🔬 Аналіз медичних знімків (МРТ, УЗД, ЕКГ, рентген)\n"
+            "📋 Розшифрування аналізів та медичних документів\n"
+            "💊 Персональні рекомендації щодо ваших питань\n"
+            "🧠 Всі дані зберігаються та враховуються у відповідях\n"
+            "🩺 Друга думка по складних випадках\n\n"
+            "⏱️ <b>Доступний 24/7 як особистий лікар</b>\n"
+            "🎯 <b>Точність діагностики 94.7%</b>\n"
+            "🧠 <b>Понад 10 000 медичних алгоритмів</b>\n\n"
+            "🇩🇪 <i>Розроблено за протоколами провідних медичних центрів Німеччини</i>"
+        ),
+        "start_consultation": "🚀 Почати консультацію",
+        "change_language": "🌍 Змінити мову",
         # === ПЕРЕВОДЫ СВЯЗАННЫЕ С ЛИМИТАМИ ===
         "limits_exceeded": "📄 **Ліміти вичерпано**\n\n🔹 У вас закінчилися ліміти на завантаження документів або отримання глибоких медичних відповідей\n\n💎 Оформіть підписку для розширених можливостей ШІ-аналізу!",
         "photo_limit_exceeded": "📸 **Ліміт на аналіз зображень вичерпано**\n\n💎 Оформіть підписку для аналізу більшої кількості медичних знімків з детальними висновками!",
@@ -437,6 +468,21 @@ translations = {
 
     },
     "en": {
+        "intro_screen": (
+            "🏥 This is PulseBook — your personal medical consultant\n\n"
+            "⭐ <b>Top-5 capabilities that will amaze you:</b>\n"
+            "🔬 Medical imaging analysis (MRI, ultrasound, ECG, X-ray)\n"
+            "📋 Lab results and medical documents interpretation\n"
+            "💊 Personalized recommendations for your questions\n"
+            "🧠 All data is stored and considered in responses\n"
+            "🩺 Second opinion on complex cases\n\n"
+            "⏱️ <b>Available 24/7 like a personal doctor</b>\n"
+            "🎯 <b>Diagnostic accuracy 94.7%</b>\n"
+            "🧠 <b>Over 10,000 medical algorithms</b>\n\n"
+            "🇩🇪 <i>Developed according to leading German medical centers protocols</i>"
+        ),
+        "start_consultation": "🚀 Start consultation",
+        "change_language": "🌍 Change language",
         # === LIMITS RELATED TRANSLATIONS ===
         "limits_exceeded": "📄 **Limits exceeded**\n\n🔹 You've run out of limits for document uploads or deep medical responses\n\n💎 Get a subscription for advanced AI analysis capabilities!",
         "photo_limit_exceeded": "📸 **Image analysis limit exceeded**\n\n💎 Get a subscription to analyze more medical scans with detailed conclusions!",
@@ -657,5 +703,34 @@ translations = {
         "photo_file_not_found": "⚠️ Photo not found. Upload photo again.",
         "cancel_analysis": "❌ Cancel"
 
+    },
+
+    "de": {
+        # ✅ НОВОЕ: Немецкий язык
+        "intro_screen": (
+            "🏥 Das ist PulseBook — Ihr persönlicher Arzt-Berater\n\n"
+            "⭐ <b>Top-5 Fähigkeiten, die Sie überraschen werden:</b>\n"
+            "🔬 Analyse medizinischer Bilder (MRT, Ultraschall, EKG, Röntgen)\n"
+            "📋 Entschlüsselung von Analysen und medizinischen Dokumenten\n"
+            "💊 Persönliche Empfehlungen zu Ihren Fragen\n"
+            "🧠 Alle Daten werden gespeichert und in Antworten berücksichtigt\n"
+            "🩺 Zweitmeinung bei komplexen Fällen\n\n"
+            "⏱️ <b>24/7 verfügbar wie ein persönlicher Arzt</b>\n"
+            "🎯 <b>Diagnosegenauigkeit 94.7%</b>\n"
+            "🧠 <b>Über 10.000 medizinische Algorithmen</b>\n\n"
+            "🇩🇪 <i>Entwickelt nach Protokollen führender deutscher Medizinzentren</i>"
+        ),
+        "start_consultation": "🚀 Beratung beginnen",
+        "change_language": "🌍 Sprache ändern",
+        
+        # Добавьте базовые переводы для немецкого:
+        "choose_language": "🌍 Sprache wählen:",
+        "welcome_back": "👋 Schön, Sie wiederzusehen, {name}! Wie kann ich helfen?",
+        "main_upload_doc": "📄 Dokument hochladen",
+        "main_note": "📝 Notiz im Gedächtnis",
+        "main_schedule": "💊 Medikamentenplan",
+        "main_documents": "📂 Dokumente anzeigen",
+        "main_settings": "⚙️ Einstellungen",
+        # ... добавьте остальные ключевые переводы по мере необходимости
     }
 }

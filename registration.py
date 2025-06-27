@@ -1,4 +1,4 @@
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
 from db_postgresql import save_user, update_user_field, user_exists, t, get_user_language, get_user_name
 from keyboards import language_keyboard, skip_keyboard, gender_keyboard, smoking_keyboard, \
     alcohol_keyboard, activity_keyboard, registration_keyboard, show_main_menu
@@ -7,11 +7,30 @@ from user_state_manager import user_state_manager, user_states
 
 # Старт регистрации
 async def start_registration(user_id: int, message: Message):
+    """
+    Старт регистрации - теперь всегда с опцией смены языка
+    """
     lang = await get_user_language(user_id)
+    
+    # Устанавливаем состояние ожидания имени
     user_states[user_id] = {"step": "awaiting_name"}
-    await message.answer(t("intro_1", lang))
-    await message.answer(t("intro_2", lang))
-    await message.answer(t("ask_name", lang), reply_markup=language_keyboard())
+    
+    # Формируем интро-текст
+    intro_text = f"{t('intro_1', lang)}\n\n{t('intro_2', lang)}\n\n{t('ask_name', lang)}"
+    
+    # Клавиатура с кнопкой смены языка
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text=t("change_language", lang), 
+            callback_data="change_language_registration"
+        )]
+    ])
+    
+    await message.answer(
+        intro_text,
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
 
 # Обработка регистрации по шагам
 async def handle_registration_step(user_id: int, message: Message) -> bool:

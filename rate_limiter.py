@@ -236,7 +236,7 @@ class RateLimiter:
                     "message": 20,    # 20 сообщений в день
                     "document": 5,    # 5 документов в день
                     "image": 5,       # 5 изображений в день
-                    "note": 10        # 10 заметок в день
+                    "note": 2        # 2 заметок в день
                 }
                 
             return subscription_limits.get(action_type, 20)  # 20 по умолчанию

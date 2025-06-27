@@ -54,43 +54,118 @@ bot = Bot(
 )
 dp = Dispatcher()
 
+def detect_user_language(user: types.User) -> str:
+    """Автоопределение языка по Telegram"""
+    phone_lang = user.language_code if user.language_code else 'en'
+    print(f"🌍 Язык телефона: {phone_lang}")
+    
+    # Простой маппинг на 4 языка
+    if phone_lang == 'ru':
+        return 'ru'
+    elif phone_lang == 'uk': 
+        return 'uk'
+    elif phone_lang == 'de':
+        return 'de'
+    else:
+        return 'en'  # По умолчанию
+
 @dp.message(CommandStart())
 async def send_welcome(message: types.Message):
     user_id = message.from_user.id
     
     try:
-        # ✅ СНАЧАЛА проверяем, есть ли пользователь ВООБЩЕ в базе
+        # Проверяем, есть ли пользователь в базе
         user_data = await get_user(user_id)
         
         if user_data is None:
-            # 🆕 НОВЫЙ ПОЛЬЗОВАТЕЛЬ - показываем выбор языка
-            from keyboards import language_keyboard
-            await message.answer(                
-                "🇺🇦 Обери мову інтерфейсу\n"
-                "🇷 Выбери язык интерфейса\n"
-                "🇬🇧 Choose your language",
-                reply_markup=language_keyboard()
-            )
+            # 🆕 НОВЫЙ ПОЛЬЗОВАТЕЛЬ
+            
+            # 🌍 Автоопределяем язык и сразу сохраняем
+            auto_lang = detect_user_language(message.from_user)
+            await set_user_language(user_id, auto_lang)
+            
+            # 🚀 СРАЗУ НАЧИНАЕМ РЕГИСТРАЦИЮ с автоопределенным языком
+            await start_registration_with_language_option(user_id, message, auto_lang)
             return
             
-        # ✅ ПОЛЬЗОВАТЕЛЬ СУЩЕСТВУЕТ - проверяем полноту регистрации
+        # ✅ Существующий пользователь
         if await is_fully_registered(user_id):
-            # 👤 ПОЛНОСТЬЮ ЗАРЕГИСТРИРОВАН - показываем главное меню
+            # Показываем главное меню
             name = user_data.get('name', 'Пользователь')
             lang = await get_user_language(user_id)
             
-            from keyboards import main_menu_keyboard
             await message.answer(
                 t("welcome_back", lang, name=name), 
                 reply_markup=main_menu_keyboard(lang)
             )
         else:
-            # 📝 ЧАСТИЧНО ЗАРЕГИСТРИРОВАН - продолжаем регистрацию
+            # Продолжаем регистрацию
             await start_registration(user_id, message)
             
     except Exception as e:
         print(f"❌ Ошибка в команде /start: {e}")
         await message.answer("❌ Произошла ошибка. Попробуйте еще раз.")
+
+async def start_registration_with_language_option(user_id: int, message: types.Message, lang: str):
+    """Начало регистрации с возможностью смены языка"""
+    
+    # Устанавливаем состояние ожидания имени
+    user_states[user_id] = {"step": "awaiting_name"}
+    
+    # Формируем интро-текст
+    intro_text = f"{t('intro_1', lang)}\n\n{t('intro_2', lang)}\n\n{t('ask_name', lang)}"
+    
+    # Клавиатура с кнопкой смены языка
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text=t("change_language", lang), 
+            callback_data="change_language_registration"
+        )]
+    ])
+    
+    await message.answer(
+        intro_text,
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+
+# 🆕 ДОБАВЬТЕ эти обработчики ПОСЛЕ start_registration_with_language_option:
+
+@dp.callback_query(lambda c: c.data == "change_language_registration")
+async def handle_language_change_during_registration(callback: types.CallbackQuery):
+    """Обработка смены языка во время регистрации"""
+    
+    # Показываем выбор языков
+    language_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🇷🇺 Русский", callback_data="set_lang_ru")],
+        [InlineKeyboardButton(text="🇺🇦 Українська", callback_data="set_lang_uk")],
+        [InlineKeyboardButton(text="🇬🇧 English", callback_data="set_lang_en")],
+        [InlineKeyboardButton(text="🇩🇪 Deutsch", callback_data="set_lang_de")]
+    ])
+    
+    await callback.message.edit_text(
+        "🇺🇦 Оберіть мову інтерфейсу\n"
+        "🇷🇺 Выберите язык интерфейса\n" 
+        "🇬🇧 Choose your language\n"
+        "🇩🇪 Sprache wählen",
+        reply_markup=language_keyboard
+    )
+    
+    await callback.answer()
+
+@dp.callback_query(lambda c: c.data.startswith("set_lang_"))
+async def handle_set_language_during_registration(callback: types.CallbackQuery):
+    """Установка языка и возврат к регистрации"""
+    user_id = callback.from_user.id
+    selected_lang = callback.data.replace("set_lang_", "")
+    
+    # Обновляем язык пользователя
+    await set_user_language(user_id, selected_lang)
+    
+    # Возвращаемся к началу регистрации с новым языком
+    await start_registration_with_language_option(user_id, callback.message, selected_lang)
+    
+    await callback.answer()
 
 @dp.message(lambda msg: msg.text in ["🇷 Русский", "🇺🇦 Українська", "🇬🇧 English"])
 @handle_telegram_errors
