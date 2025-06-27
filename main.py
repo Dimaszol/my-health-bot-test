@@ -37,7 +37,7 @@ from vector_db_postgresql import (
 )
 
 from gpt import ask_doctor, check_openai_status, fallback_response, fallback_summarize
-from subscription_manager import check_document_limit, SubscriptionManager, check_gpt4o_limit
+from subscription_manager import check_document_limit, SubscriptionManager, check_gpt4o_limit, spend_gpt4o_limit
 from stripe_config import check_stripe_setup
 from subscription_handlers import SubscriptionHandlers, upsell_tracker
 from notification_system import NotificationSystem
@@ -684,11 +684,23 @@ async def handle_user_message(message: types.Message):
                     
                     # ✅ ИСПРАВЛЕНИЕ: Тратим лимит только если ДЕЙСТВИТЕЛЬНО использовали продвинутую модель
                     if use_gemini:  # Если использовали Gemini - точно тратим лимит
-                        from subscription_manager import spend_gpt4o_limit
+                        
                         await spend_gpt4o_limit(user_id, message, bot)
                     
                     await save_message(user_id, "assistant", response)
                     await maybe_update_summary(user_id)
+                    # ✅ ДОБАВИТЬ: Проверка upsell после обновления сводки
+                    
+                    has_gpt4o_limits = await check_gpt4o_limit(user_id)
+                    if not has_gpt4o_limits:
+                        # Увеличиваем счетчик обновлений сводки
+                        upsell_tracker.increment_summary_count(user_id)
+                        
+                        # Проверяем нужно ли показать upsell при обновлении сводки
+                        if upsell_tracker.should_show_upsell_on_summary(user_id):
+                            await SubscriptionHandlers.show_subscription_upsell(
+                                message, user_id, reason="summary_updated"
+                            )
                     print(f"✅ Ответ отправлен: {len(response)} символов")
                 else:
                     await message.answer(get_user_friendly_message("Не удалось получить ответ", lang))

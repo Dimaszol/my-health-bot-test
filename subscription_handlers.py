@@ -728,6 +728,14 @@ class SubscriptionHandlers:
                     "ru": "🤖 **Хотите более подробный ответ?**\n\n🔹 Наш продвинутый ИИ может дать более детальный и точный медицинский анализ\n\n💎 Оформите подписку для доступа к глубоким медицинским ответам!",
                     "uk": "🤖 **Хочете більш детальну відповідь?**\n\n🔹 Наш прогресивний ШІ може дати більш детальний та точний медичний аналіз\n\n💎 Оформіть підписку для доступу до глибоких медичних відповідей!",
                     "en": "🤖 **Want a more detailed response?**\n\n🔹 Our advanced AI can provide more detailed and accurate medical analysis\n\n💎 Get a subscription for access to deep medical responses!"
+                },
+                # ✅ НОВЫЙ ТИП UPSELL:
+                "summary_updated": {
+                    "ru": "📋 **Ваша медицинская история пополняется!**\n\n🔹 С подпиской вы получите более детальный анализ ваших данных\n🔹 Продвинутый ИИ лучше понимает медицинский контекст\n\n💎 Оформите подписку для максимально точных консультаций!",
+                    
+                    "uk": "📋 **Ваша медична історія поповнюється!**\n\n🔹 З підпискою ви отримаєте більш детальний аналіз ваших даних\n🔹 Прогресивний ШІ краще розуміє медичний контекст\n\n💎 Оформіть підписку для максимально точних консультацій!",
+                    
+                    "en": "📋 **Your medical history is growing!**\n\n🔹 With a subscription you'll get more detailed analysis of your data\n🔹 Advanced AI better understands medical context\n\n💎 Get a subscription for the most accurate consultations!"
                 }
             }
             
@@ -753,21 +761,37 @@ class SubscriptionHandlers:
             await callback.answer()
 
 # Система отслеживания upsell сообщений (без изменений)
+# В файл subscription_handlers.py ЗАМЕНИТЬ весь класс UpsellTracker:
+
 class UpsellTracker:
     """Отслеживает показ upsell сообщений пользователям"""
     
     def __init__(self):
         self.user_message_counts = {}  # user_id: count
         self.user_last_upsell = {}     # user_id: timestamp
+        self.user_summary_counts = {}  # user_id: count обновлений сводки
     
     def should_show_upsell(self, user_id: int) -> bool:
         """Определяет, нужно ли показать upsell сообщение"""
         current_count = self.user_message_counts.get(user_id, 0)
         
-        # Показываем каждые 5 сообщений
-        if current_count >= 5:
+        # ✅ ИЗМЕНЯЕМ: показываем каждые 7 сообщений (вместо 5)
+        if current_count >= 7:
             self.user_message_counts[user_id] = 0  # Сбрасываем счетчик
             self.user_last_upsell[user_id] = datetime.now().timestamp()
+            return True
+        
+        return False
+    
+    def should_show_upsell_on_summary(self, user_id: int) -> bool:
+        """
+        ✅ НОВОЕ: Определяет, нужно ли показать upsell при обновлении сводки
+        """
+        current_count = self.user_summary_counts.get(user_id, 0)
+        
+        # Показываем каждое 3-е обновление сводки
+        if current_count >= 3:
+            self.user_summary_counts[user_id] = 0  # Сбрасываем счетчик
             return True
         
         return False
@@ -776,9 +800,16 @@ class UpsellTracker:
         """Увеличивает счетчик сообщений пользователя"""
         self.user_message_counts[user_id] = self.user_message_counts.get(user_id, 0) + 1
     
+    def increment_summary_count(self, user_id: int):
+        """
+        ✅ НОВОЕ: Увеличивает счетчик обновлений сводки
+        """
+        self.user_summary_counts[user_id] = self.user_summary_counts.get(user_id, 0) + 1
+    
     def reset_count(self, user_id: int):
-        """Сбрасывает счетчик для пользователя (например, после покупки подписки)"""
+        """Сбрасывает счетчики для пользователя (например, после покупки подписки)"""
         self.user_message_counts[user_id] = 0
+        self.user_summary_counts[user_id] = 0
         if user_id in self.user_last_upsell:
             del self.user_last_upsell[user_id]
 
