@@ -558,10 +558,15 @@ async def handle_user_message(message: types.Message):
             user_input = message.text
             await save_message(user_id, "user", user_input)
             
-            # ✅ НОВАЯ ЛОГИКА: Проверяем нужно ли показать upsell для сообщений
-            await NotificationSystem.check_and_notify_limits(
-                message, user_id, action_type="message"
-            )
+            has_gpt4o_limits = await check_gpt4o_limit(user_id)
+            if not has_gpt4o_limits:
+                upsell_tracker.increment_message_count(user_id)
+                
+                # Проверяем нужно ли показать upsell (каждые 7 сообщений)
+                if upsell_tracker.should_show_upsell(user_id):
+                    await SubscriptionHandlers.show_subscription_upsell(
+                        message, user_id, reason="better_response"
+                    )
             
             # 🔍 ДЕТАЛЬНАЯ ОБРАБОТКА ВОПРОСА С ЛОГИРОВАНИЕМ
             try:
