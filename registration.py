@@ -4,6 +4,7 @@ from keyboards import language_keyboard, skip_keyboard, gender_keyboard, smoking
     alcohol_keyboard, activity_keyboard, registration_keyboard, show_main_menu
 from datetime import datetime
 from user_state_manager import user_state_manager, user_states
+import re
 
 # Старт регистрации
 async def start_registration(user_id: int, message: Message):
@@ -32,6 +33,65 @@ async def start_registration(user_id: int, message: Message):
         parse_mode="HTML"
     )
 
+# ✅ ФУНКЦИИ ВАЛИДАЦИИ
+def validate_name(name: str) -> bool:
+    """Валидация имени"""
+    if not name or len(name.strip()) < 1:
+        return False
+    # Убираем лишние пробелы и проверяем длину
+    clean_name = name.strip()
+    if len(clean_name) > 50:  # Максимум 50 символов
+        return False
+    # Проверяем, что имя содержит хотя бы одну букву
+    if not re.search(r'[a-zA-Zа-яА-ЯёЁіІїЇєЄ]', clean_name):
+        return False
+    return True
+
+def validate_text_field(text: str, max_length: int = 200) -> bool:
+    """Валидация текстовых полей (аллергии, хронические заболевания и т.д.)"""
+    if not text:
+        return True  # Пустые поля допустимы
+    clean_text = text.strip()
+    if len(clean_text) > max_length:
+        return False
+    return True
+
+def get_valid_smoking_values(lang: str) -> list:
+    """Получить валидные значения для курения"""
+    return [
+        t("smoking_yes", lang), t("smoking_no", lang), "Vape", t("skip", lang),
+        # Дополнительные варианты на разных языках
+        "Да", "Нет", "Так", "Ні", "Yes", "No", "Ja", "Nein"
+    ]
+
+def get_valid_alcohol_values(lang: str) -> list:
+    """Получить валидные значения для алкоголя"""
+    return [
+        t("alcohol_never", lang), t("alcohol_sometimes", lang), t("alcohol_often", lang), t("skip", lang),
+        # Дополнительные варианты
+        "Не употребляю", "Иногда", "Часто", "Не вживаю", "Іноді", 
+        "Never", "Sometimes", "Often", "Nie", "Manchmal", "Oft"
+    ]
+
+def get_valid_activity_values(lang: str) -> list:
+    """Получить валидные значения для активности"""
+    return [
+        "❌ Нет активности", "🚶 Низкая", "🏃 Средняя", "💪 Высокая", "🏆 Профессиональная",
+        "❌ Відсутня активність", "🚶 Низька", "🏃 Середня", "💪 Висока", "🏆 Професійна",
+        "❌ No activity", "🚶 Low", "🏃 Medium", "💪 High", "🏆 Professional",
+        "❌ Keine Aktivität", "🚶 Niedrig", "🏃 Mittel", "💪 Hoch", "🏆 Professionell",
+        t("skip", lang)
+    ]
+
+def get_valid_gender_values(lang: str) -> list:
+    """Получить валидные значения для пола"""
+    return [
+        t("gender_male", lang), t("gender_female", lang), t("gender_other", lang), t("skip", lang),
+        # Дополнительные варианты
+        "Мужской", "Женский", "Другое", "Чоловіча", "Жіноча", "Інше",
+        "Male", "Female", "Other", "Männlich", "Weiblich", "Andere"
+    ]
+
 # Обработка регистрации по шагам
 async def handle_registration_step(user_id: int, message: Message) -> bool:
     lang = await get_user_language(user_id)
@@ -41,10 +101,18 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
         return False
 
     if isinstance(state, dict) and state.get("step") == "awaiting_name":
-        name = message.text.strip()
-        if not name:
-            await message.answer(t("name_missing", lang))
+        name = message.text.strip() if message.text else ""
+        
+        # ✅ ВАЛИДАЦИЯ ИМЕНИ
+        if not validate_name(name):
+            if not name:
+                await message.answer(t("name_missing", lang))
+            elif len(name) > 50:
+                await message.answer("⚠️ Имя слишком длинное. Максимум 50 символов.")
+            else:
+                await message.answer("⚠️ Введите корректное имя (должно содержать буквы).")
             return True
+        
         user_states[user_id] = {
             "step": "awaiting_birth_year",
             "name": name
@@ -62,11 +130,17 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
             state["birth_year"] = None
         else:
             try:
-                year = int(message.text.strip())
-                if year < 1900 or year > datetime.now().year:
+                year_text = message.text.strip() if message.text else ""
+                year = int(year_text)
+                current_year = datetime.now().year
+                if year < 1900 or year > current_year:
+                    raise ValueError
+                # Дополнительная проверка возраста
+                age = current_year - year
+                if age > 120:  # Максимальный возраст
                     raise ValueError
                 state["birth_year"] = year
-            except ValueError:
+            except (ValueError, TypeError):
                 await message.answer(t("birth_year_invalid", lang))
                 return True
         state["step"] = "awaiting_gender"
@@ -74,10 +148,20 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
         return True
 
     if step == "awaiting_gender":
+        # ✅ ВАЛИДАЦИЯ ПОЛА
+        valid_genders = get_valid_gender_values(lang)
+        
         if message.text == t("skip", lang):
             state["gender"] = None
-        else:
+        elif message.text in valid_genders:
             state["gender"] = message.text.strip()
+        else:
+            await message.answer(
+                "⚠️ Пожалуйста, выберите пол, используя кнопки:",
+                reply_markup=gender_keyboard(lang)
+            )
+            return True
+            
         state["step"] = "awaiting_height"
         await message.answer(t("height_prompt", lang), reply_markup=skip_keyboard(lang))
         return True
@@ -87,11 +171,12 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
             state["height_cm"] = None
         else:
             try:
-                height = int(message.text.strip())
+                height_text = message.text.strip() if message.text else ""
+                height = int(height_text)
                 if height < 100 or height > 250:
                     raise ValueError
                 state["height_cm"] = height
-            except ValueError:
+            except (ValueError, TypeError):
                 await message.answer(t("height_invalid", lang))
                 return True
         state["step"] = "awaiting_weight"
@@ -103,11 +188,12 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
             state["weight_kg"] = None
         else:
             try:
-                weight = float(message.text.strip())
+                weight_text = message.text.strip() if message.text else ""
+                weight = float(weight_text)
                 if weight < 30 or weight > 300:
                     raise ValueError
                 state["weight_kg"] = weight
-            except ValueError:
+            except (ValueError, TypeError):
                 await message.answer(t("weight_invalid", lang))
                 return True
 
@@ -124,6 +210,15 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
         return True
 
     if step == "ask_full_profile":
+        valid_profile_options = [t("complete_profile", lang), t("finish_registration", lang)]
+        
+        if message.text not in valid_profile_options:
+            await message.answer(
+                "⚠️ Пожалуйста, выберите один из вариантов, используя кнопки:",
+                reply_markup=registration_keyboard(lang)
+            )
+            return True
+            
         if message.text == t("complete_profile", lang):
             state["step"] = "chronic_conditions"
             await message.answer(t("profile_extra_prompt", lang), reply_markup=skip_keyboard(lang))
@@ -136,19 +231,39 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
 
     if step == "chronic_conditions":
         if message.text != t("skip", lang):
-            await update_user_field(user_id, "chronic_conditions", message.text.strip())
+            text = message.text.strip() if message.text else ""
+            # ✅ ВАЛИДАЦИЯ ТЕКСТОВОГО ПОЛЯ
+            if not validate_text_field(text, 100):
+                await message.answer("⚠️ Слишком длинный текст. Максимум 100 символов.")
+                return True
+            await update_user_field(user_id, "chronic_conditions", text)
         state["step"] = "allergies"
         await message.answer(t("allergies_prompt", lang), reply_markup=skip_keyboard(lang))
         return True
     
     if step == "allergies":
         if message.text != t("skip", lang):
-            await update_user_field(user_id, "allergies", message.text.strip())
+            text = message.text.strip() if message.text else ""
+            # ✅ ВАЛИДАЦИЯ ТЕКСТОВОГО ПОЛЯ
+            if not validate_text_field(text, 50):
+                await message.answer("⚠️ Слишком длинный текст. Максимум 50 символов.")
+                return True
+            await update_user_field(user_id, "allergies", text)
         state["step"] = "smoking"
         await message.answer(t("smoking_prompt", lang), reply_markup=smoking_keyboard(lang))
         return True
 
     if step == "smoking":
+        # ✅ ВАЛИДАЦИЯ КУРЕНИЯ
+        valid_smoking = get_valid_smoking_values(lang)
+        
+        if message.text not in valid_smoking:
+            await message.answer(
+                "⚠️ Пожалуйста, выберите один из вариантов, используя кнопки:",
+                reply_markup=smoking_keyboard(lang)
+            )
+            return True
+            
         if message.text != t("skip", lang):
             await update_user_field(user_id, "smoking", message.text.strip())
         state["step"] = "alcohol"
@@ -156,6 +271,16 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
         return True
 
     if step == "alcohol":
+        # ✅ ВАЛИДАЦИЯ АЛКОГОЛЯ
+        valid_alcohol = get_valid_alcohol_values(lang)
+        
+        if message.text not in valid_alcohol:
+            await message.answer(
+                "⚠️ Пожалуйста, выберите один из вариантов, используя кнопки:",
+                reply_markup=alcohol_keyboard(lang)
+            )
+            return True
+            
         if message.text != t("skip", lang):
             await update_user_field(user_id, "alcohol", message.text.strip())
         state["step"] = "physical_activity"
@@ -163,8 +288,18 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
         return True
 
     if step == "physical_activity":
+        # ✅ ВАЛИДАЦИЯ АКТИВНОСТИ
+        valid_activity = get_valid_activity_values(lang)
+        
+        if message.text not in valid_activity:
+            await message.answer(
+                "⚠️ Пожалуйста, выберите один из вариантов, используя кнопки:",
+                reply_markup=activity_keyboard(lang)
+            )
+            return True
+            
         if message.text != t("skip", lang):
-            # ✅ ИСПРАВЛЕННЫЙ маппинг активности
+            # ✅ ИСПРАВЛЕННЫЙ маппинг активности с немецким языком
             activity_map = {
                 # Русские варианты
                 "❌ Нет активности": "Нет активности",
@@ -185,7 +320,14 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
                 "🚶 Low": "Low",
                 "🏃 Medium": "Medium",
                 "💪 High": "High",
-                "🏆 Professional": "Professional"
+                "🏆 Professional": "Professional",
+                
+                # Немецкие варианты
+                "❌ Keine Aktivität": "No activity",
+                "🚶 Niedrig": "Low",
+                "🏃 Mittel": "Medium",
+                "💪 Hoch": "High",
+                "🏆 Professionell": "Professional"
             }
             
             # Получаем унифицированное значение
@@ -198,7 +340,12 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
 
     if step == "family_history":
         if message.text != t("skip", lang):
-            await update_user_field(user_id, "family_history", message.text.strip())
+            text = message.text.strip() if message.text else ""
+            # ✅ ВАЛИДАЦИЯ ТЕКСТОВОГО ПОЛЯ
+            if not validate_text_field(text, 300):
+                await message.answer("⚠️ Слишком длинный текст. Максимум 300 символов.")
+                return True
+            await update_user_field(user_id, "family_history", text)
         user_states[user_id] = None
         await message.answer(t("profile_thanks", lang))
         await message.answer(t("welcome", lang, name=await get_user_name(user_id)))

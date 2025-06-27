@@ -137,17 +137,19 @@ async def handle_language_change_during_registration(callback: types.CallbackQue
     
     # Показываем выбор языков
     language_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🇷🇺 Русский", callback_data="set_lang_ru")],
-        [InlineKeyboardButton(text="🇺🇦 Українська", callback_data="set_lang_uk")],
         [InlineKeyboardButton(text="🇬🇧 English", callback_data="set_lang_en")],
-        [InlineKeyboardButton(text="🇩🇪 Deutsch", callback_data="set_lang_de")]
+        [InlineKeyboardButton(text="🇩🇪 Deutsch", callback_data="set_lang_de")],
+        [InlineKeyboardButton(text="🇺🇦 Українська", callback_data="set_lang_uk")],
+        [InlineKeyboardButton(text="🇷 Русский", callback_data="set_lang_ru")]
+        
     ])
     
     await callback.message.edit_text(
-        "🇺🇦 Оберіть мову інтерфейсу\n"
-        "🇷🇺 Выберите язык интерфейса\n" 
         "🇬🇧 Choose your language\n"
-        "🇩🇪 Sprache wählen",
+        "🇩🇪 Sprache wählen\n"
+        "🇺🇦 Оберіть мову інтерфейсу\n"
+        "🇷 Выберите язык интерфейса", 
+        
         reply_markup=language_keyboard
     )
     
