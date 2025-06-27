@@ -505,7 +505,129 @@ async def spend_document_limit(user_id: int) -> bool:
     result = await SubscriptionManager.spend_limits(user_id, documents=1)
     return result["success"]
 
-async def spend_gpt4o_limit(user_id: int) -> bool:
-    """Списывает 1 GPT-4o запрос"""
-    result = await SubscriptionManager.spend_limits(user_id, queries=1)
-    return result["success"]
+async def spend_gpt4o_limit(user_id: int, message=None, bot=None) -> bool:
+    """
+    Списывает 1 GPT-4o запрос и показывает уведомление если лимиты закончились
+    
+    Args:
+        user_id: ID пользователя
+        message: Объект сообщения Telegram (опционально для уведомления)
+        bot: Объект бота (опционально для уведомления)
+        
+    Returns:
+        bool: True если лимит успешно потрачен
+    """
+    try:
+        # ✅ ДОБАВЛЯЕМ: Получаем текущие лимиты ДО траты (для проверки перехода 1→0)
+        should_notify = False
+        subscription_type = 'free'
+        
+        if message and bot:
+            current_limits = await SubscriptionManager.get_user_limits(user_id)
+            current_gpt4o = current_limits.get('gpt4o_queries_left', 0)
+            subscription_type = current_limits.get('subscription_type', 'free')
+            print(f"💎 Лимиты до траты: {current_gpt4o}")
+            
+            # Запоминаем нужно ли показывать уведомление
+            should_notify = (current_gpt4o == 1)
+        
+        # ✅ ОРИГИНАЛЬНАЯ ЛОГИКА: Тратим лимит через существующую систему
+        result = await SubscriptionManager.spend_limits(user_id, queries=1)
+        
+        # ✅ ПРОСТОЕ РЕШЕНИЕ: Показываем уведомление сразу после ответа
+        if result["success"] and should_notify:
+            print(f"🚨 Лимиты закончились у пользователя {user_id}! Показываем уведомление")
+            await _show_limits_exhausted_notification(user_id, message, bot, subscription_type)
+        
+        return result["success"]
+        
+    except Exception as e:
+        logger.error(f"Ошибка траты лимита для пользователя {user_id}: {e}")
+        return False
+
+
+async def _show_limits_exhausted_notification(user_id: int, message, bot, subscription_type: str):
+    """
+    Показывает уведомление о том, что закончились детальные ответы
+    Разные сообщения для разных типов подписки
+    """
+    try:
+        from db_postgresql import get_user_language
+        
+        lang = await get_user_language(user_id)
+        
+        # ✅ РАЗНЫЕ СООБЩЕНИЯ ДЛЯ РАЗНЫХ СТАТУСОВ
+        if subscription_type in ['free', 'one_time']:
+            # Для бесплатных и разовых покупок - предлагаем подписку
+            notification_texts = {
+                "ru": "🤖 **Детальные ответы закончились!**\n\n"
+                      "🔹 Теперь будет использоваться базовая модель для ответов\n\n"
+                      "💎 Оформите подписку для возврата к детальным медицинским консультациям!",
+                
+                "uk": "🤖 **Детальні відповіді закінчилися!**\n\n"
+                      "🔹 Тепер буде використовуватися базова модель для відповідей\n\n"
+                      "💎 Оформіть підписку для повернення до детальних медичних консультацій!",
+                
+                "en": "🤖 **Detailed responses finished!**\n\n"
+                      "🔹 Basic model will now be used for responses\n\n"
+                      "💎 Get a subscription to return to detailed medical consultations!"
+            }
+            
+            # Кнопки для подписки
+            button_texts = {
+                "ru": "💎 Получить подписку",
+                "uk": "💎 Отримати підписку", 
+                "en": "💎 Get subscription"
+            }
+            
+            show_subscription_button = True
+            
+        else:  # subscription - активная подписка
+            # Для пользователей с подпиской - просто информируем
+            notification_texts = {
+                "ru": "🤖 **Лимит детальных ответов исчерпан**\n\n"
+                      "🔹 В этом месяце вы использовали все детальные ответы\n"
+                      "🔹 Теперь будет использоваться базовая модель\n\n"
+                      "📅 Лимиты обновятся в следующем месяце",
+                
+                "uk": "🤖 **Ліміт детальних відповідей вичерпано**\n\n"
+                      "🔹 Цього місяця ви використали всі детальні відповіді\n"
+                      "🔹 Тепер буде використовуватися базова модель\n\n"
+                      "📅 Ліміти оновляться наступного місяця",
+                
+                "en": "🤖 **Detailed response limit exhausted**\n\n"
+                      "🔹 You've used all detailed responses this month\n"
+                      "🔹 Basic model will now be used\n\n"
+                      "📅 Limits will refresh next month"
+            }
+            
+            show_subscription_button = False
+        
+        text = notification_texts.get(lang, notification_texts["ru"])
+        
+        # Создаем клавиатуру только для бесплатных пользователей
+        keyboard = None
+        if show_subscription_button:
+            from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+            
+            button_text = button_texts.get(lang, button_texts["ru"])
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(
+                    text=button_text,
+                    callback_data="subscription_menu"
+                )]
+            ])
+        
+        # Отправляем уведомление
+        await bot.send_message(
+            chat_id=user_id,
+            text=text,
+            reply_markup=keyboard,
+            parse_mode="Markdown"
+        )
+        
+        status_msg = "с кнопкой подписки" if show_subscription_button else "без кнопки"
+        print(f"✅ Уведомление об исчерпанных лимитах отправлено пользователю {user_id} ({subscription_type}, {status_msg})")
+        
+    except Exception as e:
+        logger.error(f"Ошибка отправки уведомления пользователю {user_id}: {e}")

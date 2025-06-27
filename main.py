@@ -664,7 +664,7 @@ async def handle_user_message(message: types.Message):
                     model_name = "GPT-4o-mini"
                     print(f"🆓 Пользователь {user_id} без лимитов → используем {model_name}")
 
-                # Правильный вызов ask_doctor с вашими параметрами
+                # Правильный вызов ask_doctor 
                 response = await ask_doctor(
                     profile_text=profile_text,
                     summary_text=summary_text, 
@@ -673,14 +673,20 @@ async def handle_user_message(message: types.Message):
                     user_question=user_input,
                     lang=lang,
                     user_id=user_id,
-                    use_gemini=use_gemini
+                    use_gemini=use_gemini,                    
                 )
-                
-                print(f"🤖 {'GPT-4o' if use_gpt4o else 'GPT-4o-mini'} | Чанков: {chunks_found}")
-                
-                # Остальная логика отправки ответа пользователю остается без изменений
+
+                print(f"🤖 {'Gemini/GPT-4o' if use_gemini else 'GPT-4o-mini'} | Чанков: {chunks_found}")
+
+                # Отправляем ответ пользователю
                 if response:
                     await message.answer(response)
+                    
+                    # ✅ ИСПРАВЛЕНИЕ: Тратим лимит только если ДЕЙСТВИТЕЛЬНО использовали продвинутую модель
+                    if use_gemini:  # Если использовали Gemini - точно тратим лимит
+                        from subscription_manager import spend_gpt4o_limit
+                        await spend_gpt4o_limit(user_id, message, bot)
+                    
                     await save_message(user_id, "assistant", response)
                     await maybe_update_summary(user_id)
                     print(f"✅ Ответ отправлен: {len(response)} символов")

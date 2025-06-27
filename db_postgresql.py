@@ -384,28 +384,6 @@ async def get_user_limits(user_id: int) -> Dict:
     finally:
         await release_db_connection(conn)
 
-async def decrease_user_limit(user_id: int, limit_type: str, amount: int = 1) -> bool:
-    """Уменьшить лимит пользователя"""
-    conn = await get_db_connection()
-    try:
-        if limit_type == "documents":
-            field = "documents_left"
-        elif limit_type == "gpt4o_queries":
-            field = "gpt4o_queries_left"
-        else:
-            return False
-            
-        await conn.execute(
-            f"UPDATE user_limits SET {field} = GREATEST({field} - $1, 0) WHERE user_id = $2",
-            amount, user_id
-        )
-        return True
-    except Exception as e:
-        log_error_with_context(e, {"function": "decrease_user_limit", "user_id": user_id})
-        return False
-    finally:
-        await release_db_connection(conn)
-
 # 📄 ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С ДОКУМЕНТАМИ
 async def get_document_by_id(document_id: int) -> Optional[Dict]:
     """Получить документ по ID"""

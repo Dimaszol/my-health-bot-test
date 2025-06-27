@@ -509,7 +509,7 @@ async def ask_doctor(profile_text: str, summary_text: str,
                 response = await ask_doctor_gemini(system_prompt, full_prompt, lang)
                 
                 # ✅ ВАЖНО: Тратим лимит после успешного ответа
-                await spend_gpt4o_limit(user_id)
+                
                 print(f"💎 Лимит потрачен для пользователя {user_id} (Gemini)")
                 
                 return response
@@ -541,7 +541,7 @@ async def ask_doctor(profile_text: str, summary_text: str,
                 temperature=0.5
             )
             
-            await spend_gpt4o_limit(user_id)
+            
             answer = response.choices[0].message.content.strip()
             return safe_telegram_text(answer)
             

@@ -160,18 +160,14 @@ async def handle_photo_question(message: types.Message, bot):
         if not analysis_result:
             await message.answer("⚠️ Не удалось проанализировать изображение. Попробуйте другое фото.")
             return
-        
-        # ✅ ВАЖНО: Тратим лимит после успешного ответа (напрямую в базе)
-        from db_postgresql import decrease_user_limit
-        await decrease_user_limit(user_id, "gpt4o_queries", 1)
-        print(f"💎 Лимит потрачен для пользователя {user_id} (анализ фото)")
-        
+                
         # ✅ ВАЖНО: Очищаем состояние ДО отправки ответа
         await cleanup_photo_analysis(user_id, photo_path)
         
         # Отправляем результат анализа
         await send_analysis_result(message, analysis_result, lang)
-        
+        await spend_gpt4o_limit(user_id, message, bot)
+        print(f"💎 Лимит потрачен для пользователя {user_id} (анализ фото)")
         # ✅ ВАЖНО: Сохраняем ответ бота в историю чата
         from db_postgresql import save_message
         await save_message(user_id, "assistant", f"Анализ изображения: {analysis_result[:500]}...")
