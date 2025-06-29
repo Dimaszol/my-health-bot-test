@@ -845,7 +845,7 @@ async def handle_choice_selection(callback: types.CallbackQuery):
     
     state = user_states.get(user_id)
     if not state or state.get("mode") != "editing_profile":
-        await callback.answer("❌ Ошибка состояния")
+        await callback.answer(t("error_state", lang))
         return
     
     field = state.get("field")
@@ -1027,7 +1027,8 @@ async def handle_dismiss_upsell(callback: types.CallbackQuery):
 @handle_telegram_errors
 async def handle_current_subscription(callback: types.CallbackQuery):
     """Обработка нажатия на текущую подписку"""
-    await callback.answer("✅ Это ваша текущая подписка", show_alert=True)
+    lang = await get_user_language(callback.from_user.id)
+    await callback.answer(t("your_current_subscription", lang), show_alert=True)
 
 @dp.callback_query(lambda c: c.data == "cancel_photo_analysis")
 async def process_cancel_photo_analysis(callback_query: types.CallbackQuery):
