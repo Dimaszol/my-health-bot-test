@@ -5,6 +5,7 @@ import os
 import base64
 import asyncio
 import logging
+import re
 from openai import AsyncOpenAI  # 🔄 ИЗМЕНЕНИЕ: AsyncOpenAI вместо OpenAI
 from datetime import datetime
 from dotenv import load_dotenv
@@ -22,40 +23,62 @@ OPENAI_SEMAPHORE = asyncio.Semaphore(5)
 
 def safe_telegram_text(text: str) -> str:
     """
-    ЧИТАЕМАЯ версия: убираем markdown, но сохраняем структуру
+    ИСПРАВЛЕННАЯ версия: преобразует Markdown в HTML для Telegram
     """
     if not text:
         return ""
     
-    # Убираем markdown символы, но сохраняем переносы строк
-    text = text.replace('**', '')  # Убираем жирный
-    text = text.replace('*', '')   # Убираем курсив 
-    text = text.replace('_', '')   # Убираем подчеркивание
-    text = text.replace('`', '')   # Убираем код
-    text = text.replace('~', '')   # Убираем зачеркнутый
-    text = text.replace('\\', '')  # Убираем экранирование
+    # 1. Преобразуем Markdown заголовки в жирный текст
+    # ## Заголовок -> <b>Заголовок</b>
+    text = re.sub(r'^### (.+)$', r'<b>\1</b>', text, flags=re.MULTILINE)
+    text = re.sub(r'^## (.+)$', r'<b>\1</b>', text, flags=re.MULTILINE)
+    text = re.sub(r'^# (.+)$', r'<b>\1</b>', text, flags=re.MULTILINE)
     
-    # Улучшаем читаемость
-    lines = text.split('\n')
-    cleaned_lines = []
+    # 2. Преобразуем жирный текст: **текст** -> <b>текст</b>
+    text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', text)
     
-    for line in lines:
-        # Очищаем каждую строку от лишних пробелов, но сохраняем структуру
-        cleaned_line = ' '.join(line.split())
-        cleaned_lines.append(cleaned_line)
+    # 3. Преобразуем курсив: *текст* -> <i>текст</i>
+    text = re.sub(r'\*(.+?)\*', r'<i>\1</i>', text)
     
-    # Собираем обратно, сохраняя переносы строк
-    result = '\n'.join(cleaned_lines)
+    # 4. Преобразуем подчеркивание: _текст_ -> <u>текст</u>
+    text = re.sub(r'_(.+?)_', r'<u>\1</u>', text)
     
-    # Убираем лишние пустые строки (больше 2 подряд)
-    while '\n\n\n' in result:
-        result = result.replace('\n\n\n', '\n\n')
+    # 5. Преобразуем код: `код` -> <code>код</code>
+    text = re.sub(r'`(.+?)`', r'<code>\1</code>', text)
     
-    return result.strip()
+    # 6. Преобразуем списки: - пункт -> • пункт
+    text = re.sub(r'^- (.+)$', r'• \1', text, flags=re.MULTILINE)
+    text = re.sub(r'^\* (.+)$', r'• \1', text, flags=re.MULTILINE)
+    
+    # 7. Экранируем HTML символы (но не наши теги)
+    # Сначала заменяем наши теги на временные маркеры
+    temp_markers = {}
+    html_tags = ['<b>', '</b>', '<i>', '</i>', '<u>', '</u>', '<code>', '</code>']
+    
+    for i, tag in enumerate(html_tags):
+        marker = f"__TEMP_TAG_{i}__"
+        temp_markers[marker] = tag
+        text = text.replace(tag, marker)
+    
+    # Экранируем остальные HTML символы
+    text = text.replace('&', '&amp;')
+    text = text.replace('<', '&lt;')
+    text = text.replace('>', '&gt;')
+    
+    # Возвращаем наши теги обратно
+    for marker, tag in temp_markers.items():
+        text = text.replace(marker, tag)
+    
+    # 8. Убираем лишние переносы строк (больше 2 подряд)
+    while '\n\n\n' in text:
+        text = text.replace('\n\n\n', '\n\n')
+    
+    return text.strip()
+
 
 def split_long_message(text: str, max_length: int = 4000) -> list:
     """
-    Разбивает длинные сообщения на части для Telegram
+    Разбивает длинные сообщения на части для Telegram (с поддержкой HTML)
     """
     if len(text) <= max_length:
         return [text]
@@ -73,7 +96,25 @@ def split_long_message(text: str, max_length: int = 4000) -> list:
             # Сохраняем текущее сообщение и начинаем новое
             if current_message:
                 messages.append(current_message.strip())
-            current_message = paragraph + '\n\n'
+            
+            # Если сам абзац слишком длинный, разбиваем его
+            if len(paragraph) > max_length:
+                # Разбиваем по предложениям
+                sentences = paragraph.split('. ')
+                temp_paragraph = ""
+                
+                for sentence in sentences:
+                    if len(temp_paragraph + sentence + '. ') <= max_length:
+                        temp_paragraph += sentence + '. '
+                    else:
+                        if temp_paragraph:
+                            messages.append(temp_paragraph.strip())
+                        temp_paragraph = sentence + '. '
+                
+                if temp_paragraph:
+                    current_message = temp_paragraph
+            else:
+                current_message = paragraph + '\n\n'
     
     # Добавляем последнее сообщение
     if current_message:
@@ -279,12 +320,11 @@ async def ask_structured(text: str, lang: str = "ru", max_tokens: int = 2500) ->
         "• REMOVE ALL personal identifiers: patient names, doctor names, medical record numbers, addresses, phone numbers\n"
         "• REMOVE phrases like 'the patient', 'patient reports', 'patient was advised' - focus on medical content only\n"
         "• REMOVE administrative text, disclaimers, legal notices, and non-medical formal phrases\n"
-        "• KEEP the document date prominently at the top\n"
         "• KEEP all medical data: diagnoses, test results, measurements, medications, recommendations\n\n"
         
         "📋 STRUCTURE & FORMATTING:\n"
-        "• Start with a clear document title describing what this is (e.g., 'Результаты анализа крови', 'МРТ заключение')\n"
-        "• Use **bold headers** for main sections\n"
+        "⚠️ DO NOT include a document title at the beginning - the title will be added separately.\n"
+        "⚠️ Start directly with the content sections using **bold headers** for main sections.\n"
         "• Use bullet points (•) for lists of findings, medications, or recommendations\n"
         "• Group related information logically (lab results by system, imaging by organ, etc.)\n"
         "• Highlight abnormal values with 🔍 emoji when values are outside normal ranges\n"
@@ -703,8 +743,15 @@ async def is_medical_text(text: str) -> bool:  # 🔄 async
     return "yes" in answer
 
 @async_safe_openai_call(max_retries=2, delay=1.0)
-async def generate_medical_summary(text: str, lang: str) -> str:  # 🔄 async
-    """Безопасное создание медицинского резюме"""
+async def generate_medical_summary(text: str, lang: str, document_date: str = None) -> str:
+    """Безопасное создание медицинского резюме с правильной датой"""
+    
+    # Получаем текущую дату для fallback
+    current_date = datetime.now().strftime("%d.%m.%Y")
+    
+    # Если дата документа не передана, используем текущую
+    fallback_date = document_date or current_date
+    
     system_prompt = (
         "You are a medical assistant creating a structured summary of a medical document. "
         "You do not draw conclusions or add comments. You simply organize important information into paragraphs."
@@ -714,7 +761,15 @@ async def generate_medical_summary(text: str, lang: str) -> str:  # 🔄 async
     user_prompt = (
         "⚠️ STRICT INSTRUCTION:\n"
         "⚠️ Never include any personal or identifying information — such as full names, age, gender, addresses, card numbers, clinic names, or hospital departments. Completely remove such data from the summary, even if it appears in the document. Do not begin the paragraph with phrases like 'the patient is a 67-year-old male'.\n"
-        "The date must be on the first line of the paragraph and part of the sentence — not on a separate line. Do not repeat this date later in the paragraph. Do not include any other dates inside the paragraph.\n"
+        
+        f"⚠️ DATE RULES:\n"
+        f"1. FIRST: Look for dates in the document text (DD.MM.YYYY, DD/MM/YYYY, DD-MM-YYYY formats)\n"
+        f"2. SECOND: If NO date found in document, use this fallback date: {fallback_date}\n"
+        f"3. CRITICAL: Use the SAME date for ALL paragraphs - either the document date OR the fallback date\n"
+        f"4. Each paragraph must start with [dd.mm.yyyy] format\n"
+        f"5. Do not mix different dates between paragraphs\n"
+        f"6. Do not repeat dates inside paragraphs\n\n"
+        
         "⚠️ Include only content that may be clinically relevant or useful for AI-driven medical analysis. Do not include paragraphs that contain only formal phrases, disclaimers, missing data notes, or administrative remarks without medical value.\n"
         "Create a structured summary of a medical document.\n"
         "It can be any type of document: report, discharge summary, examination protocol, consultation, lab result, etc.\n"
@@ -722,23 +777,27 @@ async def generate_medical_summary(text: str, lang: str) -> str:  # 🔄 async
         "The first paragraph is the main one: include all key and diagnostically important information from the entire document.\n"
         "The first paragraph must contain all critical clinical data, diagnoses, and observations, even if they are repeated elsewhere in the document.\n"
         "Strive for logically complete fragments; do not break sentences or leave incomplete thoughts.\n"
-        "If a date is provided in the document — begin each paragraph with it in the format [dd.mm.yyyy]. If no date is given — use the current date.\n"
+        
+        f"⚠️ CRITICAL: Extract date from document first. If no date found, use {fallback_date}.\n"
+        
         "Always preserve all parameters, even if they are contradictory or incomplete.\n"
         "Do not interpret, do not draw conclusions, do not omit ambiguous or conflicting data — just keep them as they are.\n"
         "Include all numerical values, reference ranges, signs, diagnoses, scales, dosages, medications, test result descriptions, and technical parameters.\n"
         "Do not add any introductory or concluding sentences.\n"
         "If there is little information, do not create extra paragraphs — limit to 1–2 chunks.\n"
         "This summary is intended for internal AI analysis.\n"
-        "Example paragraph: [01.03.2024] Liver ultrasound: diffuse changes in the parenchyma, 8 mm hyperechoic inclusion found.\n"
+        
+        "FORMAT: [DD.MM.YYYY] Medical content of paragraph.\n"
+        
         "Before returning the answer, verify that:\n"
         "- No full names are present\n" 
-        "- Each paragraph starts with ONE date only\n"
+        f"- Each paragraph starts with either document date OR {fallback_date}\n"
         "- No other dates are mentioned inside paragraphs\n"
         "- All text is logically grouped and follows the format\n"
         "The answer must be in the form of such paragraphs, separated by double line breaks.\n\n" + text
     )
 
-    response = await client.chat.completions.create(  # 🔄 await
+    response = await client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": system_prompt},
@@ -760,12 +819,20 @@ async def generate_title_from_text(text: str, lang: str) -> str:  # 🔄 async
     title_prompt = (
         "Read the medical document and generate a short, accurate title.\n"
         "⚠️ Never include full names of patients, doctors, lab staff, or clinics — completely skip them.\n"
-        "📅 If the document contains a date, add it to the title in the format DD.MM.YYYY.\n"
+        
+        "📅 DATE RULES:\n"
+        "• ONLY if the document text contains a real date (DD.MM.YYYY, DD/MM/YYYY, etc.) - add it to the title\n"
+        "• If NO date is found in the document - do NOT add any date to the title\n"
+        "• NEVER use example dates or make up dates\n\n"
+        
         "🧾 Focus only on the essence: type of exam, organ, diagnosis, etc. No extra words, no quotes, no formal phrases.\n"
-        "Examples:\n"
-        "- Liver ultrasound 05.03.2024\n"
-        "- Blood test 21.02.2023\n"
-        "- Lumbar spine MRI\n\n"
+        
+        "EXAMPLES:\n"
+        "• If document contains date '15.06.2023': → 'Liver ultrasound 15.06.2023'\n"
+        "• If document contains NO date: → 'Blood test'\n"
+        "• If document contains NO date: → 'Lumbar spine MRI'\n\n"
+        
+        "DOCUMENT TEXT TO ANALYZE:\n"
         f"{text[:1500]}"
     )
 

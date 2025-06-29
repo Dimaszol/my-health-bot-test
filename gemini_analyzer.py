@@ -64,7 +64,7 @@ class GeminiMedicalAnalyzer:
                 [prompt, image],
                 generation_config=genai.types.GenerationConfig(
                     temperature=0.1,
-                    max_output_tokens=4000,
+                    max_output_tokens=5000,
                     candidate_count=1
                 ),
                 safety_settings=safety_settings

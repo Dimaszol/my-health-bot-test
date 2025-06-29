@@ -693,19 +693,18 @@ async def handle_user_message(message: types.Message):
                         await spend_gpt4o_limit(user_id, message, bot)
                     
                     await save_message(user_id, "assistant", response)
-                    await maybe_update_summary(user_id)
-                    # ✅ ДОБАВИТЬ: Проверка upsell после обновления сводки
-                    
-                    has_gpt4o_limits = await check_gpt4o_limit(user_id)
-                    if not has_gpt4o_limits:
-                        # Увеличиваем счетчик обновлений сводки
-                        upsell_tracker.increment_summary_count(user_id)
-                        
-                        # Проверяем нужно ли показать upsell при обновлении сводки
-                        if upsell_tracker.should_show_upsell_on_summary(user_id):
-                            await SubscriptionHandlers.show_subscription_upsell(
-                                message, user_id, reason="summary_updated"
-                            )
+                    summary_was_updated = await maybe_update_summary(user_id)
+
+                    # Проверка upsell ТОЛЬКО если сводка реально обновилась
+                    if summary_was_updated:
+                        has_gpt4o_limits = await check_gpt4o_limit(user_id)
+                        if not has_gpt4o_limits:
+                            upsell_tracker.increment_summary_count(user_id)
+                            
+                            if upsell_tracker.should_show_upsell_on_summary(user_id):
+                                await SubscriptionHandlers.show_subscription_upsell(
+                                    message, user_id, reason="summary_updated"
+                                )
                     print(f"✅ Ответ отправлен: {len(response)} символов")
                 else:
                     await message.answer(get_user_friendly_message("Не удалось получить ответ", lang))

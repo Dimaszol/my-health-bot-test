@@ -113,18 +113,55 @@ async def handle_document_upload(message: types.Message, bot):
             return
 
         print("📝 Создаю структурированный текст и резюме...")
+        
+        # ✅ НОВЫЙ ПОРЯДОК: Сначала заголовок!
+        print("🏷️ Генерирую заголовок...")
+        auto_title = await generate_title_from_text(text=vision_text[:1500], lang=lang)
+        
+        # ✅ Затем структурированный текст БЕЗ заголовка
+        print("📝 Создаю структурированный текст...")
         raw_text = await ask_structured(vision_text[:8000], lang=lang)
+        
+        # ✅ И резюме для векторной базы
+        print("📝 Создаю резюме для векторной базы...")
         summary = await generate_medical_summary(vision_text[:8000], lang)
 
         if raw_text:
-            clean_text = html.escape(raw_text[:2000])
-            await message.answer(t("vision_read_text", lang) + "\n\n" + clean_text, parse_mode="HTML")
+            # ✅ Импортируем функции разбивки сообщений
+            from gpt import safe_telegram_text, split_long_message
+            
+            # ✅ Применяем правильное форматирование 
+            formatted_text = safe_telegram_text(raw_text)
+            
+            # ✅ НОВОЕ: Заголовок включаем в header сообщения
+            header = f"{t('vision_read_text', lang)}\n «{auto_title}»"
+            full_text = f"{header}\n\n{formatted_text}"
+            
+            # ✅ Разбиваем на части если слишком длинное
+            message_parts = split_long_message(full_text, max_length=4000)
+            
+            # ✅ Отправляем каждую часть отдельно
+            for i, part in enumerate(message_parts):
+                try:
+                    await message.answer(part, parse_mode="HTML")
+                    
+                    # Небольшая задержка между сообщениями для читаемости
+                    if i < len(message_parts) - 1:  # Не ждем после последнего
+                        import asyncio
+                        await asyncio.sleep(0.5)
+                        
+                except Exception as e:
+                    print(f"❌ Ошибка отправки части {i+1}: {e}")
+                    # Fallback: отправляем без HTML форматирования
+                    try:
+                        plain_text = part.replace('<b>', '').replace('</b>', '').replace('<i>', '').replace('</i>', '')
+                        await message.answer(plain_text)
+                    except Exception as fallback_error:
+                        print(f"❌ Критическая ошибка отправки: {fallback_error}")
+                        await message.answer("❌ Ошибка отображения результата")
         else:
             await message.answer(t("vision_failed", lang))
             return
-
-        print("🏷️ Генерирую заголовок...")
-        auto_title = await generate_title_from_text(text=raw_text[:1500], lang=lang)
 
         print("💾 Сохраняю документ в БД...")
         document_id = await save_document(

@@ -144,7 +144,7 @@ async def maybe_update_summary(user_id):
             continue
     
     if len(user_messages) < 6:
-        return  # ждём пока пользователь напишет хотя бы 6 новых сообщений
+        return False  # ждём пока пользователь напишет хотя бы 6 новых сообщений
 
     dialogue = format_dialogue(new_messages)
     today = datetime.now().strftime("%d.%m.%Y")
@@ -200,21 +200,21 @@ async def maybe_update_summary(user_id):
             response_content = response.choices[0].message.content
             if not response_content:
                 print(f"⚠️ GPT вернул None для пользователя {user_id}")
-                return
+                return False
                 
             new_summary = response_content.strip()
             
             # ✅ ПРОВЕРКА: убеждаемся что получили корректный ответ
             if not new_summary:
                 print(f"⚠️ GPT вернул пустую сводку для пользователя {user_id}")
-                return
+                return False
                 
             print(f"✅ Сводка успешно обновлена для пользователя {user_id} на языке {user_lang}")
             print(f"📄 Превью сводки: {new_summary[:100]}...")
             
     except Exception as e:
         print(f"❌ Ошибка создания сводки для пользователя {user_id}: {e}")
-        return  # Не обновляем сводку при ошибке
+        return False  # Не обновляем сводку при ошибке
 
     # Сохраняем сводку только если она отличается от предыдущей
     # ✅ БЕЗОПАСНАЯ ПРОВЕРКА: убеждаемся что переменные не None
@@ -243,8 +243,10 @@ async def maybe_update_summary(user_id):
             
         await save_conversation_summary(user_id, new_summary, last_message_id)
         print(f"💾 Сводка сохранена для пользователя {user_id}")
+        return True
     else:
         print(f"📝 Сводка не изменилась для пользователя {user_id}")
+        return False
 
 async def format_user_profile(user_id: int) -> str:
     """
