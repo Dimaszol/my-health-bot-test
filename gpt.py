@@ -860,12 +860,13 @@ def fallback_summarize(text: str, lang: str = "ru") -> str:
 
 def fallback_response(user_question: str, lang: str = "ru") -> str:
     """Простой ответ если OpenAI недоступен"""
-    messages = {
-        "ru": "🤖 ИИ-ассистент временно недоступен. Ваш вопрос сохранен, я отвечу как только сервис восстановится.",
-        "en": "🤖 AI assistant is temporarily unavailable. Your question is saved, I'll respond once the service is restored.",
-        "uk": "🤖 ШІ-асистент тимчасово недоступний. Ваше питання збережено, я відповім щойно сервіс відновиться."
-    }
-    return messages.get(lang, messages["ru"])
+    from db_postgresql import t
+    return t("ai_temporarily_unavailable", lang)
+
+def get_openai_unavailable_message(lang: str = "ru") -> str:
+    """Сообщение о недоступности OpenAI для использования в main.py"""
+    from db_postgresql import t
+    return t("ai_temporarily_unavailable", lang)
 
 async def check_openai_status() -> bool:  # 🔄 async
     """Асинхронная проверка доступности OpenAI API"""

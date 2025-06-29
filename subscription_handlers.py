@@ -10,7 +10,7 @@ from subscription_keyboards import (
 )
 from subscription_manager import SubscriptionManager
 from stripe_manager import StripeManager
-from db_postgresql import get_user_language, get_user_name, fetch_one
+from db_postgresql import get_user_language, get_user_name, fetch_one, t
 from datetime import datetime
 from error_handler import log_error_with_context
 
@@ -77,7 +77,7 @@ class SubscriptionHandlers:
         except Exception as e:
             logger.error(f"Ошибка показа меню подписок для пользователя {user_id}: {e}")
             
-            error_text = "❌ Ошибка загрузки меню подписок"
+            error_text = t("subscription_menu_error", lang)
             if isinstance(message_or_callback, types.CallbackQuery):
                 await message_or_callback.message.answer(error_text)
                 await message_or_callback.answer()
@@ -464,14 +464,8 @@ class SubscriptionHandlers:
                 
             else:
                 # Ошибка создания ссылки
-                error_text = {
-                    "ru": f"❌ <b>Ошибка создания ссылки для оплаты</b>\n\n{payment_url_or_error}\n\nПопробуйте еще раз или обратитесь в поддержку.",
-                    "uk": f"❌ <b>Помилка створення посилання для оплати</b>\n\n{payment_url_or_error}\n\nСпробуйте ще раз або зверніться до підтримки.",
-                    "en": f"❌ <b>Error creating payment link</b>\n\n{payment_url_or_error}\n\nPlease try again or contact support."
-                }
-                
                 await callback.message.edit_text(
-                    error_text.get(lang, error_text["en"]),
+                    t("payment_link_error", lang, error=payment_url_or_error),
                     reply_markup=payment_processing_keyboard(lang),
                     parse_mode="HTML"
                 )
@@ -502,12 +496,7 @@ class SubscriptionHandlers:
             limits = await SubscriptionManager.get_user_limits(user_id)
             
             if not limits:
-                error_text = {
-                    "ru": "❌ Не удалось загрузить информацию о лимитах",
-                    "uk": "❌ Не вдалося завантажити інформацію про ліміти",
-                    "en": "❌ Failed to load limits information"
-                }
-                await callback.answer(error_text.get(lang, error_text["en"]), show_alert=True)
+                await callback.answer(t("limits_load_error", lang), show_alert=True)
                 return
             
             # Формируем подробный текст о лимитах
@@ -644,23 +633,12 @@ class SubscriptionHandlers:
             limits = await SubscriptionManager.get_user_limits(user_id)
             
             if not limits or limits['subscription_type'] != 'subscription':
-                no_subscription_text = {
-                    "ru": "❌ У вас нет активной подписки для отмены",
-                    "uk": "❌ У вас немає активної підписки для скасування",
-                    "en": "❌ You don't have an active subscription to cancel"
-                }
-                await callback.answer(no_subscription_text.get(lang, no_subscription_text["en"]), show_alert=True)
+                await callback.answer(t("no_subscription_to_cancel", lang), show_alert=True)
                 return
             
             # Показываем предупреждение об отмене
-            cancel_warning_text = {
-                "ru": "⚠️ <b>Отмена подписки</b>\n\nВы уверены, что хотите отменить подписку?\n\n📝 <b>Что произойдет:</b>\n• Автопродление будет отключено\n• Текущие лимиты останутся до конца периода\n• После окончания периода лимиты сбросятся до бесплатных\n\n💡 Вы сможете оформить подписку заново в любое время.",
-                "uk": "⚠️ <b>Скасування підписки</b>\n\nВи впевнені, що хочете скасувати підписку?\n\n📝 <b>Що станеться:</b>\n• Автопродовження буде вимкнено\n• Поточні ліміти залишаться до кінця періоду\n• Після закінчення періоду ліміти скинуться до безкоштовних\n\n💡 Ви зможете оформити підписку знову в будь-який час.",
-                "en": "⚠️ <b>Cancel subscription</b>\n\nAre you sure you want to cancel your subscription?\n\n📝 <b>What will happen:</b>\n• Auto-renewal will be disabled\n• Current limits will remain until the end of the period\n• After the period ends, limits will reset to free\n\n💡 You can subscribe again at any time."
-            }
-            
             await callback.message.edit_text(
-                cancel_warning_text.get(lang, cancel_warning_text["en"]),
+                t("cancel_subscription_warning", lang),
                 reply_markup=cancel_subscription_confirmation(lang),
                 parse_mode="HTML"
             )
@@ -668,7 +646,7 @@ class SubscriptionHandlers:
             
         except Exception as e:
             logger.error(f"Ошибка запроса отмены подписки для пользователя {callback.from_user.id}: {e}")
-            await callback.answer("❌ Ошибка обработки запроса", show_alert=True)
+            await callback.answer(t("request_processing_error", lang), show_alert=True)
     
     @staticmethod
     async def handle_cancel_subscription_confirmation(callback: types.CallbackQuery):
@@ -681,22 +659,14 @@ class SubscriptionHandlers:
             success, message = await StripeManager.cancel_user_subscription(user_id)
             
             if success:
-                success_text = {
-                    "ru": f"✅ <b>Подписка отменена</b>\n\n{message}\n\n📊 Ваши текущие лимиты останутся активными до окончания оплаченного периода.",
-                    "uk": f"✅ <b>Підписку скасовано</b>\n\n{message}\n\n📊 Ваші поточні ліміти залишаться активними до закінчення сплаченого періоду.",
-                    "en": f"✅ <b>Subscription cancelled</b>\n\n{message}\n\n📊 Your current limits will remain active until the end of the paid period."
-                }
+                success_text = t("subscription_cancelled_success", lang, message=message)
             else:
-                success_text = {
-                    "ru": f"❌ <b>Ошибка отмены подписки</b>\n\n{message}",
-                    "uk": f"❌ <b>Помилка скасування підписки</b>\n\n{message}",
-                    "en": f"❌ <b>Subscription cancellation error</b>\n\n{message}"
-                }
+                success_text = t("subscription_cancel_error", lang, message=message)
             
             # Создаем кнопку возврата в меню
             back_button = InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(
-                    text="⬅️ Назад к подпискам" if lang == "ru" else "⬅️ Назад до підписок" if lang == "uk" else "⬅️ Back to subscriptions",
+                    text=t("back_to_subscriptions", lang),
                     callback_data="subscription_menu"
                 )]
             ])
@@ -710,7 +680,7 @@ class SubscriptionHandlers:
             
         except Exception as e:
             logger.error(f"Ошибка подтверждения отмены подписки для пользователя {callback.from_user.id}: {e}")
-            await callback.answer("❌ Ошибка отмены подписки", show_alert=True)
+            await callback.answer(t("subscription_cancel_error_short", lang), show_alert=True)
     
     @staticmethod
     async def show_subscription_upsell(message, user_id: int, reason: str = "limits_exceeded"):

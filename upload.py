@@ -52,7 +52,7 @@ async def handle_document_upload(message: types.Message, bot):
             print(f"💾 Путь для сохранения: {local_file}")
         except Exception as e:
             print(f"❌ Ошибка создания пути: {e}")
-            await message.answer(f"❌ Ошибка имени файла: {str(e)}")
+            await message.answer(t("file_name_error", lang, error=str(e)))
             return
 
         # СКАЧИВАНИЕ ФАЙЛА
@@ -63,7 +63,7 @@ async def handle_document_upload(message: types.Message, bot):
         # ПРОВЕРКА РАЗМЕРА ФАЙЛА ПОСЛЕ СКАЧИВАНИЯ
         if not validate_file_size(local_file):
             os.remove(local_file)  # Удаляем слишком большой файл
-            await message.answer("❌ Файл слишком большой. Максимальный размер: 5 МБ")
+            await message.answer(t("file_too_large", lang))
             return
 
         # Определяем тип файла
@@ -158,7 +158,7 @@ async def handle_document_upload(message: types.Message, bot):
                         await message.answer(plain_text)
                     except Exception as fallback_error:
                         print(f"❌ Критическая ошибка отправки: {fallback_error}")
-                        await message.answer("❌ Ошибка отображения результата")
+                        await message.answer(t("display_error", lang))
         else:
             await message.answer(t("vision_failed", lang))
             return
@@ -218,10 +218,7 @@ async def handle_document_upload(message: types.Message, bot):
         ])
 
         await message.answer(
-            "ℹ️ Что дальше?\n\n"
-            "▸ Нажми <b>«Посмотреть весь документ»</b>, чтобы увидеть всё, что удалось прочитать\n"
-            "▸ Если текст получился нечитаемым — нажми <b>«Удалить»</b> и попробуй загрузить фото получше\n"
-            "▸ Можно <b>переименовать</b> документ для удобства",
+            t("next_steps_info", lang),
             reply_markup=keyboard,
             parse_mode="HTML"
         )
@@ -232,5 +229,4 @@ async def handle_document_upload(message: types.Message, bot):
         print(f"❌ Общая ошибка при загрузке документа: {e}")
         import traceback
         print(f"📊 Полная трассировка: {traceback.format_exc()}")
-        await message.answer("❌ Произошла ошибка при обработке файла. Попробуйте еще раз.")
-
+        await message.answer(t("processing_error", lang))

@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from subscription_manager import SubscriptionManager, check_document_limit, check_gpt4o_limit
 from subscription_handlers import SubscriptionHandlers, upsell_tracker
-from db_postgresql import get_user_language
+from db_postgresql import get_user_language, t
 
 logger = logging.getLogger(__name__)
 
@@ -118,20 +118,22 @@ class NotificationSystem:
             lang = await get_user_language(user_id)
             limits = await SubscriptionManager.get_user_limits(user_id)
             
-            # Новые тексты без упоминания GPT-4o
-            if action_type == "document":
-                limit_messages = {
-                    "ru": f"📄 **Лимит на документы исчерпан**\n\n📊 **Ваши текущие лимиты:**\n• Документы: {limits['documents_left']}\n• Глубокие ответы: {limits['gpt4o_queries_left']}\n\n💎 Оформите подписку для загрузки большего количества документов и получения детальных медицинских анализов!",
-                    "uk": f"📄 **Ліміт на документи вичерпано**\n\n📊 **Ваші поточні ліміти:**\n• Документи: {limits['documents_left']}\n• Глибокі відповіді: {limits['gpt4o_queries_left']}\n\n💎 Оформіть підписку для завантаження більшої кількості документів та отримання детальних медичних аналізів!",
-                    "en": f"📄 **Document limit exceeded**\n\n📊 **Your current limits:**\n• Documents: {limits['documents_left']}\n• Deep responses: {limits['gpt4o_queries_left']}\n\n💎 Get a subscription to upload more documents and receive detailed medical analysis!"
-                }
-            else:  # image
-                limit_messages = {
-                    "ru": f"📸 **Лимит на анализ изображений исчерпан**\n\n📊 **Ваши текущие лимиты:**\n• Документы: {limits['documents_left']}\n• Глубокие ответы: {limits['gpt4o_queries_left']}\n\n💎 Оформите подписку для анализа большего количества медицинских снимков с подробными заключениями!",
-                    "uk": f"📸 **Ліміт на аналіз зображень вичерпано**\n\n📊 **Ваші поточні ліміти:**\n• Документи: {limits['documents_left']}\n• Глибокі відповіді: {limits['gpt4o_queries_left']}\n\n💎 Оформіть підписку для аналізу більшої кількості медичних знімків з детальними висновками!",
-                    "en": f"📸 **Image analysis limit exceeded**\n\n📊 **Your current limits:**\n• Documents: {limits['documents_left']}\n• Deep responses: {limits['gpt4o_queries_left']}\n\n💎 Get a subscription to analyze more medical scans with detailed conclusions!"
-                }
+            # ✅ ДОБАВИТЬ: Отправку сообщения о лимитах
+            from db_postgresql import t
             
+            if action_type == "document":
+                text = t("document_limit_exceeded", lang, 
+                        documents_left=limits['documents_left'], 
+                        gpt4o_queries_left=limits['gpt4o_queries_left'])
+            else:  # image
+                text = t("image_limit_exceeded", lang,
+                        documents_left=limits['documents_left'], 
+                        gpt4o_queries_left=limits['gpt4o_queries_left'])
+            
+            # ✅ ДОБАВИТЬ: Отправляем сообщение
+            await message.answer(text, parse_mode="HTML")
+            
+            # Потом показываем кнопки подписки
             await SubscriptionHandlers.show_subscription_upsell(
                 message, user_id, reason="limits_exceeded"
             )

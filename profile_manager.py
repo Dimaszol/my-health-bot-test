@@ -61,7 +61,7 @@ class ProfileManager:
             
         except Exception as e:
             logger.error(f"Ошибка получения профиля для пользователя {user_id}: {e}")
-            return f"❌ Ошибка загрузки профиля"
+            return t("profile_load_error", lang)
 
     @staticmethod 
     def _add_activity_emoji(activity: str, lang: str) -> str:
@@ -120,11 +120,11 @@ class ProfileManager:
                 logger.info(f"Поле {field} пользователя {user_id} обновлено на: {processed_value}")
                 return True, t("profile_updated", lang)
             else:
-                return False, "❌ Ошибка обновления профиля"
+                return False, t("profile_update_error", lang)
                 
         except Exception as e:
             logger.error(f"Ошибка обновления поля {field} для пользователя {user_id}: {e}")
-            return False, "❌ Ошибка обновления профиля"
+            return False, t("profile_update_error", lang)
     
     @staticmethod
     def _process_field_value(field: str, value: str, lang: str):
@@ -181,8 +181,8 @@ class ProfileManager:
         elif field == "weight_kg":
             return t("invalid_weight", lang)
         else:
-            return "❌ Некорректное значение"
-
+            return t("invalid_value", lang)
+        
     @staticmethod
     def _normalize_activity_value(value: str, lang: str) -> str:
         """Нормализует значение активности к единому формату"""
