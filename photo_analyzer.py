@@ -57,8 +57,23 @@ async def handle_photo_analysis(message: types.Message, bot):
         file_path = file_info.file_path
         
         # Создаем временный путь для сохранения
-        local_file = create_simple_file_path(user_id, f"photo_{photo.file_id[:8]}.jpg")
-        print(f"💾 Путь для сохранения фото: {local_file}")
+        try:
+            local_file = create_simple_file_path(user_id, f"photo_{photo.file_id[:8]}.jpg")
+            print(f"💾 Путь для сохранения фото: {local_file}")
+        except ValueError as e:
+            # Локализуем ошибки файловой системы
+            error_key = {
+                "Empty filename": "file_empty_name_error",
+                "Invalid filename: contains dangerous characters": "file_invalid_name_error", 
+                "Filename too long": "file_name_too_long_error",
+                "File path outside allowed directory": "file_path_security_error",
+            }.get(str(e), "file_creation_error")
+            
+            await message.answer(t(error_key, lang))
+            return
+        except Exception as e:
+            await message.answer(t("file_creation_error", lang))
+            return
         
         # Скачиваем файл
         print("⬇️ Скачиваю фото...")
@@ -112,14 +127,14 @@ async def handle_photo_question(message: types.Message, bot):
         # Получаем состояние пользователя
         state = user_states.get(user_id)
         if not state or state.get("type") != "awaiting_photo_question":
-            await message.answer("⚠️ Состояние анализа фото не найдено. Загрузите фото заново.")
+            await message.answer(t("photo_state_not_found", lang))
             return
         
         photo_path = state.get("photo_path")
         user_question = message.text
         
         if not photo_path or not os.path.exists(photo_path):
-            await message.answer("⚠️ Фото не найдено. Загрузите фото заново.")
+            await message.answer(t("photo_file_not_found", lang))
             user_states[user_id] = None
             return
         
@@ -154,11 +169,11 @@ async def handle_photo_question(message: types.Message, bot):
             pass
         
         if error_message:
-            await message.answer(f"❌ Ошибка анализа: {error_message}")
+            await message.answer(t("photo_analysis_error_detail", lang, error=error_message))
             return
         
         if not analysis_result:
-            await message.answer("⚠️ Не удалось проанализировать изображение. Попробуйте другое фото.")
+            await message.answer(t("photo_analysis_failed", lang))
             return
                 
         # ✅ ВАЖНО: Очищаем состояние ДО отправки ответа
@@ -176,7 +191,7 @@ async def handle_photo_question(message: types.Message, bot):
         
     except Exception as e:
         logger.error(f"Ошибка при анализе фото: {e}")
-        await message.answer("❌ Произошла ошибка при анализе. Попробуйте еще раз.")
+        await message.answer(t("photo_analysis_general_error", lang))
         await cleanup_photo_analysis(user_id, photo_path if 'photo_path' in locals() else None)
 
 async def prepare_user_context(user_id: int, lang: str) -> str:
@@ -285,7 +300,7 @@ async def send_analysis_result(message: types.Message, analysis_result: str, lan
         
     except Exception as e:
         logger.error(f"Ошибка отправки результата анализа: {e}")
-        await message.answer("✅ Анализ завершен, но произошла ошибка при отправке результата.")
+        await message.answer(t("analysis_complete_send_error", lang))
 
 async def cleanup_photo_analysis(user_id: int, photo_path: Optional[str] = None):
     """
@@ -327,11 +342,11 @@ async def cancel_photo_analysis(callback_query: types.CallbackQuery):
         await cleanup_photo_analysis(user_id, photo_path)
         
         await callback_query.message.edit_text(
-            "❌ Анализ фото отменен.",
+            t("photo_analysis_canceled", lang),
             reply_markup=None
         )
         
-        await callback_query.answer("Отменено")
+        await callback_query.answer(t("canceled", lang))
         
     except Exception as e:
         logger.error(f"Ошибка отмены анализа фото: {e}")

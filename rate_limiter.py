@@ -6,6 +6,7 @@ import asyncio
 from typing import Dict, Tuple
 from collections import defaultdict
 from datetime import datetime, timedelta
+from db_postgresql import t
 
 logger = logging.getLogger(__name__)
 
@@ -106,12 +107,8 @@ class RateLimiter:
                     seconds = remaining % 60
                     time_str = f"{minutes} мин {seconds} сек" if minutes > 0 else f"{seconds} сек"
                     
-                    messages = {
-                        "ru": f"⏳ Превышен лимит запросов. Попробуйте через {time_str}",
-                        "en": f"⏳ Rate limit exceeded. Try again in {time_str}",
-                        "uk": f"⏳ Перевищено ліміт запитів. Спробуйте через {time_str}"
-                    }
-                    return False, messages.get(lang, messages["ru"])
+                    text = t("rate_limit_exceeded_time", lang, time_str=time_str)
+                    return False, text
                 else:
                     del self.blocked_users[user_id]
             
@@ -122,49 +119,23 @@ class RateLimiter:
             if daily_count >= daily_limit:
                 lang = get_user_language_sync(user_id)
                 
-                action_names = {
-                    "ru": {
-                        "message": "сообщений", 
-                        "document": "документов", 
-                        "image": "изображений", 
-                        "note": "заметок"
-                    },
-                    "en": {
-                        "message": "messages", 
-                        "document": "documents", 
-                        "image": "images", 
-                        "note": "notes"
-                    },
-                    "uk": {
-                        "message": "повідомлень", 
-                        "document": "документів", 
-                        "image": "зображень", 
-                        "note": "нотаток"
-                    }
-                }
-                
-                action_name = action_names.get(lang, action_names["ru"]).get(action_type, "запросов")
+                action_name_key = f"action_{action_type}s" if action_type != "message" else "action_messages"
+                action_name = t(action_name_key, lang, fallback=t("action_requests", lang))
                 
                 # ✅ НОВОЕ: Проверяем тип подписки для разных сообщений
                 subscription_type = await self._get_user_subscription_type(user_id)
                 
                 if subscription_type == 'subscription':
                     # Для подписчиков - обычное сообщение о лимите
-                    messages = {
-                        "ru": f"😴 **Достигнут дневной лимит**\n\nВы использовали максимум: {daily_limit} {action_name} в день.\n\n🌅 Завтра в 00:00 лимиты обновятся!",
-                        "en": f"😴 **Daily limit reached**\n\nYou've used the maximum: {daily_limit} {action_name} per day.\n\n🌅 Tomorrow at 00:00 limits will reset!",
-                        "uk": f"😴 **Досягнуто денний ліміт**\n\nВи використали максимум: {daily_limit} {action_name} на день.\n\n🌅 Завтра о 00:00 ліміти оновляться!"
-                    }
+                    text = t("daily_limit_reached_premium", lang, 
+                            daily_limit=daily_limit, action_name=action_name)
                 else:
                     # Для бесплатных пользователей - с предложением подписки
-                    messages = {
-                        "ru": f"😴 **Дневной лимит исчерпан**\n\nВы достигли лимита: {daily_limit} {action_name} в день.\n\n🌅 Завтра в 00:00 я снова буду готов помочь!\n💎 Или оформите подписку для увеличения лимитов до 100 сообщений в день",
-                        "en": f"😴 **Daily limit exceeded**\n\nYou've reached the limit: {daily_limit} {action_name} per day.\n\n🌅 Tomorrow at 00:00 I'll be ready to help again!\n💎 Or get a subscription to increase limits to 100 messages per day",
-                        "uk": f"😴 **Денний ліміт вичерпано**\n\nВи досягли ліміту: {daily_limit} {action_name} на день.\n\n🌅 Завтра о 00:00 я знову буду готовий допомогти!\n💎 Або оформіть підписку для збільшення лімітів до 100 повідомлень на день"
-                    }
-                
+                    text = t("daily_limit_exceeded_free", lang, 
+                            daily_limit=daily_limit, action_name=action_name)
+
                 logger.warning(f"Daily limit exceeded for user {user_id}, action {action_type}: {daily_count}/{daily_limit}")
-                return False, messages.get(lang, messages["ru"])
+                return False, text
             
             # 3. Проверяем минутные лимиты (существующий код без изменений)
             if action_type not in self.limits:
@@ -188,25 +159,30 @@ class RateLimiter:
                 
                 lang = get_user_language_sync(user_id)
                 
-                action_names = {
-                    "ru": {"message": "сообщений", "document": "документов", "image": "изображений", "note": "заметок"},
-                    "en": {"message": "messages", "document": "documents", "image": "images", "note": "notes"},
-                    "uk": {"message": "повідомлень", "document": "документів", "image": "зображень", "note": "нотаток"}
-                }
+                # ✅ ЗАМЕНИЛИ: Получаем локализованное название действия через t()
+                if action_type == "message":
+                    action_name = t("action_messages", lang)
+                elif action_type == "document":
+                    action_name = t("action_documents", lang)
+                elif action_type == "image":
+                    action_name = t("action_images", lang)
+                elif action_type == "note":
+                    action_name = t("action_notes", lang)
+                else:
+                    action_name = t("action_requests", lang)  # fallback
                 
                 cooldown_min = limit_config["cooldown"] // 60
                 window_min = limit_config["window"] // 60
-                action_name = action_names.get(lang, action_names["ru"]).get(action_type, "запросов")
                 
-                messages = {
-                    "ru": f"🚫 Превышен лимит: максимум {limit_config['count']} {action_name} за {window_min} мин. Попробуйте через {cooldown_min} мин.",
-                    "en": f"🚫 Rate limit exceeded: max {limit_config['count']} {action_name} per {window_min} min. Try again in {cooldown_min} min.",
-                    "uk": f"🚫 Перевищено ліміт: максимум {limit_config['count']} {action_name} за {window_min} хв. Спробуйте через {cooldown_min} хв."
-                }
-                
+                text = t("rate_limit_short", lang, 
+                        count=limit_config['count'], 
+                        action_name=action_name, 
+                        window_min=window_min, 
+                        cooldown_min=cooldown_min)
+
                 logger.warning(f"Minute rate limit exceeded for user {user_id}, action {action_type}")
-                return False, messages.get(lang, messages["ru"])
-            
+                return False, text
+
             return True, ""
 
     async def _get_daily_limit_for_user(self, user_id: int, action_type: str) -> int:

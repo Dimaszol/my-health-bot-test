@@ -6,6 +6,7 @@ import google.generativeai as genai
 import asyncio
 from PIL import Image
 from typing import Tuple, List, Dict
+from db_postgresql import t
 
 class GeminiMedicalAnalyzer:
     """Анализатор медицинских изображений через Gemini API"""
@@ -39,7 +40,7 @@ class GeminiMedicalAnalyzer:
             
             # Проверяем существование файла
             if not os.path.exists(image_path):
-                return "", f"Файл не найден: {image_path}"
+                return "", t("gemini_file_not_found", lang, path=image_path)
             
             # Загружаем изображение
             image = Image.open(image_path)
@@ -99,10 +100,10 @@ class GeminiMedicalAnalyzer:
                         if hasattr(response, 'text') and response.text:
                             analysis_text = response.text
                         else:
-                            return "", "Изображение не может быть обработано системой безопасности. Попробуйте другое изображение."
+                            return "", t("gemini_safety_blocked", lang)
                             
                     elif candidate.finish_reason == 3:  # RECITATION
-                        return "", "Gemini обнаружил возможное нарушение авторских прав. Попробуйте другое изображение."
+                        return "", t("gemini_copyright_violation", lang)
                 
                 # Если finish_reason нормальный, пробуем извлечь текст
                 if not analysis_text and hasattr(candidate, 'content') and candidate.content.parts:
@@ -112,7 +113,7 @@ class GeminiMedicalAnalyzer:
                         pass
             
             if not analysis_text:
-                return "", "Gemini не смог сгенерировать анализ. Попробуйте другое изображение."
+                return "", t("gemini_no_analysis", lang)
             
             print("\n" + "="*80)
             print("🎓 ОБРАЗОВАТЕЛЬНЫЙ АНАЛИЗ GEMINI:")
@@ -128,11 +129,11 @@ class GeminiMedicalAnalyzer:
             
             # Специальная обработка известных ошибок
             if "finish_reason" in str(e) and "2" in str(e):
-                return "", "Изображение заблокировано политиками безопасности. Попробуйте другое изображение."
+                return "", t("gemini_safety_policies", lang)
             elif "The `response.text`" in str(e):
-                return "", "Gemini не смог обработать это изображение. Попробуйте другое."
+                return "", t("gemini_processing_failed", lang)
             else:
-                return "", f"Временная ошибка анализа: {error_msg}"
+                return "", t("gemini_temporary_error", lang, error=error_msg)
     
     def _get_educational_prompt(self, lang: str) -> str:
         """Простой медицинский промпт на английском с указанием языка ответа"""
@@ -141,7 +142,8 @@ class GeminiMedicalAnalyzer:
         response_language = {
             "ru": "Russian",
             "uk": "Ukrainian", 
-            "en": "English"
+            "en": "English",
+            "de": "German"  # ← ДОБАВЛЕНО
         }.get(lang, "Russian")
         
         return f"""You are an experienced diagnostic doctor. Analyze medical images professionally and in detail.
@@ -180,7 +182,8 @@ IMPORTANT: Respond in {response_language} language."""
         response_language = {
             "ru": "Russian",
             "uk": "Ukrainian", 
-            "en": "English"
+            "en": "English",
+            "de": "German"  # ← ДОБАВЛЕНО
         }.get(lang, "Russian")
         
         return f"""Please describe what you observe in this image from an educational perspective. Focus on:
@@ -211,7 +214,7 @@ async def send_to_gemini_vision(image_path: str, lang: str = "ru", prompt: str =
         analyzer = GeminiMedicalAnalyzer()
         return await analyzer.analyze_medical_image(image_path, lang, prompt)
     except Exception as e:
-        return "", f"Ошибка анализа изображения: {str(e)}"
+        return "", t("gemini_image_analysis_error", lang, error=str(e))
     
 async def extract_medical_timeline_gemini(document_text: str, existing_timeline: List[Dict], lang: str = "ru") -> List[Dict]:
     """
@@ -253,7 +256,8 @@ async def extract_medical_timeline_gemini(document_text: str, existing_timeline:
         lang_names = {
             'ru': 'Russian',
             'uk': 'Ukrainian',
-            'en': 'English'
+            'en': 'English',
+            'de': 'German' 
         }
         response_lang = lang_names.get(lang, 'Russian')
         

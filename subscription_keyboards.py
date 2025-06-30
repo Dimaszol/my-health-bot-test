@@ -3,41 +3,10 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from stripe_config import StripeConfig
 from typing import Optional
+from db_postgresql import t
 
 def subscription_main_menu(lang: str, current_subscription: Optional[str] = None) -> InlineKeyboardMarkup:
     """✅ УПРОЩЕННАЯ версия - показывает кнопку отмены если есть ЛЮБАЯ подписка"""
-    
-    texts = {
-        "ru": {
-            "title": "💎 Выберите подписку:",
-            "monthly": "/месяц",
-            "one_time": "разово",
-            "current": "✅ Активная",
-            "limits": "📊 Мои лимиты",
-            "cancel": "❌ Отменить подписку",
-            "back": "⬅️ Назад"
-        },
-        "uk": {
-            "title": "💎 Оберіть підписку:",
-            "monthly": "/місяць", 
-            "one_time": "разово",
-            "current": "✅ Активна",
-            "limits": "📊 Мої ліміти",
-            "cancel": "❌ Скасувати підписку",
-            "back": "⬅️ Назад"
-        },
-        "en": {
-            "title": "💎 Choose subscription:",
-            "monthly": "/month",
-            "one_time": "one-time",
-            "current": "✅ Active",
-            "limits": "📊 My limits", 
-            "cancel": "❌ Cancel subscription",
-            "back": "⬅️ Back"
-        }
-    }
-    
-    t = texts.get(lang, texts["ru"])
     
     buttons = []
     
@@ -47,16 +16,16 @@ def subscription_main_menu(lang: str, current_subscription: Optional[str] = None
     for package_id, package_info in packages.items():
         # Формируем красивое описание
         if package_info['type'] == 'subscription':
-            price_text = f"{package_info['price_display']}{t['monthly']}"
+            price_text = f"{package_info['price_display']}{t('subscription_monthly', lang)}"
         else:
-            price_text = f"{package_info['price_display']} {t['one_time']}"
+            price_text = f"{package_info['price_display']} {t('subscription_one_time', lang)}"
         
         button_text = f"{package_info['user_friendly_name']} — {price_text}"
         
         # ✅ УПРОЩЕНИЕ: Проверяем активную подписку
         if current_subscription == package_id:
             # У пользователя есть эта подписка
-            button_text = f"✅ {button_text}"
+            button_text = f"{t('subscription_current_active', lang)} {button_text}"
             buttons.append([InlineKeyboardButton(
                 text=button_text, 
                 callback_data="subscription_current"
@@ -70,11 +39,11 @@ def subscription_main_menu(lang: str, current_subscription: Optional[str] = None
     
     # Дополнительные кнопки
     additional_buttons = []
-    additional_buttons.append(InlineKeyboardButton(text=t["limits"], callback_data="show_limits"))
+    additional_buttons.append(InlineKeyboardButton(text=t("subscription_my_limits", lang), callback_data="show_limits"))
     
     # ✅ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Показываем кнопку отмены если есть ЛЮБАЯ активная подписка
     if current_subscription is not None:
-        additional_buttons.append(InlineKeyboardButton(text=t["cancel"], callback_data="cancel_subscription"))
+        additional_buttons.append(InlineKeyboardButton(text=t("subscription_cancel", lang), callback_data="cancel_subscription"))
     
     if len(additional_buttons) == 2:
         buttons.append(additional_buttons)
@@ -82,7 +51,7 @@ def subscription_main_menu(lang: str, current_subscription: Optional[str] = None
         for btn in additional_buttons:
             buttons.append([btn])
     
-    buttons.append([InlineKeyboardButton(text=t["back"], callback_data="back_to_settings")])
+    buttons.append([InlineKeyboardButton(text=t("subscription_back", lang), callback_data="back_to_settings")])
     
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -95,26 +64,9 @@ def purchase_confirmation_keyboard(package_id: str, lang: str) -> InlineKeyboard
         lang: Язык интерфейса
     """
     
-    texts = {
-        "ru": {
-            "confirm": "💳 Оплатить",
-            "cancel": "❌ Отмена"
-        },
-        "uk": {
-            "confirm": "💳 Сплатити", 
-            "cancel": "❌ Скасувати"
-        },
-        "en": {
-            "confirm": "💳 Pay",
-            "cancel": "❌ Cancel"
-        }
-    }
-    
-    t = texts.get(lang, texts["en"])
-    
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=t["confirm"], callback_data=f"confirm_purchase_{package_id}")],
-        [InlineKeyboardButton(text=t["cancel"], callback_data="subscription_menu")]
+        [InlineKeyboardButton(text=t("purchase_confirm_pay", lang), callback_data=f"confirm_purchase_{package_id}")],
+        [InlineKeyboardButton(text=t("purchase_cancel", lang), callback_data="subscription_menu")]
     ])
 
 def subscription_upsell_keyboard(lang: str) -> InlineKeyboardMarkup:
@@ -125,26 +77,9 @@ def subscription_upsell_keyboard(lang: str) -> InlineKeyboardMarkup:
         lang: Язык интерфейса
     """
     
-    texts = {
-        "ru": {
-            "subscribe": "💎 Оформить подписку",
-            "later": "⏭ Позже"
-        },
-        "uk": {
-            "subscribe": "💎 Оформити підписку",
-            "later": "⏭ Пізніше"
-        },
-        "en": {
-            "subscribe": "💎 Get subscription", 
-            "later": "⏭ Later"
-        }
-    }
-    
-    t = texts.get(lang, texts["en"])
-    
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=t["subscribe"], callback_data="subscription_menu")],
-        [InlineKeyboardButton(text=t["later"], callback_data="dismiss_upsell")]
+        [InlineKeyboardButton(text=t("upsell_get_subscription", lang), callback_data="subscription_menu")],
+        [InlineKeyboardButton(text=t("upsell_later", lang), callback_data="dismiss_upsell")]
     ])
 
 def cancel_subscription_confirmation(lang: str) -> InlineKeyboardMarkup:
@@ -155,26 +90,9 @@ def cancel_subscription_confirmation(lang: str) -> InlineKeyboardMarkup:
         lang: Язык интерфейса
     """
     
-    texts = {
-        "ru": {
-            "confirm": "⚠️ Да, отменить",
-            "cancel": "✅ Нет, оставить"
-        },
-        "uk": {
-            "confirm": "⚠️ Так, скасувати",
-            "cancel": "✅ Ні, залишити"
-        },
-        "en": {
-            "confirm": "⚠️ Yes, cancel",
-            "cancel": "✅ No, keep it"
-        }
-    }
-    
-    t = texts.get(lang, texts["en"])
-    
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=t["confirm"], callback_data="confirm_cancel_subscription")],
-        [InlineKeyboardButton(text=t["cancel"], callback_data="subscription_menu")]
+        [InlineKeyboardButton(text=t("cancel_confirm_yes", lang), callback_data="confirm_cancel_subscription")],
+        [InlineKeyboardButton(text=t("cancel_confirm_no", lang), callback_data="subscription_menu")]
     ])
 
 def payment_processing_keyboard(lang: str) -> InlineKeyboardMarkup:
@@ -185,22 +103,8 @@ def payment_processing_keyboard(lang: str) -> InlineKeyboardMarkup:
         lang: Язык интерфейса
     """
     
-    texts = {
-        "ru": {
-            "back": "⬅️ Назад к подпискам"
-        },
-        "uk": {
-            "back": "⬅️ Назад до підписок"
-        },
-        "en": {
-            "back": "⬅️ Back to subscriptions"
-        }
-    }
-    
-    t = texts.get(lang, texts["en"])
-    
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=t["back"], callback_data="subscription_menu")]
+        [InlineKeyboardButton(text=t("payment_back_to_subscriptions", lang), callback_data="subscription_menu")]
     ])
 
 # Вспомогательные функции для получения информации о пакетах
@@ -210,31 +114,7 @@ def get_package_description(package_id: str, lang: str) -> str:
     
     package_info = StripeConfig.get_package_info(package_id)
     if not package_info:
-        return "Package not found"
-    
-    # Тексты для разных языков
-    texts = {
-        "ru": {
-            "subscription_desc": f"🔄 Подписка с автопродлением каждый месяц",
-            "one_time_desc": f"📅 Разовая покупка на 30 дней",
-            "features_title": "📋 Что входит:",
-            "price_label": "💰 Стоимость:"
-        },
-        "uk": {
-            "subscription_desc": f"🔄 Підписка з автопродовженням щомісяця",
-            "one_time_desc": f"📅 Разова покупка на 30 днів", 
-            "features_title": "📋 Що входить:",
-            "price_label": "💰 Вартість:"
-        },
-        "en": {
-            "subscription_desc": f"🔄 Subscription with monthly auto-renewal",
-            "one_time_desc": f"📅 One-time purchase for 30 days",
-            "features_title": "📋 What's included:",
-            "price_label": "💰 Price:"
-        }
-    }
-    
-    t = texts.get(lang, texts["ru"])
+        return t("package_not_found", lang)
     
     # Формируем описание
     description_parts = []
@@ -245,17 +125,17 @@ def get_package_description(package_id: str, lang: str) -> str:
     # Цена
     if package_info['type'] == 'subscription':
         price_text = f"{package_info['price_display']}/month"
-        type_desc = t["subscription_desc"]
+        type_desc = t("package_subscription_desc", lang)
     else:
         price_text = package_info['price_display']
-        type_desc = t["one_time_desc"]
+        type_desc = t("package_one_time_desc", lang)
     
-    description_parts.append(f"{t['price_label']} {price_text}")
+    description_parts.append(f"{t('package_price_label', lang)} {price_text}")
     description_parts.append(type_desc)
     description_parts.append("")  # Пустая строка
     
     # Особенности
-    description_parts.append(t["features_title"])
+    description_parts.append(t("package_features_title", lang))
     features = package_info.get('features', {}).get(lang, [])
     for feature in features:
         description_parts.append(f"✅ {feature}")

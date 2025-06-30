@@ -108,9 +108,9 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
             if not name:
                 await message.answer(t("name_missing", lang))
             elif len(name) > 50:
-                await message.answer("⚠️ Имя слишком длинное. Максимум 50 символов.")
+                await message.answer(t("name_too_long", lang))
             else:
-                await message.answer("⚠️ Введите корректное имя (должно содержать буквы).")
+                await message.answer(t("name_invalid", lang))
             return True
         
         user_states[user_id] = {
@@ -214,7 +214,7 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
         
         if message.text not in valid_profile_options:
             await message.answer(
-                "⚠️ Пожалуйста, выберите один из вариантов, используя кнопки:",
+                t("use_buttons_please", lang),
                 reply_markup=registration_keyboard(lang)
             )
             return True
@@ -234,7 +234,7 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
             text = message.text.strip() if message.text else ""
             # ✅ ВАЛИДАЦИЯ ТЕКСТОВОГО ПОЛЯ
             if not validate_text_field(text, 100):
-                await message.answer("⚠️ Слишком длинный текст. Максимум 100 символов.")
+                await message.answer(t("text_too_long", lang, max_len=100))
                 return True
             await update_user_field(user_id, "chronic_conditions", text)
         state["step"] = "allergies"
@@ -246,7 +246,7 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
             text = message.text.strip() if message.text else ""
             # ✅ ВАЛИДАЦИЯ ТЕКСТОВОГО ПОЛЯ
             if not validate_text_field(text, 50):
-                await message.answer("⚠️ Слишком длинный текст. Максимум 50 символов.")
+                await message.answer(t("text_too_long", lang, max_len=50))
                 return True
             await update_user_field(user_id, "allergies", text)
         state["step"] = "smoking"

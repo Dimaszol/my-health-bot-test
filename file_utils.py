@@ -14,7 +14,7 @@ def validate_filename(filename: str) -> str:
     Очищает имя файла от опасных символов
     """
     if not filename:
-        raise ValueError("Имя файла не может быть пустым")
+        raise ValueError("Empty filename")
     
     # ✅ БЛОКИРУЕМ ОПАСНЫЕ ПАТТЕРНЫ
     dangerous_patterns = [
@@ -29,7 +29,7 @@ def validate_filename(filename: str) -> str:
     filename_lower = filename.lower()
     for pattern in dangerous_patterns:
         if re.search(pattern, filename_lower):
-            raise ValueError(f"Недопустимое имя файла: содержит опасные символы")
+            raise ValueError("Invalid filename: contains dangerous characters")
     
     # Очищаем остальные символы
     safe_name = re.sub(r'[^a-zA-Z0-9._\-\s]', '_', filename)
@@ -41,7 +41,7 @@ def validate_filename(filename: str) -> str:
     if len(safe_name) > 100:
         name_part, ext = os.path.splitext(safe_name)
         safe_name = name_part[:95] + ext
-        raise ValueError("Имя файла слишком длинное")
+        raise ValueError("Filename too long")
     
     return safe_name
 
@@ -102,7 +102,7 @@ def create_safe_file_path(user_id: int, filename: str) -> str:
         
         # Проверяем, что файл будет создан в правильной директории
         if not str(absolute_path).startswith(str(expected_prefix)):
-            raise ValueError("Попытка создания файла вне разрешенной директории")
+            raise ValueError("File path outside allowed directory")
         
         return str(file_path)
         
@@ -110,7 +110,7 @@ def create_safe_file_path(user_id: int, filename: str) -> str:
         print(f"❌ Ошибка в create_safe_file_path: {e}")
         print(f"   user_id: {user_id}")
         print(f"   filename: {filename}")
-        raise ValueError(f"Не удалось создать безопасный путь: {e}")
+        raise ValueError(f"Failed to create safe path: {e}")
 
 def validate_file_size(file_path: str) -> bool:
     """

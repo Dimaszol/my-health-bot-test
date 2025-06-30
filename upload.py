@@ -50,9 +50,21 @@ async def handle_document_upload(message: types.Message, bot):
         try:
             local_file = create_simple_file_path(user_id, original_filename)
             print(f"💾 Путь для сохранения: {local_file}")
-        except Exception as e:
+        except ValueError as e:
+            # Локализуем ошибки файловой системы
+            error_key = {
+                "Empty filename": "file_empty_name_error",
+                "Invalid filename: contains dangerous characters": "file_invalid_name_error", 
+                "Filename too long": "file_name_too_long_error",
+                "File path outside allowed directory": "file_path_security_error",
+            }.get(str(e), "file_creation_error")
+            
             print(f"❌ Ошибка создания пути: {e}")
-            await message.answer(t("file_name_error", lang, error=str(e)))
+            await message.answer(t(error_key, lang))
+            return
+        except Exception as e:
+            print(f"❌ Неожиданная ошибка создания пути: {e}")
+            await message.answer(t("file_creation_error", lang))
             return
 
         # СКАЧИВАНИЕ ФАЙЛА

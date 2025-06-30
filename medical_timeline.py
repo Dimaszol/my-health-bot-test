@@ -4,7 +4,7 @@ import json
 import asyncio
 from datetime import datetime, date
 from typing import List, Dict, Optional, Tuple
-from db_postgresql import get_db_connection, release_db_connection
+from db_postgresql import get_db_connection, release_db_connection, t
 from gpt import client, OPENAI_SEMAPHORE
 from error_handler import log_error_with_context
 
@@ -391,15 +391,15 @@ async def get_medical_timeline_for_prompt(user_id: int, limit: int = 10) -> str:
     
     return "\n".join(lines)
 
-async def format_medical_timeline_for_user(user_id: int, limit: int = 10) -> str:
+async def format_medical_timeline_for_user(user_id: int, lang: str, limit: int = 10) -> str:
     """Форматировать медкарту для показа пользователю"""
     
     timeline = await get_latest_medical_timeline(user_id, limit)
     
     if not timeline:
-        return "📋 Медицинская карта пустая"
+        return t("medical_timeline_empty", lang)
     
-    lines = ["📋 **Медицинская карта:**\n"]
+    lines = [f"{t('medical_timeline_header', lang)}\n"]
     
     for entry in timeline:
         # Эмодзи по категориям

@@ -86,58 +86,25 @@ class SubscriptionHandlers:
     
     @staticmethod
     async def _get_subscription_menu_text(user_id: int, lang: str, limits: dict, has_real_subscription: bool) -> str:
-        """✅ ОБНОВЛЕННАЯ версия - учитывает реальное состояние Stripe"""
+        """✅ ЛОКАЛИЗОВАННАЯ версия - использует t() вместо словарей"""
         
-        texts = {
-            "ru": {
-                "title": "💎 <b>Подписки и лимиты</b>",
-                "current_limits": "\n📊 <b>Ваши текущие лимиты:</b>",
-                "documents": "📄 Документы",
-                "queries": "🤖 GPT-4o запросы", 
-                "subscription": "💳 Подписка",
-                "expires": "⏰ Истекает",
-                "free": "Бесплатная",
-                "choose": "\n🛒 <b>Выберите подписку:</b>",
-                "sync_note": "\n🔄 <i>Данные синхронизированы с платежной системой</i>"
-            },
-            "uk": {
-                "title": "💎 <b>Підписки та ліміти</b>",
-                "current_limits": "\n📊 <b>Ваші поточні ліміти:</b>",
-                "documents": "📄 Документи",
-                "queries": "🤖 GPT-4o запити",
-                "subscription": "💳 Підписка", 
-                "expires": "⏰ Закінчується",
-                "free": "Безкоштовна",
-                "choose": "\n🛒 <b>Оберіть підписку:</b>",
-                "sync_note": "\n🔄 <i>Дані синхронізовані з платіжною системою</i>"
-            },
-            "en": {
-                "title": "💎 <b>Subscriptions and limits</b>",
-                "current_limits": "\n📊 <b>Your current limits:</b>",
-                "documents": "📄 Documents", 
-                "queries": "🤖 GPT-4o queries",
-                "subscription": "💳 Subscription",
-                "expires": "⏰ Expires",
-                "free": "Free",
-                "choose": "\n🛒 <b>Choose subscription:</b>",
-                "sync_note": "\n🔄 <i>Data synchronized with payment system</i>"
-            }
-        }
+        # ✅ ИМПОРТИРУЕМ функцию локализации
+        from db_postgresql import t
         
-        t = texts.get(lang, texts["ru"])
+        # ✅ УБИРАЕМ весь словарь texts - теперь получаем переводы через t()
         
         # Начинаем с заголовка
-        text_parts = [t["title"]]
+        text_parts = [t("subscription_menu_title", lang)]
         
         # Добавляем информацию о текущих лимитах
         if limits:
-            text_parts.append(t["current_limits"])
-            text_parts.append(f"• {t['documents']}: <b>{limits['documents_left']}</b>")
-            text_parts.append(f"• {t['queries']}: <b>{limits['gpt4o_queries_left']}</b>")
+            text_parts.append(t("subscription_current_limits", lang))
+            text_parts.append(f"• {t('subscription_documents', lang)}: <b>{limits['documents_left']}</b>")
+            text_parts.append(f"• {t('subscription_queries', lang)}: <b>{limits['gpt4o_queries_left']}</b>")
             
             # ✅ ИСПРАВЛЕНИЕ: Информация о подписке на основе РЕАЛЬНОГО состояния
             if has_real_subscription:
-                text_parts.append(f"• {t['subscription']}: <b>✅ Активная</b>")
+                text_parts.append(f"• {t('subscription_type', lang)}: <b>{t('subscription_active', lang)}</b>")
                 if limits.get('expires_at'):
                     try:
                         from datetime import datetime
@@ -147,17 +114,17 @@ class SubscriptionHandlers:
                         else:
                             expiry_date = expires_at_value
                         formatted_date = expiry_date.strftime("%d.%m.%Y")
-                        text_parts.append(f"• {t['expires']}: <b>{formatted_date}</b>")
+                        text_parts.append(f"• {t('subscription_expires', lang)}: <b>{formatted_date}</b>")
                     except:
                         pass
             else:
-                text_parts.append(f"• {t['subscription']}: <b>{t['free']}</b>")
+                text_parts.append(f"• {t('subscription_type', lang)}: <b>{t('subscription_free', lang)}</b>")
         
         # Добавляем призыв к действию
-        text_parts.append(t["choose"])
+        text_parts.append(t("subscription_choose", lang))
         
         # Добавляем уведомление о синхронизации
-        text_parts.append(t["sync_note"])
+        text_parts.append(t("subscription_sync_note", lang))
         
         return "\n".join(text_parts)
     
@@ -190,14 +157,8 @@ class SubscriptionHandlers:
             package_description = get_package_description(package_id, lang)
             
             # Показываем подтверждение покупки
-            confirmation_text = {
-                "ru": f"🛒 <b>Подтверждение покупки</b>\n\n{package_description}\n\n💳 Нажмите 'Оплатить' для перехода к безопасной оплате через Stripe.",
-                "uk": f"🛒 <b>Підтвердження покупки</b>\n\n{package_description}\n\n💳 Натисніть 'Сплатити' для переходу до безпечної оплати через Stripe.",
-                "en": f"🛒 <b>Purchase confirmation</b>\n\n{package_description}\n\n💳 Click 'Pay' to proceed to secure payment via Stripe."
-            }
-            
             await callback.message.edit_text(
-                confirmation_text.get(lang, confirmation_text["en"]),
+                t("purchase_confirmation_title", lang, package_description=package_description),
                 reply_markup=purchase_confirmation_keyboard(package_id, lang),
                 parse_mode="HTML"
             )
@@ -206,7 +167,7 @@ class SubscriptionHandlers:
         except Exception as e:
             # ✅ ИСПРАВЛЕНО: Используем существующую систему логирования
             logger.error(f"Ошибка: {e}")
-            await callback.answer("❌ Ошибка обработки запроса", show_alert=True)
+            await callback.answer(t("purchase_request_error", lang), show_alert=True)
     
     @staticmethod
     async def _get_active_subscription(user_id: int) -> dict:
@@ -247,11 +208,11 @@ class SubscriptionHandlers:
             new_info = StripeConfig.get_package_info(new_package_id)
             
             # Формируем текст предупреждения
-            warning_texts = {
-                "ru": f"⚠️ <b>Замена подписки</b>\n\n📋 <b>Текущая подписка:</b>\n{current_info['user_friendly_name']} ({current_info['price_display']}/месяц)\n\n🔄 <b>Новая подписка:</b>\n{new_info['user_friendly_name']} ({new_info['price_display']}/месяц)\n\n💡 <b>Что произойдет:</b>\n• Текущая подписка будет отменена немедленно\n• Новая подписка активируется сразу\n• Следующее списание по новой цене\n\n❓ Продолжить замену?",
-                "uk": f"⚠️ <b>Заміна підписки</b>\n\n📋 <b>Поточна підписка:</b>\n{current_info['user_friendly_name']} ({current_info['price_display']}/місяць)\n\n🔄 <b>Нова підписка:</b>\n{new_info['user_friendly_name']} ({new_info['price_display']}/місяць)\n\n💡 <b>Що станеться:</b>\n• Поточну підписку буде скасовано негайно\n• Нова підписка активується зараз\n• Наступне списання за новою ціною\n\n❓ Продовжити заміну?",
-                "en": f"⚠️ <b>Subscription upgrade</b>\n\n📋 <b>Current subscription:</b>\n{current_info['user_friendly_name']} ({current_info['price_display']}/month)\n\n🔄 <b>New subscription:</b>\n{new_info['user_friendly_name']} ({new_info['price_display']}/month)\n\n💡 <b>What will happen:</b>\n• Current subscription will be cancelled immediately\n• New subscription will activate right away\n• Next billing at new price\n\n❓ Continue with upgrade?"
-            }
+            warning_text = t("subscription_upgrade_warning", lang,
+                current_name=current_info['user_friendly_name'],
+                current_price=current_info['price_display'],
+                new_name=new_info['user_friendly_name'],
+                new_price=new_info['price_display'])
             
             # Создаем клавиатуру подтверждения апгрейда
             upgrade_keyboard = SubscriptionHandlers._create_upgrade_confirmation_keyboard(
@@ -259,7 +220,7 @@ class SubscriptionHandlers:
             )
             
             await callback.message.edit_text(
-                warning_texts.get(lang, warning_texts["en"]),
+                warning_text,
                 reply_markup=upgrade_keyboard,
                 parse_mode="HTML"
             )
@@ -267,36 +228,34 @@ class SubscriptionHandlers:
             
         except Exception as e:
             logger.error(f"Ошибка показа предупреждения об апгрейде: {e}")
-            await callback.answer("❌ Ошибка", show_alert=True)
+            
+            # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
+            try:
+                lang = await get_user_language(callback.from_user.id)
+            except:
+                lang = "ru"  # Fallback на русский
+            
+            await callback.answer(t("upgrade_warning_error", lang), show_alert=True)
     
     @staticmethod
     def _create_upgrade_confirmation_keyboard(new_package_id: str, current_package_id: str, lang: str) -> InlineKeyboardMarkup:
-        """✅ УПРОЩЕНО: Передаем только новый пакет"""
+        """✅ ИСПРАВЛЕННАЯ версия с правильной локализацией"""
         
-        texts = {
-            "ru": {
-                "confirm": "✅ Да, заменить подписку",
-                "cancel": "❌ Отмена"
-            },
-            "uk": {
-                "confirm": "✅ Так, замінити підписку",
-                "cancel": "❌ Скасувати"
-            },
-            "en": {
-                "confirm": "✅ Yes, upgrade subscription",
-                "cancel": "❌ Cancel"
-            }
-        }
+        # ✅ ПРАВИЛЬНО: Импортируем функцию локализации
+        from db_postgresql import t
         
-        t = texts.get(lang, texts["en"])
+        # ✅ ПРАВИЛЬНО: Получаем переводы через t()
+        confirm_text = t("upgrade_confirm", lang)
+        cancel_text = t("upgrade_cancel", lang)
         
+        # ✅ ПРАВИЛЬНО: Используем полученные переводы
         return InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(
-                text=t["confirm"], 
-                callback_data=f"upgrade_to_{new_package_id}"  # ✅ ПРОСТО: только новый пакет
+                text=confirm_text,  # ✅ Используем переменную confirm_text
+                callback_data=f"upgrade_to_{new_package_id}"
             )],
             [InlineKeyboardButton(
-                text=t["cancel"], 
+                text=cancel_text,   # ✅ Используем переменную cancel_text
                 callback_data="subscription_menu"
             )]
         ])
@@ -309,14 +268,8 @@ class SubscriptionHandlers:
             lang = await get_user_language(user_id)
             
             # Показываем сообщение о процессе
-            processing_texts = {
-                "ru": "🔄 Отменяем старую подписку и создаем новую...",
-                "uk": "🔄 Скасовуємо стару підписку та створюємо нову...",
-                "en": "🔄 Cancelling old subscription and creating new one..."
-            }
-            
             await callback.message.edit_text(
-                processing_texts.get(lang, processing_texts["en"]),
+                t("processing_subscription_upgrade", lang),
                 reply_markup=payment_processing_keyboard(lang)
             )
             await callback.answer()
@@ -325,14 +278,8 @@ class SubscriptionHandlers:
             cancel_success = await SubscriptionHandlers._cancel_old_subscription(user_id)
             
             if not cancel_success:
-                error_texts = {
-                    "ru": "❌ Ошибка отмены старой подписки. Попробуйте позже.",
-                    "uk": "❌ Помилка скасування старої підписки. Спробуйте пізніше.",
-                    "en": "❌ Error cancelling old subscription. Please try later."
-                }
-                
                 await callback.message.edit_text(
-                    error_texts.get(lang, error_texts["en"]),
+                    t("upgrade_cancel_old_error", lang),
                     reply_markup=payment_processing_keyboard(lang)
                 )
                 return
@@ -346,43 +293,24 @@ class SubscriptionHandlers:
             )
             
             if success:
-                success_texts = {
-                    "ru": f"✅ <b>Старая подписка отменена!</b>\n\n💳 <b>Ссылка для новой подписки:</b>\n🔗 <a href='{payment_url_or_error}'>Нажмите для оплаты</a>\n\n⚠️ Ссылка действительна 30 минут",
-                    "uk": f"✅ <b>Стару підписку скасовано!</b>\n\n💳 <b>Посилання для нової підписки:</b>\n🔗 <a href='{payment_url_or_error}'>Натисніть для оплати</a>\n\n⚠️ Посилання дійсне 30 хвилин",
-                    "en": f"✅ <b>Old subscription cancelled!</b>\n\n💳 <b>New subscription link:</b>\n🔗 <a href='{payment_url_or_error}'>Click to pay</a>\n\n⚠️ Link expires in 30 minutes"
-                }
-                
                 await callback.message.edit_text(
-                    success_texts.get(lang, success_texts["en"]),
+                    t("upgrade_success", lang, payment_url=payment_url_or_error),
                     reply_markup=payment_processing_keyboard(lang),
                     parse_mode="HTML",
                     disable_web_page_preview=True
                 )
             else:
-                error_texts = {
-                    "ru": f"❌ <b>Старая подписка отменена, но ошибка создания новой:</b>\n\n{payment_url_or_error}\n\nВы можете создать новую подписку через меню.",
-                    "uk": f"❌ <b>Стару підписку скасовано, але помилка створення нової:</b>\n\n{payment_url_or_error}\n\nВи можете створити нову підписку через меню.",
-                    "en": f"❌ <b>Old subscription cancelled, but error creating new one:</b>\n\n{payment_url_or_error}\n\nYou can create a new subscription via menu."
-                }
-                
                 await callback.message.edit_text(
-                    error_texts.get(lang, error_texts["en"]),
+                    t("upgrade_partial_error", lang, error=payment_url_or_error),
                     reply_markup=payment_processing_keyboard(lang),
                     parse_mode="HTML"
                 )
             
         except Exception as e:
             logger.error(f"Ошибка апгрейда подписки для пользователя {callback.from_user.id}: {e}")
-            
-            error_texts = {
-                "ru": "❌ Произошла ошибка при смене подписки",
-                "uk": "❌ Сталася помилка при зміні підписки",
-                "en": "❌ An error occurred while changing subscription"
-            }
-            
-            lang = await get_user_language(callback.from_user.id)
+
             await callback.message.edit_text(
-                error_texts.get(lang, error_texts["en"]),
+                t("upgrade_general_error", lang),
                 reply_markup=payment_processing_keyboard(lang)
             )
             await callback.answer()
@@ -428,14 +356,8 @@ class SubscriptionHandlers:
             user_name = await get_user_name(user_id) or callback.from_user.first_name or "User"
             
             # Показываем сообщение о создании ссылки
-            processing_text = {
-                "ru": "⏳ Создание ссылки для оплаты...",
-                "uk": "⏳ Створення посилання для оплати...",
-                "en": "⏳ Creating payment link..."
-            }
-            
             await callback.message.edit_text(
-                processing_text.get(lang, processing_text["en"]),
+                t("creating_payment_link", lang),
                 reply_markup=payment_processing_keyboard(lang)
             )
             await callback.answer()
@@ -449,14 +371,8 @@ class SubscriptionHandlers:
             
             if success:
                 # Успешно создана ссылка
-                success_text = {
-                    "ru": f"💳 <b>Ссылка для оплаты создана!</b>\n\n🔗 <a href='{payment_url_or_error}'>Нажмите для оплаты</a>\n\n⚠️ Ссылка действительна 30 минут\n💡 После оплаты лимиты будут автоматически зачислены",
-                    "uk": f"💳 <b>Посилання для оплати створено!</b>\n\n🔗 <a href='{payment_url_or_error}'>Натисніть для оплати</a>\n\n⚠️ Посилання дійсне 30 хвилин\n💡 Після оплати ліміти будуть автоматично зараховані",
-                    "en": f"💳 <b>Payment link created!</b>\n\n🔗 <a href='{payment_url_or_error}'>Click to pay</a>\n\n⚠️ Link expires in 30 minutes\n💡 Limits will be automatically credited after payment"
-                }
-                
                 await callback.message.edit_text(
-                    success_text.get(lang, success_text["en"]),
+                    t("payment_link_created", lang, payment_url=payment_url_or_error),
                     reply_markup=payment_processing_keyboard(lang),
                     parse_mode="HTML",
                     disable_web_page_preview=True
@@ -473,15 +389,8 @@ class SubscriptionHandlers:
         except Exception as e:
             logger.error(f"Ошибка подтверждения покупки {package_id} для пользователя {callback.from_user.id}: {e}")
             
-            error_text = {
-                "ru": "❌ Произошла ошибка при создании ссылки для оплаты",
-                "uk": "❌ Сталася помилка при створенні посилання для оплати",
-                "en": "❌ An error occurred while creating payment link"
-            }
-            
-            lang = await get_user_language(callback.from_user.id)
             await callback.message.edit_text(
-                error_text.get(lang, error_text["en"]),
+                t("payment_link_general_error", lang),
                 reply_markup=payment_processing_keyboard(lang)
             )
             await callback.answer()
@@ -489,7 +398,7 @@ class SubscriptionHandlers:
     # Остальные методы остаются без изменений...
     @staticmethod
     async def show_user_limits(callback: types.CallbackQuery):
-        """Показывает подробную информацию о лимитах пользователя (без изменений)"""
+        """Показывает подробную информацию о лимитах пользователя"""
         try:
             user_id = callback.from_user.id
             lang = await get_user_language(user_id)
@@ -502,10 +411,10 @@ class SubscriptionHandlers:
             # Формируем подробный текст о лимитах
             limits_text = await SubscriptionHandlers._get_detailed_limits_text(limits, lang)
             
-            # Создаем кнопку "Назад"
+            # ✅ ИСПРАВЛЕНО: Локализованная кнопка "Назад"
             back_button = InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(
-                    text="⬅️ Назад" if lang == "ru" else "⬅️ Назад" if lang == "uk" else "⬅️ Back",
+                    text=t("back_button", lang),
                     callback_data="subscription_menu"
                 )]
             ])
@@ -518,88 +427,50 @@ class SubscriptionHandlers:
             await callback.answer()
             
         except Exception as e:
-            logger.error(f"Ошибка показа лимитов для пользователя {callback.from_user.id}: {e}")
-            await callback.answer("❌ Ошибка загрузки лимитов", show_alert=True)
+            logger.error(f"Ошибка показа лимитов: {e}")
+            # ✅ БЕЗОПАСНАЯ ЛОКАЛИЗАЦИЯ
+            try:
+                lang = await get_user_language(callback.from_user.id)
+            except:
+                lang = "ru"  # Fallback на русский
+            
+            await callback.answer(t("limits_display_error", lang), show_alert=True)
     
     @staticmethod
     async def _get_detailed_limits_text(limits: dict, lang: str) -> str:
-        """Формирует подробный текст о лимитах пользователя (без изменений)"""
-        
-        texts = {
-            "ru": {
-                "title": "📊 <b>Подробная информация о лимитах</b>",
-                "documents": "📄 Документы и снимки",
-                "queries": "🤖 GPT-4o запросы",
-                "subscription": "💳 Тип подписки",
-                "expires": "⏰ Дата окончания",
-                "unlimited": "♾️ Без ограничений",
-                "free": "🆓 Бесплатная",
-                "subscription_active": "✅ Активная подписка",
-                "one_time": "📦 Разовая покупка",
-                "expired": "❌ Истекла",
-                "usage_info": "\n💡 <b>Как используются лимиты:</b>\n• Загрузка документов и снимков: -1 документ\n• Подробные ответы с GPT-4o: -1 запрос\n• Обычные ответы используют GPT-4o-mini (бесплатно)"
-            },
-            "uk": {
-                "title": "📊 <b>Детальна інформація про ліміти</b>",
-                "documents": "📄 Документи та знімки",
-                "queries": "🤖 GPT-4o запити",
-                "subscription": "💳 Тип підписки",
-                "expires": "⏰ Дата закінчення",
-                "unlimited": "♾️ Без обмежень",
-                "free": "🆓 Безкоштовна",
-                "subscription_active": "✅ Активна підписка",
-                "one_time": "📦 Разова покупка",
-                "expired": "❌ Закінчилася",
-                "usage_info": "\n💡 <b>Як використовуються ліміти:</b>\n• Завантаження документів та знімків: -1 документ\n• Детальні відповіді з GPT-4o: -1 запит\n• Звичайні відповіді використовують GPT-4o-mini (безкоштовно)"
-            },
-            "en": {
-                "title": "📊 <b>Detailed limits information</b>",
-                "documents": "📄 Documents and scans",
-                "queries": "🤖 GPT-4o queries",
-                "subscription": "💳 Subscription type",
-                "expires": "⏰ Expiration date",
-                "unlimited": "♾️ Unlimited",
-                "free": "🆓 Free",
-                "subscription_active": "✅ Active subscription",
-                "one_time": "📦 One-time purchase",
-                "expired": "❌ Expired",
-                "usage_info": "\n💡 <b>How limits are used:</b>\n• Document and scan uploads: -1 document\n• Detailed answers with GPT-4o: -1 query\n• Regular answers use GPT-4o-mini (free)"
-            }
-        }
-        
-        t = texts.get(lang, texts["ru"])
+        """Формирует подробный текст о лимитах пользователя - ЛОКАЛИЗОВАННАЯ ВЕРСИЯ"""
         
         # Формируем текст
-        text_parts = [t["title"], ""]
+        text_parts = [t("limits_detail_title", lang), ""]
         
         # Лимиты документов
         docs_left = limits.get('documents_left', 0)
         if docs_left > 999:
-            docs_display = t["unlimited"]
+            docs_display = t("limits_unlimited", lang)
         else:
             docs_display = f"<b>{docs_left}</b>"
-        text_parts.append(f"{t['documents']}: {docs_display}")
+        text_parts.append(f"{t('limits_documents', lang)}: {docs_display}")
         
         # Лимиты запросов
         queries_left = limits.get('gpt4o_queries_left', 0)
         if queries_left > 999:
-            queries_display = t["unlimited"]
+            queries_display = t("limits_unlimited", lang)
         else:
             queries_display = f"<b>{queries_left}</b>"
-        text_parts.append(f"{t['queries']}: {queries_display}")
+        text_parts.append(f"{t('limits_queries', lang)}: {queries_display}")
         
         text_parts.append("")  # Пустая строка
         
         # Тип подписки
         sub_type = limits.get('subscription_type', 'free')
         if sub_type == 'subscription':
-            sub_display = t["subscription_active"]
+            sub_display = t("limits_subscription_active", lang)
         elif sub_type == 'one_time':
-            sub_display = t["one_time"]
+            sub_display = t("limits_one_time", lang)
         else:
-            sub_display = t["free"]
+            sub_display = t("limits_free", lang)
         
-        text_parts.append(f"{t['subscription']}: {sub_display}")
+        text_parts.append(f"{t('limits_subscription', lang)}: {sub_display}")
         
         # Дата истечения
         expires_at = limits.get('expires_at')
@@ -611,14 +482,14 @@ class SubscriptionHandlers:
                     expiry_date = expires_at
                 if expiry_date > datetime.now():
                     formatted_date = expiry_date.strftime("%d.%m.%Y")
-                    text_parts.append(f"{t['expires']}: <b>{formatted_date}</b>")
+                    text_parts.append(f"{t('limits_expires', lang)}: <b>{formatted_date}</b>")
                 else:
-                    text_parts.append(f"{t['expires']}: {t['expired']}")
+                    text_parts.append(f"{t('limits_expires', lang)}: {t('limits_expired', lang)}")
             except:
                 pass
         
         # Информация об использовании
-        text_parts.append(t["usage_info"])
+        text_parts.append(t("limits_usage_info", lang))
         
         return "\n".join(text_parts)
     
@@ -672,7 +543,7 @@ class SubscriptionHandlers:
             ])
             
             await callback.message.edit_text(
-                success_text.get(lang, success_text["en"]),
+                success_text,  # ✅ ПРАВИЛЬНО
                 reply_markup=back_button,
                 parse_mode="HTML"
             )
