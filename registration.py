@@ -1,7 +1,6 @@
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
-from db_postgresql import save_user, update_user_field, user_exists, t, get_user_language, get_user_name
-from keyboards import language_keyboard, skip_keyboard, gender_keyboard, smoking_keyboard, \
-    alcohol_keyboard, activity_keyboard, registration_keyboard, show_main_menu
+from db_postgresql import save_user, update_user_field, t, get_user_language, get_user_name
+from keyboards import skip_keyboard, gender_keyboard, smoking_keyboard, alcohol_keyboard, activity_keyboard, registration_keyboard, show_main_menu
 from datetime import datetime
 from user_state_manager import user_state_manager, user_states
 import re

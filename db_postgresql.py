@@ -200,6 +200,21 @@ async def create_tables():
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- 📊 ТАБЛИЦА АНАЛИТИКИ (ДОБАВИТЬ СЮДА!)
+    CREATE TABLE IF NOT EXISTS analytics_events (
+        id SERIAL PRIMARY KEY,
+        user_id BIGINT NOT NULL,
+        event TEXT NOT NULL,
+        properties JSONB DEFAULT '{}',
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- ИНДЕКСЫ ДЛЯ АНАЛИТИКИ
+    CREATE INDEX IF NOT EXISTS idx_analytics_user_id ON analytics_events(user_id);
+    CREATE INDEX IF NOT EXISTS idx_analytics_event ON analytics_events(event);
+    CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON analytics_events(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_analytics_user_event ON analytics_events(user_id, event);
+
     -- 📊 ИНДЕКСЫ ДЛЯ ОПТИМИЗАЦИИ
     CREATE INDEX IF NOT EXISTS idx_medical_timeline_user_date ON medical_timeline(user_id, event_date DESC);
     CREATE INDEX IF NOT EXISTS idx_medical_timeline_user_importance ON medical_timeline(user_id, importance);
@@ -260,27 +275,6 @@ async def get_user(user_id: int) -> Optional[Dict]:
     finally:
         await release_db_connection(conn)
 
-async def create_user(user_id: int, name: str = "") -> bool:
-    """Создать нового пользователя"""
-    conn = await get_db_connection()
-    try:
-        await conn.execute(
-            "INSERT INTO users (user_id, name) VALUES ($1, $2) ON CONFLICT (user_id) DO NOTHING",
-            user_id, name or None  # ← Пустое имя = NULL
-        )
-        
-        # Создаем лимиты для нового пользователя
-        await conn.execute(
-            "INSERT INTO user_limits (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING",
-            user_id
-        )
-        return True
-    except Exception as e:
-        log_error_with_context(e, {"function": "create_user", "user_id": user_id})
-        return False
-    finally:
-        await release_db_connection(conn)
-
 async def update_user_profile(user_id: int, field: str, value: Any) -> bool:
     """Обновить поле в профиле пользователя"""
     conn = await get_db_connection()
@@ -309,25 +303,6 @@ async def save_document(user_id: int, title: str, file_path: str, file_type: str
     except Exception as e:
         log_error_with_context(e, {"function": "save_document", "user_id": user_id})
         return None
-    finally:
-        await release_db_connection(conn)
-
-async def get_user_documents(user_id: int, limit: int = 999) -> List[Dict]:
-    """Получить документы пользователя"""
-    conn = await get_db_connection()
-    try:
-        rows = await conn.fetch(
-            """SELECT id, title, file_type, uploaded_at as date 
-               FROM documents 
-               WHERE user_id = $1 AND confirmed = TRUE
-               ORDER BY uploaded_at DESC 
-               LIMIT $2""",
-            user_id, limit
-        )
-        return [dict(row) for row in rows]
-    except Exception as e:
-        log_error_with_context(e, {"function": "get_user_documents", "user_id": user_id})
-        return []
     finally:
         await release_db_connection(conn)
 
@@ -625,37 +600,6 @@ async def delete_user_completely(user_id: int) -> bool:
     finally:
         await release_db_connection(conn)
 
-# 📊 ФУНКЦИИ СТАТИСТИКИ
-async def get_db_stats() -> Dict:
-    """Получить статистику базы данных"""
-    conn = await get_db_connection()
-    try:
-        users_count = await conn.fetchval("SELECT COUNT(*) FROM users")
-        docs_count = await conn.fetchval("SELECT COUNT(*) FROM documents")
-        messages_count = await conn.fetchval("SELECT COUNT(*) FROM chat_history")
-        
-        return {
-            "users": users_count,
-            "documents": docs_count,
-            "messages": messages_count,
-            "status": "healthy"
-        }
-    except Exception as e:
-        log_error_with_context(e, {"function": "get_db_stats"})
-        return {"status": "error", "error": str(e)}
-    finally:
-        await release_db_connection(conn)
-
-async def db_health_check() -> bool:
-    """Проверка здоровья базы данных"""
-    try:
-        conn = await get_db_connection()
-        await conn.fetchval("SELECT 1")
-        await release_db_connection(conn)
-        return True
-    except Exception:
-        return False
-
 async def update_user_field(user_id: int, field: str, value: Any) -> bool:
     """Совместимость: update_user_field -> update_user_profile"""
     return await update_user_profile(user_id, field, value)
@@ -684,11 +628,6 @@ async def save_user(user_id: int, name: str, birth_year: int = None) -> bool:
         return False
     finally:
         await release_db_connection(conn)
-
-async def user_exists(user_id: int) -> bool:
-    """Совместимость: проверка существования пользователя"""
-    user_data = await get_user(user_id)
-    return user_data is not None
 
 async def get_user_name(user_id: int) -> Optional[str]:
     """Совместимость: получение имени пользователя"""
@@ -735,7 +674,23 @@ async def update_document_confirmed(document_id: int, confirmed: int) -> bool:
         await release_db_connection(conn)
 
 async def get_documents_by_user(user_id: int, limit: int = 999) -> List[Dict]:
-    return await get_user_documents(user_id, limit)
+    """Получить документы пользователя"""
+    conn = await get_db_connection()
+    try:
+        rows = await conn.fetch(
+            """SELECT id, title, file_type, uploaded_at as date 
+               FROM documents 
+               WHERE user_id = $1 AND confirmed = TRUE
+               ORDER BY uploaded_at DESC 
+               LIMIT $2""",
+            user_id, limit
+        )
+        return [dict(row) for row in rows]
+    except Exception as e:
+        log_error_with_context(e, {"function": "get_documents_by_user", "user_id": user_id})
+        return []
+    finally:
+        await release_db_connection(conn)
 
 # 🔧 ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ СОВМЕСТИМОСТИ
 

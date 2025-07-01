@@ -5,8 +5,7 @@ import mimetypes
 import os
 from dotenv import load_dotenv
 from pdf2image import convert_from_path
-from db_postgresql import get_conversation_summary, get_messages_after, save_conversation_summary, \
-    get_user_medications_text, update_user_field, get_user_language
+from db_postgresql import get_conversation_summary, get_messages_after, save_conversation_summary, get_user_medications_text, update_user_field, get_user_language
 
 from gpt import client, OPENAI_SEMAPHORE
 from datetime import datetime

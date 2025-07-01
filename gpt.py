@@ -9,7 +9,7 @@ import re
 from openai import AsyncOpenAI  # 🔄 ИЗМЕНЕНИЕ: AsyncOpenAI вместо OpenAI
 from datetime import datetime
 from dotenv import load_dotenv
-from error_handler import safe_openai_call, OpenAIError, log_error_with_context, FileProcessingError
+from error_handler import OpenAIError, log_error_with_context, FileProcessingError
 from subscription_manager import check_gpt4o_limit, spend_gpt4o_limit
 from gemini_analyzer import send_to_gemini_vision
 
@@ -539,9 +539,6 @@ async def ask_doctor(profile_text: str, summary_text: str,
 
     # ✅ НОВАЯ ЛОГИКА: Gemini или GPT
     if use_gemini:
-        # Импортируем функции для работы с лимитами
-        from subscription_manager import check_gpt4o_limit, spend_gpt4o_limit
-        
         # Проверяем лимиты перед вызовом
         if user_id and await check_gpt4o_limit(user_id):
             try:
@@ -563,8 +560,7 @@ async def ask_doctor(profile_text: str, summary_text: str,
             print(f"🆓 Нет лимитов, используем GPT-4o-mini для пользователя {user_id}")
     
     # ✅ ОРИГИНАЛЬНАЯ ЛОГИКА GPT (без изменений)
-    from subscription_manager import check_gpt4o_limit, spend_gpt4o_limit
-    
+        
     interaction_type = "🔄 Продолжение" if recent_interaction and not is_greeting else "🆕 Новое/Приветствие"
     print(f"💬 {interaction_type} | Вопрос: '{user_question[:50]}{'...' if len(user_question) > 50 else ''}'")
     
@@ -857,16 +853,6 @@ def fallback_summarize(text: str, lang: str = "ru") -> str:
     else:
         summary = text
     return f"[{today_str}] {summary}"
-
-def fallback_response(user_question: str, lang: str = "ru") -> str:
-    """Простой ответ если OpenAI недоступен"""
-    from db_postgresql import t
-    return t("ai_temporarily_unavailable", lang)
-
-def get_openai_unavailable_message(lang: str = "ru") -> str:
-    """Сообщение о недоступности OpenAI для использования в main.py"""
-    from db_postgresql import t
-    return t("ai_temporarily_unavailable", lang)
 
 async def check_openai_status() -> bool:  # 🔄 async
     """Асинхронная проверка доступности OpenAI API"""

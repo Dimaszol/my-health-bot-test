@@ -11,16 +11,14 @@ from aiogram.client.default import DefaultBotProperties
 
 # ✅ ОБНОВЛЕННЫЕ ИМПОРТЫ - PostgreSQL версии
 from db_postgresql import (
-    get_user, create_user, save_document, update_document_title, is_fully_registered, get_user_name,
-    get_user_documents, get_document_by_id, delete_document, save_message, 
-    get_last_messages, get_conversation_summary,
-    get_user_profile, get_user_language, t, get_all_values_for_key,
-    initialize_db_pool, close_db_pool, get_db_stats, db_health_check, set_user_language
+    get_user, save_document, update_document_title, is_fully_registered, get_user_name,
+    get_document_by_id, delete_document, save_message, get_last_messages, get_conversation_summary,
+    get_user_language, t, get_all_values_for_key, initialize_db_pool, close_db_pool, set_user_language
 )
 
 from registration import user_states, start_registration, handle_registration_step
 from error_handler import handle_telegram_errors, BotError, OpenAIError, get_user_friendly_message, log_error_with_context, check_openai_health
-from keyboards import main_menu_keyboard, settings_keyboard
+from keyboards import main_menu_keyboard, settings_keyboard, show_main_menu
 from profile_keyboards import (
     profile_view_keyboard, profile_edit_keyboard, smoking_choice_keyboard,
     alcohol_choice_keyboard, activity_choice_keyboard, language_choice_keyboard, cancel_keyboard
@@ -28,22 +26,20 @@ from profile_keyboards import (
 from profile_manager import ProfileManager, CHOICE_MAPPINGS
 from documents import handle_show_documents, handle_ignore_document
 from save_utils import maybe_update_summary, format_user_profile
-from rate_limiter import check_rate_limit, record_user_action, get_rate_limit_stats
+from rate_limiter import check_rate_limit, record_user_action
 
 # ✅ ОБНОВЛЕННЫЕ ИМПОРТЫ - Vector DB PostgreSQL
-from vector_db_postgresql import (
-    initialize_vector_db, search_similar_chunks, keyword_search_chunks, 
-    delete_document_from_vector_db
-)
+from vector_db_postgresql import initialize_vector_db, search_similar_chunks, keyword_search_chunks
 
-from gpt import ask_doctor, check_openai_status, fallback_response, fallback_summarize
-from subscription_manager import check_document_limit, SubscriptionManager, check_gpt4o_limit, spend_gpt4o_limit
+from gpt import ask_doctor, check_openai_status, fallback_summarize
+from subscription_manager import SubscriptionManager, check_gpt4o_limit, spend_gpt4o_limit
 from stripe_config import check_stripe_setup
 from subscription_handlers import SubscriptionHandlers, upsell_tracker
 from notification_system import NotificationSystem
 from stripe_manager import StripeManager
-from prompt_logger import process_user_question_detailed, log_search_summary
+from prompt_logger import process_user_question_detailed
 from photo_analyzer import handle_photo_analysis, handle_photo_question, cancel_photo_analysis
+from analytics_system import Analytics
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -76,21 +72,20 @@ async def send_welcome(message: types.Message):
     try:
         # Проверяем, есть ли пользователь в базе
         user_data = await get_user(user_id)
+        is_new_user = user_data is None
+        
+        # 📊 ТРЕКИНГ: Пользователь запустил бота
+        auto_lang = detect_user_language(message.from_user)
+        await Analytics.track_user_started(user_id, auto_lang, is_new_user)
         
         if user_data is None:
             # 🆕 НОВЫЙ ПОЛЬЗОВАТЕЛЬ
-            
-            # 🌍 Автоопределяем язык и сразу сохраняем
-            auto_lang = detect_user_language(message.from_user)
             await set_user_language(user_id, auto_lang)
-            
-            # 🚀 СРАЗУ НАЧИНАЕМ РЕГИСТРАЦИЮ с автоопределенным языком
             await start_registration_with_language_option(user_id, message, auto_lang)
             return
             
         # ✅ Существующий пользователь
         if await is_fully_registered(user_id):
-            # Показываем главное меню
             name = user_data.get('name', 'Пользователь')
             lang = await get_user_language(user_id)
             
@@ -99,7 +94,6 @@ async def send_welcome(message: types.Message):
                 reply_markup=main_menu_keyboard(lang)
             )
         else:
-            # Продолжаем регистрацию
             await start_registration(user_id, message)
             
     except Exception as e:
@@ -172,7 +166,6 @@ async def handle_set_language_during_registration(callback: types.CallbackQuery)
 @dp.message(lambda msg: msg.text in ["🇷 Русский", "🇺🇦 Українська", "🇬🇧 English"])
 @handle_telegram_errors
 async def language_start(message: types.Message):
-    from db_postgresql import set_user_language
     user_id = message.from_user.id
 
     lang_map = {
@@ -231,10 +224,9 @@ async def show_documents_handler(message: types.Message):
 @handle_telegram_errors
 async def show_medications_schedule(message: types.Message):
     try:
-        from db_postgresql import format_medications_schedule, get_user_language
+        from db_postgresql import format_medications_schedule
         from locales import translations
-        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
+        
         user_id = message.from_user.id
         lang = await get_user_language(user_id)
 
@@ -278,6 +270,90 @@ async def reset_user(message: types.Message):
     await delete_user_completely(user_id)
     lang = "ru"  # ✅ ИСПРАВЛЕНО: используем дефолтный язык после удаления
     await message.answer(t("reset_done", lang))
+
+# 📊 КОМАНДА ДЛЯ СТАТИСТИКИ (ТОЛЬКО ДЛЯ АДМИНА)
+ADMIN_USER_ID = 7374723347  # 🔥 ЗАМЕНИТЕ НА ВАШ TELEGRAM ID!
+
+@dp.message(lambda msg: msg.text == "/stats")
+@handle_telegram_errors
+async def show_stats(message: types.Message):
+    """Показать статистику (только для админа)"""
+    user_id = message.from_user.id
+    
+    if user_id != ADMIN_USER_ID:
+        return  # Игнорируем, если не админ
+    
+    try:
+        # Получаем статистику за неделю
+        stats = await Analytics.get_stats(days=7)
+        
+        report = f"""📊 <b>СТАТИСТИКА ЗА 7 ДНЕЙ</b>
+
+👥 <b>Пользователи:</b>
+• Всего активных: {stats['total_users']}
+• Новых: {stats['new_users']}
+
+📈 <b>Активность:</b>
+• Регистрации: {stats['registrations']}
+• Документы: {stats['documents']}
+• Вопросы: {stats['questions']}
+• Оплаты: {stats['payments']}
+
+📊 <b>Конверсии:</b>
+• Регистрация: {stats['registration_rate']:.1f}%
+• Загрузка документов: {stats['document_rate']:.1f}%
+
+🎯 <b>Оценка MVP:</b>"""
+
+        # Простая оценка
+        if stats['registration_rate'] > 70:
+            report += "\n🟢 Отличная конверсия в регистрацию!"
+        elif stats['registration_rate'] > 50:
+            report += "\n🟡 Нормальная конверсия в регистрацию"
+        else:
+            report += "\n🔴 Низкая конверсия - улучшить онбординг"
+        
+        if stats['document_rate'] > 50:
+            report += "\n🟢 Пользователи активно загружают документы!"
+        elif stats['document_rate'] > 30:
+            report += "\n🟡 Средняя активность с документами"
+        else:
+            report += "\n🔴 Мало загрузок - улучшить объяснение ценности"
+        
+        await message.answer(report, parse_mode="HTML")
+        
+    except Exception as e:
+        await message.answer(f"❌ Ошибка получения статистики: {e}")
+
+@dp.message(lambda msg: msg.text == "/analytics")
+@handle_telegram_errors  
+async def show_analytics_help(message: types.Message):
+    """Справка по аналитике"""
+    user_id = message.from_user.id
+    
+    if user_id != ADMIN_USER_ID:
+        return
+    
+    help_text = """🔧 <b>КОМАНДЫ АНАЛИТИКИ</b>
+
+📊 <code>/stats</code> - статистика за 7 дней
+📈 <code>/stats_today</code> - статистика за сегодня (скоро)
+📋 <code>/funnel</code> - анализ воронки (скоро)
+
+💡 <b>Что отслеживаем:</b>
+• user_started - запуск бота
+• registration_completed - завершение регистрации  
+• document_uploaded - загрузка документов
+• question_asked - вопросы к ИИ
+• payment_completed - оплаты
+
+🎯 <b>Критерии успеха MVP:</b>
+• Регистрация > 70%
+• Загрузка документов > 50%
+• Возврат пользователей > 15%"""
+
+    await message.answer(help_text, parse_mode="HTML")
+
 
 
 
@@ -323,7 +399,7 @@ async def handle_user_message(message: types.Message):
             )
         
         # ✅ ГЛАВНОЕ ИСПРАВЛЕНИЕ: ВСЕГДА показываем главное меню после отмены
-        from keyboards import show_main_menu
+        
         await show_main_menu(message, lang)
         return  # ✅ Выходим из функции, больше ничего не обрабатываем
 
@@ -399,7 +475,6 @@ async def handle_user_message(message: types.Message):
             user_states[user_id] = None
             
             # ✅ ИСПРАВЛЕНИЕ: показываем главное меню после переименования
-            from keyboards import show_main_menu
             await show_main_menu(message, lang)
             return
         except Exception as e:
@@ -417,7 +492,6 @@ async def handle_user_message(message: types.Message):
         try:
             from gpt import summarize_note_text, generate_title_for_note
             from vector_db_postgresql import split_into_chunks, add_chunks_to_vector_db
-            from db_postgresql import save_document
             from documents import send_note_controls
 
             note_text = message.text.strip()
@@ -450,7 +524,6 @@ async def handle_user_message(message: types.Message):
             
             await record_user_action(user_id, "note")
             
-            from keyboards import show_main_menu
             await show_main_menu(message, lang)
             return
             
@@ -483,13 +556,11 @@ async def handle_user_message(message: types.Message):
                 )
                 user_states[user_id] = None
                 # ✅ ПОКАЗЫВАЕМ ГЛАВНОЕ МЕНЮ после успешного обновления
-                from keyboards import show_main_menu
                 await show_main_menu(message, lang)
             else:
                 # Если ошибка валидации, остаемся в том же поле
                 await message.answer(response_message)
                 # Показываем клавиатуру снова для продолжения ввода
-                from profile_keyboards import cancel_keyboard
                 await message.answer(
                     "Попробуйте ещё раз:",
                     reply_markup=cancel_keyboard(lang)
@@ -505,7 +576,6 @@ async def handle_user_message(message: types.Message):
             )
             user_states[user_id] = None
             # ✅ ПОКАЗЫВАЕМ ГЛАВНОЕ МЕНЮ при ошибке
-            from keyboards import show_main_menu
             await show_main_menu(message, lang)
             return
 
@@ -528,7 +598,6 @@ async def handle_user_message(message: types.Message):
                     await message.answer(t("schedule_updated", lang))
                     
                     # ✅ ИСПРАВЛЕНИЕ: показываем главное меню после обновления лекарств
-                    from keyboards import show_main_menu
                     await show_main_menu(message, lang)
                 else:
                     await message.answer(t("schedule_update_failed", lang))
@@ -634,7 +703,6 @@ async def handle_user_message(message: types.Message):
             try:
                 # Получаем недавние сообщения для контекста
                 try:
-                    from db_postgresql import get_last_messages
                     recent_messages = await get_last_messages(user_id, limit=6)
                     
                     # Форматируем недавние сообщения
@@ -866,7 +934,6 @@ async def handle_choice_selection(callback: types.CallbackQuery):
         user_states[user_id] = None
         
         # ✅ ДОБАВЛЕНО: показываем главное меню после смены языка
-        from keyboards import show_main_menu
         await show_main_menu(callback.message, lang)
         
         await callback.answer()
@@ -901,7 +968,6 @@ async def handle_choice_selection(callback: types.CallbackQuery):
         user_states[user_id] = None
         
         # ✅ ДОБАВЛЕНО: показываем главное меню после успешного обновления
-        from keyboards import show_main_menu
         await show_main_menu(callback.message, lang)
     else:
         await callback.message.edit_text(message)
@@ -1044,7 +1110,6 @@ async def handle_button_action(callback: types.CallbackQuery):
 
         if isinstance(state, dict) and state.get("mode") == "viewing_documents":
             user_states[user_id]["offset"] += 5
-            from documents import handle_show_documents
             await handle_show_documents(callback.message, user_id=user_id)
         else:
             lang = await get_user_language(user_id)  # ✅ ИСПРАВЛЕНО: добавлен await
@@ -1145,8 +1210,7 @@ async def main():
         print("🗄️ Database pool готов")
         
         # 🧠 5. ИНИЦИАЛИЗАЦИЯ VECTOR DB (ПОСЛЕ PostgreSQL!)
-        from vector_db_postgresql import initialize_vector_db
-                
+                        
         await initialize_vector_db()
         print("🧠 Vector database готова")
         

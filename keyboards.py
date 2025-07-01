@@ -9,15 +9,6 @@ async def show_main_menu(message: Message, lang: str = None):
         reply_markup=main_menu_keyboard(lang)
     )
 
-def language_keyboard():
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="🇬🇧 English"), KeyboardButton(text="🇩🇪 Deutsch")],
-            [KeyboardButton(text="🇺🇦 Українська"), KeyboardButton(text="🇷 Русский")]
-        ],
-        resize_keyboard=True
-    )
-
 def main_menu_keyboard(lang):
     """Главное меню с кнопкой настроек"""
     return ReplyKeyboardMarkup(

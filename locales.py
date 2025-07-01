@@ -1,5 +1,7 @@
 translations = {
     "ru": {
+        "pdf_processing_error": "❌ Ошибка при обработке PDF файла",
+        "image_analysis_error": "❌ Ошибка при анализе изображения",
         "file_empty_name_error": "❌ Имя файла не может быть пустым",
         "file_invalid_name_error": "❌ Недопустимое имя файла: содержит опасные символы", 
         "file_name_too_long_error": "❌ Имя файла слишком длинное",

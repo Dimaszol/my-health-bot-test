@@ -3,11 +3,7 @@
 import logging
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from subscription_keyboards import (
-    subscription_main_menu, purchase_confirmation_keyboard,
-    subscription_upsell_keyboard, cancel_subscription_confirmation,
-    payment_processing_keyboard, get_package_description
-)
+from subscription_keyboards import subscription_main_menu, purchase_confirmation_keyboard, cancel_subscription_confirmation, payment_processing_keyboard, get_package_description
 from subscription_manager import SubscriptionManager
 from stripe_manager import StripeManager
 from db_postgresql import get_user_language, get_user_name, fetch_one, t
@@ -76,6 +72,12 @@ class SubscriptionHandlers:
                 
         except Exception as e:
             logger.error(f"Ошибка показа меню подписок для пользователя {user_id}: {e}")
+            
+            # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
+            try:
+                lang = await get_user_language(user_id) if user_id else "ru"
+            except:
+                lang = "ru"
             
             error_text = t("subscription_menu_error", lang)
             if isinstance(message_or_callback, types.CallbackQuery):
@@ -165,8 +167,14 @@ class SubscriptionHandlers:
             await callback.answer()
             
         except Exception as e:
-            # ✅ ИСПРАВЛЕНО: Используем существующую систему логирования
             logger.error(f"Ошибка: {e}")
+            
+            # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
+            try:
+                lang = await get_user_language(callback.from_user.id)
+            except:
+                lang = "ru"
+            
             await callback.answer(t("purchase_request_error", lang), show_alert=True)
     
     @staticmethod
@@ -308,6 +316,12 @@ class SubscriptionHandlers:
             
         except Exception as e:
             logger.error(f"Ошибка апгрейда подписки для пользователя {callback.from_user.id}: {e}")
+            
+            # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
+            try:
+                lang = await get_user_language(callback.from_user.id)
+            except:
+                lang = "ru"
 
             await callback.message.edit_text(
                 t("upgrade_general_error", lang),
@@ -388,6 +402,12 @@ class SubscriptionHandlers:
                 
         except Exception as e:
             logger.error(f"Ошибка подтверждения покупки {package_id} для пользователя {callback.from_user.id}: {e}")
+            
+            # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
+            try:
+                lang = await get_user_language(callback.from_user.id)
+            except:
+                lang = "ru"
             
             await callback.message.edit_text(
                 t("payment_link_general_error", lang),
@@ -517,11 +537,18 @@ class SubscriptionHandlers:
             
         except Exception as e:
             logger.error(f"Ошибка запроса отмены подписки для пользователя {callback.from_user.id}: {e}")
+            
+            # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
+            try:
+                lang = await get_user_language(callback.from_user.id)
+            except:
+                lang = "ru"
+            
             await callback.answer(t("request_processing_error", lang), show_alert=True)
     
     @staticmethod
     async def handle_cancel_subscription_confirmation(callback: types.CallbackQuery):
-        """Обрабатывает подтверждение отмены подписки (без изменений)"""
+        """Обрабатывает подтверждение отмены подписки"""
         try:
             user_id = callback.from_user.id
             lang = await get_user_language(user_id)
@@ -542,8 +569,9 @@ class SubscriptionHandlers:
                 )]
             ])
             
+            # ✅ ИСПРАВЛЕНО: Убрали .get() у строки
             await callback.message.edit_text(
-                success_text,  # ✅ ПРАВИЛЬНО
+                success_text,  # ✅ ПРАВИЛЬНО: это строка, не словарь
                 reply_markup=back_button,
                 parse_mode="HTML"
             )
@@ -551,6 +579,13 @@ class SubscriptionHandlers:
             
         except Exception as e:
             logger.error(f"Ошибка подтверждения отмены подписки для пользователя {callback.from_user.id}: {e}")
+            
+            # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
+            try:
+                lang = await get_user_language(callback.from_user.id)
+            except:
+                lang = "ru"  # Fallback на русский
+            
             await callback.answer(t("subscription_cancel_error_short", lang), show_alert=True)
     
     @staticmethod

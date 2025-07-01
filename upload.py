@@ -10,7 +10,7 @@ from gpt import ask_structured, is_medical_text, generate_medical_summary, gener
 from db_postgresql import save_document, get_user_language, t
 from registration import user_states
 from vector_db_postgresql import split_into_chunks, add_chunks_to_vector_db
-from subscription_manager import check_document_limit, check_gpt4o_limit, spend_document_limit, spend_gpt4o_limit, SubscriptionManager
+from subscription_manager import spend_document_limit, SubscriptionManager
 
 # ИСПРАВЛЕННЫЙ ИМПОРТ - используем простую функцию для отладки
 from file_utils import validate_file_size, validate_file_extension, create_simple_file_path
@@ -108,7 +108,7 @@ async def handle_document_upload(message: types.Message, bot):
                 vision_text = vision_text.strip()
             except Exception as e:
                 print(f"❌ Ошибка обработки PDF: {e}")
-                await message.answer("❌ Ошибка при обработке PDF файла")
+                await message.answer(t("pdf_processing_error", lang))
                 return
         else:
             print("🖼️ Обрабатываю изображение...")
@@ -116,7 +116,7 @@ async def handle_document_upload(message: types.Message, bot):
                 vision_text, _ = await send_to_gpt_vision(local_file)
             except Exception as e:
                 print(f"❌ Ошибка обработки изображения: {e}")
-                await message.answer("❌ Ошибка при анализе изображения")
+                await message.answer(t("image_analysis_error", lang))
                 return
 
         print("🔍 Проверяю, является ли текст медицинским...")

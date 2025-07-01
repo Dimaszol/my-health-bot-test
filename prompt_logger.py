@@ -259,8 +259,3 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
     except Exception as e:
         log_step(0, "КРИТИЧЕСКАЯ ОШИБКА", f"❌ {e}", success=False)
         raise
-
-# 🔧 ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ КРАТКОГО ЛОГИРОВАНИЯ (упрощенная)
-def log_search_summary(vector_count: int, keyword_count: int, final_count: int):
-    """Краткая сводка поиска БЕЗ excluded_doc_id"""
-    print(f"🧠 Найдено: {vector_count} векторных + {keyword_count} ключевых = {final_count} итого")

@@ -464,12 +464,6 @@ async def keyword_search_chunks(user_id: int, keywords: str, limit: int = 5) -> 
         return await vector_db.keyword_search_chunks(user_id, keywords, limit)
     return []
 
-async def delete_document_from_vector_db(document_id: int):
-    """Удаляет документ из векторной базы (совместимость с ChromaDB)"""
-    if vector_db:
-        return await vector_db.delete_document_vectors(document_id)
-    return False
-
 async def extract_date_from_text(text: str) -> str:
     """Извлекает дату из текста (перенесено из vector_utils.py)"""
     match = re.match(r"\[(\d{2})[./](\d{2})[./](\d{4})\]", text.strip())

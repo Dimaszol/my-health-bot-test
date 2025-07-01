@@ -342,10 +342,6 @@ async def record_user_action(user_id: int, action_type: str = "message"):
     """✅ ASYNC версия записи действия"""
     await rate_limiter.record_request(user_id, action_type)
 
-def get_rate_limit_stats(user_id: int) -> Dict[str, int]:
-    """Получает статистику пользователя"""
-    return rate_limiter.get_user_stats(user_id)
-
 # Функция для периодической очистки (можно вызывать раз в час)
 async def cleanup_rate_limiter():
     """Очищает старые данные rate limiter"""

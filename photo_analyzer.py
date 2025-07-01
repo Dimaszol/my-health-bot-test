@@ -8,7 +8,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from gemini_analyzer import send_to_gemini_vision
 from db_postgresql import get_user_language, t
-from subscription_manager import check_gpt4o_limit, spend_gpt4o_limit
+from subscription_manager import spend_gpt4o_limit
 from file_utils import create_simple_file_path, validate_file_size
 from notification_system import NotificationSystem
 from registration import user_states

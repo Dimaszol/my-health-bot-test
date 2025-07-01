@@ -53,13 +53,14 @@ def activity_choice_keyboard(lang: str) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=t("cancel", lang), callback_data="cancel_edit")]
     ])
 
-def language_choice_keyboard() -> InlineKeyboardMarkup:
+def language_choice_keyboard(lang: str) -> InlineKeyboardMarkup:  # ← добавить lang параметр
     """Клавиатура для выбора языка"""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🇺🇦 Українська", callback_data="lang_uk")],
         [InlineKeyboardButton(text="🇬🇧 English", callback_data="lang_en")],
+        [InlineKeyboardButton(text="🇩🇪 Deutsch", callback_data="set_lang_de")], 
         [InlineKeyboardButton(text="🇷 Русский", callback_data="lang_ru")],
-        [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_edit")]
+        [InlineKeyboardButton(text=t("cancel_button", lang), callback_data="cancel_edit")]  # ← ИСПРАВЛЕНО
     ])
 
 def cancel_keyboard(lang: str) -> ReplyKeyboardMarkup:
