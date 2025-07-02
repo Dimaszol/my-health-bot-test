@@ -5,7 +5,7 @@ import mimetypes
 import os
 from dotenv import load_dotenv
 from pdf2image import convert_from_path
-from db_postgresql import get_conversation_summary, get_messages_after, save_conversation_summary, get_user_medications_text, update_user_field, get_user_language
+from db_postgresql import get_last_message_id, get_conversation_summary, get_messages_after, save_conversation_summary, get_user_medications_text, update_user_field, get_user_language
 
 from gpt import client, OPENAI_SEMAPHORE
 from datetime import datetime
@@ -227,19 +227,17 @@ async def maybe_update_summary(user_id):
                 if isinstance(last_msg, dict):
                     # Формат: {'id': 123, 'role': 'user', 'message': 'текст'}
                     last_message_id = last_msg.get('id', 0)
-                elif isinstance(last_msg, (tuple, list)) and len(last_msg) >= 3:
-                    # Формат: (id, role, message)
-                    last_message_id = last_msg[0]
+                elif isinstance(last_msg, (list, tuple)) and len(last_msg) >= 1:
+                    # Формат: ('user', 'текст') - нет ID, берем из базы
+                    last_message_id = await get_last_message_id(user_id)
                 else:
-                    # Формат: (role, message) - без ID
-                    last_message_id = 0
+                    last_message_id = await get_last_message_id(user_id)
             else:
-                last_message_id = 0
-                
+                last_message_id = await get_last_message_id(user_id)
         except Exception as e:
-            print(f"⚠️ Ошибка получения last_message_id: {e}")
-            last_message_id = 0
-            
+            print(f"❌ Ошибка получения last_message_id: {e}")
+            last_message_id = await get_last_message_id(user_id)  # Fallback
+        
         await save_conversation_summary(user_id, new_summary, last_message_id)
         print(f"💾 Сводка сохранена для пользователя {user_id}")
         return True

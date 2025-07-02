@@ -1042,3 +1042,18 @@ async def delete_user_gdpr_compliant(user_id: int) -> bool:
         return False
     finally:
         await release_db_connection(conn)
+
+async def get_last_message_id(user_id: int) -> int:
+    """Получить ID последнего сообщения пользователя"""
+    conn = await get_db_connection()
+    try:
+        row = await conn.fetchrow(
+            "SELECT id FROM chat_history WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
+            user_id
+        )
+        return row['id'] if row else 0
+    except Exception as e:
+        log_error_with_context(e, {"function": "get_last_message_id", "user_id": user_id})
+        return 0
+    finally:
+        await release_db_connection(conn)

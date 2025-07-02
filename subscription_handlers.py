@@ -630,39 +630,75 @@ class UpsellTracker:
         self.user_last_upsell = {}     # user_id: timestamp
         self.user_summary_counts = {}  # user_id: count обновлений сводки
     
-    def should_show_upsell(self, user_id: int) -> bool:
-        """Определяет, нужно ли показать upsell сообщение"""
-        current_count = self.user_message_counts.get(user_id, 0)
-        
-        # ✅ ИЗМЕНЯЕМ: показываем каждые 7 сообщений (вместо 5)
-        if current_count >= 7:
-            self.user_message_counts[user_id] = 0  # Сбрасываем счетчик
-            self.user_last_upsell[user_id] = datetime.now().timestamp()
-            return True
-        
-        return False
+    async def should_show_message_upsell(self, user_id: int) -> bool:
+        """
+        ✅ НОВАЯ ФУНКЦИЯ: Определяет, нужно ли показать upsell для сообщений
+        Показываем ТОЛЬКО если:
+        1. Нет лимитов GPT-4o 
+        2. Нет активной подписки
+        3. Прошло 7 сообщений
+        """
+        try:
+            # Проверяем лимиты и подписку
+            limits = await SubscriptionManager.get_user_limits(user_id)
+            gpt4o_queries_left = limits.get('gpt4o_queries_left', 0)
+            subscription_type = limits.get('subscription_type', 'free')
+            
+            # ✅ УСЛОВИЕ: показываем только если НЕТ лимитов И НЕТ подписки
+            if gpt4o_queries_left > 0 or subscription_type == 'subscription':
+                return False
+            
+            # Проверяем счетчик сообщений
+            current_count = self.user_message_counts.get(user_id, 0)
+            
+            if current_count >= 7:
+                self.user_message_counts[user_id] = 0  # Сбрасываем счетчик
+                self.user_last_upsell[user_id] = datetime.now().timestamp()
+                return True
+            
+            return False
+            
+        except Exception as e:
+            print(f"❌ Ошибка проверки message upsell для пользователя {user_id}: {e}")
+            return False
     
-    def should_show_upsell_on_summary(self, user_id: int) -> bool:
+    async def should_show_summary_upsell(self, user_id: int) -> bool:
         """
-        ✅ НОВОЕ: Определяет, нужно ли показать upsell при обновлении сводки
+        ✅ НОВАЯ ФУНКЦИЯ: Определяет, нужно ли показать upsell для сводок
+        Показываем ТОЛЬКО если:
+        1. Нет лимитов GPT-4o
+        2. Нет активной подписки  
+        3. Прошло 3 обновления сводки
         """
-        current_count = self.user_summary_counts.get(user_id, 0)
-        
-        # Показываем каждое 3-е обновление сводки
-        if current_count >= 3:
-            self.user_summary_counts[user_id] = 0  # Сбрасываем счетчик
-            return True
-        
-        return False
+        try:
+            # Проверяем лимиты и подписку
+            limits = await SubscriptionManager.get_user_limits(user_id)
+            gpt4o_queries_left = limits.get('gpt4o_queries_left', 0)
+            subscription_type = limits.get('subscription_type', 'free')
+            
+            # ✅ УСЛОВИЕ: показываем только если НЕТ лимитов И НЕТ подписки
+            if gpt4o_queries_left > 0 or subscription_type == 'subscription':
+                return False
+            
+            # Проверяем счетчик сводок
+            current_count = self.user_summary_counts.get(user_id, 0)
+            
+            if current_count >= 3:
+                self.user_summary_counts[user_id] = 0  # Сбрасываем счетчик
+                return True
+            
+            return False
+            
+        except Exception as e:
+            print(f"❌ Ошибка проверки summary upsell для пользователя {user_id}: {e}")
+            return False
     
     def increment_message_count(self, user_id: int):
         """Увеличивает счетчик сообщений пользователя"""
         self.user_message_counts[user_id] = self.user_message_counts.get(user_id, 0) + 1
     
     def increment_summary_count(self, user_id: int):
-        """
-        ✅ НОВОЕ: Увеличивает счетчик обновлений сводки
-        """
+        """Увеличивает счетчик обновлений сводки"""
         self.user_summary_counts[user_id] = self.user_summary_counts.get(user_id, 0) + 1
     
     def reset_count(self, user_id: int):
@@ -671,6 +707,23 @@ class UpsellTracker:
         self.user_summary_counts[user_id] = 0
         if user_id in self.user_last_upsell:
             del self.user_last_upsell[user_id]
+    
+    # ✅ УСТАРЕВШИЕ ФУНКЦИИ - оставляем для совместимости
+    def should_show_upsell(self, user_id: int) -> bool:
+        """Устаревшая функция - используйте should_show_message_upsell"""
+        current_count = self.user_message_counts.get(user_id, 0)
+        if current_count >= 7:
+            self.user_message_counts[user_id] = 0
+            return True
+        return False
+    
+    def should_show_upsell_on_summary(self, user_id: int) -> bool:
+        """Устаревшая функция - используйте should_show_summary_upsell"""
+        current_count = self.user_summary_counts.get(user_id, 0)
+        if current_count >= 3:
+            self.user_summary_counts[user_id] = 0
+            return True
+        return False
 
 # Глобальный экземпляр трекера
 upsell_tracker = UpsellTracker()
