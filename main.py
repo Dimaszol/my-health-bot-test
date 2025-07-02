@@ -66,51 +66,65 @@ def detect_user_language(user: types.User) -> str:
         return 'en'  # По умолчанию
 
 @dp.message(CommandStart())
+@handle_telegram_errors
 async def send_welcome(message: types.Message):
+    """✅ ИСПРАВЛЕННЫЙ обработчик команды /start"""
+    
     user_id = message.from_user.id
+    print(f"🚀 Команда /start от пользователя {user_id}")
     
     try:
-        # Проверяем, есть ли пользователь в базе
+        # 1️⃣ Получаем данные пользователя
         user_data = await get_user(user_id)
+        auto_lang = detect_user_language(message.from_user)
+        
+        # 2️⃣ Определяем, новый это пользователь или нет
         is_new_user = user_data is None
         
-        # 📊 ТРЕКИНГ: Пользователь запустил бота
-        auto_lang = detect_user_language(message.from_user)
+        # 📊 Отслеживаем аналитику
         await Analytics.track_user_started(user_id, auto_lang, is_new_user)
         
+        # 3️⃣ НОВЫЙ ПОЛЬЗОВАТЕЛЬ
         if user_data is None:
-            # 🆕 НОВЫЙ ПОЛЬЗОВАТЕЛЬ - ПОКАЗЫВАЕМ GDPR ДИСКЛЕЙМЕР
+            print(f"🆕 Новый пользователь {user_id}")
             await set_user_language(user_id, auto_lang)
-            # ✅ ЗАМЕНИТЬ ЭТУ СТРОКУ:
-            # await start_registration_with_language_option(user_id, message, auto_lang)
-            # НА ЭТУ:
+            
             from registration import show_gdpr_welcome
             await show_gdpr_welcome(user_id, message, auto_lang)
             return
             
-        # ✅ Существующий пользователь
-        # ✅ ДОБАВИТЬ ПРОВЕРКУ GDPR СОГЛАСИЯ:
+        # 4️⃣ СУЩЕСТВУЮЩИЙ ПОЛЬЗОВАТЕЛЬ - проверяем GDPR согласие
         from db_postgresql import has_gdpr_consent
         if not await has_gdpr_consent(user_id):
-            # Старый пользователь без GDPR - показываем дисклеймер
+            print(f"🔒 Пользователь {user_id} без GDPR согласия")
             lang = await get_user_language(user_id) 
             from registration import show_gdpr_welcome
             await show_gdpr_welcome(user_id, message, lang)
             return
         
+        # 5️⃣ ПРОВЕРЯЕМ РЕГИСТРАЦИЮ (имя + год рождения для медицинских рекомендаций)
+        lang = await get_user_language(user_id)
+        
         if await is_fully_registered(user_id):
+            # ✅ У пользователя есть имя и год рождения - показываем главное меню
             name = user_data.get('name', 'Пользователь')
-            lang = await get_user_language(user_id)
+            
+            print(f"✅ Пользователь {user_id} ({name}) зарегистрирован")
             
             await message.answer(
                 t("welcome_back", lang, name=name), 
                 reply_markup=main_menu_keyboard(lang)
             )
         else:
+            # ⚠️ Нет имени или года рождения - продолжаем регистрацию
+            print(f"⚠️ Пользователь {user_id} не завершил базовую регистрацию")
+            
+            from registration import start_registration
             await start_registration(user_id, message)
             
     except Exception as e:
-        print(f"❌ Ошибка в команде /start: {e}")
+        print(f"❌ Ошибка в команде /start для пользователя {user_id}: {e}")
+        log_error_with_context(e, {"action": "start_command", "user_id": user_id})
         await message.answer("❌ Произошла ошибка. Попробуйте еще раз.")
 
 async def start_registration_with_language_option(user_id: int, message: types.Message, lang: str):
@@ -782,12 +796,17 @@ async def handle_user_message(message: types.Message):
             user_input = message.text
             await save_message(user_id, "user", user_input)
             
-            has_gpt4o_limits = await check_gpt4o_limit(user_id)
-            if not has_gpt4o_limits:
+            from subscription_manager import SubscriptionManager
+            limits = await SubscriptionManager.get_user_limits(user_id)
+            gpt4o_queries_left = limits.get('gpt4o_queries_left', 0)
+            subscription_type = limits.get('subscription_type', 'free')
+            
+            # Увеличиваем счетчик только если нет лимитов И нет подписки
+            if gpt4o_queries_left == 0 and subscription_type != 'subscription':
                 upsell_tracker.increment_message_count(user_id)
                 
-                # Проверяем нужно ли показать upsell (каждые 7 сообщений)
-                if upsell_tracker.should_show_upsell(user_id):
+                # ✅ ПРАВИЛЬНАЯ ПРОВЕРКА: используем новую функцию
+                if await upsell_tracker.should_show_message_upsell(user_id):
                     await SubscriptionHandlers.show_subscription_upsell(
                         message, user_id, reason="better_response"
                     )
@@ -851,9 +870,6 @@ async def handle_user_message(message: types.Message):
             # ==========================================
             # ОТПРАВКА В GPT (исправленная версия)
             # ==========================================
-
-            # Проверка лимитов GPT-4o
-            use_gpt4o = await check_gpt4o_limit(user_id)
 
             try:
                 # Получаем недавние сообщения для контекста
@@ -920,11 +936,12 @@ async def handle_user_message(message: types.Message):
 
                     # Проверка upsell ТОЛЬКО если сводка реально обновилась
                     if summary_was_updated:
-                        has_gpt4o_limits = await check_gpt4o_limit(user_id)
-                        if not has_gpt4o_limits:
+                        # Увеличиваем счетчик сводок только если нет лимитов И нет подписки
+                        if gpt4o_queries_left == 0 and subscription_type != 'subscription':
                             upsell_tracker.increment_summary_count(user_id)
                             
-                            if upsell_tracker.should_show_upsell_on_summary(user_id):
+                            # ✅ ПРАВИЛЬНАЯ ПРОВЕРКА: используем новую функцию
+                            if await upsell_tracker.should_show_summary_upsell(user_id):
                                 await SubscriptionHandlers.show_subscription_upsell(
                                     message, user_id, reason="summary_updated"
                                 )
@@ -1316,7 +1333,7 @@ async def handle_button_action(callback: types.CallbackQuery):
             await safe_send_message(callback.message, clean_text, title=title)
         elif action == "rename":
             user_states[user_id] = f"rename_{doc_id}"
-            await callback.message.answer(t("enter_new_name", lang))
+            await callback.message.answer(t("enter_new_name_doc", lang))
         elif action == "delete":
             await delete_document(doc_id)
             await callback.message.answer(t("document_deleted", lang))

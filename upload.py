@@ -224,7 +224,6 @@ async def handle_document_upload(message: types.Message, bot):
         await message.answer(t("document_saved", lang, title=auto_title), parse_mode="HTML")
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text=t("view_full_text_button", lang), callback_data=f"view_{document_id}")],
             [InlineKeyboardButton(text=t("rename_doc_button", lang), callback_data=f"rename_{document_id}")],
             [InlineKeyboardButton(text=t("delete_doc_button", lang), callback_data=f"delete_{document_id}")]
         ])

@@ -711,7 +711,10 @@ async def get_user_name(user_id: int) -> Optional[str]:
     return user_data.get('name') if user_data else None
 
 async def is_fully_registered(user_id: int) -> bool:
-    """Проверяет, полностью ли зарегистрирован пользователь"""
+    """
+    ✅ ДЛЯ МЕДИЦИНСКОГО БОТА: Проверяет имя и год рождения
+    Это минимум для качественных медицинских рекомендаций
+    """
     conn = await get_db_connection()
     try:
         row = await conn.fetchrow(
@@ -720,16 +723,35 @@ async def is_fully_registered(user_id: int) -> bool:
         )
         
         if not row:
+            print(f"🔍 Пользователь {user_id} не найден в базе")
             return False
             
-        # Проверяем обязательные поля
+        # ✅ Проверяем обязательные поля для медицинского бота
         name = row['name']
         birth_year = row['birth_year']
         
-        return bool(name and len(name.strip()) > 0 and birth_year)
+        # Имя обязательно
+        if not name or len(name.strip()) == 0:
+            print(f"🔍 Пользователь {user_id}: нет имени")
+            return False
+            
+        # Год рождения нужен для возрастных рекомендаций
+        if not birth_year:
+            print(f"🔍 Пользователь {user_id}: нет года рождения")
+            return False
+        
+        # Проверяем разумность года рождения (1900-2025)
+        current_year = datetime.now().year
+        if birth_year < 1900 or birth_year > current_year:
+            print(f"🔍 Пользователь {user_id}: некорректный год рождения {birth_year}")
+            return False
+        
+        print(f"✅ Пользователь {user_id} зарегистрирован (имя: {name}, год: {birth_year})")
+        return True
         
     except Exception as e:
         log_error_with_context(e, {"function": "is_fully_registered", "user_id": user_id})
+        print(f"❌ Ошибка проверки регистрации пользователя {user_id}: {e}")
         return False
     finally:
         await release_db_connection(conn)
