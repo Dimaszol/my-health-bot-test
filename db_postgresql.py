@@ -249,6 +249,20 @@ async def create_tables():
     CREATE INDEX IF NOT EXISTS idx_medications_user_id ON medications(user_id);
     CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
     CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id);
+
+    -- ✅ GDPR МИГРАЦИЯ - Добавление полей согласия в таблицу users
+    -- 1. Добавляем поле согласия с GDPR
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS gdpr_consent BOOLEAN DEFAULT FALSE;
+    
+    -- 2. Добавляем время согласия  
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS gdpr_consent_time TIMESTAMP DEFAULT NULL;
+    
+    -- 3. Создаем индекс для быстрого поиска
+    CREATE INDEX IF NOT EXISTS idx_users_gdpr_consent ON users(gdpr_consent);
+    
+    -- 4. Комментарии для документации
+    COMMENT ON COLUMN users.gdpr_consent IS 'Пользователь дал согласие на обработку данных (GDPR)';
+    COMMENT ON COLUMN users.gdpr_consent_time IS 'Время когда пользователь дал согласие GDPR';
     """
     
     conn = await get_db_connection()
@@ -575,25 +589,87 @@ async def get_user_medications_text(user_id: int) -> str:
 
 # 🗑️ ФУНКЦИЯ УДАЛЕНИЯ ПОЛЬЗОВАТЕЛЯ
 async def delete_user_completely(user_id: int) -> bool:
-    """Полностью удалить пользователя и все его данные"""
+    """
+    GDPR-совместимое удаление пользователя
+    Удаляет ВСЕ данные: файлы + база + векторы + Stripe
+    """
     conn = await get_db_connection()
     try:
-        # Удаляем в правильном порядке (из-за внешних ключей)
-        await conn.execute("DELETE FROM chat_history WHERE user_id = $1", user_id)
-        await conn.execute("DELETE FROM conversation_summary WHERE user_id = $1", user_id)
-        await conn.execute("DELETE FROM medications WHERE user_id = $1", user_id)
-        await conn.execute("DELETE FROM documents WHERE user_id = $1", user_id)
-        await conn.execute("DELETE FROM user_limits WHERE user_id = $1", user_id)
-        await conn.execute("DELETE FROM transactions WHERE user_id = $1", user_id)
-        await conn.execute("DELETE FROM user_subscriptions WHERE user_id = $1", user_id)
-        await conn.execute("DELETE FROM users WHERE user_id = $1", user_id)
-        await conn.execute("DELETE FROM medical_timeline WHERE user_id = $1", user_id)
+        print(f"🗑️ Начинаем GDPR удаление пользователя {user_id}")
         
-        # Удаляем из векторной базы
-        from vector_db_postgresql import delete_all_chunks_by_user
-        await delete_all_chunks_by_user(user_id)
+        # 1. Получаем список файлов для удаления
+        documents = await conn.fetch(
+            "SELECT file_path FROM documents WHERE user_id = $1", 
+            user_id
+        )
         
+        # 2. Удаляем физические файлы
+        import os
+        for doc in documents:
+            file_path = doc['file_path']
+            if file_path and file_path != "memory_note" and os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    print(f"🗑️ Удален файл: {file_path}")
+                except OSError as e:
+                    print(f"⚠️ Не удалось удалить файл {file_path}: {e}")
+        
+        # 3. ✅ НОВОЕ: Удаляем данные из Stripe (GDPR)
+        try:
+            from stripe_manager import StripeGDPRManager
+            stripe_deleted = await StripeGDPRManager.delete_user_stripe_data_gdpr(user_id)
+            if stripe_deleted:
+                print(f"✅ Stripe данные удалены для пользователя {user_id}")
+            else:
+                print(f"⚠️ Проблемы с удалением Stripe данных для пользователя {user_id}")
+        except Exception as e:
+            print(f"⚠️ Ошибка удаления Stripe данных: {e}")
+        
+        # 4. Удаляем из базы данных (в правильном порядке)
+        tables_to_clear = [
+            "chat_history",
+            "conversation_summary", 
+            "medical_timeline",
+            "medications",
+            "documents",
+            "user_limits",
+            "transactions", 
+            "user_subscriptions",
+            "analytics_events",
+            "users"  # В последнюю очередь
+        ]
+        
+        for table in tables_to_clear:
+            try:
+                result = await conn.execute(f"DELETE FROM {table} WHERE user_id = $1", user_id)
+                deleted_count = int(result.split()[-1]) if result.split()[-1].isdigit() else 0
+                if deleted_count > 0:
+                    print(f"🗑️ Удалено {deleted_count} записей из {table}")
+            except Exception as e:
+                print(f"⚠️ Ошибка удаления из {table}: {e}")
+        
+        # 5. Удаляем векторы
+        try:
+            from vector_db_postgresql import delete_all_chunks_by_user
+            await delete_all_chunks_by_user(user_id)
+            print(f"🗑️ Удалены векторы пользователя {user_id}")
+        except Exception as e:
+            print(f"⚠️ Ошибка удаления векторов: {e}")
+        
+        # 6. Логируем удаление в аналитику (в самом конце)
+        try:
+            from analytics_system import Analytics
+            await Analytics.track(user_id, "user_data_deleted_gdpr", {
+                "timestamp": datetime.now().isoformat(),
+                "reason": "user_request",
+                "stripe_cleaned": True
+            })
+        except Exception as e:
+            print(f"⚠️ Не удалось залогировать удаление: {e}")
+        
+        print(f"✅ GDPR удаление пользователя {user_id} завершено полностью")
         return True
+        
     except Exception as e:
         log_error_with_context(e, {"function": "delete_user_completely", "user_id": user_id})
         return False
@@ -833,5 +909,136 @@ async def insert_and_get_id(query: str, params: tuple = ()):
     try:
         result = await conn.fetchval(pg_query, *pg_params)
         return result
+    finally:
+        await release_db_connection(conn)
+
+async def set_gdpr_consent(user_id: int, consent: bool = True) -> bool:
+    """Устанавливает GDPR согласие пользователя"""
+    conn = await get_db_connection()
+    try:
+        await conn.execute(
+            """UPDATE users SET 
+               gdpr_consent = $1, 
+               gdpr_consent_time = CURRENT_TIMESTAMP 
+               WHERE user_id = $2""",
+            consent, user_id
+        )
+        
+        # 📊 Логируем согласие в аналитику
+        if consent:
+            from analytics_system import Analytics
+            await Analytics.track(user_id, "gdpr_consent_given", {
+                "timestamp": datetime.now().isoformat(),
+                "user_agent": "telegram_bot"
+            })
+        
+        print(f"✅ GDPR согласие установлено для пользователя {user_id}")
+        return True
+        
+    except Exception as e:
+        log_error_with_context(e, {
+            "function": "set_gdpr_consent", 
+            "user_id": user_id, 
+            "consent": consent
+        })
+        return False
+    finally:
+        await release_db_connection(conn)
+
+async def has_gdpr_consent(user_id: int) -> bool:
+    """Проверяет, дал ли пользователь GDPR согласие"""
+    conn = await get_db_connection()
+    try:
+        row = await conn.fetchrow(
+            "SELECT gdpr_consent FROM users WHERE user_id = $1", 
+            user_id
+        )
+        return row['gdpr_consent'] if row else False
+        
+    except Exception as e:
+        log_error_with_context(e, {
+            "function": "has_gdpr_consent", 
+            "user_id": user_id
+        })
+        return False
+    finally:
+        await release_db_connection(conn)
+
+async def delete_user_gdpr_compliant(user_id: int) -> bool:
+    """
+    GDPR-совместимое удаление пользователя
+    Удаляет ВСЕ данные пользователя из всех таблиц + файлы
+    """
+    conn = await get_db_connection()
+    try:
+        print(f"🗑️ Начинаем GDPR удаление пользователя {user_id}")
+        
+        # 1. Получаем список файлов для удаления
+        documents = await conn.fetch(
+            "SELECT file_path FROM documents WHERE user_id = $1", 
+            user_id
+        )
+        
+        # 2. Удаляем физические файлы
+        import os
+        for doc in documents:
+            file_path = doc['file_path']
+            if file_path and os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    print(f"🗑️ Удален файл: {file_path}")
+                except OSError as e:
+                    print(f"⚠️ Не удалось удалить файл {file_path}: {e}")
+        
+        # 3. Удаляем из базы данных (в правильном порядке)
+        tables_to_clear = [
+            "chat_history",
+            "conversation_summary", 
+            "document_vectors",  # Векторы документов
+            "medical_timeline",
+            "medications",
+            "documents",
+            "user_limits",
+            "transactions", 
+            "user_subscriptions",
+            "users"  # В последнюю очередь
+        ]
+        
+        for table in tables_to_clear:
+            try:
+                result = await conn.execute(f"DELETE FROM {table} WHERE user_id = $1", user_id)
+                deleted_count = int(result.split()[-1]) if result.split()[-1].isdigit() else 0
+                if deleted_count > 0:
+                    print(f"🗑️ Удалено {deleted_count} записей из {table}")
+            except Exception as e:
+                print(f"⚠️ Ошибка удаления из {table}: {e}")
+        
+        # 4. Удаляем векторы (если есть отдельная функция)
+        try:
+            from vector_db_postgresql import delete_all_chunks_by_user
+            await delete_all_chunks_by_user(user_id)
+            print(f"🗑️ Удалены векторы пользователя {user_id}")
+        except Exception as e:
+            print(f"⚠️ Ошибка удаления векторов: {e}")
+        
+        # 5. Логируем удаление в аналитику (перед полным удалением)
+        try:
+            from analytics_system import Analytics
+            await Analytics.track(user_id, "user_data_deleted_gdpr", {
+                "timestamp": datetime.now().isoformat(),
+                "reason": "gdpr_request"
+            })
+        except Exception as e:
+            print(f"⚠️ Не удалось залогировать удаление: {e}")
+        
+        print(f"✅ GDPR удаление пользователя {user_id} завершено")
+        return True
+        
+    except Exception as e:
+        log_error_with_context(e, {
+            "function": "delete_user_gdpr_compliant", 
+            "user_id": user_id
+        })
+        return False
     finally:
         await release_db_connection(conn)

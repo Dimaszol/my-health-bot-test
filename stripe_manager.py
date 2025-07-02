@@ -308,3 +308,142 @@ async def handle_stripe_webhook(payload: str, sig_header: str) -> Tuple[bool, st
     except Exception as e:
         logger.error(f"❌ Ошибка обработки Stripe webhook: {e}")
         return False, f"Webhook error: {e}"
+    
+class StripeGDPRManager:
+    """Управление GDPR-совместимым удалением данных из Stripe"""
+    
+    @staticmethod
+    async def delete_user_stripe_data_gdpr(user_id: int) -> bool:
+        """
+        GDPR-совместимое удаление всех данных пользователя из Stripe
+        Включает отмену активных подписок и удаление customer
+        """
+        try:
+            print(f"💳 Начинаем GDPR удаление Stripe данных для пользователя {user_id}")
+            
+            # 1. Находим все Stripe подписки пользователя
+            stripe_subscriptions = await StripeGDPRManager._find_user_subscriptions(user_id)
+            
+            # 2. Отменяем все активные подписки
+            for subscription_id in stripe_subscriptions:
+                await StripeGDPRManager._cancel_stripe_subscription(subscription_id)
+            
+            # 3. Находим Stripe customer_id
+            customer_id = await StripeGDPRManager._find_stripe_customer(user_id)
+            
+            # 4. Удаляем customer из Stripe (если есть)
+            if customer_id:
+                await StripeGDPRManager._delete_stripe_customer(customer_id)
+            
+            # 5. Очищаем Stripe ссылки из нашей базы
+            await StripeGDPRManager._clean_stripe_references(user_id)
+            
+            print(f"✅ GDPR удаление Stripe данных завершено для пользователя {user_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка GDPR удаления Stripe данных для пользователя {user_id}: {e}")
+            print(f"⚠️ Ошибка удаления Stripe данных: {e}")
+            return False
+    
+    @staticmethod
+    async def _find_user_subscriptions(user_id: int) -> list:
+        """Находит все Stripe подписки пользователя"""
+        try:
+            from db_postgresql import fetch_all
+            
+            result = await fetch_all("""
+                SELECT stripe_subscription_id 
+                FROM user_subscriptions 
+                WHERE user_id = $1 AND stripe_subscription_id IS NOT NULL
+            """, (user_id,))
+            
+            subscriptions = [row['stripe_subscription_id'] for row in result if row['stripe_subscription_id']]
+            print(f"🔍 Найдено {len(subscriptions)} Stripe подписок для пользователя {user_id}")
+            return subscriptions
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка поиска подписок для пользователя {user_id}: {e}")
+            return []
+    
+    @staticmethod
+    async def _cancel_stripe_subscription(subscription_id: str):
+        """Отменяет подписку в Stripe"""
+        try:
+            # Немедленная отмена подписки
+            stripe.Subscription.delete(subscription_id)
+            print(f"✅ Отменена Stripe подписка: {subscription_id}")
+            
+        except stripe.error.InvalidRequestError as e:
+            if "No such subscription" in str(e):
+                print(f"⚠️ Подписка {subscription_id} уже не существует в Stripe")
+            else:
+                logger.error(f"❌ Ошибка отмены подписки {subscription_id}: {e}")
+        except Exception as e:
+            logger.error(f"❌ Ошибка отмены подписки {subscription_id}: {e}")
+    
+    @staticmethod
+    async def _find_stripe_customer(user_id: int) -> str:
+        """Находит Stripe customer_id по user_id (ИСПРАВЛЕННАЯ ВЕРСИЯ)"""
+        try:
+            from db_postgresql import fetch_one
+            
+            # Пока что возвращаем None, так как поле отсутствует
+            # В будущем, когда добавите поле stripe_customer_id, раскомментируйте:
+            
+            # result = await fetch_one("""
+            #     SELECT stripe_customer_id 
+            #     FROM transactions 
+            #     WHERE user_id = $1 AND stripe_customer_id IS NOT NULL
+            #     ORDER BY created_at DESC
+            #     LIMIT 1
+            # """, (user_id,))
+            
+            # if result and result['stripe_customer_id']:
+            #     customer_id = result['stripe_customer_id']
+            #     print(f"🔍 Найден Stripe customer: {customer_id} для пользователя {user_id}")
+            #     return customer_id
+            
+            print(f"⚠️ Поиск Stripe customer пропущен (поле отсутствует) для пользователя {user_id}")
+            return None
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка поиска Stripe customer для пользователя {user_id}: {e}")
+            return None
+    
+    @staticmethod
+    async def _delete_stripe_customer(customer_id: str):
+        """Удаляет customer из Stripe"""
+        try:
+            stripe.Customer.delete(customer_id)
+            print(f"✅ Удален Stripe customer: {customer_id}")
+            
+        except stripe.error.InvalidRequestError as e:
+            if "No such customer" in str(e):
+                print(f"⚠️ Customer {customer_id} уже не существует в Stripe")
+            else:
+                logger.error(f"❌ Ошибка удаления customer {customer_id}: {e}")
+        except Exception as e:
+            logger.error(f"❌ Ошибка удаления customer {customer_id}: {e}")
+    
+    @staticmethod
+    async def _clean_stripe_references(user_id: int):
+        """Очищает все ссылки на Stripe из нашей базы данных (ИСПРАВЛЕННАЯ ВЕРСИЯ)"""
+        try:
+            from db_postgresql import get_db_connection, release_db_connection
+            
+            conn = await get_db_connection()
+            try:
+                # Удаляем записи подписок с Stripe ID
+                result = await conn.execute("""
+                    DELETE FROM user_subscriptions 
+                    WHERE user_id = $1 AND stripe_subscription_id IS NOT NULL
+                """, user_id)  # ✅ ИСПРАВЛЕНО: передаем user_id напрямую, а не кортеж
+                
+                print(f"✅ Stripe ссылки очищены из базы для пользователя {user_id}")
+                
+            finally:
+                await release_db_connection(conn)
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка очистки Stripe ссылок для пользователя {user_id}: {e}")

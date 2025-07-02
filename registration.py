@@ -5,6 +5,54 @@ from datetime import datetime
 from user_state_manager import user_state_manager, user_states
 import re
 
+async def show_gdpr_welcome(user_id: int, message: Message, lang: str):
+    """
+    НОВЫЙ ПЕРВЫЙ ШАГ: Показать GDPR дисклеймер с согласием
+    Это теперь самый первый экран для новых пользователей
+    """
+    
+    # Формируем GDPR дисклеймер
+    disclaimer_text = f"{t('gdpr_welcome_title', lang)}\n\n{t('gdpr_welcome_text', lang)}"
+    
+    # ✅ ИСПРАВЛЕННЫЕ КНОПКИ:
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text=t("gdpr_consent_button", lang),
+            callback_data="gdpr_consent_agree"  # ✅ ПРАВИЛЬНО: согласие
+        )],
+        [InlineKeyboardButton(
+            text=t("change_language", lang),
+            callback_data="change_language_registration"  # ✅ ПРАВИЛЬНО: смена языка
+        )]
+    ])
+    
+    try:
+        if hasattr(message, 'edit_text'):
+            # Если это callback - редактируем сообщение
+            await message.edit_text(
+                disclaimer_text,
+                reply_markup=keyboard,
+                parse_mode="HTML",
+                disable_web_page_preview=True
+            )
+        else:
+            # Если это обычное сообщение - отправляем новое
+            await message.answer(
+                disclaimer_text,
+                reply_markup=keyboard,
+                parse_mode="HTML",
+                disable_web_page_preview=True
+            )
+    except Exception as e:
+        print(f"❌ Ошибка показа GDPR дисклеймера: {e}")
+        # Fallback - отправляем новое сообщение
+        await message.answer(
+            disclaimer_text,
+            reply_markup=keyboard,
+            parse_mode="HTML",
+            disable_web_page_preview=True
+        )
+
 # Старт регистрации
 async def start_registration(user_id: int, message: Message):
     """
@@ -18,17 +66,8 @@ async def start_registration(user_id: int, message: Message):
     # Формируем интро-текст
     intro_text = f"{t('intro_1', lang)}\n\n{t('intro_2', lang)}\n\n{t('ask_name', lang)}"
     
-    # Клавиатура с кнопкой смены языка
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(
-            text=t("change_language", lang), 
-            callback_data="change_language_registration"
-        )]
-    ])
-    
     await message.answer(
         intro_text,
-        reply_markup=keyboard,
         parse_mode="HTML"
     )
 

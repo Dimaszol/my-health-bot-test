@@ -79,12 +79,25 @@ async def send_welcome(message: types.Message):
         await Analytics.track_user_started(user_id, auto_lang, is_new_user)
         
         if user_data is None:
-            # 🆕 НОВЫЙ ПОЛЬЗОВАТЕЛЬ
+            # 🆕 НОВЫЙ ПОЛЬЗОВАТЕЛЬ - ПОКАЗЫВАЕМ GDPR ДИСКЛЕЙМЕР
             await set_user_language(user_id, auto_lang)
-            await start_registration_with_language_option(user_id, message, auto_lang)
+            # ✅ ЗАМЕНИТЬ ЭТУ СТРОКУ:
+            # await start_registration_with_language_option(user_id, message, auto_lang)
+            # НА ЭТУ:
+            from registration import show_gdpr_welcome
+            await show_gdpr_welcome(user_id, message, auto_lang)
             return
             
         # ✅ Существующий пользователь
+        # ✅ ДОБАВИТЬ ПРОВЕРКУ GDPR СОГЛАСИЯ:
+        from db_postgresql import has_gdpr_consent
+        if not await has_gdpr_consent(user_id):
+            # Старый пользователь без GDPR - показываем дисклеймер
+            lang = await get_user_language(user_id) 
+            from registration import show_gdpr_welcome
+            await show_gdpr_welcome(user_id, message, lang)
+            return
+        
         if await is_fully_registered(user_id):
             name = user_data.get('name', 'Пользователь')
             lang = await get_user_language(user_id)
@@ -150,38 +163,72 @@ async def handle_language_change_during_registration(callback: types.CallbackQue
     await callback.answer()
 
 @dp.callback_query(lambda c: c.data.startswith("set_lang_"))
+@handle_telegram_errors  # ✅ ДОБАВИТЬ ЭТОТ ДЕКОРАТОР!
 async def handle_set_language_during_registration(callback: types.CallbackQuery):
-    """Установка языка и возврат к регистрации"""
+    """Обновляем существующий обработчик"""
     user_id = callback.from_user.id
     selected_lang = callback.data.replace("set_lang_", "")
     
-    # Обновляем язык пользователя
-    await set_user_language(user_id, selected_lang)
+    try:  # ✅ ДОБАВИТЬ TRY-CATCH
+        # Обновляем язык пользователя
+        await set_user_language(user_id, selected_lang)
+        
+        # ✅ ПРОВЕРЯЕМ: это GDPR экран или обычная регистрация?
+        user_data = await get_user(user_id)
+        from db_postgresql import has_gdpr_consent
+        
+        if user_data is None or not await has_gdpr_consent(user_id):
+            # Это GDPR экран - показываем дисклеймер заново
+            from registration import show_gdpr_welcome
+            await show_gdpr_welcome(user_id, callback.message, selected_lang)
+        else:
+            # Это обычная регистрация - возвращаемся к регистрации
+            await start_registration(user_id, callback.message)
     
-    # Возвращаемся к началу регистрации с новым языком
-    await start_registration_with_language_option(user_id, callback.message, selected_lang)
+    except Exception as e:
+        print(f"❌ Ошибка установки языка: {e}")
+        # Fallback - показываем GDPR экран
+        try:
+            from registration import show_gdpr_welcome
+            await show_gdpr_welcome(user_id, callback.message, selected_lang)
+        except Exception as e2:
+            print(f"❌ Критическая ошибка: {e2}")
+            await callback.answer("❌ Произошла ошибка. Попробуйте /start", show_alert=True)
     
     await callback.answer()
 
-@dp.message(lambda msg: msg.text in ["🇷 Русский", "🇺🇦 Українська", "🇬🇧 English"])
-@handle_telegram_errors
-async def language_start(message: types.Message):
-    user_id = message.from_user.id
 
-    lang_map = {
-        "🇷 Русский": "ru",
-        "🇺🇦 Українська": "uk",
-        "🇬🇧 English": "en"
-    }
-    lang_code = lang_map[message.text]
-    await set_user_language(user_id, lang_code)
-   
-    if await is_fully_registered(user_id):
-        name = await get_user_name(user_id)
-        keyboard = main_menu_keyboard(lang_code)
-        await message.answer(t("welcome_back", lang_code, name=name), reply_markup=keyboard)
-    else:
-        await start_registration(user_id, message)
+
+@dp.callback_query(lambda c: c.data == "gdpr_consent_agree")
+async def handle_gdpr_consent(callback: types.CallbackQuery):
+    """Единственный новый обработчик для GDPR согласия"""
+    user_id = callback.from_user.id
+    lang = await get_user_language(user_id)
+    
+    try:
+        # Сохраняем согласие в базу
+        from db_postgresql import set_gdpr_consent
+        success = await set_gdpr_consent(user_id, True)
+        
+        if success:
+            await callback.message.edit_text(
+                t("gdpr_consent_given", lang)
+            )
+            
+            # Небольшая задержка для лучшего UX
+            await asyncio.sleep(1)
+            
+            # Запускаем обычную регистрацию
+            from registration import start_registration
+            await start_registration(user_id, callback.message)
+        else:
+            await callback.answer("❌ Ошибка сохранения. Попробуйте еще раз.", show_alert=True)
+            
+    except Exception as e:
+        print(f"❌ Ошибка обработки GDPR согласия: {e}")
+        await callback.answer("❌ Произошла ошибка. Попробуйте еще раз.", show_alert=True)
+    
+    await callback.answer()
 
 @dp.message(lambda msg: msg.text in get_all_values_for_key("main_upload_doc"))
 @handle_telegram_errors
@@ -270,6 +317,114 @@ async def reset_user(message: types.Message):
     await delete_user_completely(user_id)
     lang = "ru"  # ✅ ИСПРАВЛЕНО: используем дефолтный язык после удаления
     await message.answer(t("reset_done", lang))
+
+delete_confirmation_states = {}
+
+@dp.callback_query(lambda c: c.data == "delete_profile_data")
+@handle_telegram_errors  
+async def handle_delete_profile_data(callback: types.CallbackQuery):
+    """Первое предупреждение об удалении данных"""
+    user_id = callback.from_user.id
+    lang = await get_user_language(user_id)
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text=t("delete_data_confirm", lang),
+            callback_data="delete_data_step2"
+        )],
+        [InlineKeyboardButton(
+            text=t("delete_data_cancel", lang), 
+            callback_data="back_to_profile"
+        )]
+    ])
+    
+    await callback.message.edit_text(
+        t("delete_data_warning", lang),
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+@dp.callback_query(lambda c: c.data == "delete_data_step2")
+@handle_telegram_errors
+async def handle_delete_step2(callback: types.CallbackQuery):
+    """Запрос кода подтверждения"""
+    user_id = callback.from_user.id
+    lang = await get_user_language(user_id)
+    
+    # Устанавливаем состояние ожидания кода
+    delete_confirmation_states[user_id] = "awaiting_delete_code"
+    
+    # Убираем inline клавиатуру и показываем текст с кодом
+    await callback.message.edit_text(
+        t("delete_data_code_prompt", lang),
+        parse_mode="HTML"
+    )
+    
+    # Отправляем новое сообщение с reply клавиатурой для ввода
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text=t("cancel", lang))]],
+        resize_keyboard=True
+    )
+    
+    await callback.message.answer(
+        t("delete_data_code_input", lang),
+        reply_markup=keyboard
+    )
+    
+    await callback.answer()
+
+# ✅ ОБРАБОТЧИК ВВОДА КОДА (тот же что был)
+@dp.message(lambda msg: msg.from_user.id in delete_confirmation_states)
+@handle_telegram_errors
+async def handle_delete_confirmation_code(message: types.Message):
+    """Обработка кода подтверждения удаления"""
+    user_id = message.from_user.id
+    lang = await get_user_language(user_id)
+    
+    # Проверяем состояние
+    if delete_confirmation_states.get(user_id) != "awaiting_delete_code":
+        return
+    
+    # Убираем состояние
+    delete_confirmation_states.pop(user_id, None)
+    
+    # Проверяем код
+    if message.text and message.text.strip().upper() == "DELETE":
+        # Код верный - выполняем удаление
+        await message.answer(
+            "🗑️ Удаляю все данные...", 
+            reply_markup=types.ReplyKeyboardRemove()
+        )
+        
+        try:
+            from db_postgresql import delete_user_completely
+            success = await delete_user_completely(user_id)
+            
+            if success:
+                await message.answer(t("delete_data_success", "ru"))  # Дефолтный язык после удаления
+            else:
+                await message.answer("❌ Ошибка удаления. Обратитесь в поддержку.")
+                
+        except Exception as e:
+            print(f"❌ Ошибка GDPR удаления: {e}")
+            await message.answer("❌ Ошибка удаления. Обратитесь в поддержку.")
+            
+    else:
+        # Код неверный
+        await message.answer(
+            t("delete_data_code_wrong", lang),
+            reply_markup=types.ReplyKeyboardRemove()
+        )
+        
+        # Возвращаемся к профилю
+        await asyncio.sleep(1)
+        profile_text = await ProfileManager.get_profile_text(user_id, lang)
+        await message.answer(
+            profile_text,
+            reply_markup=profile_view_keyboard(lang),
+            parse_mode="HTML"
+        )
 
 # 📊 КОМАНДА ДЛЯ СТАТИСТИКИ (ТОЛЬКО ДЛЯ АДМИНА)
 ADMIN_USER_ID = 7374723347  # 🔥 ЗАМЕНИТЕ НА ВАШ TELEGRAM ID!

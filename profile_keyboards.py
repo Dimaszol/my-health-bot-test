@@ -7,6 +7,7 @@ def profile_view_keyboard(lang: str) -> InlineKeyboardMarkup:
     """Клавиатура для просмотра профиля"""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=t("profile_edit_button", lang), callback_data="edit_profile")],
+        [InlineKeyboardButton(text=t("profile_delete_data", lang), callback_data="delete_profile_data")],
         [InlineKeyboardButton(text=t("profile_back_button", lang), callback_data="back_to_settings")]
     ])
 
