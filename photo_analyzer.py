@@ -248,7 +248,8 @@ def create_photo_analysis_prompt(user_question: str, context: str, lang: str) ->
     lang_names = {
         'ru': 'Russian',
         'uk': 'Ukrainian', 
-        'en': 'English'
+        'en': 'English',
+        'de': 'German' 
     }
     response_language = lang_names.get(lang, 'Russian')
     

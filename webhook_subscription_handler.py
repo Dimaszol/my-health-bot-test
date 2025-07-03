@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from aiohttp import web
 from subscription_manager import SubscriptionManager
-from db_postgresql import get_user_name, get_user_language
+from db_postgresql import get_user_name, get_user_language, t
 from notification_system import NotificationSystem
 
 logger = logging.getLogger(__name__)
@@ -98,15 +98,18 @@ class SubscriptionWebhookHandler:
                             }
                             print(f"✅ Разовый платеж {session_id} обработан успешно")
                             
-                            # Отправляем уведомление пользователю если есть user_id
+                            # ✅ ЛОКАЛИЗОВАННОЕ уведомление пользователю
                             if user_id_from_metadata:
                                 try:
+                                    user_id = int(user_id_from_metadata)
+                                    lang = await get_user_language(user_id)
+                                    
+                                    # ✅ ИСПОЛЬЗУЕМ ЛОКАЛИЗОВАННОЕ СООБЩЕНИЕ
+                                    localized_message = t("webhook_payment_processed_auto", lang, message=message)
+                                    
                                     await self.bot.send_message(
-                                        int(user_id_from_metadata),
-                                        f"✅ <b>Платеж обработан автоматически!</b>\n\n"
-                                        f"💳 Разовая покупка завершена\n"
-                                        f"🎉 Ваши лимиты обновлены!\n\n"
-                                        f"📝 {message}",
+                                        user_id,
+                                        localized_message,
                                         parse_mode="HTML"
                                     )
                                     print(f"📧 Уведомление отправлено пользователю {user_id_from_metadata}")
@@ -185,7 +188,8 @@ class SubscriptionWebhookHandler:
                         status = 'active',
                         created_at = EXCLUDED.created_at
                 """, (user_id, subscription_id, package_id, datetime.now()))
-                # Отправляем уведомление пользователю
+                
+                # ✅ ЛОКАЛИЗОВАННОЕ уведомление пользователю
                 await self._send_renewal_notification(user_id, package_id)
                 
                 logger.info(f"✅ Лимиты пополнены для пользователя {user_id}")
@@ -215,7 +219,7 @@ class SubscriptionWebhookHandler:
             user_id = await self._get_user_id_by_stripe_customer(stripe_customer_id)
             
             if user_id:
-                # Отправляем уведомление о проблеме с оплатой
+                # ✅ ЛОКАЛИЗОВАННОЕ уведомление о проблеме с оплатой
                 await self._send_payment_failed_notification(user_id)
                 
                 logger.info(f"📧 Уведомление о неудачном платеже отправлено пользователю {user_id}")
@@ -273,18 +277,12 @@ class SubscriptionWebhookHandler:
             return "basic_sub"  # По умолчанию
     
     async def _send_renewal_notification(self, user_id, package_id):
-        """Отправляет уведомление об успешном продлении"""
+        """✅ ЛОКАЛИЗОВАННАЯ версия - Отправляет уведомление об успешном продлении"""
         try:
-            name = await get_user_name(user_id)
             lang = await get_user_language(user_id)
             
-            messages = {
-                "ru": f"✅ Ваша подписка {package_id} успешно продлена! Лимиты пополнены.",
-                "uk": f"✅ Вашу підписку {package_id} успішно продовжено! Ліміти поповнено.",
-                "en": f"✅ Your {package_id} subscription has been renewed! Limits replenished."
-            }
-            
-            message = messages.get(lang, messages["ru"])
+            # ✅ ИСПОЛЬЗУЕМ ЛОКАЛИЗОВАННОЕ СООБЩЕНИЕ
+            message = t("webhook_subscription_renewed", lang, package_id=package_id)
             
             # Отправляем сообщение через бота
             await self.bot.send_message(user_id, message)
@@ -293,18 +291,12 @@ class SubscriptionWebhookHandler:
             logger.error(f"❌ Ошибка отправки уведомления о продлении: {e}")
     
     async def _send_payment_failed_notification(self, user_id):
-        """Отправляет уведомление о неудачном платеже"""
+        """✅ ЛОКАЛИЗОВАННАЯ версия - Отправляет уведомление о неудачном платеже"""
         try:
-            name = await get_user_name(user_id)
             lang = await get_user_language(user_id)
             
-            messages = {
-                "ru": "⚠️ Проблема с продлением подписки. Проверьте данные карты в настройках Stripe.",
-                "uk": "⚠️ Проблема з продовженням підписки. Перевірте дані картки в налаштуваннях Stripe.",
-                "en": "⚠️ Subscription renewal failed. Please check your card details in Stripe settings."
-            }
-            
-            message = messages.get(lang, messages["ru"])
+            # ✅ ИСПОЛЬЗУЕМ ЛОКАЛИЗОВАННОЕ СООБЩЕНИЕ
+            message = t("webhook_payment_failed", lang)
             
             # Отправляем сообщение через бота
             await self.bot.send_message(user_id, message)

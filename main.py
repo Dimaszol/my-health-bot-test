@@ -40,6 +40,7 @@ from stripe_manager import StripeManager
 from prompt_logger import process_user_question_detailed
 from photo_analyzer import handle_photo_analysis, handle_photo_question, cancel_photo_analysis
 from analytics_system import Analytics
+from faq_handler import handle_faq_main, handle_faq_section
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -1164,13 +1165,14 @@ async def handle_cancel_edit(callback: types.CallbackQuery):
 @dp.callback_query(lambda c: c.data == "settings_faq")
 @handle_telegram_errors
 async def handle_faq_settings(callback: types.CallbackQuery):
-    """Обработка кнопки FAQ (заглушка)"""
-    lang = await get_user_language(callback.from_user.id)
-    
-    await callback.message.edit_text(
-        t("faq_coming_soon", lang)
-    )
-    await callback.answer()
+    """Обработка кнопки FAQ"""
+    await handle_faq_main(callback)
+
+@dp.callback_query(lambda c: c.data.startswith("faq_"))
+@handle_telegram_errors
+async def handle_faq_sections(callback: types.CallbackQuery):
+    """Обработчик всех разделов FAQ"""
+    await handle_faq_section(callback)
 
 @dp.callback_query(lambda c: c.data == "settings_subscription")
 @handle_telegram_errors

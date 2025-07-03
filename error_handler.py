@@ -10,7 +10,7 @@ import time
 import openai
 from openai import RateLimitError, APIError, APIConnectionError, APITimeoutError
 
-# Настройка логирования
+# Настройка логирования - НЕ ЛОКАЛИЗУЕТСЯ (это для разработчиков)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 class BotError(Exception):
     """Базовое исключение для ошибок бота"""
     def __init__(self, message: str, user_message: str = None):
-        self.message = message
-        self.user_message = user_message or "Произошла ошибка. Попробуйте позже."
+        self.message = message  # ЭТО В ЛОГИ - не локализуется
+        self.user_message = user_message or "Произошла ошибка. Попробуйте позже."  # ЭТО ВИДИТ ПОЛЬЗОВАТЕЛЬ - нужна локализация
         super().__init__(self.message)
 
 class OpenAIError(BotError):
@@ -43,78 +43,43 @@ class DatabaseError(BotError):
 
 def get_user_friendly_message(error: Exception, lang: str = "ru") -> str:
     """
+    ✅ ТОЛЬКО ДЛЯ ПОЛЬЗОВАТЕЛЯ - нужна локализация
     Возвращает понятное пользователю сообщение об ошибке
-    
-    Args:
-        error: Исключение
-        lang: Язык пользователя
-        
-    Returns:
-        Сообщение для пользователя
     """
-    messages = {
-        "ru": {
-            "openai_timeout": "⏱️ OpenAI не отвечает. Попробуйте через минуту.",
-            "openai_rate_limit": "⏳ Слишком много запросов. Подождите немного.",
-            "openai_api_error": "🤖 Проблемы с ИИ-сервисом. Попробуйте позже.",
-            "openai_connection": "🌐 Нет связи с сервером ИИ. Проверьте интернет.",
-            "file_too_large": "📁 Файл слишком большой для обработки.",
-            "file_corrupted": "📄 Файл поврежден или не читается.",
-            "database_error": "💾 Проблема с сохранением данных. Попробуйте еще раз.",
-            "unknown_error": "❌ Неожиданная ошибка. Мы уже работаем над исправлением.",
-            "validation_error": "⚠️ Некорректные данные. Проверьте ввод."
-        },
-        "en": {
-            "openai_timeout": "⏱️ OpenAI is not responding. Try again in a minute.",
-            "openai_rate_limit": "⏳ Too many requests. Please wait a moment.",
-            "openai_api_error": "🤖 AI service issues. Please try later.",
-            "openai_connection": "🌐 No connection to AI server. Check your internet.",
-            "file_too_large": "📁 File too large for processing.",
-            "file_corrupted": "📄 File is corrupted or unreadable.",
-            "database_error": "💾 Data saving issue. Please try again.",
-            "unknown_error": "❌ Unexpected error. We're working on a fix.",
-            "validation_error": "⚠️ Invalid data. Please check your input."
-        },
-        "uk": {
-            "openai_timeout": "⏱️ OpenAI не відповідає. Спробуйте через хвилину.",
-            "openai_rate_limit": "⏳ Занадто багато запитів. Зачекайте трохи.",
-            "openai_api_error": "🤖 Проблеми з ШІ-сервісом. Спробуйте пізніше.",
-            "openai_connection": "🌐 Немає зв'язку з сервером ШІ. Перевірте інтернет.",
-            "file_too_large": "📁 Файл занадто великий для обробки.",
-            "file_corrupted": "📄 Файл пошкоджений або не читається.",
-            "database_error": "💾 Проблема із збереженням даних. Спробуйте ще раз.",
-            "unknown_error": "❌ Неочікувана помилка. Ми вже працюємо над виправленням.",
-            "validation_error": "⚠️ Некоректні дані. Перевірте введення."
+    try:
+        from db_postgresql import t
+        
+        # ✅ ЭТИ СООБЩЕНИЯ ВИДИТ ПОЛЬЗОВАТЕЛЬ - локализуем
+        if isinstance(error, APITimeoutError):
+            return t("error_openai_timeout", lang)
+        elif isinstance(error, RateLimitError):
+            return t("error_openai_rate_limit", lang)
+        elif isinstance(error, APIError):
+            return t("error_openai_api_error", lang)
+        elif isinstance(error, APIConnectionError):
+            return t("error_openai_connection", lang)
+        elif isinstance(error, (FileNotFoundError, OSError)):
+            return t("error_file_corrupted", lang)
+        elif isinstance(error, ValueError):
+            return t("error_validation_error", lang)
+        elif "database" in str(error).lower():
+            return t("error_database_error", lang)
+        else:
+            return t("error_unknown_error", lang)
+            
+    except ImportError:
+        # ✅ FALLBACK для пользователя - локализуем
+        fallback_messages = {
+            "ru": "❌ Произошла ошибка. Попробуйте позже.",
+            "en": "❌ An error occurred. Please try again later.",
+            "ua": "❌ Сталася помилка. Спробуйте пізніше.",
+            "de": "❌ Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut."
         }
-    }
-    
-    lang_messages = messages.get(lang, messages["ru"])
-    
-    # Определяем тип ошибки и возвращаем соответствующее сообщение
-    if isinstance(error, APITimeoutError):
-        return lang_messages["openai_timeout"]
-    elif isinstance(error, RateLimitError):
-        return lang_messages["openai_rate_limit"]
-    elif isinstance(error, APIError):
-        return lang_messages["openai_api_error"]
-    elif isinstance(error, APIConnectionError):
-        return lang_messages["openai_connection"]
-    elif isinstance(error, (FileNotFoundError, OSError)):
-        return lang_messages["file_corrupted"]
-    elif isinstance(error, ValueError):
-        return lang_messages["validation_error"]
-    elif "database" in str(error).lower():
-        return lang_messages["database_error"]
-    else:
-        return lang_messages["unknown_error"]
+        return fallback_messages.get(lang, fallback_messages["ru"])
 
 def safe_openai_call(max_retries: int = 3, delay: float = 1.0):
     """
     Декоратор для безопасных вызовов OpenAI API
-    
-    Args:
-        max_retries: Максимальное количество попыток
-        delay: Задержка между попытками в секундах
     """
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
@@ -127,39 +92,45 @@ def safe_openai_call(max_retries: int = 3, delay: float = 1.0):
                     
                 except APITimeoutError as e:
                     last_error = e
+                    # ❌ ЭТО ЛОГИ - НЕ локализуем (только для разработчиков)
                     logger.warning(f"OpenAI timeout на попытке {attempt + 1}: {e}")
                     if attempt < max_retries - 1:
-                        time.sleep(delay * (attempt + 1))  # Увеличиваем задержку
+                        time.sleep(delay * (attempt + 1))
                     
                 except RateLimitError as e:
                     last_error = e
+                    # ❌ ЭТО ЛОГИ - НЕ локализуем
                     logger.warning(f"Rate limit на попытке {attempt + 1}: {e}")
                     if attempt < max_retries - 1:
-                        time.sleep(delay * 2)  # Двойная задержка для rate limit
+                        time.sleep(delay * 2)
                     
                 except APIConnectionError as e:
                     last_error = e
+                    # ❌ ЭТО ЛОГИ - НЕ локализуем
                     logger.error(f"Ошибка соединения с OpenAI на попытке {attempt + 1}: {e}")
                     if attempt < max_retries - 1:
                         time.sleep(delay)
                     
                 except APIError as e:
                     last_error = e
+                    # ❌ ЭТО ЛОГИ - НЕ локализуем
                     logger.error(f"OpenAI API error на попытке {attempt + 1}: {e}")
-                    # Для API ошибок не повторяем
                     break
                     
                 except Exception as e:
                     last_error = e
+                    # ❌ ЭТО ЛОГИ - НЕ локализуем
                     logger.error(f"Неожиданная ошибка в {func.__name__}: {e}")
                     logger.error(traceback.format_exc())
                     break
             
-            # Если все попытки исчерпаны
+            # ❌ ЭТО ЛОГИ - НЕ локализуем
             logger.error(f"Все попытки вызова {func.__name__} исчерпаны. Последняя ошибка: {last_error}")
+            
+            # ✅ А ВОТ ЭТО видит пользователь - локализуем через get_user_friendly_message
             raise OpenAIError(
-                f"OpenAI API недоступен: {last_error}",
-                get_user_friendly_message(last_error)
+                f"OpenAI API недоступен: {last_error}",  # ЭТО В ЛОГИ
+                get_user_friendly_message(last_error)     # ✅ ЭТО ПОЛЬЗОВАТЕЛЮ
             )
         
         return wrapper
@@ -180,20 +151,28 @@ def safe_async_call(max_retries: int = 3, delay: float = 1.0):
                     
                 except Exception as e:
                     last_error = e
+                    # ❌ ЭТО ЛОГИ - НЕ локализуем
                     logger.error(f"Ошибка в асинхронной функции {func.__name__} на попытке {attempt + 1}: {e}")
                     
                     if attempt < max_retries - 1:
                         await asyncio.sleep(delay * (attempt + 1))
             
+            # ❌ ЭТО ЛОГИ - НЕ локализуем
             logger.error(f"Все попытки вызова {func.__name__} исчерпаны")
-            raise BotError(f"Функция {func.__name__} недоступна", get_user_friendly_message(last_error))
+            
+            # ✅ ЭТО ПОЛЬЗОВАТЕЛЮ - локализуем
+            raise BotError(
+                f"Функция {func.__name__} недоступна",  # ЭТО В ЛОГИ
+                get_user_friendly_message(last_error)   # ✅ ЭТО ПОЛЬЗОВАТЕЛЮ
+            )
         
         return wrapper
     return decorator
 
 def handle_telegram_errors(func: Callable) -> Callable:
     """
-    Декоратор для обработки ошибок в Telegram handlers
+    ✅ Декоратор для обработки ошибок в Telegram handlers
+    Отправляет ЛОКАЛИЗОВАННЫЕ сообщения пользователю
     """
     @functools.wraps(func)
     async def wrapper(*args, **kwargs):
@@ -201,55 +180,85 @@ def handle_telegram_errors(func: Callable) -> Callable:
             return await func(*args, **kwargs)
             
         except BotError as e:
-            # Наши кастомные ошибки - отправляем пользователю понятное сообщение
+            # ❌ ЭТО ЛОГИ - НЕ локализуем
             logger.error(f"BotError в {func.__name__}: {e.message}")
             
-            # Получаем message object из args
+            # Получаем message object и user_id
             message = None
+            user_id = None
+            
             for arg in args:
                 if hasattr(arg, 'answer'):
                     message = arg
+                    user_id = getattr(arg, 'from_user', {}).id if hasattr(arg, 'from_user') else None
                     break
                 elif hasattr(arg, 'message') and hasattr(arg.message, 'answer'):
                     message = arg.message
+                    user_id = getattr(arg, 'from_user', {}).id if hasattr(arg, 'from_user') else None
                     break
             
             if message:
                 try:
+                    # ✅ ПОЛУЧАЕМ ЯЗЫК для локализованного сообщения ПОЛЬЗОВАТЕЛЮ
+                    try:
+                        from db_postgresql import get_user_language
+                        lang = await get_user_language(user_id) if user_id else "ru"
+                    except:
+                        lang = "ru"
+                    
+                    # ✅ ЭТО СООБЩЕНИЕ ВИДИТ ПОЛЬЗОВАТЕЛЬ - уже локализовано
                     await message.answer(e.user_message)
+                    
                 except Exception as send_error:
+                    # ❌ ЭТО ЛОГИ - НЕ локализуем
                     logger.error(f"Не удалось отправить сообщение об ошибке: {send_error}")
             
         except Exception as e:
-            # Неожиданные ошибки
+            # ❌ ЭТО ЛОГИ - НЕ локализуем
             logger.error(f"Неожиданная ошибка в {func.__name__}: {e}")
             logger.error(traceback.format_exc())
             
-            # Пытаемся отправить общее сообщение об ошибке
+            # Получаем message object и user_id для ПОЛЬЗОВАТЕЛЯ
             message = None
+            user_id = None
+            
             for arg in args:
                 if hasattr(arg, 'answer'):
                     message = arg
+                    user_id = getattr(arg, 'from_user', {}).id if hasattr(arg, 'from_user') else None
                     break
                 elif hasattr(arg, 'message') and hasattr(arg.message, 'answer'):
                     message = arg.message
+                    user_id = getattr(arg, 'from_user', {}).id if hasattr(arg, 'from_user') else None
                     break
             
             if message:
                 try:
-                    await message.answer("❌ Произошла неожиданная ошибка. Попробуйте позже.")
+                    # ✅ ЛОКАЛИЗОВАННОЕ сообщение для ПОЛЬЗОВАТЕЛЯ
+                    try:
+                        from db_postgresql import get_user_language, t
+                        lang = await get_user_language(user_id) if user_id else "ru"
+                        error_message = t("error_unexpected_general", lang)
+                    except:
+                        # Fallback сообщения для ПОЛЬЗОВАТЕЛЯ
+                        fallback_messages = {
+                            "ru": "❌ Произошла неожиданная ошибка. Попробуйте позже.",
+                            "en": "❌ An unexpected error occurred. Please try again later.",
+                            "ua": "❌ Сталася неочікувана помилка. Спробуйте пізніше.",
+                            "de": "❌ Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut."
+                        }
+                        error_message = fallback_messages["ru"]
+                    
+                    # ✅ ЭТО ВИДИТ ПОЛЬЗОВАТЕЛЬ
+                    await message.answer(error_message)
                 except Exception:
-                    pass  # Ничего не можем сделать
+                    pass
     
     return wrapper
 
-# Функция для проверки состояния OpenAI API
 def check_openai_health() -> bool:
     """
     Проверяет доступность OpenAI API
-    
-    Returns:
-        True если API доступен
     """
     try:
         from openai import OpenAI
@@ -257,7 +266,6 @@ def check_openai_health() -> bool:
         
         client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         
-        # Простой тестовый запрос
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": "test"}],
@@ -266,17 +274,13 @@ def check_openai_health() -> bool:
         return True
         
     except Exception as e:
+        # ❌ ЭТО ЛОГИ - НЕ локализуем
         logger.error(f"OpenAI API недоступен: {e}")
         return False
 
-# Функция для логирования ошибок с контекстом
 def log_error_with_context(error: Exception, context: dict = None):
     """
-    Логирует ошибку с дополнительным контекстом
-    
-    Args:
-        error: Исключение
-        context: Дополнительная информация (user_id, action, etc.)
+    ❌ ЭТО ВСЕ ЛОГИ - НЕ локализуем (только для разработчиков)
     """
     context = context or {}
     
@@ -287,15 +291,15 @@ def log_error_with_context(error: Exception, context: dict = None):
         "context": context
     }
     
+    # ❌ ЭТО ЛОГИ - НЕ локализуем
     logger.error(f"Детальная ошибка: {error_info}")
     
-    # Если это критическая ошибка - можно добавить отправку уведомления админу
     if isinstance(error, (DatabaseError, APIError)):
+        # ❌ ЭТО ЛОГИ - НЕ локализуем
         logger.critical(f"КРИТИЧЕСКАЯ ОШИБКА: {error_info}")
 
-# Пример использования декораторов (для справки)
+# Пример использования (для справки)
 if __name__ == "__main__":
-    # Тест декоратора
     @safe_openai_call(max_retries=2, delay=1.0)
     def test_openai():
         raise APITimeoutError("Test timeout")
@@ -303,4 +307,5 @@ if __name__ == "__main__":
     try:
         test_openai()
     except OpenAIError as e:
+        # ❌ ЭТО ЛОГИ/ТЕСТ - НЕ локализуем
         print(f"Поймана ошибка: {e.user_message}")

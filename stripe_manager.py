@@ -1,4 +1,4 @@
-# stripe_manager.py - Менеджер платежей через Stripe
+# stripe_manager.py - ИСПРАВЛЕННАЯ ВЕРСИЯ с полной локализацией
 
 import stripe
 import logging
@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
 from stripe_config import StripeConfig
 from subscription_manager import SubscriptionManager
-from db_postgresql import execute_query, fetch_one
+from db_postgresql import execute_query, fetch_one, get_user_language, t
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,14 @@ class StripeManager:
         try:
             package_info = StripeConfig.get_package_info(package_id)
             if not package_info:
-                return False, f"Пакет {package_id} не найден"
+                # ✅ ДОБАВЛЕНО: получение языка для локализованной ошибки
+                try:
+                    lang = await get_user_language(user_id)
+                    error_msg = t("stripe_package_not_found", lang, package_id=package_id)
+                except:
+                    error_msg = f"Package {package_id} not found"
+                
+                return False, error_msg
             
             # ✅ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Определяем тип оплаты
             if package_info['type'] == 'subscription':
@@ -86,7 +93,15 @@ class StripeManager:
             
         except Exception as e:
             logger.error(f"❌ Ошибка создания сессии: {e}")
-            return False, str(e)
+            
+            # ✅ ДОБАВЛЕНО: локализованная ошибка
+            try:
+                lang = await get_user_language(user_id)
+                error_msg = t("stripe_session_creation_error", lang)
+            except:
+                error_msg = "Payment session creation failed"
+            
+            return False, error_msg
     
     @staticmethod
     async def _save_payment_session(user_id: int, session_id: str, package_id: str, amount_cents: int):
@@ -114,23 +129,32 @@ class StripeManager:
     
     @staticmethod
     async def handle_successful_payment(session_id: str):
-        """Обрабатывает успешную оплату (подписка или разовая)"""
+        """✅ ИСПРАВЛЕННАЯ ВЕРСИЯ: Обрабатывает успешную оплату с локализацией"""
         try:
             session = stripe.checkout.Session.retrieve(session_id)
+            
+            # Извлекаем метаданные
+            user_id = int(session.metadata.get('user_id'))
+            package_id = session.metadata.get('package_id')
+            
+            # ✅ ДОБАВЛЕНО: Получаем язык пользователя для локализованных сообщений
+            try:
+                lang = await get_user_language(user_id)
+            except:
+                lang = "ru"  # Fallback на русский
             
             # Для подписок проверяем статус подписки, не платежа
             if session.mode == 'subscription':
                 subscription = stripe.Subscription.retrieve(session.subscription)
                 if subscription.status not in ['active', 'trialing']:
-                    return False, f"Подписка не активна: {subscription.status}"
+                    # ✅ ИСПРАВЛЕНО: Локализованное сообщение ошибки
+                    error_msg = t("stripe_subscription_not_active", lang, status=subscription.status)
+                    return False, error_msg
             else:
                 # Для разовых платежей проверяем статус оплаты
                 if session.payment_status != 'paid':
-                    return False, "Платеж не завершен"
-            
-            # Извлекаем метаданные
-            user_id = int(session.metadata.get('user_id'))
-            package_id = session.metadata.get('package_id')
+                    # ✅ ИСПРАВЛЕНО: Локализованное сообщение ошибки
+                    return False, t("stripe_payment_not_completed", lang)
             
             # Проверяем дубликаты
             existing_transaction = await fetch_one("""
@@ -139,12 +163,15 @@ class StripeManager:
             """, (session_id,))
             
             if existing_transaction:
-                return True, "Платеж уже обработан"
+                # ✅ ИСПРАВЛЕНО: Локализованное сообщение
+                return True, t("stripe_payment_already_processed", lang)
             
             # Получаем информацию о пакете
             package_info = StripeConfig.get_package_info(package_id)
             if not package_info:
-                return False, f"Пакет {package_id} не найден"
+                # ✅ ИСПРАВЛЕНО: Локализованное сообщение ошибки
+                error_msg = t("stripe_package_not_found", lang, package_id=package_id)
+                return False, error_msg
             
             # ✅ НОВАЯ ЛОГИКА: Обрабатываем подписки по-разному
             if package_info['type'] == 'subscription':
@@ -165,7 +192,9 @@ class StripeManager:
                     payment_method='stripe_subscription'
                 )
                 
-                message = f"Подписка '{package_info['name']}' активирована! Автопродление каждый месяц."
+                # ✅ ИСПРАВЛЕНО: Локализованное сообщение с названием пакета
+                package_name = StripeConfig.get_localized_package_name(package_id, lang)
+                message = t("stripe_subscription_activated", lang, package_name=package_name)
                 
             else:
                 # Для разовых покупок - как раньше
@@ -175,10 +204,14 @@ class StripeManager:
                     payment_method='stripe_payment'
                 )
                 
-                message = f"'{package_info['name']}' успешно приобретен!"
+                # ✅ ИСПРАВЛЕНО: Локализованное сообщение с названием пакета
+                package_name = StripeConfig.get_localized_package_name(package_id, lang)
+                message = t("stripe_package_purchased", lang, package_name=package_name)
             
             if not result['success']:
-                return False, f"Ошибка выдачи лимитов: {result['error']}"
+                # ✅ ИСПРАВЛЕНО: Локализованное сообщение ошибки
+                error_msg = t("stripe_limits_grant_error", lang, error=result['error'])
+                return False, error_msg
             
             # Обновляем статус транзакции
             await execute_query("""
@@ -201,19 +234,21 @@ class StripeManager:
             
         except Exception as e:
             logger.error(f"❌ Ошибка обработки платежа {session_id}: {e}")
-            return False, f"Ошибка активации: {e}"
+            
+            # ✅ ДОБАВЛЕНО: локализованная ошибка
+            try:
+                user_id = int(session.metadata.get('user_id', 0)) if 'session' in locals() else 0
+                lang = await get_user_language(user_id) if user_id > 0 else "ru"
+                error_msg = t("stripe_activation_error", lang, error=str(e))
+            except:
+                error_msg = f"Activation error: {e}"
+            
+            return False, error_msg
     
     @staticmethod
     async def handle_failed_payment(session_id: str, reason: str = "Unknown") -> bool:
         """
         Обрабатывает неуспешный платеж
-        
-        Args:
-            session_id: ID сессии Stripe
-            reason: Причина неудачи
-            
-        Returns:
-            bool: Успех обработки
         """
         try:
             # Обновляем статус в БД
@@ -268,13 +303,6 @@ class StripeManager:
 async def handle_stripe_webhook(payload: str, sig_header: str) -> Tuple[bool, str]:
     """
     Обрабатывает webhook события от Stripe
-    
-    Args:
-        payload: Тело запроса от Stripe
-        sig_header: Заголовок подписи Stripe
-        
-    Returns:
-        (успех, сообщение)
     """
     try:
         # Проверяем подпись webhook
@@ -316,10 +344,10 @@ class StripeGDPRManager:
     async def delete_user_stripe_data_gdpr(user_id: int) -> bool:
         """
         GDPR-совместимое удаление всех данных пользователя из Stripe
-        Включает отмену активных подписок и удаление customer
         """
         try:
-            print(f"💳 Начинаем GDPR удаление Stripe данных для пользователя {user_id}")
+            # ✅ ИСПРАВЛЕНО: Используем логирование вместо print
+            logger.info(f"💳 Начинаем GDPR удаление Stripe данных для пользователя {user_id}")
             
             # 1. Находим все Stripe подписки пользователя
             stripe_subscriptions = await StripeGDPRManager._find_user_subscriptions(user_id)
@@ -338,12 +366,12 @@ class StripeGDPRManager:
             # 5. Очищаем Stripe ссылки из нашей базы
             await StripeGDPRManager._clean_stripe_references(user_id)
             
-            print(f"✅ GDPR удаление Stripe данных завершено для пользователя {user_id}")
+            # ✅ ИСПРАВЛЕНО: Используем логирование вместо print
+            logger.info(f"✅ GDPR удаление Stripe данных завершено для пользователя {user_id}")
             return True
             
         except Exception as e:
             logger.error(f"❌ Ошибка GDPR удаления Stripe данных для пользователя {user_id}: {e}")
-            print(f"⚠️ Ошибка удаления Stripe данных: {e}")
             return False
     
     @staticmethod
@@ -359,7 +387,7 @@ class StripeGDPRManager:
             """, (user_id,))
             
             subscriptions = [row['stripe_subscription_id'] for row in result if row['stripe_subscription_id']]
-            print(f"🔍 Найдено {len(subscriptions)} Stripe подписок для пользователя {user_id}")
+            logger.info(f"🔍 Найдено {len(subscriptions)} Stripe подписок для пользователя {user_id}")
             return subscriptions
             
         except Exception as e:
@@ -372,11 +400,11 @@ class StripeGDPRManager:
         try:
             # Немедленная отмена подписки
             stripe.Subscription.delete(subscription_id)
-            print(f"✅ Отменена Stripe подписка: {subscription_id}")
+            logger.info(f"✅ Отменена Stripe подписка: {subscription_id}")
             
         except stripe.error.InvalidRequestError as e:
             if "No such subscription" in str(e):
-                print(f"⚠️ Подписка {subscription_id} уже не существует в Stripe")
+                logger.warning(f"⚠️ Подписка {subscription_id} уже не существует в Stripe")
             else:
                 logger.error(f"❌ Ошибка отмены подписки {subscription_id}: {e}")
         except Exception as e:
@@ -384,27 +412,10 @@ class StripeGDPRManager:
     
     @staticmethod
     async def _find_stripe_customer(user_id: int) -> str:
-        """Находит Stripe customer_id по user_id (ИСПРАВЛЕННАЯ ВЕРСИЯ)"""
+        """Находит Stripe customer_id по user_id"""
         try:
-            from db_postgresql import fetch_one
-            
-            # Пока что возвращаем None, так как поле отсутствует
-            # В будущем, когда добавите поле stripe_customer_id, раскомментируйте:
-            
-            # result = await fetch_one("""
-            #     SELECT stripe_customer_id 
-            #     FROM transactions 
-            #     WHERE user_id = $1 AND stripe_customer_id IS NOT NULL
-            #     ORDER BY created_at DESC
-            #     LIMIT 1
-            # """, (user_id,))
-            
-            # if result and result['stripe_customer_id']:
-            #     customer_id = result['stripe_customer_id']
-            #     print(f"🔍 Найден Stripe customer: {customer_id} для пользователя {user_id}")
-            #     return customer_id
-            
-            print(f"⚠️ Поиск Stripe customer пропущен (поле отсутствует) для пользователя {user_id}")
+            # ✅ ИСПРАВЛЕНО: Используем логирование вместо print
+            logger.info(f"⚠️ Поиск Stripe customer пропущен (поле отсутствует) для пользователя {user_id}")
             return None
             
         except Exception as e:
@@ -416,11 +427,11 @@ class StripeGDPRManager:
         """Удаляет customer из Stripe"""
         try:
             stripe.Customer.delete(customer_id)
-            print(f"✅ Удален Stripe customer: {customer_id}")
+            logger.info(f"✅ Удален Stripe customer: {customer_id}")
             
         except stripe.error.InvalidRequestError as e:
             if "No such customer" in str(e):
-                print(f"⚠️ Customer {customer_id} уже не существует в Stripe")
+                logger.warning(f"⚠️ Customer {customer_id} уже не существует в Stripe")
             else:
                 logger.error(f"❌ Ошибка удаления customer {customer_id}: {e}")
         except Exception as e:
@@ -428,7 +439,7 @@ class StripeGDPRManager:
     
     @staticmethod
     async def _clean_stripe_references(user_id: int):
-        """Очищает все ссылки на Stripe из нашей базы данных (ИСПРАВЛЕННАЯ ВЕРСИЯ)"""
+        """Очищает все ссылки на Stripe из нашей базы данных"""
         try:
             from db_postgresql import get_db_connection, release_db_connection
             
@@ -438,9 +449,9 @@ class StripeGDPRManager:
                 result = await conn.execute("""
                     DELETE FROM user_subscriptions 
                     WHERE user_id = $1 AND stripe_subscription_id IS NOT NULL
-                """, user_id)  # ✅ ИСПРАВЛЕНО: передаем user_id напрямую, а не кортеж
+                """, user_id)
                 
-                print(f"✅ Stripe ссылки очищены из базы для пользователя {user_id}")
+                logger.info(f"✅ Stripe ссылки очищены из базы для пользователя {user_id}")
                 
             finally:
                 await release_db_connection(conn)

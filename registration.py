@@ -1,3 +1,5 @@
+# registration.py - ИСПРАВЛЕННАЯ ВЕРСИЯ с полной локализацией
+
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
 from db_postgresql import save_user, update_user_field, t, get_user_language, get_user_name
 from keyboards import skip_keyboard, gender_keyboard, smoking_keyboard, alcohol_keyboard, activity_keyboard, registration_keyboard, show_main_menu
@@ -186,7 +188,7 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
         return True
 
     if step == "awaiting_gender":
-        # ✅ ВАЛИДАЦИЯ ПОЛА
+        # ✅ ИСПРАВЛЕНО: Локализованная валидация пола
         valid_genders = get_valid_gender_values(lang)
         
         if message.text == t("skip", lang):
@@ -195,7 +197,7 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
             state["gender"] = message.text.strip()
         else:
             await message.answer(
-                "⚠️ Пожалуйста, выберите пол, используя кнопки:",
+                t("use_buttons_please", lang),  # ✅ ЛОКАЛИЗОВАНО
                 reply_markup=gender_keyboard(lang)
             )
             return True
@@ -252,7 +254,7 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
         
         if message.text not in valid_profile_options:
             await message.answer(
-                t("use_buttons_please", lang),
+                t("use_buttons_please", lang),  # ✅ ЛОКАЛИЗОВАНО
                 reply_markup=registration_keyboard(lang)
             )
             return True
@@ -292,12 +294,12 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
         return True
 
     if step == "smoking":
-        # ✅ ВАЛИДАЦИЯ КУРЕНИЯ
+        # ✅ ИСПРАВЛЕНО: Локализованная валидация курения
         valid_smoking = get_valid_smoking_values(lang)
         
         if message.text not in valid_smoking:
             await message.answer(
-                "⚠️ Пожалуйста, выберите один из вариантов, используя кнопки:",
+                t("use_buttons_please", lang),  # ✅ ЛОКАЛИЗОВАНО
                 reply_markup=smoking_keyboard(lang)
             )
             return True
@@ -309,12 +311,12 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
         return True
 
     if step == "alcohol":
-        # ✅ ВАЛИДАЦИЯ АЛКОГОЛЯ
+        # ✅ ИСПРАВЛЕНО: Локализованная валидация алкоголя
         valid_alcohol = get_valid_alcohol_values(lang)
         
         if message.text not in valid_alcohol:
             await message.answer(
-                "⚠️ Пожалуйста, выберите один из вариантов, используя кнопки:",
+                t("use_buttons_please", lang),  # ✅ ЛОКАЛИЗОВАНО
                 reply_markup=alcohol_keyboard(lang)
             )
             return True
@@ -326,18 +328,18 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
         return True
 
     if step == "physical_activity":
-        # ✅ ВАЛИДАЦИЯ АКТИВНОСТИ
+        # ✅ ИСПРАВЛЕНО: Локализованная валидация активности
         valid_activity = get_valid_activity_values(lang)
         
         if message.text not in valid_activity:
             await message.answer(
-                "⚠️ Пожалуйста, выберите один из вариантов, используя кнопки:",
+                t("use_buttons_please", lang),  # ✅ ЛОКАЛИЗОВАНО
                 reply_markup=activity_keyboard(lang)
             )
             return True
             
         if message.text != t("skip", lang):
-            # ✅ ИСПРАВЛЕННЫЙ маппинг активности с немецким языком
+            # ✅ ИСПРАВЛЕННЫЙ маппинг активности - сохраняем оригинальные значения по языкам
             activity_map = {
                 # Русские варианты
                 "❌ Нет активности": "Нет активности",
@@ -347,11 +349,11 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
                 "🏆 Профессиональная": "Профессиональная",
                 
                 # Украинские варианты
-                "❌ Відсутня активність": "Нет активности",
-                "🚶 Низька": "Низкая",
-                "🏃 Середня": "Средняя",
-                "💪 Висока": "Высокая", 
-                "🏆 Професійна": "Профессиональная",
+                "❌ Відсутня активність": "Відсутня активність",
+                "🚶 Низька": "Низька",
+                "🏃 Середня": "Середня",
+                "💪 Висока": "Висока", 
+                "🏆 Професійна": "Професійна",
                 
                 # Английские варианты
                 "❌ No activity": "No activity",
@@ -360,12 +362,12 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
                 "💪 High": "High",
                 "🏆 Professional": "Professional",
                 
-                # Немецкие варианты
-                "❌ Keine Aktivität": "No activity",
-                "🚶 Niedrig": "Low",
-                "🏃 Mittel": "Medium",
-                "💪 Hoch": "High",
-                "🏆 Professionell": "Professional"
+                # ✅ ИСПРАВЛЕНО: Немецкие варианты сохраняют немецкие значения
+                "❌ Keine Aktivität": "Keine Aktivität",
+                "🚶 Niedrig": "Niedrig",
+                "🏃 Mittel": "Mittel",
+                "💪 Hoch": "Hoch",
+                "🏆 Professionell": "Professionell"
             }
             
             # Получаем унифицированное значение
@@ -379,9 +381,9 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
     if step == "family_history":
         if message.text != t("skip", lang):
             text = message.text.strip() if message.text else ""
-            # ✅ ВАЛИДАЦИЯ ТЕКСТОВОГО ПОЛЯ
+            # ✅ ИСПРАВЛЕНО: Локализованная валидация семейной истории
             if not validate_text_field(text, 300):
-                await message.answer("⚠️ Слишком длинный текст. Максимум 300 символов.")
+                await message.answer(t("text_too_long", lang, max_len=300))  # ✅ ЛОКАЛИЗОВАНО
                 return True
             await update_user_field(user_id, "family_history", text)
         user_states[user_id] = None

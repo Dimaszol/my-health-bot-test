@@ -152,7 +152,8 @@ async def maybe_update_summary(user_id):
     lang_names = {
         'ru': 'Russian',
         'uk': 'Ukrainian', 
-        'en': 'English'
+        'en': 'English',
+        'de': 'German' 
     }
     
     prompt = (

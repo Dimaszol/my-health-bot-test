@@ -134,7 +134,8 @@ async def extract_medical_events_gpt(document_text: str, existing_timeline: List
     lang_names = {
         'ru': 'Russian',
         'uk': 'Ukrainian',
-        'en': 'English'
+        'en': 'English',
+        'de': 'German' 
     }
     response_lang = lang_names.get(lang, 'Russian')
     
