@@ -261,7 +261,13 @@ async def prompt_document_upload(message: types.Message):
     
     # Если лимиты есть - разрешаем загрузку
     user_states[message.from_user.id] = "awaiting_document"
-    await message.answer(t("please_send_file", lang))
+    
+    # ✅ ДОБАВЛЯЕМ: Показываем кнопку "Отмена" вместо главного меню
+    from keyboards import cancel_keyboard
+    await message.answer(
+        t("please_send_file", lang), 
+        reply_markup=cancel_keyboard(lang)  # ← ВОТ ЭТО ВАЖНО!
+    )
 
 @dp.message(lambda msg: msg.text in get_all_values_for_key("main_note"))
 @handle_telegram_errors
@@ -269,11 +275,13 @@ async def prompt_memory_note(message: types.Message):
     user_id = message.from_user.id
     lang = await get_user_language(user_id)
     user_states[message.from_user.id] = "awaiting_memory_note"
-    keyboard = ReplyKeyboardMarkup(
-         keyboard=[[KeyboardButton(text=t("cancel", lang))]],
-        resize_keyboard=True
+    
+    # ✅ ИСПРАВЛЕНО: используем cancel_keyboard из keyboards
+    from keyboards import cancel_keyboard
+    await message.answer(
+        t("write_note", lang), 
+        reply_markup=cancel_keyboard(lang)
     )
-    await message.answer(t("write_note", lang), reply_markup=keyboard)
 
 @dp.message(lambda msg: msg.text in get_all_values_for_key("main_documents"))
 @handle_telegram_errors
@@ -431,6 +439,8 @@ async def handle_delete_confirmation_code(message: types.Message):
             t("delete_data_code_wrong", lang),
             reply_markup=types.ReplyKeyboardRemove()
         )
+        from keyboards import show_main_menu
+        await show_main_menu(message, lang)
         
         # Возвращаемся к профилю
         await asyncio.sleep(1)
@@ -535,6 +545,15 @@ async def handle_user_message(message: types.Message):
     
     # ✅ ИСПРАВЛЕНИЕ 1: Обработка отмены ПЕРВЫМ ДЕЛОМ (до всех других проверок)
     if message.text and message.text in [t("cancel", lang)]:
+        if user_id in delete_confirmation_states:
+            delete_confirmation_states.pop(user_id, None)  # Убираем состояние
+            await message.answer(
+                "❌ Удаление профиля отменено",
+                reply_markup=types.ReplyKeyboardRemove()
+            )
+            # ✅ ПОКАЗЫВАЕМ ГЛАВНОЕ МЕНЮ
+            await show_main_menu(message, lang)
+            return
         current_state = user_states.get(user_id)
         
         # Сбрасываем состояние пользователя
@@ -581,6 +600,8 @@ async def handle_user_message(message: types.Message):
         if message.text is not None:  # Если отправлен текст вместо файла
             await message.answer(t("unrecognized_document", lang))
             user_states[user_id] = None
+            # ✅ ДОБАВЛЯЕМ: Возвращаем главное меню
+            await show_main_menu(message, lang)
             return
     
     # Обработка файлов
@@ -765,9 +786,10 @@ async def handle_user_message(message: types.Message):
                     await replace_medications(user_id, new_list)
                     await update_user_profile_medications(user_id)
                     user_states[user_id] = None
-                    await message.answer(t("schedule_updated", lang))
-                    
-                    # ✅ ИСПРАВЛЕНИЕ: показываем главное меню после обновления лекарств
+                    await message.answer(
+                        t("schedule_updated", lang),
+                        reply_markup=types.ReplyKeyboardRemove()  # ✅ ДОБАВЬ ЭТО!
+                    )
                     await show_main_menu(message, lang)
                 else:
                     await message.answer(t("schedule_update_failed", lang))
@@ -1160,6 +1182,7 @@ async def handle_cancel_edit(callback: types.CallbackQuery):
         t("profile_edit_cancelled", lang),
         parse_mode="HTML"
     )
+    await show_main_menu(callback.message, lang)
     await callback.answer()
 
 @dp.callback_query(lambda c: c.data == "settings_faq")
@@ -1286,7 +1309,6 @@ async def handle_button_action(callback: types.CallbackQuery):
             user_states[user_id]["offset"] += 5
             await handle_show_documents(callback.message, user_id=user_id)
         else:
-            lang = await get_user_language(user_id)  # ✅ ИСПРАВЛЕНО: добавлен await
             await callback.message.answer(t("unknown_state", lang))
         await callback.answer()
         return
@@ -1294,7 +1316,13 @@ async def handle_button_action(callback: types.CallbackQuery):
     if callback.data == "edit_meds":
         user_states[callback.from_user.id] = "editing_medications"
         lang = await get_user_language(callback.from_user.id)
-        await callback.message.answer(t("edit_schedule", lang))
+        
+        # ✅ ДОБАВЛЯЕМ: Показываем кнопку "Отмена"
+        from keyboards import cancel_keyboard
+        await callback.message.answer(
+            t("edit_schedule", lang),
+            reply_markup=cancel_keyboard(lang)  # ← ВОТ ЭТО ВАЖНО!
+        )
         await callback.answer()
         return
     
@@ -1325,6 +1353,8 @@ async def handle_button_action(callback: types.CallbackQuery):
         
         if not doc or doc["user_id"] != user_id:
             await callback.message.answer(t("document_not_found", lang))
+            # ✅ ДОБАВЛЯЕМ ГЛАВНОЕ МЕНЮ ЕСЛИ ДОКУМЕНТ НЕ НАЙДЕН
+            await show_main_menu(callback.message, lang)
             return
 
         if action == "view":
@@ -1333,26 +1363,39 @@ async def handle_button_action(callback: types.CallbackQuery):
             clean_text = html.escape(text[:4000])
             from utils.security import safe_send_message
             await safe_send_message(callback.message, clean_text, title=title)
+            # ✅ ДОБАВЛЯЕМ ГЛАВНОЕ МЕНЮ ПОСЛЕ ПРОСМОТРА
+            await show_main_menu(callback.message, lang)
+            
         elif action == "rename":
             user_states[user_id] = f"rename_{doc_id}"
             await callback.message.answer(t("enter_new_name_doc", lang))
+            
         elif action == "delete":
             await delete_document(doc_id)
             await callback.message.answer(t("document_deleted", lang))
+            # ✅ ДОБАВЛЯЕМ ГЛАВНОЕ МЕНЮ ПОСЛЕ УДАЛЕНИЯ
+            await show_main_menu(callback.message, lang)
+            
         elif action == "download":
             file_path = doc.get("file_path")
             if not file_path or not os.path.exists(file_path):
                 await callback.message.answer(t("file_not_found", lang))
+                # ✅ ДОБАВЛЯЕМ ГЛАВНОЕ МЕНЮ ЕСЛИ ФАЙЛ НЕ НАЙДЕН
+                await show_main_menu(callback.message, lang)
                 return
             await callback.message.answer_document(types.FSInputFile(path=file_path))
+            # ✅ ДОБАВЛЯЕМ ГЛАВНОЕ МЕНЮ ПОСЛЕ СКАЧИВАНИЯ
+            await show_main_menu(callback.message, lang)
             
     except Exception as e:
         user_id = callback.from_user.id
         lang = await get_user_language(user_id)
         log_error_with_context(e, {"user_id": user_id, "action": "button_callback", "callback_data": callback.data})
         await callback.message.answer(get_user_friendly_message(e, lang))
-
-# 🚀 ЗАМЕНИТЕ ФУНКЦИЮ main() В КОНЦЕ ВАШЕГО main.py НА ЭТУ:
+        # ✅ ДОБАВЛЯЕМ ГЛАВНОЕ МЕНЮ ДАЖЕ ПРИ ОШИБКАХ
+        await show_main_menu(callback.message, lang)
+    
+    await callback.answer()
 
 @handle_telegram_errors
 async def main():

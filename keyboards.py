@@ -81,3 +81,14 @@ def registration_keyboard(lang):
         ],
         resize_keyboard=True
     )
+
+def cancel_keyboard(lang):
+    """Клавиатура с кнопкой отмены"""
+    from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+    from db_postgresql import t
+    
+    return ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text=t("cancel", lang))]],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )

@@ -6,7 +6,7 @@ from typing import Optional
 from db_postgresql import t
 
 def subscription_main_menu(lang: str, current_subscription: Optional[str] = None) -> InlineKeyboardMarkup:
-    """✅ УПРОЩЕННАЯ версия - показывает кнопку отмены если есть ЛЮБАЯ подписка"""
+    """✅ ИСПРАВЛЕННАЯ версия с правильной локализацией"""
     
     buttons = []
     
@@ -14,13 +14,17 @@ def subscription_main_menu(lang: str, current_subscription: Optional[str] = None
     packages = StripeConfig.get_all_packages()
     
     for package_id, package_info in packages.items():
+        # ✅ ИСПРАВЛЕНО: Используем функцию локализации вместо прямого поля
+        package_name = StripeConfig.get_localized_package_name(package_id, lang)
+        
         # Формируем красивое описание
         if package_info['type'] == 'subscription':
             price_text = f"{package_info['price_display']}{t('subscription_monthly', lang)}"
         else:
             price_text = f"{package_info['price_display']} {t('subscription_one_time', lang)}"
         
-        button_text = f"{package_info['user_friendly_name']} — {price_text}"
+        # ✅ ИСПРАВЛЕНО: Используем локализованное название
+        button_text = f"{package_name} — {price_text}"
         
         # ✅ УПРОЩЕНИЕ: Проверяем активную подписку
         if current_subscription == package_id:
@@ -119,8 +123,9 @@ def get_package_description(package_id: str, lang: str) -> str:
     # Формируем описание
     description_parts = []
     
-    # Заголовок
-    description_parts.append(f"**{package_info['user_friendly_name']}**")
+    # ✅ ИСПРАВЛЕНО: Используем локализованное название
+    package_name = StripeConfig.get_localized_package_name(package_id, lang)
+    description_parts.append(f"**{package_name}**")
     
     # Цена
     if package_info['type'] == 'subscription':
@@ -134,9 +139,9 @@ def get_package_description(package_id: str, lang: str) -> str:
     description_parts.append(type_desc)
     description_parts.append("")  # Пустая строка
     
-    # Особенности
+    # ✅ ИСПРАВЛЕНО: Используем локализованные особенности
     description_parts.append(t("package_features_title", lang))
-    features = package_info.get('features', {}).get(lang, [])
+    features = StripeConfig.get_localized_package_features(package_id, lang)
     for feature in features:
         description_parts.append(f"✅ {feature}")
     

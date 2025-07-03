@@ -233,6 +233,10 @@ async def handle_document_upload(message: types.Message, bot):
             reply_markup=keyboard,
             parse_mode="HTML"
         )
+        user_states[user_id] = None
+        from keyboards import show_main_menu
+        await show_main_menu(message, lang)
+
 
         print("✅ Документ успешно обработан")
 

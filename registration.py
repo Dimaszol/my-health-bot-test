@@ -87,7 +87,7 @@ def validate_name(name: str) -> bool:
         return False
     return True
 
-def validate_text_field(text: str, max_length: int = 200) -> bool:
+def validate_text_field(text: str, max_length: int = 50) -> bool:  # ✅ ИЗМЕНЕНО: по умолчанию 50
     """Валидация текстовых полей (аллергии, хронические заболевания и т.д.)"""
     if not text:
         return True  # Пустые поля допустимы
@@ -272,9 +272,9 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
     if step == "chronic_conditions":
         if message.text != t("skip", lang):
             text = message.text.strip() if message.text else ""
-            # ✅ ВАЛИДАЦИЯ ТЕКСТОВОГО ПОЛЯ
-            if not validate_text_field(text, 100):
-                await message.answer(t("text_too_long", lang, max_len=100))
+            # ✅ ИСПРАВЛЕНО: унифицируем до 50 символов
+            if not validate_text_field(text, 50):  # БЫЛО: 100
+                await message.answer(t("text_too_long", lang, max_len=50))  # БЫЛО: 100
                 return True
             await update_user_field(user_id, "chronic_conditions", text)
         state["step"] = "allergies"
@@ -381,9 +381,9 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
     if step == "family_history":
         if message.text != t("skip", lang):
             text = message.text.strip() if message.text else ""
-            # ✅ ИСПРАВЛЕНО: Локализованная валидация семейной истории
-            if not validate_text_field(text, 300):
-                await message.answer(t("text_too_long", lang, max_len=300))  # ✅ ЛОКАЛИЗОВАНО
+            # ✅ ИСПРАВЛЕНО: сокращаем с 300 до 50 символов
+            if not validate_text_field(text, 50):  # БЫЛО: 300
+                await message.answer(t("text_too_long", lang, max_len=50))  # БЫЛО: 300
                 return True
             await update_user_field(user_id, "family_history", text)
         user_states[user_id] = None

@@ -19,7 +19,7 @@ class SubscriptionHandlers:
 
     @staticmethod
     async def show_subscription_menu(message_or_callback, user_id: int = None):
-        """✅ ИСПРАВЛЕННАЯ версия - проверяет локальную БД вместо Stripe"""
+        """✅ ИСПРАВЛЕННАЯ версия с proper error handling"""
         try:
             # Определяем user_id если не передан
             if user_id is None:
@@ -29,31 +29,70 @@ class SubscriptionHandlers:
                     logger.error("Не удалось определить user_id")
                     return
             
-            # Получаем язык и лимиты пользователя
+            # Получаем язык пользователя СНАЧАЛА
             lang = await get_user_language(user_id)
-            limits = await SubscriptionManager.get_user_limits(user_id)
+            
+            # ✅ ДОБАВЛЯЕМ TRY-CATCH для get_user_limits
+            try:
+                limits = await SubscriptionManager.get_user_limits(user_id)
+            except Exception as limits_error:
+                logger.error(f"Ошибка получения лимитов для пользователя {user_id}: {limits_error}")
+                # ✅ FALLBACK: Создаем дефолтные лимиты
+                limits = {
+                    "documents_left": 0,
+                    "gpt4o_queries_left": 0,
+                    "subscription_type": "free",
+                    "expires_at": None
+                }
+            
+            # ✅ Проверяем что limits не None
+            if not limits:
+                limits = {
+                    "documents_left": 0,
+                    "gpt4o_queries_left": 0,
+                    "subscription_type": "free",
+                    "expires_at": None
+                }
             
             # ✅ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Проверяем ЛОКАЛЬНУЮ БД вместо Stripe
             current_subscription = None
             has_active_subscription = False
             
             # Проверяем активные подписки в локальной БД
-            active_subscription = await SubscriptionHandlers._get_active_subscription(user_id)
-            
-            if active_subscription:
-                # Есть активная подписка в БД
-                has_active_subscription = True
-                package_id = active_subscription['package_id']
-                current_subscription = package_id  # basic_sub, premium_sub
-                logger.info(f"Найдена активная подписка в БД: {package_id}")
+            try:
+                active_subscription = await SubscriptionHandlers._get_active_subscription(user_id)
+                
+                if active_subscription:
+                    # Есть активная подписка в БД
+                    has_active_subscription = True
+                    package_id = active_subscription['package_id']
+                    current_subscription = package_id  # basic_sub, premium_sub
+                    logger.info(f"Найдена активная подписка в БД: {package_id}")
+            except Exception as sub_error:
+                logger.error(f"Ошибка проверки подписки для пользователя {user_id}: {sub_error}")
+                has_active_subscription = False
             
             # Получаем текст меню
-            subscription_text = await SubscriptionHandlers._get_subscription_menu_text(
-                user_id, lang, limits, has_active_subscription
-            )
+            try:
+                subscription_text = await SubscriptionHandlers._get_subscription_menu_text(
+                    user_id, lang, limits, has_active_subscription
+                )
+            except Exception as text_error:
+                logger.error(f"Ошибка генерации текста меню для пользователя {user_id}: {text_error}")
+                # ✅ FALLBACK текст
+                subscription_text = t("subscription_menu_title", lang) + "\n\n" + t("subscription_menu_error", lang)
             
             # Создаем клавиатуру с правильным current_subscription
-            keyboard = subscription_main_menu(lang, current_subscription)
+            try:
+                from subscription_keyboards import subscription_main_menu
+                keyboard = subscription_main_menu(lang, current_subscription)
+            except Exception as keyboard_error:
+                logger.error(f"Ошибка создания клавиатуры для пользователя {user_id}: {keyboard_error}")
+                # ✅ FALLBACK: Простая кнопка назад
+                from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+                keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text=t("back_to_settings", lang), callback_data="back_to_settings")]
+                ])
             
             # Отправляем или редактируем сообщение
             if isinstance(message_or_callback, types.CallbackQuery):
@@ -75,16 +114,30 @@ class SubscriptionHandlers:
             
             # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
             try:
-                lang = await get_user_language(user_id) if user_id else "ru"
+                lang = await get_user_language(user_id)
             except:
                 lang = "ru"
             
+            # ✅ ПОКАЗЫВАЕМ ПОНЯТНУЮ ОШИБКУ ПОЛЬЗОВАТЕЛЮ
             error_text = t("subscription_menu_error", lang)
+            
+            # Простая кнопка назад
+            from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+            back_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text=t("back_to_settings", lang), callback_data="back_to_settings")]
+            ])
+            
             if isinstance(message_or_callback, types.CallbackQuery):
-                await message_or_callback.message.answer(error_text)
+                await message_or_callback.message.edit_text(
+                    error_text,
+                    reply_markup=back_keyboard
+                )
                 await message_or_callback.answer()
             else:
-                await message_or_callback.answer(error_text)
+                await message_or_callback.answer(
+                    error_text,
+                    reply_markup=back_keyboard
+                )
     
     @staticmethod
     async def _get_subscription_menu_text(user_id: int, lang: str, limits: dict, has_real_subscription: bool) -> str:
@@ -630,75 +683,39 @@ class UpsellTracker:
         self.user_last_upsell = {}     # user_id: timestamp
         self.user_summary_counts = {}  # user_id: count обновлений сводки
     
-    async def should_show_message_upsell(self, user_id: int) -> bool:
-        """
-        ✅ НОВАЯ ФУНКЦИЯ: Определяет, нужно ли показать upsell для сообщений
-        Показываем ТОЛЬКО если:
-        1. Нет лимитов GPT-4o 
-        2. Нет активной подписки
-        3. Прошло 7 сообщений
-        """
-        try:
-            # Проверяем лимиты и подписку
-            limits = await SubscriptionManager.get_user_limits(user_id)
-            gpt4o_queries_left = limits.get('gpt4o_queries_left', 0)
-            subscription_type = limits.get('subscription_type', 'free')
-            
-            # ✅ УСЛОВИЕ: показываем только если НЕТ лимитов И НЕТ подписки
-            if gpt4o_queries_left > 0 or subscription_type == 'subscription':
-                return False
-            
-            # Проверяем счетчик сообщений
-            current_count = self.user_message_counts.get(user_id, 0)
-            
-            if current_count >= 7:
-                self.user_message_counts[user_id] = 0  # Сбрасываем счетчик
-                self.user_last_upsell[user_id] = datetime.now().timestamp()
-                return True
-            
-            return False
-            
-        except Exception as e:
-            print(f"❌ Ошибка проверки message upsell для пользователя {user_id}: {e}")
-            return False
+    def should_show_upsell(self, user_id: int) -> bool:
+        """Определяет, нужно ли показать upsell сообщение"""
+        current_count = self.user_message_counts.get(user_id, 0)
+        
+        # ✅ ИЗМЕНЯЕМ: показываем каждые 7 сообщений (вместо 5)
+        if current_count >= 7:
+            self.user_message_counts[user_id] = 0  # Сбрасываем счетчик
+            self.user_last_upsell[user_id] = datetime.now().timestamp()
+            return True
+        
+        return False
     
-    async def should_show_summary_upsell(self, user_id: int) -> bool:
+    def should_show_upsell_on_summary(self, user_id: int) -> bool:
         """
-        ✅ НОВАЯ ФУНКЦИЯ: Определяет, нужно ли показать upsell для сводок
-        Показываем ТОЛЬКО если:
-        1. Нет лимитов GPT-4o
-        2. Нет активной подписки  
-        3. Прошло 3 обновления сводки
+        ✅ НОВОЕ: Определяет, нужно ли показать upsell при обновлении сводки
         """
-        try:
-            # Проверяем лимиты и подписку
-            limits = await SubscriptionManager.get_user_limits(user_id)
-            gpt4o_queries_left = limits.get('gpt4o_queries_left', 0)
-            subscription_type = limits.get('subscription_type', 'free')
-            
-            # ✅ УСЛОВИЕ: показываем только если НЕТ лимитов И НЕТ подписки
-            if gpt4o_queries_left > 0 or subscription_type == 'subscription':
-                return False
-            
-            # Проверяем счетчик сводок
-            current_count = self.user_summary_counts.get(user_id, 0)
-            
-            if current_count >= 3:
-                self.user_summary_counts[user_id] = 0  # Сбрасываем счетчик
-                return True
-            
-            return False
-            
-        except Exception as e:
-            print(f"❌ Ошибка проверки summary upsell для пользователя {user_id}: {e}")
-            return False
+        current_count = self.user_summary_counts.get(user_id, 0)
+        
+        # Показываем каждое 3-е обновление сводки
+        if current_count >= 3:
+            self.user_summary_counts[user_id] = 0  # Сбрасываем счетчик
+            return True
+        
+        return False
     
     def increment_message_count(self, user_id: int):
         """Увеличивает счетчик сообщений пользователя"""
         self.user_message_counts[user_id] = self.user_message_counts.get(user_id, 0) + 1
     
     def increment_summary_count(self, user_id: int):
-        """Увеличивает счетчик обновлений сводки"""
+        """
+        ✅ НОВОЕ: Увеличивает счетчик обновлений сводки
+        """
         self.user_summary_counts[user_id] = self.user_summary_counts.get(user_id, 0) + 1
     
     def reset_count(self, user_id: int):
@@ -707,23 +724,6 @@ class UpsellTracker:
         self.user_summary_counts[user_id] = 0
         if user_id in self.user_last_upsell:
             del self.user_last_upsell[user_id]
-    
-    # ✅ УСТАРЕВШИЕ ФУНКЦИИ - оставляем для совместимости
-    def should_show_upsell(self, user_id: int) -> bool:
-        """Устаревшая функция - используйте should_show_message_upsell"""
-        current_count = self.user_message_counts.get(user_id, 0)
-        if current_count >= 7:
-            self.user_message_counts[user_id] = 0
-            return True
-        return False
-    
-    def should_show_upsell_on_summary(self, user_id: int) -> bool:
-        """Устаревшая функция - используйте should_show_summary_upsell"""
-        current_count = self.user_summary_counts.get(user_id, 0)
-        if current_count >= 3:
-            self.user_summary_counts[user_id] = 0
-            return True
-        return False
 
 # Глобальный экземпляр трекера
 upsell_tracker = UpsellTracker()

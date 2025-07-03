@@ -379,16 +379,17 @@ async def update_medical_timeline_on_document_upload(user_id: int, document_id: 
 # ==========================================
 
 async def get_medical_timeline_for_prompt(user_id: int, limit: int = 10) -> str:
-    """Получить медкарту в формате для промпта GPT"""
+    """Получить медкарту в компактном формате для промпта GPT"""
     
     timeline = await get_latest_medical_timeline(user_id, limit)
     
     if not timeline:
-        return "Медкарта пустая"
+        return "medical timeline empty"
     
     lines = []
     for entry in timeline:
-        lines.append(f"📅 {entry['event_date']} | {entry['category']} | {entry['importance']} | {entry['description']}")
+        # ✅ КОМПАКТНЫЙ ФОРМАТ: только дата и описание
+        lines.append(f"{entry['event_date']}: {entry['description']}")
     
     return "\n".join(lines)
 
