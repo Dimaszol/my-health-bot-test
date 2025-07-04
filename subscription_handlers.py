@@ -446,12 +446,10 @@ class SubscriptionHandlers:
             )
             
             if success:
-                # Успешно создана ссылка
                 await callback.message.edit_text(
-                    t("payment_link_created", lang, payment_url=payment_url_or_error),
-                    reply_markup=payment_processing_keyboard(lang),
-                    parse_mode="HTML",
-                    disable_web_page_preview=True
+                    t("payment_link_created", lang),
+                    reply_markup=payment_processing_keyboard(lang, payment_url_or_error),  # Передаем URL
+                    parse_mode="HTML"
                 )
                 
             else:

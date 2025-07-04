@@ -90,17 +90,24 @@ def cancel_subscription_confirmation(lang: str) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=t("cancel_confirm_no", lang), callback_data="subscription_menu")]
     ])
 
-def payment_processing_keyboard(lang: str) -> InlineKeyboardMarkup:
+def payment_processing_keyboard(lang: str, payment_url: str = None) -> InlineKeyboardMarkup:
     """
     Клавиатура при обработке платежа
     
     Args:
         lang: Язык интерфейса
+        payment_url: URL для оплаты (опционально)
     """
+    buttons = []
     
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=t("payment_back_to_subscriptions", lang), callback_data="subscription_menu")]
-    ])
+    # Если есть ссылка на оплату - добавляем кнопку
+    if payment_url:
+        buttons.append([InlineKeyboardButton(text="💳 Перейти к оплате", url=payment_url)])
+    
+    # Кнопка "Назад"
+    buttons.append([InlineKeyboardButton(text=t("payment_back_to_subscriptions", lang), callback_data="subscription_menu")])
+    
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 # Вспомогательные функции для получения информации о пакетах
 

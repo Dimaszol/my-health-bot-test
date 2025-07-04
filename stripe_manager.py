@@ -298,6 +298,165 @@ class StripeManager:
         except Exception as e:
             logger.error(f"❌ Ошибка получения истории платежей для пользователя {user_id}: {e}")
             return []
+        
+    
+    @staticmethod
+    async def create_promo_payment_session(user_id: int, package_id: str, promo_code: str, user_name: str = "User"):
+        """
+        💰 Создает сессию оплаты с применением промокода
+        
+        Args:
+            user_id: ID пользователя
+            package_id: ID пакета (basic_sub, premium_sub)
+            promo_code: Промокод в Stripe (FIRST30BASIC, FIRST30PREMIUM)
+            user_name: Имя пользователя
+            
+        Returns:
+            Tuple[bool, str]: (успех, ссылка_или_ошибка)
+        """
+        try:
+            logger.info(f"🎫 Создание ссылки с промокодом {promo_code} для user {user_id}, package {package_id}")
+            
+            # 1️⃣ Проверяем существование пакета
+            package_info = StripeConfig.get_package_info(package_id)
+            if not package_info:
+                try:
+                    lang = await get_user_language(user_id)
+                    error_msg = t("stripe_package_not_found", lang, package_id=package_id)
+                except:
+                    error_msg = f"Package {package_id} not found"
+                
+                logger.error(f"Package {package_id} не найден")
+                return False, error_msg
+            
+            # 2️⃣ Проверяем, что это подписка (промокоды только для подписок)
+            if package_info['type'] != 'subscription':
+                logger.error(f"Промокоды работают только для подписок, а {package_id} - {package_info['type']}")
+                return False, "Промокоды доступны только для подписок"
+            
+            # 3️⃣ Создаем сессию подписки с промокодом
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price': package_info['stripe_price_id'],  # Используем готовый Price ID
+                    'quantity': 1,
+                }],
+                mode='subscription',  # Подписка
+                success_url=StripeConfig.SUCCESS_URL + f"?session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=StripeConfig.CANCEL_URL,
+                
+                # 🎯 КЛЮЧЕВАЯ ОСОБЕННОСТЬ: Автоматически применяем промокод
+                discounts=[{
+                    'coupon': 'basic_first_30'  # Промокод применится автоматически
+                }],
+                
+                # Метаданные для отслеживания
+                subscription_data={
+                    'metadata': {
+                        'user_id': str(user_id),
+                        'package_id': package_id,
+                        'promo_code_used': promo_code,  # Отмечаем использование промокода
+                        'is_promo_purchase': 'true'     # Флаг промопокупки
+                    }
+                },
+                metadata={
+                    'user_id': str(user_id),
+                    'package_id': package_id,
+                    'user_name': user_name,
+                    'subscription_type': 'recurring',
+                    'promo_code_used': promo_code,
+                    'acquisition_channel': 'promo_30th_message'  # Для аналитики
+                }
+            )
+            
+            # 4️⃣ Сохраняем информацию о сессии с промокодом
+            await StripeManager._save_promo_payment_session(
+                user_id=user_id,
+                session_id=session.id,
+                package_id=package_id,
+                amount_cents=package_info['price_cents'],
+                promo_code=promo_code
+            )
+            
+            logger.info(f"✅ Создана промо-ссылка для user {user_id}: {session.id} с кодом {promo_code}")
+            return True, session.url
+            
+        except stripe.error.InvalidRequestError as e:
+            # Ошибка промокода (не существует, неактивен, не подходит)
+            error_msg = f"Промокод недействителен: {str(e)}"
+            logger.error(f"❌ Ошибка промокода {promo_code}: {e}")
+            return False, error_msg
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка создания промо-сессии: {e}")
+            
+            try:
+                lang = await get_user_language(user_id)
+                error_msg = t("stripe_session_creation_error", lang)
+            except:
+                error_msg = "Payment session creation failed"
+            
+            return False, error_msg
+    
+    @staticmethod
+    async def _save_promo_payment_session(user_id: int, session_id: str, package_id: str, amount_cents: int, promo_code: str):
+        """
+        💾 Сохраняет информацию о промо-сессии в БД
+        """
+        try:
+            await execute_query("""
+                INSERT INTO transactions 
+                (user_id, stripe_session_id, package_id, amount_usd, package_type, status, payment_method, promo_code, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                user_id,
+                session_id, 
+                package_id,
+                amount_cents / 100,  # Конвертируем центы в доллары
+                StripeConfig.get_package_info(package_id)['name'],
+                'pending',
+                'stripe_promo',  # Специальный payment_method для промокодов
+                promo_code,      # Сохраняем использованный промокод
+                datetime.now()
+            ))
+            
+            logger.info(f"💾 Сохранена промо-сессия {session_id} с кодом {promo_code}")
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка сохранения промо-сессии в БД: {e}")
+    
+    @staticmethod
+    async def get_promo_usage_stats(promo_code: str) -> Dict[str, Any]:
+        """
+        📊 Получает статистику использования промокода (для аналитики)
+        
+        Returns:
+            {"total_uses": 5, "successful_payments": 3, "revenue_usd": 5.97}
+        """
+        try:
+            # Общее количество использований
+            total_uses_result = await fetch_one("""
+                SELECT COUNT(*) as total FROM transactions 
+                WHERE promo_code = ?
+            """, (promo_code,))
+            
+            # Успешные платежи
+            successful_result = await fetch_one("""
+                SELECT COUNT(*) as successful, COALESCE(SUM(amount_usd), 0) as revenue
+                FROM transactions 
+                WHERE promo_code = ? AND status = 'completed'
+            """, (promo_code,))
+            
+            return {
+                "promo_code": promo_code,
+                "total_uses": total_uses_result['total'] if total_uses_result else 0,
+                "successful_payments": successful_result['successful'] if successful_result else 0,
+                "revenue_usd": float(successful_result['revenue']) if successful_result and successful_result['revenue'] else 0.0
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка получения статистики промокода {promo_code}: {e}")
+            return {"promo_code": promo_code, "total_uses": 0, "successful_payments": 0, "revenue_usd": 0.0}
 
 # Функция для webhook (обработка событий от Stripe)
 async def handle_stripe_webhook(payload: str, sig_header: str) -> Tuple[bool, str]:

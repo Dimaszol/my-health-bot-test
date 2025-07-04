@@ -93,7 +93,7 @@ async def create_tables():
         physical_activity TEXT,
         family_history TEXT,
         last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        language TEXT DEFAULT 'ru'
+        language TEXT DEFAULT 'ru'        
     );
 
     -- 💬 ИСТОРИЯ ЧАТА
@@ -250,6 +250,8 @@ async def create_tables():
     CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
     CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id);
 
+    -- Добавляем накопительный счетчик сообщений  
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS total_messages_count INTEGER DEFAULT 0;
     -- ✅ GDPR МИГРАЦИЯ - Добавление полей согласия в таблицу users
     -- 1. Добавляем поле согласия с GDPR
     ALTER TABLE users ADD COLUMN IF NOT EXISTS gdpr_consent BOOLEAN DEFAULT FALSE;

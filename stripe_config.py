@@ -55,8 +55,7 @@ class StripeConfig:
             "features_keys": [  # ✅ КЛЮЧИ ВМЕСТО ЗАХАРДКОЖЕННОГО ТЕКСТА
                 "package_premium_feature_1",
                 "package_premium_feature_2",
-                "package_premium_feature_3",
-                "package_premium_feature_4"
+                "package_premium_feature_3"
             ]
         },
         "extra_pack": {

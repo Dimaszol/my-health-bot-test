@@ -1,6 +1,7 @@
 import asyncio
 import os
 import html
+import logging
 from datetime import datetime
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
@@ -41,6 +42,9 @@ from prompt_logger import process_user_question_detailed
 from photo_analyzer import handle_photo_analysis, handle_photo_question, cancel_photo_analysis
 from analytics_system import Analytics
 from faq_handler import handle_faq_main, handle_faq_section
+from promo_manager import PromoManager, check_promo_on_message
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -331,6 +335,24 @@ async def show_settings_menu_new(message: types.Message):
         reply_markup=settings_keyboard(lang)
     )
 
+@dp.callback_query(lambda c: c.data.startswith("promo_buy:"))
+@handle_telegram_errors
+async def handle_promo_purchase_callback(callback: types.CallbackQuery):
+    """
+    💳 Обработчик покупки по промокоду
+    """
+    logger.info(f"🎫 User {callback.from_user.id} нажал на промокнопку: {callback.data}")
+    await PromoManager.handle_promo_purchase(callback)
+
+@dp.callback_query(lambda c: c.data == "promo_dismiss")
+@handle_telegram_errors
+async def handle_promo_dismiss_callback(callback: types.CallbackQuery):
+    """
+    ⏰ Обработчик "Может быть позже"
+    """
+    logger.info(f"⏰ User {callback.from_user.id} отложил промокод")
+    await PromoManager.handle_promo_dismiss(callback)
+
 @dp.message(lambda msg: msg.text == "/reset123456")
 @handle_telegram_errors
 async def reset_user(message: types.Message):
@@ -551,6 +573,15 @@ async def handle_user_message(message: types.Message):
         from registration import show_gdpr_welcome
         await show_gdpr_welcome(user_id, message, lang)
         return  # ⚠️ ВАЖНО: Прерываем обработку!
+    
+    # Проверяем rate limits
+    allowed, rate_message = await check_rate_limit(user_id, "message")
+    if not allowed:
+        await message.answer(rate_message)
+        return
+
+    # Записываем действие
+    await record_user_action(user_id, "message")
     
     # ✅ ИСПРАВЛЕНИЕ 1: Обработка отмены ПЕРВЫМ ДЕЛОМ (до всех других проверок)
     if message.text and message.text in [t("cancel", lang)]:
@@ -860,7 +891,7 @@ async def handle_user_message(message: types.Message):
                 upsell_tracker.increment_message_count(user_id)
                 
                 # ✅ ПРАВИЛЬНАЯ ПРОВЕРКА: используем новую функцию
-                if await upsell_tracker.should_show_message_upsell(user_id):
+                if upsell_tracker.should_show_upsell(user_id):
                     await SubscriptionHandlers.show_subscription_upsell(
                         message, user_id, reason="better_response"
                     )
@@ -986,7 +1017,13 @@ async def handle_user_message(message: types.Message):
                         await spend_gpt4o_limit(user_id, message, bot)
                     
                     await save_message(user_id, "assistant", response)
-                    summary_was_updated = await maybe_update_summary(user_id)
+                    summary_allowed, _ = await check_rate_limit(user_id, "summary")
+                    if summary_allowed:
+                        summary_was_updated = await maybe_update_summary(user_id)
+                        if summary_was_updated:
+                            await record_user_action(user_id, "summary")
+                    else:
+                        summary_was_updated = False
 
                     # Проверка upsell ТОЛЬКО если сводка реально обновилась
                     if summary_was_updated:
@@ -995,7 +1032,7 @@ async def handle_user_message(message: types.Message):
                             upsell_tracker.increment_summary_count(user_id)
                             
                             # ✅ ПРАВИЛЬНАЯ ПРОВЕРКА: используем новую функцию
-                            if await upsell_tracker.should_show_summary_upsell(user_id):
+                            if upsell_tracker.should_show_upsell_on_summary(user_id):
                                 await SubscriptionHandlers.show_subscription_upsell(
                                     message, user_id, reason="summary_updated"
                                 )
@@ -1010,6 +1047,26 @@ async def handle_user_message(message: types.Message):
         except Exception as e:
             log_error_with_context(e, {"user_id": user_id, "action": "message_processing"})
             await message.answer(get_user_friendly_message(e, lang))
+    
+    # 🎯 ГЛАВНОЕ ДОБАВЛЕНИЕ - ПРОВЕРКА ПРОМОКОДА:
+    try:
+        # Увеличиваем накопительный счетчик и получаем новое значение
+        from cumulative_counter import increment_and_get_total_messages
+        total_message_count = await increment_and_get_total_messages(user_id)
+        
+        logger.info(f"📊 User {user_id}: всего сообщений #{total_message_count}")
+        
+        # 🎯 ОПТИМИЗАЦИЯ: проверяем промокод только в нужном диапазоне
+        if total_message_count == 11:  # Точно на 4-м сообщении
+            promo_message = await check_promo_on_message(user_id, total_message_count)
+            if promo_message:
+                logger.info(f"🎉 User {user_id}: показан промокод на {total_message_count}-м сообщении!")
+        # Для всех остальных сообщений промокод не проверяем!
+            
+    except Exception as e:
+        # Ошибка промокода не должна ломать основную функциональность
+        logger.error(f"❌ Ошибка проверки промокода для user {user_id}: {e}")
+    
 
 @dp.callback_query(lambda c: c.data == "settings_profile")
 @handle_telegram_errors  
