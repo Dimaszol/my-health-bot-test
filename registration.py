@@ -1,7 +1,7 @@
 # registration.py - ИСПРАВЛЕННАЯ ВЕРСИЯ с полной локализацией
 
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
-from db_postgresql import save_user, update_user_field, t, get_user_language, get_user_name
+from db_postgresql import save_user, update_user_field, t, get_user_language, get_user_name, get_user
 from keyboards import skip_keyboard, gender_keyboard, smoking_keyboard, alcohol_keyboard, activity_keyboard, registration_keyboard, show_main_menu
 from datetime import datetime
 from user_state_manager import user_state_manager, user_states
@@ -29,8 +29,9 @@ async def show_gdpr_welcome(user_id: int, message: Message, lang: str):
     ])
     
     try:
-        if hasattr(message, 'edit_text'):
-            # Если это callback - редактируем сообщение
+        # Проверяем, это callback или обычное сообщение
+        if hasattr(message, 'message_id') and hasattr(message, 'bot'):
+            # Это CallbackQuery.message - можно редактировать
             await message.edit_text(
                 disclaimer_text,
                 reply_markup=keyboard,
@@ -38,7 +39,7 @@ async def show_gdpr_welcome(user_id: int, message: Message, lang: str):
                 disable_web_page_preview=True
             )
         else:
-            # Если это обычное сообщение - отправляем новое
+            # Это обычное Message - отправляем новое
             await message.answer(
                 disclaimer_text,
                 reply_markup=keyboard,
@@ -47,7 +48,7 @@ async def show_gdpr_welcome(user_id: int, message: Message, lang: str):
             )
     except Exception as e:
         print(f"❌ Ошибка показа GDPR дисклеймера: {e}")
-        # Fallback - отправляем новое сообщение
+        # Fallback - ВСЕГДА отправляем новое сообщение
         await message.answer(
             disclaimer_text,
             reply_markup=keyboard,
@@ -55,25 +56,29 @@ async def show_gdpr_welcome(user_id: int, message: Message, lang: str):
             disable_web_page_preview=True
         )
 
-# Старт регистрации
 async def start_registration(user_id: int, message: Message):
     """
-    Старт регистрации - теперь всегда с опцией смены языка
+    УПРОЩЕННАЯ регистрация: сразу начинаем с года рождения (имя уже есть из Telegram)
     """
     lang = await get_user_language(user_id)
     
-    # Устанавливаем состояние ожидания имени
-    user_states[user_id] = {"step": "awaiting_name"}
+    # СРАЗУ устанавливаем состояние ожидания года рождения (пропускаем имя)
+    user_states[user_id] = {"step": "awaiting_birth_year"}
     
-    # Формируем интро-текст
-    intro_text = f"{t('intro_1', lang)}\n\n{t('intro_2', lang)}\n\n{t('ask_name', lang)}"
+    # Получаем имя пользователя из базы (уже сохранено из Telegram)
+    user_data = await get_user(user_id)
+    user_name = user_data.get('name', 'Пользователь') if user_data else 'Пользователь'
+    
+    # Формируем приветственный текст через ключи локализации
+    intro_text = f"{t('intro_1', lang, name=user_name)}\n\n{t('intro_2', lang)}\n\n{t('birth_year_prompt', lang)}"
     
     await message.answer(
         intro_text,
+        reply_markup=skip_keyboard(lang),  # Добавляем кнопку "Пропустить"
         parse_mode="HTML"
     )
 
-# ✅ ФУНКЦИИ ВАЛИДАЦИИ
+# ✅ ФУНКЦИИ ВАЛИДАЦИИ (оставляем, могут пригодиться для других полей)
 def validate_name(name: str) -> bool:
     """Валидация имени"""
     if not name or len(name.strip()) < 1:
@@ -139,26 +144,6 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
 
     if not state:
         return False
-
-    if isinstance(state, dict) and state.get("step") == "awaiting_name":
-        name = message.text.strip() if message.text else ""
-        
-        # ✅ ВАЛИДАЦИЯ ИМЕНИ
-        if not validate_name(name):
-            if not name:
-                await message.answer(t("name_missing", lang))
-            elif len(name) > 50:
-                await message.answer(t("name_too_long", lang))
-            else:
-                await message.answer(t("name_invalid", lang))
-            return True
-        
-        user_states[user_id] = {
-            "step": "awaiting_birth_year",
-            "name": name
-        }
-        await message.answer(t("birth_year_prompt", lang), reply_markup=skip_keyboard(lang))
-        return True
 
     if not isinstance(state, dict):
         return False
@@ -237,7 +222,7 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
                 await message.answer(t("weight_invalid", lang))
                 return True
 
-        await save_user(user_id=user_id, name=state.get("name"), birth_year=state.get("birth_year"))
+        await save_user(user_id=user_id, name=None, birth_year=state.get("birth_year"))
         await update_user_field(user_id, "gender", state.get("gender"))
         await update_user_field(user_id, "height_cm", state.get("height_cm"))
         await update_user_field(user_id, "weight_kg", state.get("weight_kg"))

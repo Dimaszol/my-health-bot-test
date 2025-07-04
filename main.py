@@ -88,7 +88,7 @@ async def send_welcome(message: types.Message):
         # 3️⃣ НОВЫЙ ПОЛЬЗОВАТЕЛЬ
         if user_data is None:
             print(f"🆕 Новый пользователь {user_id}")
-            await set_user_language(user_id, auto_lang)
+            await set_user_language(user_id, auto_lang, message.from_user)
             
             from registration import show_gdpr_welcome
             await show_gdpr_welcome(user_id, message, auto_lang)
@@ -542,6 +542,15 @@ async def show_analytics_help(message: types.Message):
 async def handle_user_message(message: types.Message):
     user_id = message.from_user.id
     lang = await get_user_language(user_id)
+
+    from db_postgresql import has_gdpr_consent
+    if not await has_gdpr_consent(user_id):
+        print(f"🔒 Заблокировано сообщение от пользователя {user_id} без GDPR согласия")
+        
+        # Показываем GDPR дисклеймер вместо обработки сообщения
+        from registration import show_gdpr_welcome
+        await show_gdpr_welcome(user_id, message, lang)
+        return  # ⚠️ ВАЖНО: Прерываем обработку!
     
     # ✅ ИСПРАВЛЕНИЕ 1: Обработка отмены ПЕРВЫМ ДЕЛОМ (до всех других проверок)
     if message.text and message.text in [t("cancel", lang)]:
@@ -1093,7 +1102,7 @@ async def handle_edit_field(callback: types.CallbackQuery):
     elif field == "language":
         await callback.message.edit_text(
             t("choose_language", lang),
-            reply_markup=language_choice_keyboard()
+            reply_markup=language_choice_keyboard(lang)
         )
     
     await callback.answer()
@@ -1260,12 +1269,6 @@ async def handle_simple_upgrade(callback: types.CallbackQuery):
 async def handle_subscription_menu(callback: types.CallbackQuery):
     """Возврат в меню подписок"""
     await SubscriptionHandlers.show_subscription_menu(callback)
-
-@dp.callback_query(lambda c: c.data == "show_limits")
-@handle_telegram_errors
-async def handle_show_limits(callback: types.CallbackQuery):
-    """Показ подробной информации о лимитах"""
-    await SubscriptionHandlers.show_user_limits(callback)
 
 @dp.callback_query(lambda c: c.data == "cancel_subscription")
 @handle_telegram_errors

@@ -6,7 +6,7 @@ from typing import Optional
 from db_postgresql import t
 
 def subscription_main_menu(lang: str, current_subscription: Optional[str] = None) -> InlineKeyboardMarkup:
-    """✅ ИСПРАВЛЕННАЯ версия с правильной локализацией"""
+    """✅ ОБНОВЛЕННАЯ версия БЕЗ кнопки Мои лимиты"""
     
     buttons = []
     
@@ -14,7 +14,7 @@ def subscription_main_menu(lang: str, current_subscription: Optional[str] = None
     packages = StripeConfig.get_all_packages()
     
     for package_id, package_info in packages.items():
-        # ✅ ИСПРАВЛЕНО: Используем функцию локализации вместо прямого поля
+        # Используем функцию локализации вместо прямого поля
         package_name = StripeConfig.get_localized_package_name(package_id, lang)
         
         # Формируем красивое описание
@@ -23,10 +23,10 @@ def subscription_main_menu(lang: str, current_subscription: Optional[str] = None
         else:
             price_text = f"{package_info['price_display']} {t('subscription_one_time', lang)}"
         
-        # ✅ ИСПРАВЛЕНО: Используем локализованное название
+        # Используем локализованное название
         button_text = f"{package_name} — {price_text}"
         
-        # ✅ УПРОЩЕНИЕ: Проверяем активную подписку
+        # Проверяем активную подписку
         if current_subscription == package_id:
             # У пользователя есть эта подписка
             button_text = f"{t('subscription_current_active', lang)} {button_text}"
@@ -40,21 +40,12 @@ def subscription_main_menu(lang: str, current_subscription: Optional[str] = None
                 text=button_text,
                 callback_data=f"buy_{package_id}"
             )])
-    
-    # Дополнительные кнопки
-    additional_buttons = []
-    additional_buttons.append(InlineKeyboardButton(text=t("subscription_my_limits", lang), callback_data="show_limits"))
-    
-    # ✅ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Показываем кнопку отмены если есть ЛЮБАЯ активная подписка
+       
+    # Кнопка отмены подписки (если есть активная подписка)
     if current_subscription is not None:
-        additional_buttons.append(InlineKeyboardButton(text=t("subscription_cancel", lang), callback_data="cancel_subscription"))
+        buttons.append([InlineKeyboardButton(text=t("subscription_cancel", lang), callback_data="cancel_subscription")])
     
-    if len(additional_buttons) == 2:
-        buttons.append(additional_buttons)
-    else:
-        for btn in additional_buttons:
-            buttons.append([btn])
-    
+    # Кнопка назад
     buttons.append([InlineKeyboardButton(text=t("subscription_back", lang), callback_data="back_to_settings")])
     
     return InlineKeyboardMarkup(inline_keyboard=buttons)

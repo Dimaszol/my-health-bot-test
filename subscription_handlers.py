@@ -155,7 +155,8 @@ class SubscriptionHandlers:
         if limits:
             text_parts.append(t("subscription_current_limits", lang))
             text_parts.append(f"• {t('subscription_documents', lang)}: <b>{limits['documents_left']}</b>")
-            text_parts.append(f"• {t('subscription_queries', lang)}: <b>{limits['gpt4o_queries_left']}</b>")
+            text_parts.append(f"• {t('subscription_queries', lang)}: <b>{limits['gpt4o_queries_left']}</b>\n")
+            text_parts.append(f"• {t('limits_usage_info', lang)}")
             
             # ✅ ИСПРАВЛЕНИЕ: Информация о подписке на основе РЕАЛЬНОГО состояния
             if has_real_subscription:
@@ -256,23 +257,34 @@ class SubscriptionHandlers:
     
     @staticmethod
     async def _show_upgrade_warning(callback: types.CallbackQuery, new_package_id: str, active_subscription: dict):
-        """✅ НОВАЯ ФУНКЦИЯ: Показывает предупреждение об апгрейде подписки"""
+        """✅ ИСПРАВЛЕННАЯ ФУНКЦИЯ: Показывает предупреждение об апгрейде подписки"""
         try:
             user_id = callback.from_user.id
             lang = await get_user_language(user_id)
             
             current_package = active_subscription['package_id']
             
-            # Получаем информацию о пакетах для красивого отображения
+            # ✅ ИСПРАВЛЕНО: Используем функции локализации вместо прямого поля
             from stripe_config import StripeConfig
+            
+            # Получаем локализованные названия пакетов
+            current_name = StripeConfig.get_localized_package_name(current_package, lang)
+            new_name = StripeConfig.get_localized_package_name(new_package_id, lang)
+            
+            # Получаем информацию о ценах
             current_info = StripeConfig.get_package_info(current_package)
             new_info = StripeConfig.get_package_info(new_package_id)
             
-            # Формируем текст предупреждения
+            if not current_info or not new_info:
+                logger.error(f"Не найдена информация о пакетах: {current_package}, {new_package_id}")
+                await callback.answer(t("upgrade_warning_error", lang), show_alert=True)
+                return
+            
+            # ✅ ИСПРАВЛЕНО: Используем локализованные названия
             warning_text = t("subscription_upgrade_warning", lang,
-                current_name=current_info['user_friendly_name'],
+                current_name=current_name,
                 current_price=current_info['price_display'],
-                new_name=new_info['user_friendly_name'],
+                new_name=new_name,
                 new_price=new_info['price_display'])
             
             # Создаем клавиатуру подтверждения апгрейда
@@ -300,10 +312,7 @@ class SubscriptionHandlers:
     
     @staticmethod
     def _create_upgrade_confirmation_keyboard(new_package_id: str, current_package_id: str, lang: str) -> InlineKeyboardMarkup:
-        """✅ ИСПРАВЛЕННАЯ версия с правильной локализацией"""
-        
-        # ✅ ПРАВИЛЬНО: Импортируем функцию локализации
-        from db_postgresql import t
+        """✅ Создает клавиатуру подтверждения апгрейда"""
         
         # ✅ ПРАВИЛЬНО: Получаем переводы через t()
         confirm_text = t("upgrade_confirm", lang)
@@ -467,104 +476,6 @@ class SubscriptionHandlers:
                 reply_markup=payment_processing_keyboard(lang)
             )
             await callback.answer()
-    
-    # Остальные методы остаются без изменений...
-    @staticmethod
-    async def show_user_limits(callback: types.CallbackQuery):
-        """Показывает подробную информацию о лимитах пользователя"""
-        try:
-            user_id = callback.from_user.id
-            lang = await get_user_language(user_id)
-            limits = await SubscriptionManager.get_user_limits(user_id)
-            
-            if not limits:
-                await callback.answer(t("limits_load_error", lang), show_alert=True)
-                return
-            
-            # Формируем подробный текст о лимитах
-            limits_text = await SubscriptionHandlers._get_detailed_limits_text(limits, lang)
-            
-            # ✅ ИСПРАВЛЕНО: Локализованная кнопка "Назад"
-            back_button = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(
-                    text=t("back_button", lang),
-                    callback_data="subscription_menu"
-                )]
-            ])
-            
-            await callback.message.edit_text(
-                limits_text,
-                reply_markup=back_button,
-                parse_mode="HTML"
-            )
-            await callback.answer()
-            
-        except Exception as e:
-            logger.error(f"Ошибка показа лимитов: {e}")
-            # ✅ БЕЗОПАСНАЯ ЛОКАЛИЗАЦИЯ
-            try:
-                lang = await get_user_language(callback.from_user.id)
-            except:
-                lang = "ru"  # Fallback на русский
-            
-            await callback.answer(t("limits_display_error", lang), show_alert=True)
-    
-    @staticmethod
-    async def _get_detailed_limits_text(limits: dict, lang: str) -> str:
-        """Формирует подробный текст о лимитах пользователя - ЛОКАЛИЗОВАННАЯ ВЕРСИЯ"""
-        
-        # Формируем текст
-        text_parts = [t("limits_detail_title", lang), ""]
-        
-        # Лимиты документов
-        docs_left = limits.get('documents_left', 0)
-        if docs_left > 999:
-            docs_display = t("limits_unlimited", lang)
-        else:
-            docs_display = f"<b>{docs_left}</b>"
-        text_parts.append(f"{t('limits_documents', lang)}: {docs_display}")
-        
-        # Лимиты запросов
-        queries_left = limits.get('gpt4o_queries_left', 0)
-        if queries_left > 999:
-            queries_display = t("limits_unlimited", lang)
-        else:
-            queries_display = f"<b>{queries_left}</b>"
-        text_parts.append(f"{t('limits_queries', lang)}: {queries_display}")
-        
-        text_parts.append("")  # Пустая строка
-        
-        # Тип подписки
-        sub_type = limits.get('subscription_type', 'free')
-        if sub_type == 'subscription':
-            sub_display = t("limits_subscription_active", lang)
-        elif sub_type == 'one_time':
-            sub_display = t("limits_one_time", lang)
-        else:
-            sub_display = t("limits_free", lang)
-        
-        text_parts.append(f"{t('limits_subscription', lang)}: {sub_display}")
-        
-        # Дата истечения
-        expires_at = limits.get('expires_at')
-        if expires_at:
-            try:
-                if isinstance(expires_at, str):
-                    expiry_date = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
-                else:
-                    expiry_date = expires_at
-                if expiry_date > datetime.now():
-                    formatted_date = expiry_date.strftime("%d.%m.%Y")
-                    text_parts.append(f"{t('limits_expires', lang)}: <b>{formatted_date}</b>")
-                else:
-                    text_parts.append(f"{t('limits_expires', lang)}: {t('limits_expired', lang)}")
-            except:
-                pass
-        
-        # Информация об использовании
-        text_parts.append(t("limits_usage_info", lang))
-        
-        return "\n".join(text_parts)
     
     @staticmethod
     async def handle_cancel_subscription_request(callback: types.CallbackQuery):

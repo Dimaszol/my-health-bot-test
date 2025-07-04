@@ -8,6 +8,7 @@ from typing import Dict, Tuple
 from collections import defaultdict
 from datetime import datetime, timedelta
 from db_postgresql import t
+from subscription_manager import SubscriptionManager
 
 logger = logging.getLogger(__name__)
 
@@ -66,20 +67,70 @@ class RateLimiter:
         """Получить ключ для сегодняшнего дня"""
         return datetime.now().strftime("%Y-%m-%d")
     
-    def _get_daily_count(self, user_id: int, action_type: str) -> int:
-        """Получить количество действий пользователя за сегодня"""
-        today = self._get_today_key()
-        user_daily = self.daily_message_counts.get(user_id, {})
-        return user_daily.get(f"{today}_{action_type}", 0)
+    def _get_week_key(self) -> str:
+        """Получить ключ для текущей недели (понедельник-воскресенье)"""
+        today = datetime.now()
+        # Получаем понедельник текущей недели
+        monday = today - timedelta(days=today.weekday())
+        return monday.strftime("%Y-W%U")  # Формат: 2025-W27
     
-    def _increment_daily_count(self, user_id: int, action_type: str):
-        """Увеличить счетчик действий за день"""
-        today = self._get_today_key()
+    def _get_period_count(self, user_id: int, action_type: str) -> int:
+        """
+        НОВАЯ ФУНКЦИЯ: Получить количество действий за период (день или неделю)
+        """
+        from subscription_manager import SubscriptionManager
+        
+        # Синхронно получаем тип подписки (упрощенно)
+        subscription_type = self._get_subscription_type_sync(user_id)
+        
+        if subscription_type == 'subscription':
+            # Подписчики - считаем по дням
+            period_key = self._get_today_key()
+            user_data = self.daily_message_counts.get(user_id, {})
+            return user_data.get(f"{period_key}_{action_type}", 0)
+        else:
+            # Бесплатные - считаем по неделям
+            week_key = self._get_week_key()
+            user_data = self.daily_message_counts.get(user_id, {})  # Переименуем позже
+            return user_data.get(f"{week_key}_{action_type}", 0)
+
+    def _increment_period_count(self, user_id: int, action_type: str):
+        """
+        НОВАЯ ФУНКЦИЯ: Увеличить счетчик за период (день или неделю)
+        """
+        subscription_type = self._get_subscription_type_sync(user_id)
+        
         if user_id not in self.daily_message_counts:
             self.daily_message_counts[user_id] = {}
         
-        key = f"{today}_{action_type}"
+        if subscription_type == 'subscription':
+            # Подписчики - считаем по дням
+            period_key = self._get_today_key()
+        else:
+            # Бесплатные - считаем по неделям
+            period_key = self._get_week_key()
+        
+        key = f"{period_key}_{action_type}"
         self.daily_message_counts[user_id][key] = self.daily_message_counts[user_id].get(key, 0) + 1
+
+    def _get_subscription_type_sync(self, user_id: int) -> str:
+        """Синхронная версия получения типа подписки"""
+        try:
+            import psycopg2
+            DATABASE_URL = os.getenv("DATABASE_URL")
+            if not DATABASE_URL:
+                return "free"
+                
+            conn = psycopg2.connect(DATABASE_URL)
+            cursor = conn.cursor()
+            cursor.execute("SELECT subscription_type FROM user_limits WHERE user_id = %s", (user_id,))
+            result = cursor.fetchone()
+            conn.close()
+            
+            return result[0] if result and result[0] else "free"
+        except Exception as e:
+            logger.error(f"Ошибка получения типа подписки для пользователя {user_id}: {e}")
+            return "free"
     
     async def is_blocked(self, user_id: int) -> Tuple[bool, int]:
         """Проверка блокировки (без изменений)"""
@@ -99,13 +150,13 @@ class RateLimiter:
     
     async def check_limit(self, user_id: int, action_type: str = "message") -> Tuple[bool, str]:
         """
-        ✅ ОБНОВЛЕННАЯ версия с динамическими дневными лимитами на основе подписки
+        ОБНОВЛЕННАЯ версия с поддержкой недельных лимитов для бесплатных пользователей
         """
         current_time = time.time()
         user_lock = await self._get_user_lock(user_id)
         
         async with user_lock:
-            # 1. Проверяем существующую блокировку
+            # 1. Проверяем существующую блокировку (без изменений)
             if user_id in self.blocked_users:
                 unblock_time = self.blocked_users[user_id]
                 if current_time < unblock_time:
@@ -124,19 +175,19 @@ class RateLimiter:
                 else:
                     del self.blocked_users[user_id]
             
-            # ✅ 2. НОВАЯ ПРОВЕРКА: Динамический дневной лимит на основе подписки
-            daily_count = self._get_daily_count(user_id, action_type)
-            daily_limit = await self._get_daily_limit_for_user(user_id, action_type)
+            # ✅ 2. НОВАЯ ПРОВЕРКА: Период лимит (день/неделя) на основе подписки
+            period_count = self._get_period_count(user_id, action_type)
+            period_limit = await self._get_daily_limit_for_user(user_id, action_type)
             
-            if daily_count >= daily_limit:
+            if period_count >= period_limit:
                 lang = get_user_language_sync(user_id)
+                subscription_type = self._get_subscription_type_sync(user_id)
                 
                 # Получаем локализованное название действия
                 try:
                     action_name_key = f"action_{action_type}s" if action_type != "message" else "action_messages"
                     action_name = t(action_name_key, lang)
                 except:
-                    # Fallback названия
                     action_names = {
                         "message": "сообщений",
                         "document": "документов", 
@@ -145,25 +196,23 @@ class RateLimiter:
                     }
                     action_name = action_names.get(action_type, "запросов")
                 
-                # ✅ НОВОЕ: Проверяем тип подписки для разных сообщений
-                subscription_type = await self._get_user_subscription_type(user_id)
-                
+                # ✅ НОВОЕ: Разные сообщения для дневных и недельных лимитов
                 if subscription_type == 'subscription':
-                    # Для подписчиков - обычное сообщение о лимите
+                    # Подписчики - дневной лимит
                     try:
                         text = t("daily_limit_reached_premium", lang, 
-                                daily_limit=daily_limit, action_name=action_name)
+                                daily_limit=period_limit, action_name=action_name)
                     except:
-                        text = f"📊 Дневной лимит {action_name}: {daily_limit}. Попробуйте завтра."
+                        text = f"📊 Дневной лимит {action_name}: {period_limit}. Попробуйте завтра."
                 else:
-                    # Для бесплатных пользователей - с предложением подписки
+                    # Бесплатные - недельный лимит
                     try:
-                        text = t("daily_limit_exceeded_free", lang, 
-                                daily_limit=daily_limit, action_name=action_name)
+                        text = t("weekly_limit_exceeded_free", lang, 
+                                weekly_limit=period_limit, action_name=action_name)
                     except:
-                        text = f"📊 Дневной лимит {action_name}: {daily_limit}. 💎 Оформите подписку для увеличения лимитов!"
+                        text = f"📊 Недельный лимит {action_name}: {period_limit}. Обновится в понедельник. 💎 Оформите подписку для ежедневных лимитов!"
 
-                logger.warning(f"Daily limit exceeded for user {user_id}, action {action_type}: {daily_count}/{daily_limit}")
+                logger.warning(f"Period limit exceeded for user {user_id}, action {action_type}: {period_count}/{period_limit}")
                 return False, text
             
             # 3. Проверяем минутные лимиты (существующий код без изменений)
@@ -229,19 +278,19 @@ class RateLimiter:
 
     async def _get_daily_limit_for_user(self, user_id: int, action_type: str) -> int:
         """
-        Получает дневной лимит для конкретного пользователя на основе его подписки
+        ОБНОВЛЕНО: Получает лимит для конкретного пользователя
+        - Подписчики: дневные лимиты
+        - Бесплатные: недельные лимиты
         """
         try:
-            # Импортируем здесь, чтобы избежать циклических импортов
-            from subscription_manager import SubscriptionManager
-            
+                        
             # Получаем информацию о подписке пользователя
             limits_info = await SubscriptionManager.get_user_limits(user_id)
             subscription_type = limits_info.get('subscription_type', 'free')
             
             # Определяем лимиты в зависимости от подписки
             if subscription_type == 'subscription':
-                # Подписчики - щедрые лимиты
+                # Подписчики - щедрые ДНЕВНЫЕ лимиты
                 subscription_limits = {
                     "message": 100,   # сообщений в день
                     "document": 40,   # документов в день  
@@ -249,27 +298,25 @@ class RateLimiter:
                     "note": 10        # заметок в день
                 }
             else:
-                # Бесплатные пользователи - ограниченные лимиты
+                # ✅ НОВОЕ: Бесплатные пользователи - НЕДЕЛЬНЫЕ лимиты
                 subscription_limits = {
-                    "message": 20,    # сообщений в день
-                    "document": 5,    # документов в день
-                    "image": 5,       # изображений в день
-                    "note": 2         # заметок в день
+                    "message": 50,    # сообщений в НЕДЕЛЮ (было 20 в день)
+                    "document": 10,   # документов в НЕДЕЛЮ (было 5 в день)
+                    "image": 15,      # изображений в НЕДЕЛЮ (было 5 в день)
+                    "note": 5         # заметок в НЕДЕЛЮ (было 2 в день)
                 }
                 
             return subscription_limits.get(action_type, 20)  # 20 по умолчанию
             
         except Exception as e:
-            logger.error(f"Ошибка получения дневного лимита для пользователя {user_id}: {e}")
-            # В случае ошибки возвращаем консервативный лимит
+            logger.error(f"Ошибка получения лимита для пользователя {user_id}: {e}")
             return 20
-
+        
     async def _get_user_subscription_type(self, user_id: int) -> str:
         """
         Получает тип подписки пользователя
         """
         try:
-            from subscription_manager import SubscriptionManager
             limits_info = await SubscriptionManager.get_user_limits(user_id)
             return limits_info.get('subscription_type', 'free')
         except Exception as e:
@@ -278,17 +325,17 @@ class RateLimiter:
     
     async def record_request(self, user_id: int, action_type: str = "message"):
         """
-        ✅ ОБНОВЛЕННАЯ версия записи запроса
+        ОБНОВЛЕННАЯ версия записи запроса с поддержкой недель
         """
         current_time = time.time()
         user_lock = await self._get_user_lock(user_id)
         
         async with user_lock:
-            # Записываем для минутных лимитов
+            # Записываем для минутных лимитов (без изменений)
             self.user_requests[user_id].append(current_time)
             
-            # ✅ НОВОЕ: Записываем для дневных лимитов
-            self._increment_daily_count(user_id, action_type)
+            # ✅ НОВОЕ: Записываем для периодических лимитов (день/неделя)
+            self._increment_period_count(user_id, action_type)
             
             logger.info(f"Request recorded: user {user_id}, action {action_type}")
     
@@ -307,7 +354,7 @@ class RateLimiter:
         daily_stats = {}
         
         for action_type in action_types:
-            daily_count = self._get_daily_count(user_id, action_type)
+            daily_count = self._get_period_count(user_id, action_type)
             daily_limit = await self._get_daily_limit_for_user(user_id, action_type)
             daily_stats[f"daily_{action_type}"] = f"{daily_count}/{daily_limit}"
         
@@ -398,7 +445,7 @@ async def check_daily_limit(user_id: int, action_type: str = "message") -> Tuple
     Returns:
         (можно_продолжить, текущий_счетчик, максимальный_лимит)
     """
-    daily_count = rate_limiter._get_daily_count(user_id, action_type)
+    daily_count = rate_limiter._get_period_count(user_id, action_type)
     daily_limit = await rate_limiter._get_daily_limit_for_user(user_id, action_type)
     
     return daily_count < daily_limit, daily_count, daily_limit
@@ -418,7 +465,7 @@ async def get_daily_stats(user_id: int) -> Dict[str, Dict[str, int]]:
     action_types = ["message", "document", "image", "note"]
     
     for action_type in action_types:
-        used = rate_limiter._get_daily_count(user_id, action_type)
+        used = rate_limiter._get_period_count(user_id, action_type)
         limit = await rate_limiter._get_daily_limit_for_user(user_id, action_type)
         stats[action_type] = {"used": used, "limit": limit}
     

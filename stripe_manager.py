@@ -378,18 +378,25 @@ class StripeGDPRManager:
     async def _find_user_subscriptions(user_id: int) -> list:
         """Находит все Stripe подписки пользователя"""
         try:
-            from db_postgresql import fetch_all
+            from db_postgresql import get_db_connection, release_db_connection
             
-            result = await fetch_all("""
-                SELECT stripe_subscription_id 
-                FROM user_subscriptions 
-                WHERE user_id = $1 AND stripe_subscription_id IS NOT NULL
-            """, (user_id,))
-            
-            subscriptions = [row['stripe_subscription_id'] for row in result if row['stripe_subscription_id']]
-            logger.info(f"🔍 Найдено {len(subscriptions)} Stripe подписок для пользователя {user_id}")
-            return subscriptions
-            
+            conn = await get_db_connection()
+            try:
+                # ✅ ИСПОЛЬЗУЕМ ПРЯМОЕ ПОДКЛЮЧЕНИЕ ВМЕСТО fetch_all
+                rows = await conn.fetch("""
+                    SELECT stripe_subscription_id 
+                    FROM user_subscriptions 
+                    WHERE user_id = $1 AND stripe_subscription_id IS NOT NULL
+                """, user_id)
+                
+                # ✅ ПРАВИЛЬНО ИЗВЛЕКАЕМ ДАННЫЕ ИЗ СТРОК
+                subscriptions = [row['stripe_subscription_id'] for row in rows if row['stripe_subscription_id']]
+                logger.info(f"🔍 Найдено {len(subscriptions)} Stripe подписок для пользователя {user_id}")
+                return subscriptions
+                
+            finally:
+                await release_db_connection(conn)
+                
         except Exception as e:
             logger.error(f"❌ Ошибка поиска подписок для пользователя {user_id}: {e}")
             return []

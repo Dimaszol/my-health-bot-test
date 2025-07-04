@@ -513,15 +513,27 @@ async def get_user_language(user_id: int) -> str:
     finally:
         await release_db_connection(conn)
 
-async def set_user_language(user_id: int, language: str) -> bool:
-    """Установить язык пользователя (создать если не существует)"""
+async def set_user_language(user_id: int, language: str, telegram_user=None) -> bool:
+    """Установить язык пользователя (создать если не существует) + имя из Telegram"""
     conn = await get_db_connection()
     try:
-        # ✅ СНАЧАЛА создаем пользователя, если его нет
-        await conn.execute(
-            "INSERT INTO users (user_id, language) VALUES ($1, $2) ON CONFLICT (user_id) DO NOTHING",
-            user_id, language
-        )
+        # Получаем имя из Telegram
+        name = None
+        if telegram_user:
+            name = telegram_user.first_name or "Пользователь"
+        
+        # ✅ СОЗДАЕМ пользователя с именем и языком
+        if name:
+            await conn.execute(
+                "INSERT INTO users (user_id, language, name) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO NOTHING",
+                user_id, language, name
+            )
+        else:
+            # Fallback если нет telegram_user
+            await conn.execute(
+                "INSERT INTO users (user_id, language) VALUES ($1, $2) ON CONFLICT (user_id) DO NOTHING",
+                user_id, language
+            )
         
         # ✅ ПОТОМ обновляем язык (на случай, если пользователь уже существовал)
         await conn.execute(
@@ -975,13 +987,9 @@ async def has_gdpr_consent(user_id: int) -> bool:
             "SELECT gdpr_consent FROM users WHERE user_id = $1", 
             user_id
         )
-        return row['gdpr_consent'] if row else False
-        
+        return bool(row['gdpr_consent']) if row else False
     except Exception as e:
-        log_error_with_context(e, {
-            "function": "has_gdpr_consent", 
-            "user_id": user_id
-        })
+        log_error_with_context(e, {"function": "has_gdpr_consent", "user_id": user_id})
         return False
     finally:
         await release_db_connection(conn)
