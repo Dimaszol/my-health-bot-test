@@ -1,8 +1,8 @@
-# upload.py - ИСПРАВЛЕННАЯ ВЕРСИЯ с лучшей обработкой файлов
+# 🔧 ИСПРАВЛЕННЫЙ upload.py - все ошибки устранены
 
 import os
 import html
-import logging  # ✅ ДОБАВЛЕНО
+import logging
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from save_utils import send_to_gpt_vision, convert_pdf_to_images
@@ -10,26 +10,32 @@ from gpt import ask_structured, is_medical_text, generate_medical_summary, gener
 from db_postgresql import save_document, get_user_language, t
 from registration import user_states
 from vector_db_postgresql import split_into_chunks, add_chunks_to_vector_db
-from subscription_manager import spend_document_limit, SubscriptionManager
-
-# ИСПРАВЛЕННЫЙ ИМПОРТ - используем простую функцию для отладки
+# ❌ УДАЛИТЬ: from subscription_manager import spend_document_limit, SubscriptionManager
 from file_utils import validate_file_size, validate_file_extension, create_simple_file_path
 
-# ✅ СОЗДАЕМ LOGGER
 logger = logging.getLogger(__name__)
 
 async def handle_document_upload(message: types.Message, bot):
     user_id = message.from_user.id
     user_states[user_id] = None
     lang = await get_user_language(user_id)
+
+    # ✅ СНАЧАЛА быстрые проверки БЕЗ трат лимитов
+    if message.content_type not in [types.ContentType.DOCUMENT, types.ContentType.PHOTO]:
+        await message.answer(t("unrecognized_document", lang))
+        return
+
+    # ✅ ПОТОМ проверяем лимиты
+    from rate_limiter import check_rate_limit, record_user_action
+    
+    allowed, error_msg = await check_rate_limit(user_id, "document")
+    if not allowed:
+        await message.answer(error_msg)
+        return
     
     try:
         print(f"\n📄 Начало загрузки документа для пользователя {user_id}")
         
-        if message.content_type not in [types.ContentType.DOCUMENT, types.ContentType.PHOTO]:
-            await message.answer(t("unrecognized_document", lang))
-            return
-
         file = message.document or message.photo[-1]
         file_id = file.file_id
         file_info = await bot.get_file(file_id)
@@ -61,11 +67,11 @@ async def handle_document_upload(message: types.Message, bot):
             
             print(f"❌ Ошибка создания пути: {e}")
             await message.answer(t(error_key, lang))
-            return
+            return  # ← НЕ записываем лимит при ошибке пути
         except Exception as e:
             print(f"❌ Неожиданная ошибка создания пути: {e}")
             await message.answer(t("file_creation_error", lang))
-            return
+            return  # ← НЕ записываем лимит при ошибке
 
         # СКАЧИВАНИЕ ФАЙЛА
         print("⬇️ Начинаю скачивание файла...")
@@ -76,7 +82,7 @@ async def handle_document_upload(message: types.Message, bot):
         if not validate_file_size(local_file):
             os.remove(local_file)  # Удаляем слишком большой файл
             await message.answer(t("file_too_large", lang))
-            return
+            return  # ← НЕ записываем лимит для больших файлов
 
         # Определяем тип файла
         file_ext = os.path.splitext(original_filename.lower())[1]
@@ -95,7 +101,7 @@ async def handle_document_upload(message: types.Message, bot):
                 image_paths = convert_pdf_to_images(local_file, output_dir=f"files/{user_id}/pages")
                 if not image_paths:
                     await message.answer(t("pdf_read_failed", lang))
-                    return
+                    return  # ← НЕ записываем лимит если PDF нечитаемый
                 if len(image_paths) > 5:
                     await message.answer(t("file_too_many_pages", lang, pages=len(image_paths)))
                     image_paths = image_paths[:5]
@@ -109,7 +115,7 @@ async def handle_document_upload(message: types.Message, bot):
             except Exception as e:
                 print(f"❌ Ошибка обработки PDF: {e}")
                 await message.answer(t("pdf_processing_error", lang))
-                return
+                return  # ← НЕ записываем лимит при ошибке PDF
         else:
             print("🖼️ Обрабатываю изображение...")
             try:
@@ -117,12 +123,12 @@ async def handle_document_upload(message: types.Message, bot):
             except Exception as e:
                 print(f"❌ Ошибка обработки изображения: {e}")
                 await message.answer(t("image_analysis_error", lang))
-                return
+                return  # ← НЕ записываем лимит при ошибке изображения
 
         print("🔍 Проверяю, является ли текст медицинским...")
         if not await is_medical_text(vision_text):
             await message.answer(t("not_medical_doc", lang))
-            return
+            return  # ← НЕ записываем лимит для немедицинских документов
 
         print("📝 Создаю структурированный текст и резюме...")
         
@@ -173,7 +179,7 @@ async def handle_document_upload(message: types.Message, bot):
                         await message.answer(t("display_error", lang))
         else:
             await message.answer(t("vision_failed", lang))
-            return
+            return  # ← НЕ записываем лимит если обработка не удалась
 
         print("💾 Сохраняю документ в БД...")
         document_id = await save_document(
@@ -184,10 +190,6 @@ async def handle_document_upload(message: types.Message, bot):
             raw_text=raw_text,
             summary=summary
         )
-        
-        # ✅ СПИСЫВАЕМ ЛИМИТ НА ДОКУМЕНТ
-        await spend_document_limit(user_id)
-        logger.info(f"Списан лимит на документ для пользователя {user_id}")
         
         print("🧠 Добавляю в векторную базу...")
         chunks = await split_into_chunks(summary, document_id, user_id)
@@ -221,6 +223,10 @@ async def handle_document_upload(message: types.Message, bot):
                 "document_id": document_id
             })
 
+        # ✅ ЗАПИСЫВАЕМ ЛИМИТ ТОЛЬКО ПОСЛЕ ПОЛНОЙ УСПЕШНОЙ ОБРАБОТКИ
+        await record_user_action(user_id, "document")
+        logger.info(f"✅ Документ обработан, лимит записан для пользователя {user_id}")
+
         await message.answer(t("document_saved", lang, title=auto_title), parse_mode="HTML")
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -233,15 +239,17 @@ async def handle_document_upload(message: types.Message, bot):
             reply_markup=keyboard,
             parse_mode="HTML"
         )
+        
         user_states[user_id] = None
         from keyboards import show_main_menu
         await show_main_menu(message, lang)
 
-
         print("✅ Документ успешно обработан")
 
     except Exception as e:
-        print(f"❌ Общая ошибка при загрузке документа: {e}")
+        # ❌ НЕ записываем лимит при любой неожиданной ошибке
+        print(f"❌ Ошибка обработки документа: {e}")
         import traceback
         print(f"📊 Полная трассировка: {traceback.format_exc()}")
         await message.answer(t("processing_error", lang))
+        # НЕ вызываем record_user_action здесь!

@@ -781,6 +781,17 @@ async def handle_user_message(message: types.Message):
 
     # Обработка редактирования лекарств
     elif current_state == "editing_medications":
+        # ✅ ПРОВЕРЯЕМ ЛИМИТ через существующую систему
+        allowed, error_msg = await check_rate_limit(user_id, "pills")
+        if not allowed:
+            await message.answer(
+                error_msg,
+                reply_markup=types.ReplyKeyboardRemove()
+            )
+            user_states[user_id] = None
+            await show_main_menu(message, lang)
+            return
+
         try:
             from db_postgresql import get_medications, replace_medications
             from gpt import update_medications_via_gpt
@@ -790,27 +801,38 @@ async def handle_user_message(message: types.Message):
             user_input = message.text.strip()
 
             try:
+                # ✅ ВЫЗЫВАЕМ GPT для обработки лекарств
                 new_list = await update_medications_via_gpt(user_input, current_list)
+                
                 if new_list is not None:
+                    # ✅ ЗАПИСЫВАЕМ использование через существующую систему
+                    await record_user_action(user_id, "pills")
+                    
+                    # Сохраняем результат
                     await replace_medications(user_id, new_list)
                     await update_user_profile_medications(user_id)
                     user_states[user_id] = None
                     await message.answer(
                         t("schedule_updated", lang),
-                        reply_markup=types.ReplyKeyboardRemove()  # ✅ ДОБАВЬ ЭТО!
+                        reply_markup=types.ReplyKeyboardRemove()
                     )
                     await show_main_menu(message, lang)
                 else:
                     await message.answer(t("schedule_update_failed", lang))
-            except OpenAIError:
-                # Fallback - не обновляем лекарства если GPT недоступен
+                    
+            except Exception as openai_error:
+                # НЕ записываем использование если GPT упал
                 await message.answer("⚠️ ИИ-помощник недоступен. Попробуйте обновить лекарства позже.")
+                user_states[user_id] = None
+                await show_main_menu(message, lang)
                 
             return
             
         except Exception as e:
             log_error_with_context(e, {"user_id": user_id, "action": "edit_medications"})
             await message.answer(get_user_friendly_message(e, lang))
+            user_states[user_id] = None
+            await show_main_menu(message, lang)
             return
 
     # Основная обработка вопросов пользователя

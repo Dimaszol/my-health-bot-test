@@ -53,7 +53,9 @@ class RateLimiter:
             "message": {"count": 10, "window": 60, "cooldown": 30},
             "document": {"count": 3, "window": 300, "cooldown": 120},
             "image": {"count": 3, "window": 600, "cooldown": 300},
-            "note": {"count": 5, "window": 300, "cooldown": 60}
+            "note": {"count": 5, "window": 300, "cooldown": 60},
+            "pills": {"count": 2, "window": 300, "cooldown": 60},
+            "summary": {"count": 3, "window": 900, "cooldown": 300}
         }
         
     async def _get_user_lock(self, user_id: int) -> asyncio.Lock:
@@ -291,19 +293,23 @@ class RateLimiter:
             # Определяем лимиты в зависимости от подписки
             if subscription_type == 'subscription':
                 # Подписчики - щедрые ДНЕВНЫЕ лимиты
-                subscription_limits = {
-                    "message": 100,   # сообщений в день
-                    "document": 40,   # документов в день  
-                    "image": 10,      # изображений в день
-                    "note": 10        # заметок в день
-                }
-            else:
-                # ✅ НОВОЕ: Бесплатные пользователи - НЕДЕЛЬНЫЕ лимиты
-                subscription_limits = {
-                    "message": 50,    # сообщений в НЕДЕЛЮ (было 20 в день)
-                    "document": 10,   # документов в НЕДЕЛЮ (было 5 в день)
-                    "image": 15,      # изображений в НЕДЕЛЮ (было 5 в день)
-                    "note": 5         # заметок в НЕДЕЛЮ (было 2 в день)
+                subscription_limits = {                     
+                    "message": 100,   # сообщений в день                     
+                    "document": 40,   # документов в день                       
+                    "image": 10,      # изображений в день                     
+                    "note": 10,       # заметок в день
+                    "pills": 10,      # ✅ НОВОЕ: изменений лекарств в день                
+                    "summary": 15
+                }             
+            else:                 
+                # Бесплатные пользователи - НЕДЕЛЬНЫЕ лимиты                 
+                subscription_limits = {                     
+                    "message": 50,    # сообщений в НЕДЕЛЮ                     
+                    "document": 10,   # документов в НЕДЕЛЮ                     
+                    "image": 15,      # изображений в НЕДЕЛЮ                     
+                    "note": 5,        # заметок в НЕДЕЛЮ
+                    "pills": 5,       # ✅ НОВОЕ: изменений лекарств в НЕДЕЛЮ               
+                    "summary": 5
                 }
                 
             return subscription_limits.get(action_type, 20)  # 20 по умолчанию
@@ -350,7 +356,7 @@ class RateLimiter:
         recent_requests = [req for req in user_requests if req > hour_ago]
         
         # Получаем дневные счетчики для всех типов действий
-        action_types = ["message", "document", "image", "note"]
+        action_types = ["message", "document", "image", "note", "pills", "summary"]
         daily_stats = {}
         
         for action_type in action_types:
@@ -462,7 +468,7 @@ async def get_daily_stats(user_id: int) -> Dict[str, Dict[str, int]]:
         }
     """
     stats = {}
-    action_types = ["message", "document", "image", "note"]
+    action_types = ["message", "document", "image", "note", "pills", "summary"]
     
     for action_type in action_types:
         used = rate_limiter._get_period_count(user_id, action_type)
