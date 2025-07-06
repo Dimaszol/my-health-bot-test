@@ -256,33 +256,88 @@ async def send_to_gpt_vision(image_path: str, lang: str, prompt: str = None):
     return await send_to_gemini_vision(image_path, lang, prompt)
 
 @async_safe_openai_call(max_retries=2, delay=1.0)
-async def update_medications_via_gpt(user_input: str, current_list: list) -> list:  # 🔄 async
-    """Безопасное обновление списка лекарств"""
+async def update_medications_via_gpt(user_input: str, current_list: list, user_lang: str = 'ru') -> list:
+    """
+    Мультиязычное безопасное обновление списка лекарств
+    
+    Args:
+        user_input: Ввод пользователя на любом языке
+        current_list: Текущий список лекарств
+        user_lang: Язык пользователя для названий времени
+    
+    Returns:
+        Обновленный список лекарств в формате JSON
+    """
+    
+    # Словарь языков для GPT
+    lang_names = {
+        'ru': 'Russian',
+        'uk': 'Ukrainian', 
+        'en': 'English',
+        'de': 'German'
+    }
+    response_language = lang_names.get(user_lang, 'Russian')
+    
+    # Примеры времени на разных языках
+    time_examples = {
+        'ru': {
+            'morning': 'утром → 08:00',
+            'afternoon': 'днём → 13:00', 
+            'evening': 'вечером → 20:00',
+            'night': 'перед сном → 22:00'
+        },
+        'uk': {
+            'morning': 'вранці → 08:00',
+            'afternoon': 'вдень → 13:00',
+            'evening': 'ввечері → 20:00', 
+            'night': 'перед сном → 22:00'
+        },
+        'en': {
+            'morning': 'morning → 08:00',
+            'afternoon': 'afternoon → 13:00',
+            'evening': 'evening → 20:00',
+            'night': 'before bed → 22:00'
+        },
+        'de': {
+            'morning': 'morgens → 08:00',
+            'afternoon': 'nachmittags → 13:00', 
+            'evening': 'abends → 20:00',
+            'night': 'vor dem Schlafengehen → 22:00'
+        }
+    }
+    
+    examples = time_examples.get(user_lang, time_examples['ru'])
+    
+    # Английский промпт для стабильности
     prompt = (
-        "Ты — медицинский ассистент. У пользователя есть список принимаемых лекарств в формате JSON, "
-        "и он вводит изменения обычным языком: добавь, удали, измени время. "
-        "Верни обновлённый список в формате JSON со следующими полями:\n"
-        "- name (название лекарства)\n"
-        "- time (время в формате HH:MM)\n"
-        "- label (оригинальная фраза времени, как пользователь написал)\n\n"
-        "Сопоставь фразы со временем приёма. Примеры:\n"
-        "- утром → 08:00\n"
-        "- днём → 13:00\n"
-        "- вечером → 20:00\n"
-        "- перед сном → 22:00\n"
-        f"📋 Текущий список лекарств:\n{current_list}\n\n"
-        f"📨 Ввод пользователя:\n{user_input}\n\n"
-        "Верни обновлённый список как JSON-массив без комментариев и пояснений. "
-        "Ответ должен начинаться и заканчиваться квадратными скобками, содержать объекты с ключами name, time, label. "
-        "Если пользователь просит удалить все лекарства (например: «удали все», «больше не принимаю», «очистить список»), "
-        "Пример правильного формата:\n\n"
-        "[{\"name\": \"Анальгин\", \"time\": \"18:00\", \"label\": \"вечером\"}, {\"name\": \"Омепразол\", \"time\": \"22:00\", \"label\": \"перед сном\"}]"
+        f"You are a medical assistant. The user has a list of medications in JSON format, "
+        f"and they input changes in natural language: add, remove, change time. "
+        f"Return the updated list in JSON format with the following fields:\n"
+        f"- name (medication name in {response_language})\n"
+        f"- time (time in HH:MM format)\n"
+        f"- label (original time phrase as user wrote it in {response_language})\n\n"
+        f"Match phrases with intake times. Examples for {response_language}:\n"
+        f"- {examples['morning']}\n"
+        f"- {examples['afternoon']}\n" 
+        f"- {examples['evening']}\n"
+        f"- {examples['night']}\n\n"
+        f"📋 Current medication list:\n{current_list}\n\n"
+        f"📨 User input (in {response_language}):\n{user_input}\n\n"
+        f"Return the updated list as a JSON array without comments or explanations. "
+        f"The response should start and end with square brackets, containing objects with keys: name, time, label. "
+        f"If user asks to remove all medications (e.g., 'remove all', 'clear list', 'delete everything'), return an empty array: []. "
+        f"Keep medication names and time labels in {response_language} language.\n\n"
+        f"Example of correct format:\n"
+        f"[{{\"name\": \"Aspirin\", \"time\": \"18:00\", \"label\": \"evening\"}}, {{\"name\": \"Omeprazole\", \"time\": \"22:00\", \"label\": \"before bed\"}}]"
     )
 
-    response = await client.chat.completions.create(  # 🔄 await
+    response = await client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "Ты — помощник, который обновляет список лекарств по описанию пользователя."},
+            {
+                "role": "system", 
+                "content": f"You are a helpful assistant that updates medication lists based on user descriptions. Always respond with medication names and time labels in {response_language} language."
+            },
             {"role": "user", "content": prompt}
         ],
         max_tokens=500,
@@ -290,16 +345,35 @@ async def update_medications_via_gpt(user_input: str, current_list: list) -> lis
     )
     
     raw_text = response.choices[0].message.content.strip()
-    print("\n[🧪 GPT ответ — update_medications_via_gpt]:")
+    print(f"\n[🧪 GPT ответ — update_medications_via_gpt] ({user_lang}):")
     print(raw_text)
 
     import json
     try:
-        return json.loads(raw_text)
+        result = json.loads(raw_text)
+        
+        # Дополнительная валидация для мультиязычности
+        if isinstance(result, list):
+            for item in result:
+                if isinstance(item, dict) and all(key in item for key in ['name', 'time', 'label']):
+                    # Проверяем что время в правильном формате
+                    if not re.match(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$', item['time']):
+                        print(f"⚠️ Некорректное время: {item['time']}")
+                        item['time'] = '08:00'  # Fallback
+                else:
+                    print(f"⚠️ Некорректная структура элемента: {item}")
+                    return current_list  # Возвращаем старый список
+        
+        return result
+        
     except Exception as e:
         print("❌ Ошибка парсинга JSON:", e)
-        log_error_with_context(e, {"function": "update_medications_via_gpt", "raw_response": raw_text[:200]})
-        return []
+        log_error_with_context(e, {
+            "function": "update_medications_via_gpt", 
+            "raw_response": raw_text[:200],
+            "user_lang": user_lang
+        })
+        return current_list  # Возвращаем старый список при ошибке
 
 @async_safe_openai_call(max_retries=2, delay=1.0)
 async def ask_structured(text: str, lang: str = "ru", max_tokens: int = 2500) -> str:  # 🔄 async

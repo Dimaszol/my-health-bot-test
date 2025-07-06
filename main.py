@@ -130,7 +130,7 @@ async def send_welcome(message: types.Message):
     except Exception as e:
         print(f"❌ Ошибка в команде /start для пользователя {user_id}: {e}")
         log_error_with_context(e, {"action": "start_command", "user_id": user_id})
-        await message.answer("❌ Произошла ошибка. Попробуйте еще раз.")
+        await message.answer(t("start_command_error", lang))
 
 async def start_registration_with_language_option(user_id: int, message: types.Message, lang: str):
     """Начало регистрации с возможностью смены языка"""
@@ -438,7 +438,7 @@ async def handle_delete_confirmation_code(message: types.Message):
     if message.text and message.text.strip().upper() == "DELETE":
         # Код верный - выполняем удаление
         await message.answer(
-            "🗑️ Удаляю все данные...", 
+            t("deleting_all_data", lang), 
             reply_markup=types.ReplyKeyboardRemove()
         )
         
@@ -449,11 +449,11 @@ async def handle_delete_confirmation_code(message: types.Message):
             if success:
                 await message.answer(t("delete_data_success", "ru"))  # Дефолтный язык после удаления
             else:
-                await message.answer("❌ Ошибка удаления. Обратитесь в поддержку.")
+                await message.answer(t("delete_error_contact_support", lang))
                 
         except Exception as e:
             print(f"❌ Ошибка GDPR удаления: {e}")
-            await message.answer("❌ Ошибка удаления. Обратитесь в поддержку.")
+            await message.answer(t("delete_error_contact_support", lang))
             
     else:
         # Код неверный
@@ -588,7 +588,7 @@ async def handle_user_message(message: types.Message):
         if user_id in delete_confirmation_states:
             delete_confirmation_states.pop(user_id, None)  # Убираем состояние
             await message.answer(
-                "❌ Удаление профиля отменено",
+                t("profile_delete_cancelled", lang),
                 reply_markup=types.ReplyKeyboardRemove()
             )
             # ✅ ПОКАЗЫВАЕМ ГЛАВНОЕ МЕНЮ
@@ -612,7 +612,7 @@ async def handle_user_message(message: types.Message):
             )
         elif current_state == "editing_medications":
             await message.answer(
-                "❌ Редактирование лекарств отменено",
+                t("medication_edit_cancelled", lang),
                 reply_markup=types.ReplyKeyboardRemove()  # ✅ Убираем клавиатуру
             )
         elif isinstance(current_state, str) and current_state.startswith("rename_"):
@@ -623,7 +623,7 @@ async def handle_user_message(message: types.Message):
         else:
             # Любая другая отмена
             await message.answer(
-                "❌ Операция отменена",
+                t("operation_cancelled", lang),
                 reply_markup=types.ReplyKeyboardRemove()  # ✅ Убираем клавиатуру
             )
         
@@ -734,7 +734,7 @@ async def handle_user_message(message: types.Message):
             except OpenAIError as e:
                 title = f"Заметка {datetime.now().strftime('%Y-%m-%d %H:%M')}"
                 summary = fallback_summarize(note_text, lang)
-                await message.answer("⚠️ ИИ-обработка недоступна, заметка сохранена в упрощенном виде.")
+                await message.answer("⚠️ Обработка недоступна, заметка сохранена в упрощенном виде.")
 
             document_id = await save_document(
                 user_id=user_id,
@@ -793,7 +793,7 @@ async def handle_user_message(message: types.Message):
                 await message.answer(response_message)
                 # Показываем клавиатуру снова для продолжения ввода
                 await message.answer(
-                    "Попробуйте ещё раз:",
+                    t("try_again", lang),
                     reply_markup=cancel_keyboard(lang)
                 )
             
@@ -802,7 +802,7 @@ async def handle_user_message(message: types.Message):
         except Exception as e:
             log_error_with_context(e, {"user_id": user_id, "action": "edit_profile_field"})
             await message.answer(
-                "❌ Ошибка обновления профиля",
+                t("try_again", lang),
                 reply_markup=types.ReplyKeyboardRemove()  # ✅ Убираем клавиатуру
             )
             user_states[user_id] = None
@@ -957,52 +957,58 @@ async def handle_user_message(message: types.Message):
             # ==========================================
 
             try:
-                # Получаем недавние сообщения для контекста
-                try:
-                    recent_messages = await get_last_messages(user_id, limit=6)
+                # ✅ ОПРЕДЕЛЯЕМ ПОЛНЫЙ КОНТЕКСТ
+                if 'prompt_data' in locals() and prompt_data and 'context_text' in prompt_data:
+                    # Используем готовый контекст из prompt_logger
+                    full_context = prompt_data["context_text"]
+                    print("✅ Используем полный контекст из prompt_logger")
+                else:
+                    # Fallback: собираем контекст из частей
+                    context_parts = []
                     
-                    # Форматируем недавние сообщения
-                    context_lines = []
-                    for msg in recent_messages:
-                        if isinstance(msg, (tuple, list)) and len(msg) >= 2:
-                            role = "USER" if msg[0] == 'user' else "BOT"
-                            content = str(msg[1])[:100]  # Ограничиваем длину
-                            context_lines.append(f"{role}: {content}")
-                        else:
-                            print(f"⚠️ Неожиданный формат сообщения: {msg}")
+                    context_parts.append(f"📌 Patient profile:\n{profile_text}")
+                    context_parts.append(f"🧠 Conversation summary:\n{summary_text}")
+                    context_parts.append(f"🔎 Related historical data:\n{chunks_text}")
                     
-                    context_text = "\n".join(context_lines)
+                    # Получаем недавние сообщения
+                    try:
+                        recent_messages = await get_last_messages(user_id, limit=6)
+                        context_lines = []
+                        for msg in recent_messages:
+                            if isinstance(msg, (tuple, list)) and len(msg) >= 2:
+                                role = "USER" if msg[0] == 'user' else "BOT"
+                                content = str(msg[1])[:100]
+                                context_lines.append(f"{role}: {content}")
+                        recent_context = "\n".join(context_lines)
+                        context_parts.append(f"💬 Recent messages:\n{recent_context}")
+                    except Exception as e:
+                        print(f"⚠️ Не удалось получить последние сообщения: {e}")
                     
-                except Exception as e:
-                    context_text = ""
-                    print(f"⚠️ Не удалось получить контекст сообщений: {e}")
+                    full_context = "\n\n".join(context_parts)
+                    print("⚠️ Используем fallback контекст")
 
-                 # ✅ НОВАЯ ЛОГИКА ВЫБОРА МОДЕЛИ
-                # Проверяем есть ли у пользователя лимиты
+                # ✅ ОПРЕДЕЛЯЕМ КАКУЮ МОДЕЛЬ ИСПОЛЬЗОВАТЬ
                 has_premium_limits = await check_gpt4o_limit(user_id)
                 
-                # ✅ ОПРЕДЕЛЯЕМ КАКУЮ МОДЕЛЬ ИСПОЛЬЗОВАТЬ
                 if has_premium_limits:
-                    # У пользователя есть лимиты → используем Gemini
                     use_gemini = True
                     model_name = "Gemini 2.5 Flash"
                     print(f"💎 Пользователь {user_id} имеет лимиты → используем {model_name}")
                 else:
-                    # У пользователя нет лимитов → используем GPT-4o mini
                     use_gemini = False
                     model_name = "GPT-4o-mini"
                     print(f"🆓 Пользователь {user_id} без лимитов → используем {model_name}")
 
-                # Правильный вызов ask_doctor 
+                # ✅ ПРАВИЛЬНЫЙ ВЫЗОВ ask_doctor (НОВАЯ СИГНАТУРА):
                 response = await ask_doctor(
-                    context_text=prompt_data["context_text"],
+                    context_text=full_context,  # Полный готовый контекст
                     user_question=user_input,
                     lang=lang,
                     user_id=user_id,
                     use_gemini=use_gemini
                 )
 
-                print(f"🤖 {'Gemini/GPT-4o' if use_gemini else 'GPT-4o-mini'} | Чанков: {chunks_found}")
+                print(f"🤖 {'Gemini/GPT-4o' if use_gemini else 'GPT-4o-mini'} | Чанков: {chunks_found if 'chunks_found' in locals() else 0}")
 
                 # Отправляем ответ пользователю
                 if response:
@@ -1442,8 +1448,7 @@ async def handle_button_action(callback: types.CallbackQuery):
             clean_text = html.escape(text[:4000])
             from utils.security import safe_send_message
             await safe_send_message(callback.message, clean_text, title=title)
-            # ✅ ДОБАВЛЯЕМ ГЛАВНОЕ МЕНЮ ПОСЛЕ ПРОСМОТРА
-            await show_main_menu(callback.message, lang)
+
             
         elif action == "rename":
             user_states[user_id] = f"rename_{doc_id}"
@@ -1459,12 +1464,10 @@ async def handle_button_action(callback: types.CallbackQuery):
             file_path = doc.get("file_path")
             if not file_path or not os.path.exists(file_path):
                 await callback.message.answer(t("file_not_found", lang))
-                # ✅ ДОБАВЛЯЕМ ГЛАВНОЕ МЕНЮ ЕСЛИ ФАЙЛ НЕ НАЙДЕН
-                await show_main_menu(callback.message, lang)
+  
                 return
             await callback.message.answer_document(types.FSInputFile(path=file_path))
-            # ✅ ДОБАВЛЯЕМ ГЛАВНОЕ МЕНЮ ПОСЛЕ СКАЧИВАНИЯ
-            await show_main_menu(callback.message, lang)
+          
             
     except Exception as e:
         user_id = callback.from_user.id

@@ -23,11 +23,11 @@ class PromoManager:
             "original_price": "$3.99",          # Обычная цена
             "promo_price": "$0.99",             # Цена со скидкой
             "package_id": "basic_sub",          # ID пакета из stripe_config.py
-            "description": "Базовый план",
-            "features": [
-                "5 загруженных документов",
-                "100 детальных консультаций", 
-                "100 вопросов в день"
+            "description_key": "promo_basic_plan_name",  # ← Ключ локализации
+            "feature_keys": [                   # ← Ключи локализации вместо текста
+                "promo_basic_feature_1",
+                "promo_basic_feature_2", 
+                "promo_basic_feature_3"
             ],
             "emoji": "💎"
         },
@@ -36,11 +36,11 @@ class PromoManager:
             "original_price": "$9.99",          # Обычная цена
             "promo_price": "$1.99",             # Цена со скидкой
             "package_id": "premium_sub",        # ID пакета из stripe_config.py
-            "description": "Премиум план",
-            "features": [
-                "20 загруженных документов",
-                "400 детальных консультаций",
-                "100 вопросов в день"
+            "description_key": "promo_premium_plan_name",  # ← Ключ локализации
+            "feature_keys": [                   # ← Ключи локализации вместо текста
+                "promo_premium_feature_1",
+                "promo_premium_feature_2",
+                "promo_premium_feature_3"
             ],
             "emoji": "🚀"
         }
@@ -86,7 +86,7 @@ class PromoManager:
         """
         try:
             from main import bot
-            from db_postgresql import get_user_language
+            from db_postgresql import get_user_language, t
             
             # 1️⃣ Получаем язык пользователя (убираем обновление БД)
             lang = await get_user_language(user_id)
@@ -95,40 +95,40 @@ class PromoManager:
             basic_info = PromoManager.PROMO_CODES['basic_special']
             premium_info = PromoManager.PROMO_CODES['premium_special']
             
-            text = f"""🎉 <b>Специальное предложение только для Вас!</b>
+            text = f"""{t('promo_title', lang)}
 
-🔥 Вы активный пользователь - самое время получить максимум от медицинского ассистента!
+{t('promo_subtitle', lang)}
 
-💎 <b>БАЗОВЫЙ ПЛАН</b>
-<s>{basic_info['original_price']}</s> ➜ <b>{basic_info['promo_price']}</b> <i>(экономия $3.00!)</i>
-{chr(10).join(['• ' + feature for feature in basic_info['features']])}
+💎 <b>{t('promo_basic_plan', lang)}</b>
+<s>{basic_info['original_price']}</s> ➜ <b>{basic_info['promo_price']}</b> <i>{t('promo_basic_savings', lang)}</i>
+{chr(10).join(['• ' + t(feature_key, lang) for feature_key in basic_info['feature_keys']])}
 
-🚀 <b>ПРЕМИУМ ПЛАН</b> <i>(самый популярный!)</i>
-<s>{premium_info['original_price']}</s> ➜ <b>{premium_info['promo_price']}</b> <i>(экономия $8.00!)</i>
-{chr(10).join(['• ' + feature for feature in premium_info['features']])}
+🚀 <b>{t('promo_premium_plan', lang)}</b> <i>{t('promo_most_popular', lang)}</i>
+<s>{premium_info['original_price']}</s> ➜ <b>{premium_info['promo_price']}</b> <i>{t('promo_premium_savings', lang)}</i>
+{chr(10).join(['• ' + t(feature_key, lang) for feature_key in premium_info['feature_keys']])}
 
-⚡ <i>Это предложение действует только через кнопки ниже!</i>
+⚡ <i>{t('promo_offer_note', lang)}</i>
 
-🎯 Выберите свой план:"""
+🎯 {t('promo_choose_plan', lang)}"""
 
             # 4️⃣ Создаем кнопки с промокодами
             keyboard = InlineKeyboardBuilder()
             
             # Кнопка для Basic плана
             keyboard.button(
-                text=f"{basic_info['emoji']} Базовый за {basic_info['promo_price']}",
+                text=t('promo_basic_button', lang, price=basic_info['promo_price']),
                 callback_data=f"promo_buy:basic_special"
             )
             
             # Кнопка для Premium плана  
             keyboard.button(
-                text=f"{premium_info['emoji']} Премиум за {premium_info['promo_price']}", 
+                text=t('promo_premium_button', lang, price=premium_info['promo_price']), 
                 callback_data=f"promo_buy:premium_special"
             )
             
             # Кнопка "Не сейчас"
             keyboard.button(
-                text="⏰ Может быть позже",
+                text=t('promo_maybe_later', lang),
                 callback_data="promo_dismiss"
             )
             
@@ -155,21 +155,26 @@ class PromoManager:
         💳 Обрабатывает нажатие на кнопку покупки по промокоду
         """
         try:
+            from db_postgresql import get_user_language, t
+            
             # 1️⃣ Извлекаем тип промокода из callback_data
             callback_data = callback_query.data
             if ":" not in callback_data:
-                await callback_query.answer("❌ Неверный формат промокода")
+                lang = await get_user_language(callback_query.from_user.id)
+                await callback_query.answer(t('promo_invalid_format', lang))
                 return
                 
             promo_type = callback_data.split(":")[1]
             promo_info = PromoManager.PROMO_CODES.get(promo_type)
             
+            user_id = callback_query.from_user.id
+            lang = await get_user_language(user_id)
+            
             if not promo_info:
-                await callback_query.answer("❌ Промокод не найден")
+                await callback_query.answer(t('promo_not_found', lang))
                 logger.warning(f"Неизвестный промокод: {promo_type}")
                 return
                 
-            user_id = callback_query.from_user.id
             user_name = callback_query.from_user.first_name or "Пользователь"
             
             logger.info(f"User {user_id} выбрал промокод {promo_type}")
@@ -188,32 +193,33 @@ class PromoManager:
             if success:
                 # Успешно создали ссылку на оплату
                 keyboard = InlineKeyboardBuilder()
-                keyboard.button(text="💳 Перейти к оплате", url=result)
+                keyboard.button(text=t('promo_payment_button', lang), url=result)
                 
                 # Обновляем сообщение с кнопкой оплаты
                 savings = float(promo_info['original_price'][1:]) - float(promo_info['promo_price'][1:])
                 
                 await callback_query.message.edit_text(
-                    f"🎯 <b>Отличный выбор!</b>\n\n"
-                    f"📦 <b>{promo_info['description']}</b>: {promo_info['promo_price']}\n"
-                    f"💰 <b>Ваша экономия:</b> ${savings:.2f}\n\n"
-                    
-                    f"👇 Нажмите кнопку для оплаты со скидкой:",
+                    t('promo_payment_message', lang, 
+                      plan=t(promo_info['description_key'], lang),
+                      price=promo_info['promo_price'],
+                      savings=f"${savings:.2f}"),
                     reply_markup=keyboard.as_markup(),
                     parse_mode="HTML"
                 )
                 
-                await callback_query.answer("✅ Ссылка на оплату готова!")
+                await callback_query.answer(t('promo_payment_ready', lang))
                 logger.info(f"✅ User {user_id}: создана ссылка на оплату с промокодом {promo_type}")
                 
             else:
                 # Ошибка создания ссылки
-                await callback_query.answer(f"❌ {result}")
+                await callback_query.answer(t('promo_payment_error', lang, error=result))
                 logger.error(f"Ошибка создания ссылки для user {user_id}: {result}")
                 
         except Exception as e:
             logger.error(f"Ошибка обработки промокода: {e}")
-            await callback_query.answer("❌ Произошла ошибка. Попробуйте позже.")
+            user_id = callback_query.from_user.id
+            lang = await get_user_language(user_id)
+            await callback_query.answer(t('promo_general_error', lang))
     
     @staticmethod
     async def handle_promo_dismiss(callback_query: types.CallbackQuery):
@@ -221,19 +227,22 @@ class PromoManager:
         ⏰ Обрабатывает нажатие "Может быть позже"
         """
         try:
+            from db_postgresql import get_user_language, t
+            
+            user_id = callback_query.from_user.id
+            lang = await get_user_language(user_id)
+            
             await callback_query.message.edit_text(
-                f"💡 <b>Не проблема!</b>\n\n"
-                f"🔖 Это сообщение останется в переписке - сможете воспользоваться промокодом в любое время.\n\n"
-                f"🎯 Просто вернитесь сюда, когда будете готовы получить максимум от медицинского ассистента!",
+                t('promo_dismiss_message', lang),
                 parse_mode="HTML"
             )
             
-            await callback_query.answer("✅ Промокод сохранен в переписке")
-            logger.info(f"User {callback_query.from_user.id}: отложил промокод")
+            await callback_query.answer(t('promo_dismiss_answer', lang))
+            logger.info(f"User {user_id}: отложил промокод")
             
         except Exception as e:
             logger.error(f"Ошибка обработки dismiss промокода: {e}")
-            await callback_query.answer("✅ Окей!")
+            await callback_query.answer(t('promo_dismiss_fallback', lang))
 
 # 🔧 Функция для интеграции с существующим кодом
 async def check_promo_on_message(user_id: int, message_count: int) -> Optional[types.Message]:
