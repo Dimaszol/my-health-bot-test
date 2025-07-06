@@ -100,6 +100,13 @@ async def maybe_update_summary(user_id):
     ✅ МУЛЬТИЯЗЫЧНАЯ версия без использования ask_gpt
     Создает сводки разговоров с прямым вызовом OpenAI API
     """
+    from datetime import datetime, timedelta
+    
+    def create_cutoff_date() -> str:
+        """Создает дату отсечения (7 дней назад)"""
+        cutoff = datetime.now() - timedelta(days=7)
+        return cutoff.strftime("%d.%m.%Y")
+    
     # Получаем язык пользователя
     try:
         user_lang = await get_user_language(user_id)
@@ -147,6 +154,7 @@ async def maybe_update_summary(user_id):
 
     dialogue = format_dialogue(new_messages)
     today = datetime.now().strftime("%d.%m.%Y")
+    cutoff_date = create_cutoff_date()
 
     # 🌐 МУЛЬТИЯЗЫЧНЫЙ ПРОМПТ (English prompt, user language response)
     lang_names = {
@@ -157,17 +165,21 @@ async def maybe_update_summary(user_id):
     }
     
     prompt = (
-        f"Below is a brief summary of communication between a doctor and patient, compiled earlier. "
-        f"Also provided are new messages. Today's date: {today}.\n\n"
-        f"🛠 Your task — update the summary, strictly following the rules:\n"
-        f"- Each complaint, symptom or recommendation in the summary should have a date of first or last mention.\n"
-        f"- If new messages mention an existing problem again — update the date to current ({today}).\n"
-        f"- If a topic was **not mentioned** in new messages, **keep it with the previous date**.\n"
-        f"- If any problem **hasn't been updated for more than 7 days** and is not mentioned in new messages — **delete it**.\n"
-        f"- The final summary should be brief, with dates, maximum 2-3 paragraphs. Don't duplicate or complicate.\n\n"
-        f"📘 Previous summary:\n{old_summary}\n\n"
-        f"💬 New messages:\n{dialogue}\n\n"
-        f"Update the summary considering dates. IMPORTANT: Respond ONLY in {lang_names.get(user_lang, 'Russian')} language:"
+        f"📅 TODAY: {today}\n"
+        f"🗓️ DELETE RULE: Remove entries older than 7 days (before {cutoff_date})\n\n"
+        f"Update medical summary following these rules:\n"
+        f"1. If topic mentioned in new messages → update date to {today}\n"
+        f"2. If topic NOT mentioned → keep original date\n"
+        f"3. ⚠️ MANDATORY: Delete ALL entries with dates before {cutoff_date}\n"
+        f"4. Group similar topics (max 8 entries total)\n"
+        f"5. Format: [DD.MM.YYYY] - [brief description]\n\n"
+        f"EXAMPLE of what to DELETE:\n"
+        f"❌ [{cutoff_date}] - Old symptom (exactly 7 days - DELETE!)\n"
+        f"✅ [02.07.2025] - Recent symptom (keep)\n\n"
+        f"Previous summary:\n{old_summary}\n\n"
+        f"New messages:\n{dialogue}\n\n"
+        f"⚠️ FINAL CHECK: Delete entries from {cutoff_date} and earlier!\n"
+        f"Respond in {lang_names.get(user_lang, 'Russian')} language:"
     )
 
     # ⚠️ Ограничиваем объём промта по символам (~токены)
@@ -183,17 +195,18 @@ async def maybe_update_summary(user_id):
                     {
                         "role": "system", 
                         "content": (
-                            "You are a medical conversation summarizer. Create concise, accurate summaries "
-                            "of doctor-patient conversations with dates. Focus on symptoms, diagnoses, "
-                            "treatments, and recommendations mentioned in the conversation. "
+                            f"You are a medical summarizer. TODAY is {today}. "
+                            f"CRITICAL RULE: Delete ALL entries dated {cutoff_date} or earlier. "
+                            f"Only keep entries from last 7 days. Calculate: if date is before {cutoff_date} → DELETE. "
+                            f"Use format [DD.MM.YYYY] - [description]. "
                             f"Always respond ONLY in {lang_names.get(user_lang, 'Russian')} language, "
                             f"regardless of the input language."
                         )
                     },
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=800,
-                temperature=0.3  # Низкая температура для точности сводок
+                max_tokens=400,
+                temperature=0.2  # Низкая температура для точности сводок
             )
             
             # ✅ БЕЗОПАСНОЕ получение ответа
@@ -244,7 +257,24 @@ async def maybe_update_summary(user_id):
         return True
     else:
         print(f"📝 Сводка не изменилась для пользователя {user_id}")
-        return False
+        try:
+            if new_messages:
+                last_msg = new_messages[-1]
+                if isinstance(last_msg, dict):
+                    last_message_id = last_msg.get('id', 0)
+                else:
+                    last_message_id = await get_last_message_id(user_id)
+            else:
+                last_message_id = await get_last_message_id(user_id)
+            
+            # Сохраняем ту же сводку, но с обновленным last_message_id
+            await save_conversation_summary(user_id, old_summary, last_message_id)
+            print(f"🔄 Обновлен last_message_id для предотвращения повторной обработки")
+            
+        except Exception as e:
+            print(f"❌ Ошибка обновления last_message_id: {e}")
+        
+        return True  # ← ВАЖНО: возвращаем True чтобы считалось что обработка завершена
 
 async def format_user_profile(user_id: int) -> str:
     """

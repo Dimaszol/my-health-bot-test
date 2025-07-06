@@ -995,14 +995,11 @@ async def handle_user_message(message: types.Message):
 
                 # Правильный вызов ask_doctor 
                 response = await ask_doctor(
-                    profile_text=profile_text,
-                    summary_text=summary_text, 
-                    chunks_text=chunks_text,
-                    context_text=context_text,
+                    context_text=prompt_data["context_text"],
                     user_question=user_input,
                     lang=lang,
                     user_id=user_id,
-                    use_gemini=use_gemini,                    
+                    use_gemini=use_gemini
                 )
 
                 print(f"🤖 {'Gemini/GPT-4o' if use_gemini else 'GPT-4o-mini'} | Чанков: {chunks_found}")

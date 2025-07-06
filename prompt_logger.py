@@ -1,5 +1,3 @@
-# prompt_logger.py - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ с проверкой векторной базы
-
 import logging
 import json
 from datetime import datetime
@@ -29,48 +27,124 @@ def log_chunk_info(chunks: list, chunk_type: str):
     if len(chunks) > 3:
         print(f"   ... и еще {len(chunks) - 3} чанков")
 
+async def get_recent_messages_formatted(user_id: int, limit: int = 6) -> str:
+    """
+    Получает последние сообщения ИСКЛЮЧАЯ текущее (последнее) сообщение
+    """
+    try:
+        from db_postgresql import get_last_messages
+        
+        # Берем на 1 больше чтобы исключить последнее (текущее) сообщение
+        recent_messages = await get_last_messages(user_id, limit=limit + 1)
+        
+        if not recent_messages:
+            return "No recent messages"
+        
+        # ✅ ИСКЛЮЧАЕМ ПОСЛЕДНЕЕ СООБЩЕНИЕ (текущий вопрос)
+        if len(recent_messages) > 1:
+            recent_messages = recent_messages[:-1]  # Убираем последнее
+        
+        # ✅ ОБЕСПЕЧИВАЕМ ЧЕТНОЕ КОЛИЧЕСТВО (пары USER-BOT)
+        if len(recent_messages) % 2 != 0:
+            recent_messages = recent_messages[1:]  # Убираем первое если нечетное
+        
+        formatted_lines = []
+        for msg in recent_messages:
+            if isinstance(msg, (tuple, list)) and len(msg) >= 2:
+                role = "USER" if msg[0] == 'user' else "BOT"
+                content = str(msg[1])
+                
+                # ✅ УМНАЯ ОЧИСТКА HTML ТЕГОВ
+                import re
+                content = re.sub(r'<[^>]+>', '', content)  # Убираем HTML теги
+                
+                # ✅ ОБРЕЗКА ДО 100 СИМВОЛОВ БЕЗ РАЗРЫВА СЛОВ
+                if len(content) > 100:
+                    content = content[:97]
+                    # Найдем последний пробел чтобы не резать слово
+                    last_space = content.rfind(' ')
+                    if last_space > 80:  # Если пробел не слишком близко к началу
+                        content = content[:last_space]
+                    content += "..."
+                
+                formatted_lines.append(f"{role}: {content}")
+        
+        # ✅ ОГРАНИЧИВАЕМ ДО 3 ПАР (6 сообщений)
+        if len(formatted_lines) > 6:
+            formatted_lines = formatted_lines[-6:]
+        
+        return "\n".join(formatted_lines) if formatted_lines else "No recent messages"
+        
+    except Exception as e:
+        print(f"❌ Ошибка получения последних сообщений: {e}")
+        return "Recent messages unavailable"
+
+async def get_medical_timeline_simple(user_id: int, limit: int = 6) -> str:
+    """
+    Простая функция для получения медкарты в компактном виде
+    """
+    try:
+        from db_postgresql import get_db_connection, release_db_connection
+        
+        conn = await get_db_connection()
+        
+        # Получаем последние записи
+        rows = await conn.fetch("""
+            SELECT event_date, description, importance
+            FROM medical_timeline 
+            WHERE user_id = $1 
+            ORDER BY event_date DESC, created_at DESC
+            LIMIT $2
+        """, user_id, limit)
+        
+        if not rows:
+            return "Medical timeline: empty"
+        
+        # Форматируем компактно
+        lines = []
+        for row in rows:
+            date_str = row['event_date'].strftime('%d.%m.%Y') if row['event_date'] else 'N/A'
+            importance = row['importance'] or 'normal'
+            description = (row['description'] or '')[:80]  # Ограничиваем длину
+            
+            # Добавляем эмодзи важности
+            emoji = '🔴' if importance == 'critical' else '🟡' if importance == 'important' else '⚪'
+            lines.append(f"{emoji} {date_str}: {description}")
+        
+        return "\n".join(lines)
+        
+    except Exception as e:
+        print(f"❌ Ошибка получения медкарты: {e}")
+        return "Medical timeline: unavailable"
+    finally:
+        if 'conn' in locals():
+            await release_db_connection(conn)
+
 async def get_user_vector_count(user_id: int) -> int:
     """
-    🔍 НОВАЯ ФУНКЦИЯ: Получает количество векторов пользователя
-    
-    Returns:
-        int: Количество векторов в базе для данного пользователя
+    🔍 Получает количество векторов пользователя (ПРОСТАЯ версия)
     """
     try:
         from vector_db_postgresql import vector_db
         if not vector_db:
-            print("❌ Векторная база не инициализирована")
             return 0
             
         conn = await vector_db.db_pool.acquire()
         try:
-            result = await conn.fetchval("""
-                SELECT COUNT(*) 
-                FROM document_vectors 
-                WHERE user_id = $1
-            """, user_id)
-            
-            count = result or 0
-            print(f"📊 У пользователя {user_id} в векторной базе: {count} записей")
-            return count
-            
+            result = await conn.fetchval(
+                "SELECT COUNT(*) FROM document_vectors WHERE user_id = $1", 
+                user_id
+            )
+            return result or 0
         finally:
             await vector_db.db_pool.release(conn)
-            
     except Exception as e:
-        print(f"❌ Ошибка подсчета векторов для пользователя {user_id}: {e}")
+        print(f"❌ Ошибка подсчета векторов: {e}")
         return 0
 
-async def get_all_user_vectors(user_id: int, limit: int = 4) -> List[Dict]:
+async def get_all_user_chunks(user_id: int, limit: int = 4) -> List[Dict]:
     """
-    📥 НОВАЯ ФУНКЦИЯ: Получает ВСЕ векторы пользователя (для малых баз)
-    
-    Args:
-        user_id: ID пользователя
-        limit: Максимальное количество записей
-        
-    Returns:
-        List[Dict]: Все записи пользователя из векторной базы
+    📥 Получает ВСЕ чанки пользователя (ПРОСТАЯ версия)
     """
     try:
         from vector_db_postgresql import vector_db
@@ -89,7 +163,7 @@ async def get_all_user_vectors(user_id: int, limit: int = 4) -> List[Dict]:
                 FROM document_vectors dv
                 JOIN documents d ON d.id = dv.document_id
                 WHERE dv.user_id = $1
-                ORDER BY d.uploaded_at DESC, dv.id DESC
+                ORDER BY d.uploaded_at DESC
                 LIMIT $2
             """, user_id, limit)
             
@@ -97,41 +171,35 @@ async def get_all_user_vectors(user_id: int, limit: int = 4) -> List[Dict]:
             for row in results:
                 try:
                     metadata = json.loads(row['metadata']) if row['metadata'] else {}
-                except (json.JSONDecodeError, TypeError):
+                except:
                     metadata = {}
                 
-                chunk_data = {
+                chunks.append({
                     "chunk_text": row['chunk_text'],
                     "metadata": metadata,
                     "keywords": row['keywords'],
                     "document_title": row['document_title'],
-                    "uploaded_at": row['uploaded_at'],
-                    "similarity": 1.0,  # Все записи одинаково релевантны
-                    "final_score": 1.0
-                }
-                chunks.append(chunk_data)
+                    "uploaded_at": row['uploaded_at']
+                })
             
-            print(f"📦 Получено {len(chunks)} записей из векторной базы пользователя {user_id}")
             return chunks
-            
         finally:
             await vector_db.db_pool.release(conn)
-            
     except Exception as e:
-        print(f"❌ Ошибка получения всех векторов для пользователя {user_id}: {e}")
+        print(f"❌ Ошибка получения всех чанков: {e}")
         return []
 
 async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
     """
-    🔍 ОПТИМИЗИРОВАННАЯ ГЛАВНАЯ ФУНКЦИЯ: Обрабатывает вопрос пользователя с умной оптимизацией
+    🔍 ГЛАВНАЯ ФУНКЦИЯ: Обрабатывает вопрос пользователя с ПРОСТОЙ оптимизацией
     
-    Логика оптимизации:
-    - 0 векторов: НЕ вызываем GPT для поиска, сразу отвечаем
-    - 1-4 вектора: НЕ делаем поиск, берем ВСЕ векторы пользователя  
-    - 5+ векторов: Делаем полный поиск как обычно
+    Логика:
+    - 0 векторов: пропускаем поиск
+    - 1-4 вектора: берем все без поиска  
+    - 5+ векторов: делаем полный поиск
     
     Returns:
-        Dict с данными для финального промпта
+        Dict с данными для финального промта
     """
     
     # ==========================================
@@ -144,19 +212,10 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
         # ==========================================
         # ШАГ 2: ПРОВЕРКА ВЕКТОРНОЙ БАЗЫ (НОВОЕ!)
         # ==========================================
-        log_step(2, "🚀 ОПТИМИЗАЦИЯ: ПРОВЕРКА ВЕКТОРНОЙ БАЗЫ")
+        log_step(2, "🚀 ПРОВЕРКА ВЕКТОРНОЙ БАЗЫ")
         
         vector_count = await get_user_vector_count(user_id)
-        
-        if vector_count == 0:
-            print("🎯 ОПТИМИЗАЦИЯ: Векторная база пустая - пропускаем ВСЕ GPT вызовы для поиска")
-            search_mode = "empty"
-        elif vector_count <= 4:
-            print(f"🎯 ОПТИМИЗАЦИЯ: Мало векторов ({vector_count}) - берем ВСЕ без поиска")
-            search_mode = "take_all"
-        else:
-            print(f"🎯 СТАНДАРТНЫЙ РЕЖИМ: Много векторов ({vector_count}) - делаем полный поиск")
-            search_mode = "full_search"
+        print(f"📊 У пользователя {user_id} векторов: {vector_count}")
         
         # ==========================================
         # ШАГ 3: ПОЛУЧЕНИЕ ПРОФИЛЯ ПОЛЬЗОВАТЕЛЯ
@@ -189,44 +248,37 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
             print(f"❌ Ошибка получения сводки: {e}")
         
         # ==========================================
-        # ШАГ 5: УМНАЯ ОБРАБОТКА ВЕКТОРНОЙ БАЗЫ
+        # ШАГ 5: УМНАЯ ОБРАБОТКА ВЕКТОРОВ
         # ==========================================
         
-        if search_mode == "empty":
-            # 🚀 ОПТИМИЗАЦИЯ: Пустая база - никаких вызовов GPT
+        if vector_count == 0:
+            # 🚀 ПУСТАЯ БАЗА: пропускаем поиск
             log_step(5, "🚀 ПРОПУСК: Векторная база пустая")
             chunks_text = "У пользователя нет загруженных медицинских документов"
             chunks_found = 0
-            print("💰 ЭКОНОМИЯ: Пропущено 3 вызова GPT (расширение запроса + ключевые слова + эмбеддинг)")
+            print("💰 ЭКОНОМИЯ: Пропущены GPT вызовы для поиска")
             
-        elif search_mode == "take_all":
-            # 🎯 ОПТИМИЗАЦИЯ: Мало векторов - берем все без поиска
-            log_step(5, f"🎯 УМНАЯ ЗАГРУЗКА: Берем все {vector_count} записей без поиска")
+        elif vector_count <= 4:
+            # 🎯 МАЛО ВЕКТОРОВ: берем все
+            log_step(5, f"🎯 БЕРЕМ ВСЕ: {vector_count} векторов")
             
-            all_chunks = await get_all_user_vectors(user_id, limit=4)
+            all_chunks = await get_all_user_chunks(user_id, limit=4)
             
             if all_chunks:
-                # Преобразуем в текст
-                chunk_texts = []
-                for chunk in all_chunks:
-                    chunk_text = chunk.get("chunk_text", "")
-                    if chunk_text.strip():
-                        chunk_texts.append(chunk_text)
-                
+                chunk_texts = [chunk.get("chunk_text", "") for chunk in all_chunks if chunk.get("chunk_text", "").strip()]
                 chunks_text = "\n\n".join(chunk_texts)
                 chunks_found = len(chunk_texts)
-                
-                print(f"📦 Загружено {chunks_found} записей ({len(chunks_text)} символов)")
-                print("💰 ЭКОНОМИЯ: Пропущено 3 вызова GPT (расширение запроса + ключевые слова + эмбеддинг)")
+                print(f"📦 Загружено {chunks_found} записей без поиска")
+                print("💰 ЭКОНОМИЯ: Пропущены GPT вызовы для поиска")
             else:
-                chunks_text = "Не удалось загрузить данные из векторной базы"
+                chunks_text = "Не удалось загрузить данные"
                 chunks_found = 0
                 
         else:
-            # 🔍 ПОЛНЫЙ ПОИСК: Много векторов - делаем как обычно
-            log_step(5, "🔍 ПОЛНЫЙ ПОИСК: Расширение запроса и векторный поиск")
+            # 🔍 МНОГО ВЕКТОРОВ: полный поиск как в рабочей версии
+            log_step(5, f"🔍 ПОЛНЫЙ ПОИСК: {vector_count} векторов")
             
-            # ШАГ 5A: УЛУЧШЕНИЕ ЗАПРОСА ДЛЯ ПОИСКА
+            # ШАГ 5A: УЛУЧШЕНИЕ ЗАПРОСА
             try:
                 from gpt import enrich_query_for_vector_search, extract_keywords
                 
@@ -240,7 +292,7 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
             except Exception as e:
                 refined_query = user_input
                 keywords = []
-                print(f"❌ Ошибка обработки запроса, используем исходный: {e}")
+                print(f"❌ Ошибка обработки запроса: {e}")
             
             # ШАГ 5B: СЕМАНТИЧЕСКИЙ ПОИСК
             try:
@@ -271,52 +323,39 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
                 keyword_chunks = []
                 print(f"❌ Ошибка поиска по ключевым словам: {e}")
             
-            # ШАГ 5D: ГИБРИДНОЕ РАНЖИРОВАНИЕ
+            # ШАГ 5D: ГИБРИДНОЕ РАНЖИРОВАНИЕ (ИСПРАВЛЕНО!)
             try:
-                from save_utils import rank_chunks_hybrid
+                # ✅ ПРАВИЛЬНЫЙ ИМПОРТ
+                from vector_db_postgresql import create_hybrid_ranking
                 
-                ranked_chunk_texts = rank_chunks_hybrid(
+                ranked_chunk_texts = create_hybrid_ranking(
                     vector_chunks=vector_chunks,
                     keyword_chunks=keyword_chunks,
-                    query=user_input,
-                    max_chunks=6
+                    boost_factor=1.8
                 )
                 
-                selected_chunks = ranked_chunk_texts[:6]
+                selected_chunks = ranked_chunk_texts[:5]
                 chunks_text = "\n\n".join(selected_chunks)
                 chunks_found = len(selected_chunks)
                 
-                print(f"\n📦 ИТОГОВЫЙ РЕЗУЛЬТАТ ГИБРИДНОГО ПОИСКА:")
+                print(f"\n📦 ГИБРИДНЫЙ РЕЗУЛЬТАТ:")
                 print(f"   🔥 Ранжированных чанков: {len(ranked_chunk_texts)}")
                 print(f"   🎯 Отобрано для промпта: {chunks_found}")
-                print(f"   📄 Символов контекста: {len(chunks_text)}")
                 
             except Exception as e:
                 print(f"❌ Ошибка гибридного ранжирования: {e}")
                 # Fallback на простое объединение
-                
-                def filter_chunks_simple(chunks, limit=5):
-                    filtered_texts = []
-                    for chunk in chunks:
-                        chunk_text = chunk.get("chunk_text", "")
-                        if chunk_text.strip():
-                            filtered_texts.append(chunk_text)
-                            if len(filtered_texts) >= limit:
-                                break
-                    return filtered_texts
-
-                vector_texts = filter_chunks_simple(vector_chunks, limit=3)
-                keyword_texts = filter_chunks_simple(keyword_chunks, limit=2)
+                vector_texts = [chunk.get("chunk_text", "") for chunk in vector_chunks[:3] if chunk.get("chunk_text", "").strip()]
+                keyword_texts = [chunk.get("chunk_text", "") for chunk in keyword_chunks[:2] if chunk.get("chunk_text", "").strip()]
                 all_chunks = list(dict.fromkeys(vector_texts + keyword_texts))
                 chunks_text = "\n\n".join(all_chunks[:5])
                 chunks_found = len(all_chunks)
-                
-                print(f"📦 FALLBACK: {chunks_found} чанков (простое объединение)")
+                print(f"📦 FALLBACK: {chunks_found} чанков")
         
         # ==========================================
         # ШАГ 6: СИСТЕМНЫЙ ПРОМТ
         # ==========================================
-        log_step(6, "СОЗДАНИЕ СИСТЕМНОГО ПРОМПТА")
+        log_step(6, "СОЗДАНИЕ СИСТЕМНОГО ПРОМТА")
         
         try:
             from db_postgresql import get_user_language
@@ -329,7 +368,6 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
             )
             
             print(f"🌐 Язык ответа: {lang}")
-            print(f"📏 Длина системного промта: {len(system_prompt)} символов")
             
         except Exception as e:
             system_prompt = "You are a helpful medical assistant."
@@ -337,18 +375,45 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
             print(f"❌ Ошибка создания системного промта: {e}")
         
         # ==========================================
-        # ШАГ 7: СОЗДАНИЕ ФИНАЛЬНОГО ПРОМПТА
+        # ШАГ 7: ПОЛУЧЕНИЕ МЕДКАРТЫ
         # ==========================================
-        log_step(7, "СОЗДАНИЕ ФИНАЛЬНОГО ПРОМПТА")
+        log_step(7, "ПОЛУЧЕНИЕ МЕДКАРТЫ")
         
-        user_prompt_parts = [
-            "Answer only questions related to the user's health. Do not repeat that you're an AI. Do not ask follow-up questions unless critical.",
-            "",
+        try:
+            medical_timeline = await get_medical_timeline_simple(user_id, limit=6)
+            print(f"🏥 Медкарта получена: {len(medical_timeline)} символов")
+        except Exception as e:
+            medical_timeline = "Medical timeline: unavailable"
+            print(f"❌ Ошибка получения медкарты: {e}")
+        
+        # ==========================================
+        # ШАГ 8: ПОЛУЧЕНИЕ ПОСЛЕДНИХ СООБЩЕНИЙ
+        # ==========================================
+        log_step(8, "ПОЛУЧЕНИЕ ПОСЛЕДНИХ СООБЩЕНИЙ")
+        
+        try:
+            recent_messages_text = await get_recent_messages_formatted(user_id, limit=6)
+            print(f"💬 Последние сообщения получены: {len(recent_messages_text)} символов")
+        except Exception as e:
+            recent_messages_text = "Recent messages unavailable"
+            print(f"❌ Ошибка получения последних сообщений: {e}")
+
+
+        # ==========================================
+        # ШАГ 9: СОЗДАНИЕ ФИНАЛЬНОГО ПРОМТА
+        # ==========================================
+        log_step(9, "СОЗДАНИЕ ФИНАЛЬНОГО ПРОМТА")
+        
+        user_prompt_parts = [            
             f"📌 Patient profile:\n{profile_text}",
             "",
             f"🧠 Conversation summary:\n{summary_text}",
             "",
+            f"🏥 Medical timeline:\n{medical_timeline}",  # ← ДОБАВИТЬ МЕДКАРТУ
+            "",
             f"🔎 Related historical data:\n{chunks_text or 'Релевантная информация не найдена'}",
+            "",
+            f"💬 Recent messages (last 3 pairs):\n{recent_messages_text}",  # ← ДОБАВИТЬ ПОСЛЕДНИЕ СООБЩЕНИЯ
             "",
             f"Patient: {user_input}"
         ]
@@ -359,35 +424,29 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
         print(f"   🔧 Системный промт: {len(system_prompt)} символов")
         print(f"   👤 Профиль: {len(profile_text)} символов")
         print(f"   💭 Сводка: {len(summary_text)} символов")
+        print(f"   🏥 Медкарта: {len(medical_timeline)} символов")
+        print(f"   💬 Последние сообщения: {len(recent_messages_text)} символов")
         print(f"   🔎 Исторические данные: {len(chunks_text)} символов")
         print(f"   📏 ОБЩАЯ ДЛИНА: {len(final_user_prompt)} символов")
         print(f"   🎯 Примерно токенов: {len(final_user_prompt) // 4}")
         
-        # ==========================================
-        # ШАГ 8: ФИНАЛЬНАЯ СВОДКА ОПТИМИЗАЦИЙ
-        # ==========================================
-        
-        if search_mode in ["empty", "take_all"]:
-            print(f"\n💰 ИТОГОВАЯ ЭКОНОМИЯ:")
-            print(f"   🚀 Режим оптимизации: {search_mode}")
-            print(f"   💸 Пропущено вызовов GPT: 3")
-            print(f"   📊 Векторов в базе: {vector_count}")
-            print(f"   ⚡ Время обработки: значительно сокращено")
-        else:
-            print(f"\n🔍 ПОЛНАЯ ОБРАБОТКА:")
-            print(f"   📊 Векторов в базе: {vector_count}")
-            print(f"   🧠 Использованы все GPT вызовы")
-            print(f"   ⚡ Режим: полный поиск")
+        # Дополнительная статистика оптимизации
+        if vector_count <= 4:
+            print(f"\n💰 ЭКОНОМИЯ:")
+            print(f"   📊 Векторов: {vector_count}")
+            print(f"   💸 Пропущено GPT вызовов: 3")
+            print(f"   ⚡ Режим: упрощенный")
         
         return {
             "profile_text": profile_text,
-            "summary_text": summary_text, 
+            "summary_text": summary_text,
+            "medical_timeline": medical_timeline,
+            "recent_messages": recent_messages_text,
             "chunks_text": chunks_text or "Релевантная информация не найдена",
             "chunks_found": chunks_found,
             "lang": lang if 'lang' in locals() else 'ru',
             "context_text": final_user_prompt,
-            "search_mode": search_mode,  # Дополнительная информация
-            "vector_count": vector_count  # Дополнительная информация
+            "vector_count": vector_count
         }
         
     except Exception as e:

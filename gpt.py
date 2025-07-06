@@ -478,9 +478,8 @@ async def extract_keywords(text: str) -> list[str]:
         return []
 
 @async_safe_openai_call(max_retries=3, delay=2.0)
-async def ask_doctor(profile_text: str, summary_text: str, 
-               chunks_text: str, context_text: str, user_question: str, 
-               lang: str, user_id: int = None, use_gemini: bool = False) -> str:
+async def ask_doctor(context_text: str, user_question: str, 
+                    lang: str, user_id: int = None, use_gemini: bool = False) -> str:
     """
     ✅ УЛУЧШЕННАЯ версия — учитывает недавнее общение, не здоровается каждый раз
     Добавлена поддержка Gemini 2.5 Flash
@@ -528,14 +527,32 @@ async def ask_doctor(profile_text: str, summary_text: str,
             "If information is missing, offer a preliminary suggestion and explain what's lacking."
         )
 
-    context_block = (
-        f"📌 Patient profile:\n{profile_text}\n\n"
-        f"🧠 Conversation summary:\n{summary_text}\n\n"
-        f"🔎 Related historical data:\n{chunks_text}\n\n"
-        f"💬 Recent messages:\n{context_text}\n\n"
-    )
+    full_prompt = f"{instruction_prompt}\n\n{context_text}"
 
-    full_prompt = f"{instruction_prompt}\n\n{context_block}\n\nPatient: {user_question}"
+    try:
+        import datetime
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Определяем какая модель будет использоваться
+        model_info = "Gemini 2.5 Flash" if use_gemini else "GPT-4o/GPT-4o-mini"
+        
+        with open("prompts_log.txt", "a", encoding="utf-8") as f:
+            f.write(f"\n{'='*80}\n")
+            f.write(f"🕐 {timestamp} | User {user_id} | {model_info}\n")
+            f.write(f"🌐 Язык: {lang} | Взаимодействие: {'Продолжение' if recent_interaction and not is_greeting else 'Новое/Приветствие'}\n")
+            f.write(f"❓ Вопрос: {user_question}\n")
+            f.write(f"📊 Длина system: {len(system_prompt)} симв. | user: {len(full_prompt)} симв. | ~{(len(system_prompt) + len(full_prompt)) // 4} токенов\n")
+            f.write(f"{'='*80}\n")
+            f.write("🔧 SYSTEM PROMPT:\n")
+            f.write(system_prompt)
+            f.write("\n\n👤 USER PROMPT:\n")
+            f.write(full_prompt)
+            f.write(f"\n{'='*80}\n\n")
+        
+        print(f"💾 Промпт сохранен в prompts_log.txt (User {user_id})")
+        
+    except Exception as e:
+        print(f"⚠️ Не удалось сохранить промпт в файл: {e}")
 
     # ✅ НОВАЯ ЛОГИКА: Gemini или GPT
     if use_gemini:
