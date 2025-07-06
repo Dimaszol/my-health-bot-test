@@ -258,7 +258,8 @@ async def create_tables():
     
     -- 2. Добавляем время согласия  
     ALTER TABLE users ADD COLUMN IF NOT EXISTS gdpr_consent_time TIMESTAMP DEFAULT NULL;
-    
+    -- ✅ ПРОМОКОДЫ МИГРАЦИЯ - Добавление поля в transactions
+    ALTER TABLE transactions ADD COLUMN IF NOT EXISTS promo_code TEXT;
     -- 3. Создаем индекс для быстрого поиска
     CREATE INDEX IF NOT EXISTS idx_users_gdpr_consent ON users(gdpr_consent);
     

@@ -23,8 +23,8 @@ class PromoManager:
             "original_price": "$3.99",          # Обычная цена
             "promo_price": "$0.99",             # Цена со скидкой
             "package_id": "basic_sub",          # ID пакета из stripe_config.py
-            "description_key": "promo_basic_plan_name",  # ← Ключ локализации
-            "feature_keys": [                   # ← Ключи локализации вместо текста
+            "description_key": "promo_basic_plan_name",  # ✅ ЗАМЕНИЛИ на ключ
+            "features_keys": [                  # ✅ ЗАМЕНИЛИ на ключи
                 "promo_basic_feature_1",
                 "promo_basic_feature_2", 
                 "promo_basic_feature_3"
@@ -36,8 +36,8 @@ class PromoManager:
             "original_price": "$9.99",          # Обычная цена
             "promo_price": "$1.99",             # Цена со скидкой
             "package_id": "premium_sub",        # ID пакета из stripe_config.py
-            "description_key": "promo_premium_plan_name",  # ← Ключ локализации
-            "feature_keys": [                   # ← Ключи локализации вместо текста
+            "description_key": "promo_premium_plan_name",  # ✅ ЗАМЕНИЛИ на ключ
+            "features_keys": [                  # ✅ ЗАМЕНИЛИ на ключи
                 "promo_premium_feature_1",
                 "promo_premium_feature_2",
                 "promo_premium_feature_3"
@@ -64,14 +64,14 @@ class PromoManager:
             
             # 1️⃣ Проверяем точный номер сообщения (Промокод1)
             if current_message_count != 30:
-                print(f"🔍 PROMO DEBUG: Счетчик {current_message_count} != 4, выходим")
-                logger.debug(f"User {user_id}: message {current_message_count}/4 - промокод не показываем")
+                print(f"🔍 PROMO DEBUG: Счетчик {current_message_count} != 30, выходим")
+                logger.debug(f"User {user_id}: message {current_message_count}/30 - промокод не показываем")
                 return None
                 
             print(f"🔍 PROMO DEBUG: Счетчик подходит! Показываем промокод!")
                 
             # 2️⃣ Показываем промокод сразу (без проверки БД)!
-            logger.info(f"🎉 User {user_id}: показываем промокод на 4-м сообщении!")
+            logger.info(f"🎉 User {user_id}: показываем промокод на 30-м сообщении!")
             return await PromoManager._send_promo_message(user_id)
             
         except Exception as e:
@@ -86,32 +86,41 @@ class PromoManager:
         """
         try:
             from main import bot
-            from db_postgresql import get_user_language, t
+            from db_postgresql import get_user_language, t  # ✅ ИМПОРТИРУЕМ ФУНКЦИЮ ЛОКАЛИЗАЦИИ
             
-            # 1️⃣ Получаем язык пользователя (убираем обновление БД)
+            # 1️⃣ Получаем язык пользователя
             lang = await get_user_language(user_id)
             
-            # 3️⃣ Создаем красивое сообщение с промокодом
+            # 2️⃣ Получаем локализованные данные промокодов
             basic_info = PromoManager.PROMO_CODES['basic_special']
             premium_info = PromoManager.PROMO_CODES['premium_special']
             
+            # ✅ ЛОКАЛИЗУЕМ ОПИСАНИЯ И ОСОБЕННОСТИ
+            basic_description = t(basic_info['description_key'], lang)
+            premium_description = t(premium_info['description_key'], lang)
+            
+            # ✅ ЛОКАЛИЗУЕМ ОСОБЕННОСТИ ПЛАНОВ
+            basic_features = [t(key, lang) for key in basic_info['features_keys']]
+            premium_features = [t(key, lang) for key in premium_info['features_keys']]
+            
+            # 3️⃣ Создаем красивое сообщение с промокодом - ВСЁ ЧЕРЕЗ КЛЮЧИ!
             text = f"""{t('promo_title', lang)}
 
 {t('promo_subtitle', lang)}
 
 💎 <b>{t('promo_basic_plan', lang)}</b>
 <s>{basic_info['original_price']}</s> ➜ <b>{basic_info['promo_price']}</b> <i>{t('promo_basic_savings', lang)}</i>
-{chr(10).join(['• ' + t(feature_key, lang) for feature_key in basic_info['feature_keys']])}
+{chr(10).join(['• ' + feature for feature in basic_features])}
 
 🚀 <b>{t('promo_premium_plan', lang)}</b> <i>{t('promo_most_popular', lang)}</i>
 <s>{premium_info['original_price']}</s> ➜ <b>{premium_info['promo_price']}</b> <i>{t('promo_premium_savings', lang)}</i>
-{chr(10).join(['• ' + t(feature_key, lang) for feature_key in premium_info['feature_keys']])}
+{chr(10).join(['• ' + feature for feature in premium_features])}
 
 ⚡ <i>{t('promo_offer_note', lang)}</i>
 
 🎯 {t('promo_choose_plan', lang)}"""
 
-            # 4️⃣ Создаем кнопки с промокодами
+            # 4️⃣ Создаем кнопки с промокодами - ВСЁ ЧЕРЕЗ КЛЮЧИ!
             keyboard = InlineKeyboardBuilder()
             
             # Кнопка для Basic плана
@@ -155,11 +164,12 @@ class PromoManager:
         💳 Обрабатывает нажатие на кнопку покупки по промокоду
         """
         try:
-            from db_postgresql import get_user_language, t
+            from db_postgresql import get_user_language, t  # ✅ ИМПОРТИРУЕМ ФУНКЦИЮ ЛОКАЛИЗАЦИИ
             
             # 1️⃣ Извлекаем тип промокода из callback_data
             callback_data = callback_query.data
             if ":" not in callback_data:
+                # ✅ ЛОКАЛИЗУЕМ ОШИБКУ
                 lang = await get_user_language(callback_query.from_user.id)
                 await callback_query.answer(t('promo_invalid_format', lang))
                 return
@@ -167,15 +177,16 @@ class PromoManager:
             promo_type = callback_data.split(":")[1]
             promo_info = PromoManager.PROMO_CODES.get(promo_type)
             
-            user_id = callback_query.from_user.id
-            lang = await get_user_language(user_id)
-            
             if not promo_info:
+                # ✅ ЛОКАЛИЗУЕМ ОШИБКУ
+                lang = await get_user_language(callback_query.from_user.id)
                 await callback_query.answer(t('promo_not_found', lang))
                 logger.warning(f"Неизвестный промокод: {promo_type}")
                 return
                 
+            user_id = callback_query.from_user.id
             user_name = callback_query.from_user.first_name or "Пользователь"
+            lang = await get_user_language(user_id)  # ✅ ПОЛУЧАЕМ ЯЗЫК
             
             logger.info(f"User {user_id} выбрал промокод {promo_type}")
             
@@ -193,33 +204,38 @@ class PromoManager:
             if success:
                 # Успешно создали ссылку на оплату
                 keyboard = InlineKeyboardBuilder()
-                keyboard.button(text=t('payment_proceed_button', lang), url=result)
+                keyboard.button(text="💳 Перейти к оплате", url=result)
                 
-                # Обновляем сообщение с кнопкой оплаты
+                # ✅ ЛОКАЛИЗУЕМ НАЗВАНИЕ ПЛАНА И СООБЩЕНИЕ
+                plan_name = t(promo_info['description_key'], lang)
                 savings = float(promo_info['original_price'][1:]) - float(promo_info['promo_price'][1:])
                 
                 await callback_query.message.edit_text(
                     t('promo_payment_message', lang, 
-                      plan=t(promo_info['description_key'], lang),
+                      plan=plan_name, 
                       price=promo_info['promo_price'],
                       savings=f"${savings:.2f}"),
                     reply_markup=keyboard.as_markup(),
                     parse_mode="HTML"
                 )
                 
+                # ✅ ЛОКАЛИЗУЕМ ОТВЕТ
                 await callback_query.answer(t('promo_payment_ready', lang))
                 logger.info(f"✅ User {user_id}: создана ссылка на оплату с промокодом {promo_type}")
                 
             else:
-                # Ошибка создания ссылки
+                # ✅ ЛОКАЛИЗУЕМ ОШИБКУ
                 await callback_query.answer(t('promo_payment_error', lang, error=result))
                 logger.error(f"Ошибка создания ссылки для user {user_id}: {result}")
                 
         except Exception as e:
             logger.error(f"Ошибка обработки промокода: {e}")
-            user_id = callback_query.from_user.id
-            lang = await get_user_language(user_id)
-            await callback_query.answer(t('promo_general_error', lang))
+            # ✅ ЛОКАЛИЗУЕМ ОБЩУЮ ОШИБКУ
+            try:
+                lang = await get_user_language(callback_query.from_user.id)
+                await callback_query.answer(t('promo_general_error', lang))
+            except:
+                await callback_query.answer("❌ Произошла ошибка. Попробуйте позже.")
     
     @staticmethod
     async def handle_promo_dismiss(callback_query: types.CallbackQuery):
@@ -227,10 +243,10 @@ class PromoManager:
         ⏰ Обрабатывает нажатие "Может быть позже"
         """
         try:
-            from db_postgresql import get_user_language, t
+            from db_postgresql import get_user_language, t  # ✅ ИМПОРТИРУЕМ ФУНКЦИЮ ЛОКАЛИЗАЦИИ
             
-            user_id = callback_query.from_user.id
-            lang = await get_user_language(user_id)
+            # ✅ ПОЛУЧАЕМ ЯЗЫК И ЛОКАЛИЗУЕМ ВСЁ СООБЩЕНИЕ
+            lang = await get_user_language(callback_query.from_user.id)
             
             await callback_query.message.edit_text(
                 t('promo_dismiss_message', lang),
@@ -238,11 +254,16 @@ class PromoManager:
             )
             
             await callback_query.answer(t('promo_dismiss_answer', lang))
-            logger.info(f"User {user_id}: отложил промокод")
+            logger.info(f"User {callback_query.from_user.id}: отложил промокод")
             
         except Exception as e:
             logger.error(f"Ошибка обработки dismiss промокода: {e}")
-            await callback_query.answer(t('promo_dismiss_fallback', lang))
+            # ✅ ЛОКАЛИЗУЕМ FALLBACK
+            try:
+                lang = await get_user_language(callback_query.from_user.id)
+                await callback_query.answer(t('promo_dismiss_fallback', lang))
+            except:
+                await callback_query.answer("✅ Окей!")
 
 # 🔧 Функция для интеграции с существующим кодом
 async def check_promo_on_message(user_id: int, message_count: int) -> Optional[types.Message]:

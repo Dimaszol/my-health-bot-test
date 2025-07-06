@@ -70,17 +70,14 @@ class SubscriptionManager:
     @staticmethod
     async def check_real_stripe_subscription(user_id: int):
         """
-        ✅ НОВАЯ ФУНКЦИЯ: Проверяет реальное состояние подписки в Stripe
-        
-        Returns:
-            dict: {"has_active": bool, "subscription_id": str, "status": str}
+        ✅ Проверяет реальное состояние подписки в Stripe с учетом отмены
         """
         try:
-            # Получаем записи о подписках из локальной БД
+            # Ищем любую подписку с stripe_subscription_id
             subscription_data = await fetch_one("""
-                SELECT stripe_subscription_id, package_id 
+                SELECT stripe_subscription_id, package_id, status 
                 FROM user_subscriptions 
-                WHERE user_id = ? AND status = 'active'
+                WHERE user_id = ? AND stripe_subscription_id IS NOT NULL
                 ORDER BY created_at DESC LIMIT 1
             """, (user_id,))
             
@@ -91,17 +88,29 @@ class SubscriptionManager:
             
             # Проверяем статус в Stripe
             try:
+                import stripe
                 subscription = stripe.Subscription.retrieve(stripe_subscription_id)
                 
-                if subscription.status in ['active', 'trialing']:
+                # ✅ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Проверяем отмену в конце периода
+                is_cancelled_at_period_end = getattr(subscription, 'cancel_at_period_end', False)
+                
+                if subscription.status in ['active', 'trialing'] and not is_cancelled_at_period_end:
+                    # Подписка активна И НЕ отменена в конце периода
                     return {
                         "has_active": True, 
                         "subscription_id": stripe_subscription_id,
                         "status": subscription.status
                     }
+                elif subscription.status in ['active', 'trialing'] and is_cancelled_at_period_end:
+                    # ✅ НОВАЯ ЛОГИКА: Подписка активна, но отменена → считаем неактивной
+                    logger.info(f"🔄 Подписка {stripe_subscription_id} активна, но отменена в конце периода")
+                    return {
+                        "has_active": False, 
+                        "subscription_id": stripe_subscription_id,
+                        "status": "cancelled_at_period_end"
+                    }
                 else:
-                    # Подписка неактивна в Stripe - обновляем локальную БД
-                    await SubscriptionManager._sync_inactive_subscription(user_id, stripe_subscription_id, subscription.status)
+                    # Подписка неактивна
                     return {
                         "has_active": False, 
                         "subscription_id": stripe_subscription_id,
@@ -109,8 +118,6 @@ class SubscriptionManager:
                     }
                     
             except stripe.error.InvalidRequestError:
-                # Подписка не найдена в Stripe - удаляем из локальной БД
-                await SubscriptionManager._sync_deleted_subscription(user_id, stripe_subscription_id)
                 return {"has_active": False, "subscription_id": None, "status": "deleted"}
                 
         except Exception as e:
@@ -251,7 +258,7 @@ class SubscriptionManager:
     @staticmethod
     async def cancel_stripe_subscription(user_id: int):
         """
-        ✅ УЛУЧШЕННАЯ версия отмены подписки
+        ✅ ИСПРАВЛЕННАЯ версия отмены подписки
         """
         try:
             # Сначала проверяем реальное состояние в Stripe
@@ -266,7 +273,7 @@ class SubscriptionManager:
                 
                 if status == "deleted":
                     return True, "Подписка уже была отменена ранее (данные синхронизированы)"
-                elif status in ["canceled", "cancelled"]:
+                elif status in ["canceled", "cancelled", "cancelled_at_period_end"]:  # ✅ ДОБАВИЛИ НОВЫЙ СТАТУС
                     return True, "Подписка уже отменена в Stripe (данные синхронизированы)"
                 else:
                     return True, "У вас нет активной подписки (данные синхронизированы)"
@@ -281,15 +288,19 @@ class SubscriptionManager:
                     cancel_at_period_end=True
                 )
                 
-                # Обновляем статус в локальной БД
+                # ✅ ИСПРАВЛЕНИЕ: Сразу обновляем статус в БД как "отменена"
                 await execute_query("""
                     UPDATE user_subscriptions 
                     SET status = 'cancelled', cancelled_at = ?
                     WHERE stripe_subscription_id = ?
                 """, (datetime.now(), stripe_subscription_id))
                 
-                # ✅ ДОБАВЛЕНО: Исправляем subscription_type после отмены
-                await SubscriptionManager.fix_orphaned_subscription_state(user_id)
+                # ✅ ИСПРАВЛЕНИЕ: Сразу меняем subscription_type на free
+                await execute_query("""
+                    UPDATE user_limits 
+                    SET subscription_type = 'free'
+                    WHERE user_id = ?
+                """, (user_id,))
                 
                 logger.info(f"✅ Подписка {stripe_subscription_id} пользователя {user_id} отменена")
                 
@@ -488,6 +499,145 @@ class SubscriptionManager:
             
         except Exception as e:
             logger.error(f"Ошибка сброса лимитов для пользователя {user_id}: {e}")
+
+    @staticmethod
+    async def force_sync_with_stripe(user_id: int) -> dict:
+        """
+        🔄 Принудительная синхронизация с Stripe - только статусы, без изменения лимитов
+        """
+        try:
+            logger.info(f"🔄 Принудительная синхронизация для пользователя {user_id}")
+            
+            # 1. Получаем реальное состояние из Stripe
+            stripe_check = await SubscriptionManager.check_real_stripe_subscription(user_id)
+            
+            # 2. Получаем текущее состояние в БД
+            all_subscriptions = await fetch_one("""
+                SELECT status, package_id, stripe_subscription_id 
+                FROM user_subscriptions 
+                WHERE user_id = ?
+                ORDER BY created_at DESC LIMIT 1
+            """, (user_id,))
+            
+            active_subscription = await fetch_one("""
+                SELECT status, package_id, stripe_subscription_id 
+                FROM user_subscriptions 
+                WHERE user_id = ? AND status = 'active'
+                ORDER BY created_at DESC LIMIT 1
+            """, (user_id,))
+            
+            db_limits = await fetch_one("""
+                SELECT subscription_type, documents_left, gpt4o_queries_left
+                FROM user_limits WHERE user_id = ?
+            """, (user_id,))
+            
+            # 3. Сравниваем и исправляем расхождения
+            stripe_active = stripe_check["has_active"]
+            db_active = active_subscription is not None
+            
+            sync_actions = []
+            
+            if stripe_active and not db_active:
+                # Stripe активна, БД неактивна → активируем в БД
+                if all_subscriptions and stripe_check["subscription_id"] == all_subscriptions[2]:
+                    # Активируем существующую подписку
+                    await execute_query("""
+                        UPDATE user_subscriptions 
+                        SET status = 'active', cancelled_at = NULL
+                        WHERE user_id = ? AND stripe_subscription_id = ?
+                    """, (user_id, stripe_check["subscription_id"]))
+                    sync_actions.append("✅ Активирован статус подписки")
+                    
+                else:
+                    # Создаём новую запись подписки
+                    package_id = await SubscriptionManager._detect_package_from_stripe(
+                        stripe_check["subscription_id"]
+                    )
+                    
+                    await execute_query("""
+                        INSERT INTO user_subscriptions 
+                        (user_id, stripe_subscription_id, package_id, status, created_at, cancelled_at)
+                        VALUES ($1, $2, $3, $4, $5, $6)
+                        ON CONFLICT (user_id) 
+                        DO UPDATE SET 
+                            stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+                            package_id = EXCLUDED.package_id,
+                            status = EXCLUDED.status,
+                            created_at = EXCLUDED.created_at,
+                            cancelled_at = EXCLUDED.cancelled_at
+                    """, (user_id, stripe_check["subscription_id"], package_id, 'active', datetime.now(), None))
+                    sync_actions.append("✅ Создана запись активной подписки")
+                
+            elif not stripe_active and db_active:
+                # Stripe неактивна, БД активна → деактивируем в БД
+                await execute_query("""
+                    UPDATE user_subscriptions 
+                    SET status = 'cancelled', cancelled_at = $1
+                    WHERE user_id = $2 AND status = 'active'
+                """, (datetime.now(), user_id))
+                sync_actions.append("❌ Деактивирован статус подписки")
+                
+            elif stripe_active and db_active:
+                # Обе активны - проверяем детали
+                stripe_sub_id = stripe_check["subscription_id"]
+                db_sub_id = active_subscription[2]
+                
+                if stripe_sub_id != db_sub_id:
+                    await execute_query("""
+                        UPDATE user_subscriptions 
+                        SET stripe_subscription_id = $1
+                        WHERE user_id = $2 AND status = 'active'
+                    """, (stripe_sub_id, user_id))
+                    sync_actions.append("🔄 Обновлён Stripe subscription ID")
+            
+            # 4. Синхронизируем только subscription_type
+            if db_limits:
+                current_type = db_limits[0]
+                expected_type = 'subscription' if stripe_active else 'free'
+                
+                if current_type != expected_type:
+                    await execute_query("""
+                        UPDATE user_limits 
+                        SET subscription_type = $1
+                        WHERE user_id = $2
+                    """, (expected_type, user_id))
+                    sync_actions.append(f"🔄 Исправлен subscription_type на {expected_type}")
+            
+            if sync_actions:
+                logger.info(f"✅ Синхронизация завершена для {user_id}: {'; '.join(sync_actions)}")
+            
+            return {
+                "synced": True,
+                "stripe_active": stripe_active,
+                "db_active": db_active,
+                "actions": sync_actions
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка принудительной синхронизации для {user_id}: {e}")
+            return {"synced": False, "error": str(e), "actions": []}
+
+    async def _detect_package_from_stripe(stripe_subscription_id: str) -> str:
+        """Определяет package_id по Stripe подписке"""
+        try:
+            import stripe
+            subscription = stripe.Subscription.retrieve(stripe_subscription_id)
+            
+            # Получаем сумму из Stripe
+            amount_cents = subscription.plan.amount
+            
+            # Определяем пакет по сумме (учитываем промокоды)
+            if amount_cents in [399, 99]:  # $3.99 или $0.99 (промокод)
+                return "basic_sub"
+            elif amount_cents in [999, 199]:  # $9.99 или $1.99 (промокод)
+                return "premium_sub"
+            else:
+                logger.warning(f"⚠️ Неизвестная сумма в Stripe: ${amount_cents/100}")
+                return "basic_sub"  # По умолчанию
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка определения пакета из Stripe: {e}")
+            return "basic_sub"
 
 # Вспомогательные функции для интеграции в существующий код
 async def check_document_limit(user_id: int) -> bool:

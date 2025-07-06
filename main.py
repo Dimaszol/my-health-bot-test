@@ -1291,8 +1291,37 @@ async def handle_faq_sections(callback: types.CallbackQuery):
 @dp.callback_query(lambda c: c.data == "settings_subscription")
 @handle_telegram_errors
 async def handle_subscription_settings(callback: types.CallbackQuery):
-    """Обработка кнопки Подписка в настройках"""
-    await SubscriptionHandlers.show_subscription_menu(callback)
+    """
+    🔄 Обработка кнопки Подписка в настройках с автосинхронизацией
+    """
+    user_id = callback.from_user.id
+    lang = await get_user_language(user_id)
+    
+    try:
+        # 🔄 ПРИНУДИТЕЛЬНАЯ СИНХРОНИЗАЦИЯ с Stripe при каждом заходе
+        logger.info(f"🔄 Синхронизация подписки для пользователя {user_id}")
+        
+        # Показываем "загрузка" пока синхронизируемся
+        await callback.message.edit_text(
+            "🔄 Синхронизация с платежной системой...",
+            parse_mode="HTML"
+        )
+        
+        # Принудительная синхронизация
+        sync_result = await SubscriptionManager.force_sync_with_stripe(user_id)
+        
+        if sync_result.get("actions"):
+            # Если были исправления - логируем
+            logger.info(f"✅ Синхронизация для {user_id}: {'; '.join(sync_result['actions'])}")
+        
+        # После синхронизации показываем актуальное меню
+        await SubscriptionHandlers.show_subscription_menu(callback)
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка синхронизации для пользователя {user_id}: {e}")
+        
+        # Если синхронизация не удалась - всё равно показываем меню
+        await SubscriptionHandlers.show_subscription_menu(callback)
 
 # 2. НОВЫЕ обработчики для покупки подписок
 @dp.callback_query(lambda c: c.data.startswith("buy_"))

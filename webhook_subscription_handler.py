@@ -177,17 +177,20 @@ class SubscriptionWebhookHandler:
             
             if result['success']:
                 from db_postgresql import execute_query
+                
+                # ✅ ИСПРАВЛЕННЫЙ SQL: Используем None вместо NULL в параметрах
                 await execute_query("""
                     INSERT INTO user_subscriptions 
-                    (user_id, stripe_subscription_id, package_id, status, created_at)
-                    VALUES ($1, $2, $3, 'active', $4)
+                    (user_id, stripe_subscription_id, package_id, status, created_at, cancelled_at)
+                    VALUES ($1, $2, $3, $4, $5, $6)
                     ON CONFLICT (user_id) 
                     DO UPDATE SET 
                         stripe_subscription_id = EXCLUDED.stripe_subscription_id,
                         package_id = EXCLUDED.package_id,
-                        status = 'active',
-                        created_at = EXCLUDED.created_at
-                """, (user_id, subscription_id, package_id, datetime.now()))
+                        status = EXCLUDED.status,
+                        created_at = EXCLUDED.created_at,
+                        cancelled_at = EXCLUDED.cancelled_at
+                """, (user_id, subscription_id, package_id, 'active', datetime.now(), None))
                 
                 # ✅ ЛОКАЛИЗОВАННОЕ уведомление пользователю
                 await self._send_renewal_notification(user_id, package_id)
@@ -219,13 +222,32 @@ class SubscriptionWebhookHandler:
             user_id = await self._get_user_id_by_stripe_customer(stripe_customer_id)
             
             if user_id:
-                # ✅ ЛОКАЛИЗОВАННОЕ уведомление о проблеме с оплатой
+                # 1️⃣ Отправляем уведомление пользователю
                 await self._send_payment_failed_notification(user_id)
                 
+                # 2️⃣ ✅ НОВОЕ: Обновляем статус подписки в БД
+                from db_postgresql import execute_query
+                
+                await execute_query("""
+                    UPDATE user_subscriptions 
+                    SET status = 'payment_failed', cancelled_at = $1
+                    WHERE user_id = $2 AND stripe_subscription_id = $3
+                """, (datetime.now(), user_id, subscription_id))
+                
+                # 3️⃣ ✅ НОВОЕ: Деактивируем лимиты пользователя
+                await execute_query("""
+                    UPDATE user_limits 
+                    SET subscription_type = 'free',
+                        subscription_expires_at = NULL
+                    WHERE user_id = $1
+                """, (user_id,))
+                
                 logger.info(f"📧 Уведомление о неудачном платеже отправлено пользователю {user_id}")
+                logger.info(f"🚫 Подписка деактивирована для пользователя {user_id}")
+                
                 return {
                     "status": "success",
-                    "message": "Payment failed notification sent",
+                    "message": "Payment failed processed and subscription deactivated",
                     "user_id": user_id
                 }
             else:
@@ -266,12 +288,24 @@ class SubscriptionWebhookHandler:
     
     def _determine_package_by_amount(self, amount_cents):
         """Определяет тип пакета по сумме платежа"""
-        if amount_cents == 399:  # $3.99
+        
+        # ✅ ОБЫЧНЫЕ ЦЕНЫ
+        if amount_cents == 399:  # $3.99 - Обычная цена Basic
             return "basic_sub"
-        elif amount_cents == 999:  # $9.99
+        elif amount_cents == 999:  # $9.99 - Обычная цена Premium  
             return "premium_sub"
-        elif amount_cents == 199:  # $1.99
+        elif amount_cents == 199:  # $1.99 - Разовая покупка
             return "extra_pack"
+        
+        # ✅ ПРОМОКОДЫ (ДОБАВЛЯЕМ ЭТИ СТРОКИ!)
+        elif amount_cents == 99:   # $0.99 - Промокод Basic (было $3.99)
+            logger.info(f"🎫 Обнаружен промокод Basic: ${amount_cents/100}")
+            return "basic_sub"
+        elif amount_cents == 199:  # $1.99 - Промокод Premium (было $9.99) 
+            logger.info(f"🎫 Обнаружен промокод Premium: ${amount_cents/100}")
+            return "premium_sub"
+        
+        # ✅ НЕИЗВЕСТНАЯ СУММА
         else:
             logger.warning(f"⚠️ Неизвестная сумма платежа: ${amount_cents/100}")
             return "basic_sub"  # По умолчанию
