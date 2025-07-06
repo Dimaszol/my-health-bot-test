@@ -62,8 +62,8 @@ class PromoManager:
             # 🔍 ОТЛАДОЧНЫЕ ЛОГИ
             print(f"🔍 PROMO DEBUG: User {user_id}, count = {current_message_count}")
             
-            # 1️⃣ Проверяем точно 4-е сообщение (было изменено для теста)
-            if current_message_count != 11:
+            # 1️⃣ Проверяем точный номер сообщения (Промокод1)
+            if current_message_count != 30:
                 print(f"🔍 PROMO DEBUG: Счетчик {current_message_count} != 4, выходим")
                 logger.debug(f"User {user_id}: message {current_message_count}/4 - промокод не показываем")
                 return None
@@ -107,7 +107,7 @@ class PromoManager:
 <s>{premium_info['original_price']}</s> ➜ <b>{premium_info['promo_price']}</b> <i>(экономия $8.00!)</i>
 {chr(10).join(['• ' + feature for feature in premium_info['features']])}
 
-⚡ <i>Это предложение действует только через кнопки ниже!<\i>
+⚡ <i>Это предложение действует только через кнопки ниже!</i>
 
 🎯 Выберите свой план:"""
 

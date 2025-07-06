@@ -448,6 +448,88 @@ class PostgreSQLVectorDB:
             return {"total_vectors": 0, "unique_users": 0, "unique_documents": 0}
         finally:
             await self.db_pool.release(conn)
+    
+    async def count_user_vectors(self, user_id: int) -> int:
+        """
+        🔍 НОВАЯ ФУНКЦИЯ: Подсчитывает количество векторов пользователя
+        
+        Args:
+            user_id: ID пользователя
+            
+        Returns:
+            int: Количество векторов в базе
+        """
+        conn = await self.db_pool.acquire()
+        try:
+            result = await conn.fetchval("""
+                SELECT COUNT(*) 
+                FROM document_vectors 
+                WHERE user_id = $1
+            """, user_id)
+            
+            count = result or 0
+            logger.info(f"📊 Пользователь {user_id} имеет {count} векторов")
+            return count
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка подсчета векторов для пользователя {user_id}: {e}")
+            return 0
+        finally:
+            await self.db_pool.release(conn)
+
+    async def get_all_user_chunks(self, user_id: int, limit: int = 4) -> List[Dict]:
+        """
+        📥 НОВАЯ ФУНКЦИЯ: Получает ВСЕ чанки пользователя (для малых баз)
+        
+        Args:
+            user_id: ID пользователя
+            limit: Максимальное количество записей
+            
+        Returns:
+            List[Dict]: Все записи пользователя из векторной базы
+        """
+        conn = await self.db_pool.acquire()
+        try:
+            results = await conn.fetch("""
+                SELECT 
+                    dv.chunk_text,
+                    dv.metadata,
+                    dv.keywords,
+                    d.title as document_title,
+                    d.uploaded_at
+                FROM document_vectors dv
+                JOIN documents d ON d.id = dv.document_id
+                WHERE dv.user_id = $1
+                ORDER BY d.uploaded_at DESC, dv.id DESC
+                LIMIT $2
+            """, user_id, limit)
+            
+            chunks = []
+            for row in results:
+                try:
+                    metadata = json.loads(row['metadata']) if row['metadata'] else {}
+                except (json.JSONDecodeError, TypeError):
+                    metadata = {}
+                
+                chunk_data = {
+                    "chunk_text": row['chunk_text'],
+                    "metadata": metadata,
+                    "keywords": row['keywords'],
+                    "document_title": row['document_title'],
+                    "uploaded_at": row['uploaded_at'],
+                    "similarity": 1.0,  # Все записи одинаково релевантны
+                    "final_score": 1.0
+                }
+                chunks.append(chunk_data)
+            
+            logger.info(f"📦 Получено {len(chunks)} чанков для пользователя {user_id}")
+            return chunks
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка получения всех чанков для пользователя {user_id}: {e}")
+            return []
+        finally:
+            await self.db_pool.release(conn)
 
 # 🌐 ГЛОБАЛЬНЫЙ ЭКЗЕМПЛЯР (будет инициализирован в main.py)
 vector_db: Optional[PostgreSQLVectorDB] = None
@@ -749,3 +831,15 @@ def create_hybrid_ranking(vector_chunks: List[Dict], keyword_chunks: List[Dict],
     
     # Возвращаем только тексты чанков (для совместимости)
     return [item["chunk_text"] for item in scored_chunks]
+
+async def count_user_vectors(user_id: int) -> int:
+    """Подсчитывает векторы пользователя (совместимость)"""
+    if vector_db:
+        return await vector_db.count_user_vectors(user_id)
+    return 0
+
+async def get_all_user_chunks(user_id: int, limit: int = 4) -> List[Dict]:
+    """Получает все чанки пользователя (совместимость)"""
+    if vector_db:
+        return await vector_db.get_all_user_chunks(user_id, limit)
+    return []

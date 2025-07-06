@@ -1056,8 +1056,8 @@ async def handle_user_message(message: types.Message):
         
         logger.info(f"📊 User {user_id}: всего сообщений #{total_message_count}")
         
-        # 🎯 ОПТИМИЗАЦИЯ: проверяем промокод только в нужном диапазоне
-        if total_message_count == 11:  # Точно на 4-м сообщении
+        # 1️⃣ Проверяем точный номер сообщения (Промокод1)
+        if total_message_count == 30:  # Точно на 30 сообщении
             promo_message = await check_promo_on_message(user_id, total_message_count)
             if promo_message:
                 logger.info(f"🎉 User {user_id}: показан промокод на {total_message_count}-м сообщении!")

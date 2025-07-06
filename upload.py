@@ -33,6 +33,9 @@ async def handle_document_upload(message: types.Message, bot):
         await message.answer(error_msg)
         return
     
+    from keyboards import show_main_menu
+    await show_main_menu(message, lang)
+
     try:
         print(f"\n📄 Начало загрузки документа для пользователя {user_id}")
         
@@ -225,7 +228,11 @@ async def handle_document_upload(message: types.Message, bot):
 
         # ✅ ЗАПИСЫВАЕМ ЛИМИТ ТОЛЬКО ПОСЛЕ ПОЛНОЙ УСПЕШНОЙ ОБРАБОТКИ
         await record_user_action(user_id, "document")
-        logger.info(f"✅ Документ обработан, лимит записан для пользователя {user_id}")
+        logger.info(f"✅ Rate limiter записан для пользователя {user_id}")
+
+        from subscription_manager import SubscriptionManager
+        await SubscriptionManager.spend_limits(user_id, documents=1)
+        logger.info(f"✅ Основной лимит списан для пользователя {user_id}")
 
         await message.answer(t("document_saved", lang, title=auto_title), parse_mode="HTML")
 
@@ -241,9 +248,7 @@ async def handle_document_upload(message: types.Message, bot):
         )
         
         user_states[user_id] = None
-        from keyboards import show_main_menu
-        await show_main_menu(message, lang)
-
+        
         print("✅ Документ успешно обработан")
 
     except Exception as e:
