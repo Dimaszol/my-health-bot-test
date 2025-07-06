@@ -193,7 +193,7 @@ class PromoManager:
             if success:
                 # Успешно создали ссылку на оплату
                 keyboard = InlineKeyboardBuilder()
-                keyboard.button(text=t('promo_payment_button', lang), url=result)
+                keyboard.button(text=t('payment_proceed_button', lang), url=result)
                 
                 # Обновляем сообщение с кнопкой оплаты
                 savings = float(promo_info['original_price'][1:]) - float(promo_info['promo_price'][1:])

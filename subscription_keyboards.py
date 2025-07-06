@@ -102,7 +102,7 @@ def payment_processing_keyboard(lang: str, payment_url: str = None) -> InlineKey
     
     # Если есть ссылка на оплату - добавляем кнопку
     if payment_url:
-        buttons.append([InlineKeyboardButton(text="💳 Перейти к оплате", url=payment_url)])
+        buttons.append([InlineKeyboardButton(text=t("payment_proceed_button", lang), url=payment_url)])
     
     # Кнопка "Назад"
     buttons.append([InlineKeyboardButton(text=t("payment_back_to_subscriptions", lang), callback_data="subscription_menu")])
