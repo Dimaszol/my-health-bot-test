@@ -594,7 +594,11 @@ async def get_user_medications_text(user_id: int) -> str:
     """Получить лекарства пользователя в текстовом виде"""
     medications = await get_user_medications(user_id)
     if not medications:
-        return "Не принимает лекарства"
+        try:
+            lang = await get_user_language(user_id)
+            return t("no_medications", lang)
+        except:
+            return "No medications"
     
     med_texts = []
     for med in medications:

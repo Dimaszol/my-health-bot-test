@@ -127,7 +127,7 @@ def get_package_description(package_id: str, lang: str) -> str:
     
     # Цена
     if package_info['type'] == 'subscription':
-        price_text = f"{package_info['price_display']}/month"
+        price_text = f"{package_info['price_display']}{t('subscription_monthly', lang)}"
         type_desc = t("package_subscription_desc", lang)
     else:
         price_text = package_info['price_display']

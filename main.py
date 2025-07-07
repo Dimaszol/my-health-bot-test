@@ -1303,7 +1303,7 @@ async def handle_subscription_settings(callback: types.CallbackQuery):
         
         # Показываем "загрузка" пока синхронизируемся
         await callback.message.edit_text(
-            "🔄 Синхронизация с платежной системой...",
+            t("subscription_syncing", lang),
             parse_mode="HTML"
         )
         

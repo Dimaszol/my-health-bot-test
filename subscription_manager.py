@@ -5,6 +5,7 @@ import logging
 from datetime import datetime, timedelta
 from db_postgresql import fetch_one, execute_query
 
+
 logger = logging.getLogger(__name__)
 
 class SubscriptionManager:
@@ -159,6 +160,7 @@ class SubscriptionManager:
         ✅ ИСПРАВЛЕННАЯ версия покупки пакета - ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ!
         """
         try:
+            from db_postgresql import get_user_language, t
             # Получаем данные пакета
             package = await fetch_one("""
                 SELECT name, price_usd, documents_included, gpt4o_queries_included, type
@@ -167,7 +169,8 @@ class SubscriptionManager:
             """, (package_id,))
             
             if not package:
-                raise ValueError(f"Пакет {package_id} не найден или неактивен")
+                lang = await get_user_language(user_id)
+                raise ValueError(t("package_not_found", lang, package_id=package_id))
             
             name, price, docs, queries, pkg_type = package
             
@@ -261,6 +264,8 @@ class SubscriptionManager:
         ✅ ИСПРАВЛЕННАЯ версия отмены подписки
         """
         try:
+            from db_postgresql import get_user_language, t
+            lang = await get_user_language(user_id)
             # Сначала проверяем реальное состояние в Stripe
             stripe_check = await SubscriptionManager.check_real_stripe_subscription(user_id)
             
@@ -272,11 +277,11 @@ class SubscriptionManager:
                 await SubscriptionManager.fix_orphaned_subscription_state(user_id)
                 
                 if status == "deleted":
-                    return True, "Подписка уже была отменена ранее (данные синхронизированы)"
+                    return True, t("subscription_already_cancelled_synced", lang)
                 elif status in ["canceled", "cancelled", "cancelled_at_period_end"]:  # ✅ ДОБАВИЛИ НОВЫЙ СТАТУС
-                    return True, "Подписка уже отменена в Stripe (данные синхронизированы)"
+                    return True, t("subscription_already_cancelled_stripe", lang)
                 else:
-                    return True, "У вас нет активной подписки (данные синхронизированы)"
+                    return True, t("subscription_no_active", lang)
             
             stripe_subscription_id = stripe_check["subscription_id"]
             
@@ -304,7 +309,7 @@ class SubscriptionManager:
                 
                 logger.info(f"✅ Подписка {stripe_subscription_id} пользователя {user_id} отменена")
                 
-                return True, "Подписка отменена. Лимиты останутся до конца текущего периода."
+                return True, t("subscription_cancelled_success", lang)
                 
             except stripe.error.InvalidRequestError as stripe_error:
                 # Подписка уже отменена в Stripe
@@ -312,13 +317,18 @@ class SubscriptionManager:
                     # Синхронизируем локальную БД
                     await SubscriptionManager._sync_inactive_subscription(user_id, stripe_subscription_id, "cancelled")
                     await SubscriptionManager.fix_orphaned_subscription_state(user_id)
-                    return True, "Подписка уже была отменена в Stripe (данные синхронизированы)"
+                    return True, t("subscription_already_cancelled_stripe", lang)
                 else:
                     raise stripe_error
                 
         except Exception as e:
             logger.error(f"❌ Ошибка отмены подписки для пользователя {user_id}: {e}")
-            return False, f"Ошибка отмены подписки: {e}"
+            try:
+                from db_postgresql import get_user_language, t
+                lang = await get_user_language(user_id)
+                return False, t("subscription_cancel_error", lang, error=str(e))
+            except:
+                return False, f"Ошибка отмены подписки: {e}"
     
     @staticmethod
     async def get_user_limits(user_id: int):
@@ -366,6 +376,7 @@ class SubscriptionManager:
         Тратит лимиты пользователя (без изменений)
         """
         try:
+            from db_postgresql import get_user_language, t
             # Сначала проверяем истекшие лимиты
             await SubscriptionManager.check_and_reset_expired_limits(user_id)
             
@@ -377,16 +388,17 @@ class SubscriptionManager:
             """, (user_id,))
             
             if not current:
-                return {"success": False, "error": "Пользователь не найден"}
+                lang = await get_user_language(user_id)
+                return {"success": False, "error": t("user_not_found", lang)}
             
             current_docs, current_queries = current
-            
+            lang = await get_user_language(user_id)
             # Проверяем достаточность лимитов
             if documents > current_docs:
-                return {"success": False, "error": "Недостаточно лимитов на документы"}
+                return {"success": False, "error": t("insufficient_document_limits", lang)}
             
             if queries > current_queries:
-                return {"success": False, "error": "Недостаточно лимитов на запросы"}
+                return {"success": False, "error": t("insufficient_query_limits", lang)}
             
             # Списываем лимиты
             new_docs = current_docs - documents
@@ -617,6 +629,7 @@ class SubscriptionManager:
             logger.error(f"❌ Ошибка принудительной синхронизации для {user_id}: {e}")
             return {"synced": False, "error": str(e), "actions": []}
 
+    @staticmethod
     async def _detect_package_from_stripe(stripe_subscription_id: str) -> str:
         """Определяет package_id по Stripe подписке"""
         try:
