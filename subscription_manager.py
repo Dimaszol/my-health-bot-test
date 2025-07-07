@@ -715,65 +715,29 @@ async def _show_limits_exhausted_notification(user_id: int, message, bot, subscr
     Разные сообщения для разных типов подписки
     """
     try:
-        from db_postgresql import get_user_language
+        from db_postgresql import get_user_language, t
         
         lang = await get_user_language(user_id)
         
         # ✅ РАЗНЫЕ СООБЩЕНИЯ ДЛЯ РАЗНЫХ СТАТУСОВ
         if subscription_type in ['free', 'one_time']:
             # Для бесплатных и разовых покупок - предлагаем подписку
-            notification_texts = {
-                "ru": "🤖 **Детальные ответы закончились!**\n\n"
-                      "🔹 Теперь будет использоваться базовая модель для ответов\n\n"
-                      "💎 Оформите подписку для возврата к детальным медицинским консультациям!",
-                
-                "uk": "🤖 **Детальні відповіді закінчилися!**\n\n"
-                      "🔹 Тепер буде використовуватися базова модель для відповідей\n\n"
-                      "💎 Оформіть підписку для повернення до детальних медичних консультацій!",
-                
-                "en": "🤖 **Detailed responses finished!**\n\n"
-                      "🔹 Basic model will now be used for responses\n\n"
-                      "💎 Get a subscription to return to detailed medical consultations!"
-            }
+            text = t("limits_exhausted_free_message", lang)
             
-            # Кнопки для подписки
-            button_texts = {
-                "ru": "💎 Получить подписку",
-                "uk": "💎 Отримати підписку", 
-                "en": "💎 Get subscription"
-            }
-            
+            # Кнопка для подписки
+            button_text = t("limits_exhausted_subscription_button", lang)
             show_subscription_button = True
             
         else:  # subscription - активная подписка
             # Для пользователей с подпиской - просто информируем
-            notification_texts = {
-                "ru": "🤖 **Лимит детальных ответов исчерпан**\n\n"
-                      "🔹 В этом месяце вы использовали все детальные ответы\n"
-                      "🔹 Теперь будет использоваться базовая модель\n\n"
-                      "📅 Лимиты обновятся в следующем месяце",
-                
-                "uk": "🤖 **Ліміт детальних відповідей вичерпано**\n\n"
-                      "🔹 Цього місяця ви використали всі детальні відповіді\n"
-                      "🔹 Тепер буде використовуватися базова модель\n\n"
-                      "📅 Ліміти оновляться наступного місяця",
-                
-                "en": "🤖 **Detailed response limit exhausted**\n\n"
-                      "🔹 You've used all detailed responses this month\n"
-                      "🔹 Basic model will now be used\n\n"
-                      "📅 Limits will refresh next month"
-            }
-            
+            text = t("limits_exhausted_subscription_message", lang)
             show_subscription_button = False
-        
-        text = notification_texts.get(lang, notification_texts["ru"])
         
         # Создаем клавиатуру только для бесплатных пользователей
         keyboard = None
         if show_subscription_button:
             from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
             
-            button_text = button_texts.get(lang, button_texts["ru"])
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(
                     text=button_text,
@@ -789,6 +753,7 @@ async def _show_limits_exhausted_notification(user_id: int, message, bot, subscr
             parse_mode="Markdown"
         )
         
+        # ✅ ЛОГИ ДЛЯ РАЗРАБОТЧИКОВ - НЕ ЛОКАЛИЗУЮТСЯ
         status_msg = "с кнопкой подписки" if show_subscription_button else "без кнопки"
         print(f"✅ Уведомление об исчерпанных лимитах отправлено пользователю {user_id} ({subscription_type}, {status_msg})")
         
