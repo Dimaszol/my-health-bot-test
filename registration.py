@@ -157,12 +157,8 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
             try:
                 year_text = message.text.strip() if message.text else ""
                 year = int(year_text)
-                current_year = datetime.now().year
+                current_year = datetime.now().year - 16
                 if year < 1900 or year > current_year:
-                    raise ValueError
-                # Дополнительная проверка возраста
-                age = current_year - year
-                if age > 120:  # Максимальный возраст
                     raise ValueError
                 state["birth_year"] = year
             except (ValueError, TypeError):

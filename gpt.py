@@ -156,7 +156,8 @@ async def summarize_note_text(note: str, lang: str = "ru") -> str:  # 🔄 async
     lang_instruction = {
         "ru": "Ответь на русском языке.",
         "uk": "Відповідай українською мовою.",
-        "en": "Respond in English language."
+        "en": "Respond in English language.",
+        "de": "Antworte auf Deutsch."
     }
 
     today_str = datetime.now().strftime("%d.%m.%Y")
