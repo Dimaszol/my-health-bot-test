@@ -155,8 +155,8 @@ async def create_tables():
     -- 📊 ЛИМИТЫ ПОЛЬЗОВАТЕЛЕЙ
     CREATE TABLE IF NOT EXISTS user_limits (
         user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
-        documents_left INTEGER DEFAULT 3,
-        gpt4o_queries_left INTEGER DEFAULT 5,
+        documents_left INTEGER DEFAULT 2,
+        gpt4o_queries_left INTEGER DEFAULT 10,
         subscription_type TEXT DEFAULT 'free',
         subscription_expires_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
