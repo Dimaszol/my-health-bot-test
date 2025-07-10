@@ -105,7 +105,7 @@ translations = {
         "package_features_title": "Что включено:",
         # Названия языков (для отображения в профиле)
         "language_name_ru": "Русский",
-        "language_name_ua": "Українська", 
+        "language_name_uk": "Українська", 
         "language_name_en": "English",
         "language_name_de": "Deutsch",
          # OpenAI/ИИ ошибки (что видит пользователь)
@@ -536,7 +536,7 @@ translations = {
     "package_features_title": "Що включено:",
     # Названия языков (для отображения в профиле)
     "language_name_ru": "Російська",
-    "language_name_ua": "Українська", 
+    "language_name_uk": "Українська", 
     "language_name_en": "English",
     "language_name_de": "Deutsch",
      # OpenAI/ИИ ошибки (что видит пользователь)
@@ -966,7 +966,7 @@ translations = {
     "package_features_title": "What's included:",
     # Language names (for profile display)
     "language_name_ru": "Russian",
-    "language_name_ua": "Ukrainian", 
+    "language_name_uk": "Ukrainian", 
     "language_name_en": "English",
     "language_name_de": "German",
      # OpenAI/AI errors (user-facing)
@@ -1397,7 +1397,7 @@ translations = {
     "package_features_title": "Was enthalten ist:",
     # Sprachnamen (für Profil-Anzeige)
     "language_name_ru": "Russisch",
-    "language_name_ua": "Ukrainisch", 
+    "language_name_uk": "Ukrainisch", 
     "language_name_en": "English",
     "language_name_de": "Deutsch",
      # OpenAI/AI-Fehler (benutzerseitig)
