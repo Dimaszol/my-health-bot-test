@@ -72,7 +72,7 @@ class SubscriptionManager:
             subscription_data = await fetch_one("""
                 SELECT stripe_subscription_id, package_id, status 
                 FROM user_subscriptions 
-                WHERE user_id = $1 AND stripe_subscription_id IS NOT NULL
+                WHERE user_id = $1
                 ORDER BY created_at DESC LIMIT 1
             """, (user_id,))
             
@@ -83,7 +83,28 @@ class SubscriptionManager:
                 return {"has_active": False, "subscription_id": None, "status": "none"}
             
             stripe_subscription_id = subscription_data[0]
+            
+            # Если нет stripe_subscription_id - подписка только в локальной БД
+            if not stripe_subscription_id:
+                logger.info("⚠️ Подписка найдена в БД, но без stripe_subscription_id")
+                # Проверяем статус в локальной БД
+                local_status = subscription_data[2]  # status из БД
+                if local_status == 'active':
+                    return {
+                        "has_active": True,
+                        "subscription_id": None,
+                        "status": "local_active"
+                    }
+                else:
+                    return {
+                        "has_active": False,
+                        "subscription_id": None,
+                        "status": "local_inactive"
+                    }
+            
             logger.info(f"🔍 Найдена подписка в БД: {stripe_subscription_id}")
+            
+            # ✅ ВАЖНО: Проверяем реальный статус в Stripe, игнорируя локальный статус
             
             # Проверяем статус в Stripe
             try:
