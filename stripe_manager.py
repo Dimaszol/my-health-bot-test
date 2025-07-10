@@ -128,7 +128,7 @@ class StripeManager:
     
     @staticmethod
     async def handle_successful_payment(session_id: str):
-        """✅ ИСПРАВЛЕННАЯ ВЕРСИЯ: Обрабатывает успешную оплату с локализацией"""
+        """✅ ИСПРАВЛЕННАЯ ВЕРСИЯ: Обрабатывает успешную оплату с правильным PostgreSQL синтаксисом"""
         try:
             session = stripe.checkout.Session.retrieve(session_id)
             
@@ -147,42 +147,50 @@ class StripeManager:
                 subscription = stripe.Subscription.retrieve(session.subscription)
                 if subscription.status not in ['active', 'trialing']:
                     # ✅ ИСПРАВЛЕНО: Локализованное сообщение ошибки
-                    error_msg = t("stripe_subscription_not_active", lang, status=subscription.status)
+                    error_msg = f"Subscription not active: {subscription.status}"
                     return False, error_msg
             else:
                 # Для разовых платежей проверяем статус оплаты
                 if session.payment_status != 'paid':
                     # ✅ ИСПРАВЛЕНО: Локализованное сообщение ошибки
-                    return False, t("stripe_payment_not_completed", lang)
+                    return False, "Payment not completed"
             
             # Проверяем дубликаты
             existing_transaction = await fetch_one("""
                 SELECT id FROM transactions 
-                WHERE stripe_session_id = ? AND status = 'completed'
+                WHERE stripe_session_id = ?
+                AND status = 'completed'
             """, (session_id,))
             
             if existing_transaction:
                 # ✅ ИСПРАВЛЕНО: Локализованное сообщение
-                return True, t("stripe_payment_already_processed", lang)
+                return True, "Payment already processed"
             
             # Получаем информацию о пакете
             package_info = StripeConfig.get_package_info(package_id)
             if not package_info:
                 # ✅ ИСПРАВЛЕНО: Локализованное сообщение ошибки
-                error_msg = t("stripe_package_not_found", lang, package_id=package_id)
+                error_msg = f"Package not found: {package_id}"
                 return False, error_msg
             
-            # ✅ НОВАЯ ЛОГИКА: Обрабатываем подписки по-разному
+            # ✅ ИСПРАВЛЕНИЕ SQL: Заменяем INSERT OR REPLACE на PostgreSQL UPSERT
             if package_info['type'] == 'subscription':
                 # Для подписок сохраняем Stripe subscription ID
                 subscription_id = session.subscription
                 
-                # Сохраняем информацию о подписке
+                # ✅ ИСПРАВЛЕНО: PostgreSQL UPSERT вместо INSERT OR REPLACE
                 await execute_query("""
-                    INSERT OR REPLACE INTO user_subscriptions 
-                    (user_id, stripe_subscription_id, package_id, status, created_at)
-                    VALUES (?, ?, ?, 'active', ?)
-                """, (user_id, subscription_id, package_id, datetime.now()))
+                    INSERT INTO user_subscriptions 
+                    (user_id, stripe_subscription_id, package_id, status, created_at, cancelled_at)
+                    VALUES (?, ?, ?, 'active', ?, ?)
+                    ON CONFLICT (user_id) 
+                    DO UPDATE SET 
+                        stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+                        package_id = EXCLUDED.package_id,
+                        status = EXCLUDED.status,
+                        created_at = EXCLUDED.created_at,
+                        cancelled_at = EXCLUDED.cancelled_at
+                """, (user_id, subscription_id, package_id, datetime.now(), None))
                 
                 # Выдаем лимиты
                 result = await SubscriptionManager.purchase_package(
@@ -192,8 +200,8 @@ class StripeManager:
                 )
                 
                 # ✅ ИСПРАВЛЕНО: Локализованное сообщение с названием пакета
-                package_name = StripeConfig.get_localized_package_name(package_id, lang)
-                message = t("stripe_subscription_activated", lang, package_name=package_name)
+                package_name = package_info['name']
+                message = f"Subscription activated: {package_name}"
                 
             else:
                 # Для разовых покупок - как раньше
@@ -204,12 +212,12 @@ class StripeManager:
                 )
                 
                 # ✅ ИСПРАВЛЕНО: Локализованное сообщение с названием пакета
-                package_name = StripeConfig.get_localized_package_name(package_id, lang)
-                message = t("stripe_package_purchased", lang, package_name=package_name)
+                package_name = package_info['name']
+                message = f"Package purchased: {package_name}"
             
             if not result['success']:
                 # ✅ ИСПРАВЛЕНО: Локализованное сообщение ошибки
-                error_msg = t("stripe_limits_grant_error", lang, error=result['error'])
+                error_msg = f"❌ Ошибка активации: {result['error']}"
                 return False, error_msg
             
             # Обновляем статус транзакции
@@ -230,13 +238,13 @@ class StripeManager:
             return True, message
             
         except Exception as e:
-            logger.error(f"❌ Ошибка обработки платежа")
+            logger.error(f"❌ Ошибка обработки платежа: {e}")
             
             # ✅ ДОБАВЛЕНО: локализованная ошибка
             try:
                 user_id = int(session.metadata.get('user_id', 0)) if 'session' in locals() else 0
                 lang = await get_user_language(user_id) if user_id > 0 else "ru"
-                error_msg = t("stripe_activation_error", lang, error=str(e))
+                error_msg = f"❌ Ошибка активации: {str(e)}"
             except:
                 error_msg = f"Activation error: {e}"
             

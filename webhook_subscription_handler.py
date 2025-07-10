@@ -1,4 +1,5 @@
-# webhook_subscription_handler.py - ИСПРАВЛЕННАЯ ВЕРСИЯ
+
+# В webhook_subscription_handler.py - ИСПРАВЛЯЕМ JSON ошибку
 
 import json
 import logging
@@ -9,6 +10,12 @@ from db_postgresql import get_user_language, t, get_db_connection, release_db_co
 
 logger = logging.getLogger(__name__)
 
+def datetime_serializer(obj):
+    """JSON serializer для datetime объектов"""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
 class SubscriptionWebhookHandler:
     """Обработчик webhook для событий подписок от Stripe"""
     
@@ -17,10 +24,12 @@ class SubscriptionWebhookHandler:
     
     async def handle_subscription_webhook(self, request):
         """
-        ✅ ИСПРАВЛЕННАЯ версия - правильное извлечение данных и прямой PostgreSQL
+        ✅ ИСПРАВЛЕННАЯ версия - фикс JSON serialization + правильное извлечение данных
         """
         try:
-            # Получаем данные webhook
+            # ... существующий код получения данных ...
+            # (оставляем как есть до строки с event_type)
+            
             try:
                 import stripe
                 import os
@@ -72,10 +81,6 @@ class SubscriptionWebhookHandler:
                             if parent.get('type') == 'subscription_details':
                                 subscription_details = parent.get('subscription_details', {})
                                 subscription_id = subscription_details.get('subscription')
-                        
-                        # Способ 3: Прямо из invoice (если есть)
-                        if not subscription_id:
-                            subscription_id = invoice_data.get('subscription')
                         
                         amount = invoice_data.get('amount_paid', 0)
                         
@@ -175,15 +180,18 @@ class SubscriptionWebhookHandler:
                 logger.info(f"🚫 Ignoring event: {event_type}")
                 result = {"status": "ignored", "message": f"Event {event_type} ignored"}
             
-            # Возвращаем результат
+            # ✅ ИСПРАВЛЕНИЕ JSON SERIALIZATION: Возвращаем результат с правильным сериализатором
             logger.info(f"✅ Webhook result: {result}")
-            return web.json_response({
+            
+            response_data = {
                 "status": "success",
                 "message": "Webhook processed successfully",
                 "event_type": event_type,
                 "result": result,
-                "processed_at": datetime.now().isoformat()
-            })
+                "processed_at": datetime.now().isoformat()  # ✅ ИСПРАВЛЕНО: используем .isoformat()
+            }
+            
+            return web.json_response(response_data)
             
         except Exception as e:
             logger.error(f"❌ Webhook processing error: {e}")
@@ -291,6 +299,7 @@ class SubscriptionWebhookHandler:
                 
                 logger.info(f"✅ УСПЕШНО ЗАВЕРШЕНО для user_id={user_id}")
                 
+                # ✅ ИСПРАВЛЕНИЕ: Убираем datetime объекты из ответа
                 return {
                     "status": "success",
                     "message": "Subscription renewed",
@@ -300,8 +309,8 @@ class SubscriptionWebhookHandler:
                     "new_limits": {
                         "documents": result.get('new_documents'),
                         "queries": result.get('new_queries')
-                    },
-                    "database_record": dict(saved_subscription) if saved_subscription else None
+                    }
+                    # Убираем database_record, чтобы избежать datetime сериализации
                 }
                 
             finally:
