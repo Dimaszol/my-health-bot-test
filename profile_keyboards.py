@@ -59,7 +59,7 @@ def language_choice_keyboard(lang: str) -> InlineKeyboardMarkup:  # ← доба
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🇺🇦 Українська", callback_data="lang_uk")],
         [InlineKeyboardButton(text="🇬🇧 English", callback_data="lang_en")],
-        [InlineKeyboardButton(text="🇩🇪 Deutsch", callback_data="set_lang_de")], 
+        [InlineKeyboardButton(text="🇩🇪 Deutsch", callback_data="lang_de")], 
         [InlineKeyboardButton(text="🇷 Русский", callback_data="lang_ru")],
         [InlineKeyboardButton(text=t("cancel_button", lang), callback_data="cancel_edit")]  # ← ИСПРАВЛЕНО
     ])

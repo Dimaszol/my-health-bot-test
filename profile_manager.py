@@ -257,19 +257,19 @@ CHOICE_MAPPINGS = {
     "smoking": {
         "smoking_yes": {
             "ru": "Да", 
-            "ua": "Так", 
+            "uk": "Так", 
             "en": "Yes", 
             "de": "Ja"  # ✅ ДОБАВЛЕНО
         },
         "smoking_no": {
             "ru": "Нет", 
-            "ua": "Ні", 
+            "uk": "Ні", 
             "en": "No", 
             "de": "Nein"  # ✅ ДОБАВЛЕНО
         },
         "smoking_vape": {
             "ru": "Vape", 
-            "ua": "Vape", 
+            "uk": "Vape", 
             "en": "Vape", 
             "de": "Vape"  # ✅ ДОБАВЛЕНО
         }
@@ -277,19 +277,19 @@ CHOICE_MAPPINGS = {
     "alcohol": {
         "alcohol_never": {
             "ru": "Не употребляю", 
-            "ua": "Не вживаю", 
+            "uk": "Не вживаю", 
             "en": "Never", 
             "de": "Nie"  # ✅ ДОБАВЛЕНО
         },
         "alcohol_sometimes": {
             "ru": "Иногда", 
-            "ua": "Іноді", 
+            "uk": "Іноді", 
             "en": "Sometimes", 
             "de": "Manchmal"  # ✅ ДОБАВЛЕНО
         },
         "alcohol_often": {
             "ru": "Часто", 
-            "ua": "Часто", 
+            "uk": "Часто", 
             "en": "Often", 
             "de": "Oft"  # ✅ ДОБАВЛЕНО
         }
@@ -297,31 +297,31 @@ CHOICE_MAPPINGS = {
     "physical_activity": {
         "activity_none": {
             "ru": "Нет активности", 
-            "ua": "Немає активності", 
+            "uk": "Немає активності", 
             "en": "No activity", 
             "de": "Keine Aktivität"  # ✅ ДОБАВЛЕНО
         },
         "activity_low": {
             "ru": "Низкая", 
-            "ua": "Низька", 
+            "uk": "Низька", 
             "en": "Low", 
             "de": "Niedrig"  # ✅ ДОБАВЛЕНО
         },
         "activity_medium": {
             "ru": "Средняя", 
-            "ua": "Середня", 
+            "uk": "Середня", 
             "en": "Medium", 
             "de": "Mittel"  # ✅ ДОБАВЛЕНО
         },
         "activity_high": {
             "ru": "Высокая", 
-            "ua": "Висока", 
+            "uk": "Висока", 
             "en": "High", 
             "de": "Hoch"  # ✅ ДОБАВЛЕНО
         },
         "activity_pro": {
             "ru": "Профессиональная", 
-            "ua": "Професійна", 
+            "uk": "Професійна", 
             "en": "Professional", 
             "de": "Professionell"  # ✅ ДОБАВЛЕНО
         }
