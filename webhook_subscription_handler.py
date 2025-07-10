@@ -1,24 +1,23 @@
-# webhook_subscription_handler.py - Обработчик webhook для автоматического продления подписок
+# webhook_subscription_handler.py - ИСПРАВЛЕННАЯ ВЕРСИЯ
 
 import json
 import logging
 from datetime import datetime
 from aiohttp import web
 from subscription_manager import SubscriptionManager
-from db_postgresql import get_user_name, get_user_language, t
-from notification_system import NotificationSystem
+from db_postgresql import get_user_language, t, get_db_connection, release_db_connection
 
 logger = logging.getLogger(__name__)
 
 class SubscriptionWebhookHandler:
-    """Обработчик webhook для событий подписок от Make.com"""
+    """Обработчик webhook для событий подписок от Stripe"""
     
     def __init__(self, bot):
         self.bot = bot
     
     async def handle_subscription_webhook(self, request):
         """
-        ✅ ПРОСТАЯ версия - как раньше через Make.com, но напрямую через Stripe
+        ✅ ИСПРАВЛЕННАЯ версия - правильное извлечение данных и прямой PostgreSQL
         """
         try:
             # Получаем данные webhook
@@ -43,7 +42,7 @@ class SubscriptionWebhookHandler:
                         # Извлекаем данные для подписки
                         invoice_data = data.get('data', {}).get('object', {})
                         
-                        # Ищем user_id в metadata line items (как в вашем JSON)
+                        # ✅ ПРАВИЛЬНОЕ извлечение user_id
                         stripe_customer_id = None
                         lines = invoice_data.get('lines', {}).get('data', [])
                         if lines:
@@ -57,10 +56,33 @@ class SubscriptionWebhookHandler:
                                 sub_metadata = parent.get('subscription_details', {}).get('metadata', {})
                                 stripe_customer_id = sub_metadata.get('user_id')
                         
-                        subscription_id = invoice_data.get('subscription')
+                        # ✅ ПРАВИЛЬНОЕ извлечение subscription_id
+                        subscription_id = None
+                        
+                        # Способ 1: Из lines -> parent -> subscription_item_details -> subscription
+                        if lines and len(lines) > 0:
+                            parent = lines[0].get('parent', {})
+                            if parent.get('type') == 'subscription_item_details':
+                                subscription_item_details = parent.get('subscription_item_details', {})
+                                subscription_id = subscription_item_details.get('subscription')
+                        
+                        # Способ 2: Если не найден выше, пробуем из parent -> subscription_details
+                        if not subscription_id:
+                            parent = invoice_data.get('parent', {})
+                            if parent.get('type') == 'subscription_details':
+                                subscription_details = parent.get('subscription_details', {})
+                                subscription_id = subscription_details.get('subscription')
+                        
+                        # Способ 3: Прямо из invoice (если есть)
+                        if not subscription_id:
+                            subscription_id = invoice_data.get('subscription')
+                        
                         amount = invoice_data.get('amount_paid', 0)
                         
-                        logger.info(f"📄 Invoice payment: user_id={stripe_customer_id}, amount={amount}")
+                        logger.info(f"📄 Invoice payment extracted:")
+                        logger.info(f"   user_id: {stripe_customer_id}")
+                        logger.info(f"   subscription_id: {subscription_id}")
+                        logger.info(f"   amount: {amount}")
                         
                     elif event_type == 'checkout.session.completed':
                         # Извлекаем данные для разовой покупки
@@ -93,7 +115,7 @@ class SubscriptionWebhookHandler:
                 subscription_id = data.get('subscription_id')
                 amount = int(data.get('amount', 0))
             
-            logger.info(f"🎯 Processing: {event_type}, user: {stripe_customer_id}, amount: {amount}")
+            logger.info(f"🎯 Processing: {event_type}, user: {stripe_customer_id}, subscription: {subscription_id}, amount: {amount}")
             
             # ✅ ПРОСТАЯ ОБРАБОТКА - только 2 типа событий
             if event_type == 'invoice.payment_succeeded':
@@ -102,6 +124,13 @@ class SubscriptionWebhookHandler:
                     logger.error("❌ User ID not found in invoice webhook")
                     return web.json_response(
                         {"status": "error", "message": "User ID not found"}, 
+                        status=400
+                    )
+                
+                if not subscription_id:
+                    logger.error("❌ Subscription ID not found in invoice webhook")
+                    return web.json_response(
+                        {"status": "error", "message": "Subscription ID not found"}, 
                         status=400
                     )
                 
@@ -166,162 +195,152 @@ class SubscriptionWebhookHandler:
             )
     
     async def _handle_successful_payment(self, stripe_customer_id, subscription_id, amount):
-        """Обрабатывает успешное продление подписки"""
+        """Обрабатывает успешное продление подписки - ПРЯМОЙ PostgreSQL"""
         try:
-            # ✅ ИСПРАВЛЕНО: Убираем деление, так как amount уже в центах
-            logger.info("Subscription payment processed successfully")
+            logger.info(f"🔍 НАЧАЛО ОБРАБОТКИ: user_id={stripe_customer_id}, sub_id={subscription_id}, amount={amount}")
             
-            # TODO: Найти user_id по stripe_customer_id
-            user_id = int(stripe_customer_id)
+            # 1. Проверяем и преобразуем user_id
+            if not stripe_customer_id:
+                logger.error("❌ stripe_customer_id пустой")
+                return {"status": "error", "message": "stripe_customer_id is required"}
             
-            if not user_id:
-                logger.warning("User not found for webhook")
-                return {"status": "error", "message": "User not found"}
+            try:
+                user_id = int(stripe_customer_id)
+                logger.info(f"✅ user_id преобразован: {user_id}")
+            except (ValueError, TypeError) as e:
+                logger.error(f"❌ Не удалось преобразовать user_id: {stripe_customer_id}, ошибка: {e}")
+                return {"status": "error", "message": f"Invalid user_id: {stripe_customer_id}"}
             
-            # Определяем тип подписки по сумме
+            # 2. Определяем пакет
             package_id = self._determine_package_by_amount(amount)
+            logger.info(f"📦 Определен пакет: {package_id} для суммы {amount}")
             
-            # Пополняем лимиты пользователя
-            result = await SubscriptionManager.purchase_package(
-                user_id=user_id,
-                package_id=package_id,
-                payment_method='stripe_subscription'
-            )
-            
-            if result['success']:
-                from db_postgresql import execute_query
+            # 3. Получаем соединение с БД напрямую
+            conn = await get_db_connection()
+            try:
+                # 4. Проверяем существование пользователя
+                user_exists = await conn.fetchrow("""
+                    SELECT user_id FROM users WHERE user_id = $1
+                """, user_id)
                 
-                # ✅ ИСПРАВЛЕННЫЙ SQL: Используем None вместо NULL в параметрах
-                await execute_query("""
-                    INSERT INTO user_subscriptions 
-                    (user_id, stripe_subscription_id, package_id, status, created_at, cancelled_at)
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                    ON CONFLICT (user_id) 
-                    DO UPDATE SET 
-                        stripe_subscription_id = EXCLUDED.stripe_subscription_id,
-                        package_id = EXCLUDED.package_id,
-                        status = EXCLUDED.status,
-                        created_at = EXCLUDED.created_at,
-                        cancelled_at = EXCLUDED.cancelled_at
-                """, (user_id, subscription_id, package_id, 'active', datetime.now(), None))
+                if not user_exists:
+                    logger.warning(f"⚠️ Пользователь {user_id} не найден в БД, создаем...")
+                    await conn.execute("""
+                        INSERT INTO users (user_id, name, created_at) 
+                        VALUES ($1, $2, $3)
+                        ON CONFLICT (user_id) DO NOTHING
+                    """, user_id, f"User {user_id}", datetime.now())
                 
-                # ✅ ЛОКАЛИЗОВАННОЕ уведомление пользователю
+                # 5. Обновляем лимиты через SubscriptionManager
+                logger.info(f"💳 Вызываем SubscriptionManager.purchase_package...")
+                result = await SubscriptionManager.purchase_package(
+                    user_id=user_id,
+                    package_id=package_id,
+                    payment_method='stripe_subscription'
+                )
+                
+                logger.info(f"💳 Результат SubscriptionManager: {result}")
+                
+                if not result.get('success'):
+                    logger.error(f"❌ SubscriptionManager вернул ошибку: {result}")
+                    return {"status": "error", "message": f"SubscriptionManager failed: {result.get('error')}"}
+                
+                # 6. Сохраняем/обновляем подписку в БД НАПРЯМУЮ через PostgreSQL
+                logger.info(f"💾 Сохраняем подписку в user_subscriptions...")
+                
+                # Проверяем, есть ли уже подписка для этого пользователя
+                existing_subscription = await conn.fetchrow("""
+                    SELECT id, stripe_subscription_id FROM user_subscriptions 
+                    WHERE user_id = $1
+                """, user_id)
+                
+                logger.info(f"🔍 Существующая подписка: {dict(existing_subscription) if existing_subscription else None}")
+                
+                if existing_subscription:
+                    # Обновляем существующую
+                    await conn.execute("""
+                        UPDATE user_subscriptions 
+                        SET stripe_subscription_id = $1, 
+                            package_id = $2, 
+                            status = $3,
+                            created_at = $4,
+                            cancelled_at = $5
+                        WHERE user_id = $6
+                    """, subscription_id, package_id, 'active', datetime.now(), None, user_id)
+                    logger.info(f"✅ Обновлена существующая подписка для user_id={user_id}")
+                else:
+                    # Создаем новую
+                    await conn.execute("""
+                        INSERT INTO user_subscriptions 
+                        (user_id, stripe_subscription_id, package_id, status, created_at, cancelled_at)
+                        VALUES ($1, $2, $3, $4, $5, $6)
+                    """, user_id, subscription_id, package_id, 'active', datetime.now(), None)
+                    logger.info(f"✅ Создана новая подписка для user_id={user_id}")
+                
+                # 7. Проверяем, что запись действительно сохранилась
+                saved_subscription = await conn.fetchrow("""
+                    SELECT user_id, stripe_subscription_id, package_id, status, created_at 
+                    FROM user_subscriptions 
+                    WHERE user_id = $1
+                """, user_id)
+                
+                logger.info(f"🔍 ПРОВЕРКА: Сохраненная подписка: {dict(saved_subscription) if saved_subscription else None}")
+                
+                # 8. Отправляем уведомление
                 await self._send_renewal_notification(user_id, package_id)
                 
-                logger.info("User limits updated successfully")
+                logger.info(f"✅ УСПЕШНО ЗАВЕРШЕНО для user_id={user_id}")
+                
                 return {
                     "status": "success",
                     "message": "Subscription renewed",
                     "user_id": user_id,
                     "package_id": package_id,
+                    "stripe_subscription_id": subscription_id,
                     "new_limits": {
                         "documents": result.get('new_documents'),
                         "queries": result.get('new_queries')
-                    }
+                    },
+                    "database_record": dict(saved_subscription) if saved_subscription else None
                 }
-            else:
-                logger.error("Limits update failed")
-                return {"status": "error", "message": result.get('error')}
+                
+            finally:
+                await release_db_connection(conn)
                 
         except Exception as e:
-            logger.error("Payment processing error")
-            return {"status": "error", "message": str(e)}
-    
-    async def _handle_failed_payment(self, stripe_customer_id, subscription_id):
-        """Обрабатывает неудачное продление подписки"""
-        try:
-            logger.warning("Subscription payment failed")
-            
-            user_id = await self._get_user_id_by_stripe_customer(stripe_customer_id)
-            
-            if user_id:
-                # 1️⃣ Отправляем уведомление пользователю
-                await self._send_payment_failed_notification(user_id)
-                
-                # 2️⃣ ✅ НОВОЕ: Обновляем статус подписки в БД
-                from db_postgresql import execute_query
-                
-                await execute_query("""
-                    UPDATE user_subscriptions 
-                    SET status = 'payment_failed', cancelled_at = $1
-                    WHERE user_id = $2 AND stripe_subscription_id = $3
-                """, (datetime.now(), user_id, subscription_id))
-                
-                # 3️⃣ ✅ НОВОЕ: Деактивируем лимиты пользователя
-                await execute_query("""
-                    UPDATE user_limits 
-                    SET subscription_type = 'free',
-                        subscription_expires_at = NULL
-                    WHERE user_id = $1
-                """, (user_id,))
-                
-                logger.info("Payment failure notification sent")
-                logger.info("Subscription deactivated")
-                
-                return {
-                    "status": "success",
-                    "message": "Payment failed processed and subscription deactivated",
-                    "user_id": user_id
-                }
-            else:
-                return {"status": "error", "message": "User not found"}
-                
-        except Exception as e:
-            logger.error("Failed payment processing error")
-            return {"status": "error", "message": str(e)}
-    
-    async def _handle_invoice_created(self, stripe_customer_id, subscription_id):
-        """Обрабатывает создание нового счета"""
-        try:
-            logger.info("Invoice created")
-            
-            # Пока просто логируем
-            # В будущем можно добавить предварительные уведомления
-            
-            return {
-                "status": "success",
-                "message": "Invoice created logged"
-            }
-            
-        except Exception as e:
-            logger.error("Invoice processing error")
-            return {"status": "error", "message": str(e)}
-    
-    async def _get_user_id_by_stripe_customer(self, stripe_customer_id):
-        """
-        Находит user_id по stripe_customer_id
-        
-        TODO: Реализовать поиск в БД
-        Нужна таблица связи stripe_customer_id -> user_id
-        """
-        # ЗАГЛУШКА: для тестирования возвращаем тестового пользователя
-        if stripe_customer_id:
-            return int(stripe_customer_id)  # Используем переданный ID
-        return None
+            logger.error(f"❌ ОШИБКА В _handle_successful_payment: {e}")
+            import traceback
+            logger.error(f"❌ Полный traceback: {traceback.format_exc()}")
+            return {"status": "error", "message": f"Exception: {str(e)}"}
     
     def _determine_package_by_amount(self, amount_cents):
-        """Определяет тип пакета по сумме платежа"""
+        """Определяет тип пакета по сумме платежа с подробным логированием"""
+        
+        logger.info(f"🔍 Определяем пакет для суммы: {amount_cents} центов")
         
         # ✅ ОБЫЧНЫЕ ЦЕНЫ
-        if amount_cents == 399:  # $3.99 - Обычная цена Basic
+        if amount_cents == 399:  # $3.99 - Basic
+            logger.info("📦 Определен пакет: basic_sub (обычная цена)")
             return "basic_sub"
-        elif amount_cents == 999:  # $9.99 - Обычная цена Premium  
+        elif amount_cents == 999:  # $9.99 - Premium  
+            logger.info("📦 Определен пакет: premium_sub (обычная цена)")
             return "premium_sub"
-        elif amount_cents == 199:  # $1.99 - Разовая покупка
+        elif amount_cents == 199:  # $1.99 - Extra pack
+            logger.info("📦 Определен пакет: extra_pack")
             return "extra_pack"
         
-        # ✅ ПРОМОКОДЫ (ДОБАВЛЯЕМ ЭТИ СТРОКИ!)
-        elif amount_cents == 99:   # $0.99 - Промокод Basic (было $3.99)
-            logger.info("Promotional pricing detected")
+        # ✅ ПРОМОКОДЫ
+        elif amount_cents == 99:   # $0.99 - Промокод Basic
+            logger.info("📦 Определен пакет: basic_sub (промокод)")
             return "basic_sub"
-        elif amount_cents == 199:  # $1.99 - Промокод Premium (было $9.99) 
-            logger.info("Premium subscription processed")
+        elif amount_cents == 299:  # $2.99 - Промокод Premium (если есть)
+            logger.info("📦 Определен пакет: premium_sub (промокод)")
             return "premium_sub"
         
         # ✅ НЕИЗВЕСТНАЯ СУММА
         else:
-            logger.warning("Unrecognized payment amount")
-            return "basic_sub"  # По умолчанию
+            logger.warning(f"⚠️ Неизвестная сумма {amount_cents}, используем premium_sub по умолчанию")
+            return "premium_sub"  # Для $9.99 по умолчанию premium
     
     async def _send_renewal_notification(self, user_id, package_id):
         """✅ ЛОКАЛИЗОВАННАЯ версия - Отправляет уведомление об успешном продлении"""
@@ -335,7 +354,7 @@ class SubscriptionWebhookHandler:
             await self.bot.send_message(user_id, message)
             
         except Exception as e:
-            logger.error("Renewal notification failed")
+            logger.error(f"Renewal notification failed: {e}")
     
     async def _send_payment_failed_notification(self, user_id):
         """✅ ЛОКАЛИЗОВАННАЯ версия - Отправляет уведомление о неудачном платеже"""
@@ -349,7 +368,7 @@ class SubscriptionWebhookHandler:
             await self.bot.send_message(user_id, message)
             
         except Exception as e:
-            logger.error("Payment failure notification failed")
+            logger.error(f"Payment failure notification failed: {e}")
 
 # Функция для создания веб-приложения
 def create_webhook_app(bot):
