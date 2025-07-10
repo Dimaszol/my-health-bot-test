@@ -18,60 +18,96 @@ class SubscriptionWebhookHandler:
     
     async def handle_subscription_webhook(self, request):
         """
-        Обрабатывает webhook от Stripe напрямую или через Make.com
+        Обрабатывает webhook от Stripe с защитой от дублирования
         """
         try:
-            # Проверяем Stripe подпись для безопасности
+            # Получаем данные webhook
             try:
                 import stripe
                 import os
                 
-                # Получаем тело запроса и подпись
                 payload = await request.read()
                 sig_header = request.headers.get('stripe-signature')
                 webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
                 
                 if sig_header and webhook_secret and webhook_secret.startswith('whsec_'):
-                    # Проверяем подпись Stripe
                     event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
                     data = event
                     logger.info("Webhook verified with Stripe signature")
                 else:
-                    # Fallback для Make.com или тестирования
                     data = json.loads(payload.decode('utf-8'))
                     logger.info("Webhook processed as JSON (Make.com format)")
                     
             except Exception as e:
-                # Если проверка подписи не удалась, пробуем как обычный JSON
                 data = await request.json()
                 logger.warning("Webhook signature verification failed, processing as JSON")
             
-            # Логируем полученные данные
             logger.info("Webhook received from payment provider")
             
-            # Извлекаем информацию - поддержка и Make.com и прямого Stripe
+            # Извлекаем тип события
             event_type = data.get('event_type') or data.get('type')
             stripe_customer_id = data.get('user_id')
             subscription_id = data.get('subscription_id')
             amount_raw = data.get('amount', 0)
             
-            # Если это прямой Stripe webhook
+            # Обработка прямых Stripe webhook
             if not event_type and 'type' in data:
                 event_type = data['type']
                 
-                # Для invoice.payment_succeeded извлекаем данные из metadata
                 if event_type == 'invoice.payment_succeeded':
                     invoice_data = data.get('data', {}).get('object', {})
-                    metadata = invoice_data.get('metadata', {})
                     
-                    # Извлекаем user_id и package_id из metadata
+                    # ✅ ПРАВИЛЬНОЕ извлечение user_id из metadata
+                    metadata = invoice_data.get('metadata', {})
                     stripe_customer_id = metadata.get('user_id')
-                    amount_raw = invoice_data.get('amount_paid', 0)  # Сумма в центах
+                    
+                    # Если нет в invoice metadata - ищем в line items
+                    if not stripe_customer_id:
+                        lines = invoice_data.get('lines', {}).get('data', [])
+                        if lines:
+                            line_metadata = lines[0].get('metadata', {})
+                            stripe_customer_id = line_metadata.get('user_id')
+                    
+                    # Если нет в line items - ищем в subscription metadata
+                    if not stripe_customer_id:
+                        parent = invoice_data.get('parent', {})
+                        if parent.get('type') == 'subscription_details':
+                            sub_metadata = parent.get('subscription_details', {}).get('metadata', {})
+                            stripe_customer_id = sub_metadata.get('user_id')
+                    
+                    amount_raw = invoice_data.get('amount_paid', 0)
                     subscription_id = invoice_data.get('subscription')
                     
-                    logger.info(f"Direct Stripe webhook: user_id={stripe_customer_id}, amount={amount_raw}")
+                    # ✅ ВАЖНО: Проверяем billing_reason
+                    billing_reason = invoice_data.get('billing_reason')
+                    logger.info(f"Invoice billing_reason: {billing_reason}")
+                    
+                elif event_type == 'checkout.session.completed':
+                    session_data = data.get('data', {}).get('object', {})
+                    session_id = session_data.get('id')
+                    
+                    # Получаем детали сессии
+                    try:
+                        import stripe
+                        session = stripe.checkout.Session.retrieve(session_id)
+                        
+                        # ✅ КЛЮЧЕВАЯ ПРОВЕРКА: Проверяем mode сессии
+                        session_mode = session.mode
+                        logger.info(f"Session mode: {session_mode}")
+                        
+                        # Если это subscription mode - НЕ обрабатываем здесь
+                        if session_mode == 'subscription':
+                            logger.info("🚫 Skipping checkout.session.completed for subscription - will be handled by invoice.payment_succeeded")
+                            return web.json_response({
+                                "status": "success",
+                                "message": "Subscription checkout ignored - will be processed by invoice webhook",
+                                "event_type": event_type
+                            })
+                        
+                    except Exception as session_error:
+                        logger.error(f"Error retrieving session details: {session_error}")
             
-            # Конвертируем amount в число
+            # Конвертируем amount
             try:
                 amount = int(amount_raw) if amount_raw else 0
             except (ValueError, TypeError):
@@ -83,17 +119,36 @@ class SubscriptionWebhookHandler:
                     status=400
                 )
             
-            # Обрабатываем разные типы событий
+            logger.info(f"Processing event: {event_type}, user_id: {stripe_customer_id}, amount: {amount}")
+            
+            # ✅ ОБРАБОТКА СОБЫТИЙ С ЗАЩИТОЙ ОТ ДУБЛИРОВАНИЯ
             if event_type == 'invoice.payment_succeeded':
-                result = await self._handle_successful_payment(
-                    stripe_customer_id, subscription_id, amount
-                )
+                # ✅ ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: только первые платежи по подписке
+                if billing_reason in ['subscription_create', 'subscription_cycle']:
+                    logger.info(f"Processing subscription payment for billing_reason: {billing_reason}")
+                    
+                    if not stripe_customer_id:
+                        logger.error("❌ User ID not found in invoice webhook data")
+                        return web.json_response(
+                            {"status": "error", "message": "User ID not found"}, 
+                            status=400
+                        )
+                    
+                    result = await self._handle_successful_payment(
+                        stripe_customer_id, subscription_id, amount
+                    )
+                else:
+                    logger.info(f"🚫 Ignoring invoice.payment_succeeded with billing_reason: {billing_reason}")
+                    result = {"status": "ignored", "message": f"Billing reason {billing_reason} ignored"}
+                    
             elif event_type == 'invoice.payment_failed':
                 result = await self._handle_failed_payment(
                     stripe_customer_id, subscription_id
                 )
+                
             elif event_type == 'checkout.session.completed':
-                session_id = data.get('session_id')
+                # ✅ Здесь обрабатываем ТОЛЬКО разовые покупки (mode = 'payment')
+                session_id = data.get('session_id') or data.get('data', {}).get('object', {}).get('id')
                 user_id_from_metadata = stripe_customer_id or data.get('user_id')
                 
                 if session_id:
@@ -122,7 +177,7 @@ class SubscriptionWebhookHandler:
                                         parse_mode="HTML"
                                     )
                                 except Exception as notify_error:
-                                    pass
+                                    logger.warning(f"Notification failed: {notify_error}")
                         else:
                             result = {
                                 "status": "error", 
@@ -135,11 +190,13 @@ class SubscriptionWebhookHandler:
                         }
                 else:
                     result = {"status": "error", "message": "Missing session_id"}
+                    
             else:
                 logger.warning(f"Unknown webhook event type: {event_type}")
                 result = {"status": "ignored", "message": f"Event {event_type} ignored"}
             
             # Возвращаем результат
+            logger.info(f"✅ Webhook processing completed: {result}")
             return web.json_response({
                 "status": "success",
                 "message": "Webhook processed successfully",
@@ -149,7 +206,9 @@ class SubscriptionWebhookHandler:
             })
             
         except Exception as e:
-            logger.error(f"Webhook processing error: {e}")
+            logger.error(f"❌ Webhook processing error: {e}")
+            import traceback
+            logger.error(f"❌ Full traceback: {traceback.format_exc()}")
             return web.json_response(
                 {"status": "error", "message": str(e)}, 
                 status=500
