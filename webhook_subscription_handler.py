@@ -333,7 +333,7 @@ def create_webhook_app(bot):
     app = web.Application()
     
     # Добавляем маршрут для webhook
-    app.router.add_post('/webhook', handler.handle_subscription_webhook)
+    app.router.add_post('/webhook/stripe', handler.handle_subscription_webhook)
     
     # Добавляем health check
     async def health_check(request):
