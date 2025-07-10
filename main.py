@@ -1532,15 +1532,38 @@ async def main():
             print(f"❌ Ошибка pgvector: {e}")
             print("⚠️ Проверьте, что расширение pgvector включено в Railway PostgreSQL")
             raise
+
+        # 📁 5. ПРОВЕРКА ФАЙЛОВОГО ХРАНИЛИЩА (ВСТАВИТЬ СЮДА!)
+        try:
+            from file_storage import check_storage_setup
+            storage_info = check_storage_setup()
+            
+            if storage_info['success']:
+                stats = storage_info['stats']
+                print(f"✅ Файловое хранилище готово:")
+                print(f"   📂 Тип: {stats['storage_type']}")
+                print(f"   📍 Путь: {stats['storage_path']}")
+                print(f"   📊 Файлов: {stats['file_count']}")
+                print(f"   💾 Размер: {stats['total_size_mb']} MB")
+                
+                if stats['storage_type'] == 'persistent':
+                    print("   🎉 Railway Volumes активны!")
+                else:
+                    print("   ⚠️ Временное хранилище (добавьте Railway Volume)")
+            else:
+                print(f"❌ Ошибка хранилища: {storage_info['error']}")
+                
+        except Exception as e:
+            print(f"⚠️ Ошибка проверки хранилища: {e}")
         
-        # 🤖 5. ПРОВЕРКА OPENAI
+        # 🤖 6. ПРОВЕРКА OPENAI
         openai_status = await check_openai_status()
         if openai_status:
             print("✅ OpenAI API доступен")
         else:
             print("⚠️ Проблемы с OpenAI API")
         
-        # 🌐 6. ЗАПУСК WEBHOOK СЕРВЕРА (на Railway порту)
+        # 🌐 7. ЗАПУСК WEBHOOK СЕРВЕРА (на Railway порту)
         if stripe_ok:
             print(f"🔗 Запуск Stripe webhook сервера на порту {port}...")
             from webhook_subscription_handler import start_webhook_server
@@ -1554,7 +1577,7 @@ async def main():
         print("   - Заметки: 5/5мин")
         print("🚀 Бот готов к работе на Railway!")
         
-        # 🚀 7. ЗАПУСК БОТА
+        # 🚀 8. ЗАПУСК БОТА
         await dp.start_polling(bot)
         
     except KeyboardInterrupt:

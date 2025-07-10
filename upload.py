@@ -10,8 +10,8 @@ from gpt import ask_structured, is_medical_text, generate_medical_summary, gener
 from db_postgresql import save_document, get_user_language, t
 from registration import user_states
 from vector_db_postgresql import split_into_chunks, add_chunks_to_vector_db
-# ❌ УДАЛИТЬ: from subscription_manager import spend_document_limit, SubscriptionManager
 from file_utils import validate_file_size, validate_file_extension, create_simple_file_path
+from file_storage import get_file_storage
 
 logger = logging.getLogger(__name__)
 
@@ -159,10 +159,27 @@ async def handle_document_upload(message: types.Message, bot):
             await message.answer(t("vision_failed", lang))
             return  # ← НЕ записываем лимит если обработка не удалась
 
+        storage = get_file_storage()
+        success, permanent_path = storage.save_file(
+            user_id=user_id,
+            filename=original_filename,
+            source_path=local_file
+        )
+
+        if not success:
+            await message.answer(t("file_storage_error", lang))
+            return
+
+        # Используем постоянный путь вместо временного
+        final_file_path = permanent_path
+
+        # Логируем успешное сохранение
+        logger.info(f"✅ Файл сохранен в постоянное хранилище: {permanent_path}")
+
         document_id = await save_document(
             user_id=user_id,
             title=auto_title,
-            file_path=local_file,
+            file_path=final_file_path,
             file_type=file_type,
             raw_text=raw_text,
             summary=summary
