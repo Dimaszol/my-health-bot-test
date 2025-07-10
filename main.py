@@ -1490,52 +1490,71 @@ async def handle_button_action(callback: types.CallbackQuery):
 
 @handle_telegram_errors
 async def main():
-    """
-    🔧 ИСПРАВЛЕННАЯ функция main() с правильной инициализацией баз данных
-    """
+    """Главная функция запуска бота (Railway-ready)"""
     print("🚀 Запуск медицинского бота...")
     
     try:
+        # 🔧 Получаем порт от Railway (для webhook)
+        port = int(os.getenv("PORT", 8080))
+        is_railway = os.getenv("RAILWAY_ENVIRONMENT") == "production"
+        
+        print(f"🚀 Запуск бота {'на Railway' if is_railway else 'локально'}")
+        print(f"🌐 Webhook порт: {port}")
+        
         # 🔧 1. ИНИЦИАЛИЗАЦИЯ СИСТЕМЫ USER STATE
         from user_state_manager import UserStateManager
         user_state_manager = UserStateManager(ttl_minutes=60)
-        print("✅ Бот запущен. Ожидаю сообщения...")
+        print("✅ Бот инициализирован")
         
         # 💳 2. ПРОВЕРКА STRIPE
         stripe_ok = check_stripe_setup()  # БЕЗ await - функция не async!
         if stripe_ok:
-            print("✅ Соединение с Stripe API успешно")
+            print("✅ Stripe API готов")
             print("💳 Stripe готов к работе")
+        else:
+            print("⚠️ Stripe недоступен (возможно, ключи не настроены)")
         
-        # 🌐 3. ЗАПУСК WEBHOOK СЕРВЕРА
-        from webhook_subscription_handler import start_webhook_server
-        webhook_runner = await start_webhook_server(bot, port=8080)
-        
-        # 🗄️ 4. ИНИЦИАЛИЗАЦИЯ POSTGRESQL (КРИТИЧНО!)
+        # 🗄️ 3. ИНИЦИАЛИЗАЦИЯ POSTGRESQL (КРИТИЧНО!)
         print("🔗 Подключение к PostgreSQL...")
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            raise Exception("❌ DATABASE_URL не найден в переменных окружения")
+        
         await initialize_db_pool(max_connections=10)
-        print("🗄️ Database pool готов")
+        print("🗄️ PostgreSQL pool готов")
         
-        # 🧠 5. ИНИЦИАЛИЗАЦИЯ VECTOR DB (ПОСЛЕ PostgreSQL!)
-                        
-        await initialize_vector_db()
-        print("🧠 Vector database готова")
+        # 🧠 4. ИНИЦИАЛИЗАЦИЯ VECTOR DB (ПОСЛЕ PostgreSQL!)
+        print("🧠 Инициализация pgvector...")
+        try:
+            await initialize_vector_db()
+            print("✅ Vector database готова")
+        except Exception as e:
+            print(f"❌ Ошибка pgvector: {e}")
+            print("⚠️ Проверьте, что расширение pgvector включено в Railway PostgreSQL")
+            raise
         
-        # 🤖 6. ПРОВЕРКА OPENAI
+        # 🤖 5. ПРОВЕРКА OPENAI
         openai_status = await check_openai_status()
         if openai_status:
             print("✅ OpenAI API доступен")
         else:
             print("⚠️ Проблемы с OpenAI API")
         
-       
+        # 🌐 6. ЗАПУСК WEBHOOK СЕРВЕРА (на Railway порту)
+        if stripe_ok:
+            print(f"🔗 Запуск Stripe webhook сервера на порту {port}...")
+            from webhook_subscription_handler import start_webhook_server
+            webhook_runner = await start_webhook_server(bot, port=port)
+            print("✅ Webhook сервер запущен")
+        
         print("🚦 Rate Limiter активирован")
         print("   - Сообщения: 10/мин")
         print("   - Документы: 3/5мин") 
         print("   - Изображения: 3/10мин")
         print("   - Заметки: 5/5мин")
+        print("🚀 Бот готов к работе на Railway!")
         
-        # 🚀 8. ЗАПУСК БОТА
+        # 🚀 7. ЗАПУСК БОТА
         await dp.start_polling(bot)
         
     except KeyboardInterrupt:
@@ -1543,16 +1562,16 @@ async def main():
         
     except Exception as e:
         print(f"❌ Критическая ошибка при запуске: {e}")
-        log_error_with_context(e, {"action": "main_startup"})
+        log_error_with_context(e, {"action": "railway_startup"})
         
     finally:
         # 🧹 ОЧИСТКА РЕСУРСОВ
         print("🧹 Закрытие соединений...")
         try:
             await close_db_pool()
-            print("✅ Базы данных закрыты")
+            print("✅ База данных закрыта")
         except Exception as e:
-            print(f"⚠️ Ошибка закрытия баз: {e}")
+            print(f"⚠️ Ошибка закрытия: {e}")
 
 # 🎯 ТОЧКА ВХОДА (в самом конце файла, замените существующую)
 if __name__ == "__main__":

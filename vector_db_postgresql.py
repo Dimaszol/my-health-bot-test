@@ -28,41 +28,38 @@ class PostgreSQLVectorDB:
         self.db_pool = db_pool
     
     async def initialize_vector_tables(self):
-        """Создает таблицы для векторного поиска"""
+        """Проверяет существование таблиц для векторного поиска (без создания)"""
         
-        create_tables_sql = """
-        -- 🔌 Включаем расширение pgvector
-        CREATE EXTENSION IF NOT EXISTS vector;
-        
-        -- 📊 ТАБЛИЦА ВЕКТОРОВ ДОКУМЕНТОВ
-        CREATE TABLE IF NOT EXISTS document_vectors (
-            id SERIAL PRIMARY KEY,
-            document_id INTEGER REFERENCES documents(id) ON DELETE CASCADE,
-            user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-            chunk_index INTEGER NOT NULL,
-            chunk_text TEXT NOT NULL,
-            embedding vector(1536),  -- OpenAI text-embedding-3-small размерность
-            metadata JSONB DEFAULT '{}',
-            keywords TEXT DEFAULT '',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            
-            -- 🔍 ИНДЕКСЫ ДЛЯ БЫСТРОГО ПОИСКА
-            CONSTRAINT unique_chunk UNIQUE(document_id, chunk_index)
-        );
-        
-        -- 📈 ИНДЕКСЫ ДЛЯ ПРОИЗВОДИТЕЛЬНОСТИ
-        CREATE INDEX IF NOT EXISTS idx_document_vectors_user_id ON document_vectors(user_id);
-        CREATE INDEX IF NOT EXISTS idx_document_vectors_document_id ON document_vectors(document_id);
-        CREATE INDEX IF NOT EXISTS idx_document_vectors_embedding ON document_vectors USING ivfflat (embedding vector_cosine_ops);
-        CREATE INDEX IF NOT EXISTS idx_document_vectors_keywords ON document_vectors USING gin(to_tsvector('russian', keywords));
+        check_tables_sql = """
+        -- 🔍 Проверяем, что pgvector расширение включено
+        SELECT EXISTS(
+            SELECT 1 FROM pg_extension WHERE extname = 'vector'
+        ) as pgvector_enabled;
         """
         
         conn = await self.db_pool.acquire()
         try:
-            await conn.execute(create_tables_sql)
-            logger.info("✅ Векторные таблицы PostgreSQL созданы")
+            # Проверяем pgvector
+            result = await conn.fetchrow("SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'vector') as pgvector_enabled")
+            
+            if not result['pgvector_enabled']:
+                raise Exception("❌ pgvector расширение не включено в PostgreSQL")
+            
+            # Проверяем таблицу document_vectors
+            result = await conn.fetchrow("""
+                SELECT EXISTS(
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_name = 'document_vectors'
+                ) as table_exists
+            """)
+            
+            if not result['table_exists']:
+                raise Exception("❌ Таблица document_vectors не существует")
+            
+            logger.info("✅ Векторные таблицы PostgreSQL готовы")
+            
         except Exception as e:
-            logger.error(f"❌ Ошибка создания векторных таблиц")
+            logger.error(f"❌ Ошибка проверки векторных таблиц: {e}")
             raise
         finally:
             await self.db_pool.release(conn)

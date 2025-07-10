@@ -71,7 +71,13 @@ async def close_db_pool():
         await db_pool.close()
 
 async def create_tables():
-    """Создание всех таблиц медицинского бота"""
+    """Создание всех таблиц медицинского бота для Railway"""
+    
+    # 🔧 СНАЧАЛА подключаем pgvector расширение
+    pgvector_setup = """
+    -- Подключаем расширение pgvector (если не подключено)
+    CREATE EXTENSION IF NOT EXISTS vector;
+    """
     
     tables_sql = """
     -- 👤 ТАБЛИЦА ПОЛЬЗОВАТЕЛЕЙ
@@ -91,7 +97,10 @@ async def create_tables():
         physical_activity TEXT,
         family_history TEXT,
         last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        language TEXT DEFAULT 'ru'        
+        language TEXT DEFAULT 'ru',
+        gdpr_consent BOOLEAN DEFAULT FALSE,
+        gdpr_consent_time TIMESTAMP DEFAULT NULL,
+        total_messages_count INTEGER DEFAULT 0        
     );
 
     -- 💬 ИСТОРИЯ ЧАТА
@@ -115,6 +124,22 @@ async def create_tables():
         confirmed BOOLEAN DEFAULT FALSE,
         uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         vector_id TEXT
+    );
+
+    -- 🧠 ВЕКТОРЫ ДОКУМЕНТОВ (pgvector) - ЭТА ТАБЛИЦА ВАЖНА!
+    CREATE TABLE IF NOT EXISTS document_vectors (
+        id SERIAL PRIMARY KEY,
+        document_id INTEGER REFERENCES documents(id) ON DELETE CASCADE,
+        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+        chunk_index INTEGER NOT NULL,
+        chunk_text TEXT NOT NULL,
+        embedding vector(1536),  -- OpenAI embeddings размер
+        metadata JSONB DEFAULT '{}',
+        keywords TEXT DEFAULT '',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        
+        -- 🔍 УНИКАЛЬНЫЙ ИНДЕКС
+        CONSTRAINT unique_chunk UNIQUE(document_id, chunk_index)
     );
 
     -- 💊 ЛЕКАРСТВА
@@ -150,7 +175,8 @@ async def create_tables():
         completed_at TIMESTAMP,
         package_id TEXT,
         documents_granted INTEGER DEFAULT 0,
-        queries_granted INTEGER DEFAULT 0
+        queries_granted INTEGER DEFAULT 0,
+        promo_code TEXT
     );
 
     -- 📦 ПАКЕТЫ ПОДПИСОК
@@ -185,7 +211,7 @@ async def create_tables():
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- 📋 ТАБЛИЦА МЕДИЦИНСКОЙ КАРТЫ ПАЦИЕНТА
+    -- 📋 МЕДИЦИНСКАЯ КАРТА ПАЦИЕНТА
     CREATE TABLE IF NOT EXISTS medical_timeline (
         id SERIAL PRIMARY KEY,
         user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
@@ -198,7 +224,7 @@ async def create_tables():
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- 📊 ТАБЛИЦА АНАЛИТИКИ (ДОБАВИТЬ СЮДА!)
+    -- 📊 АНАЛИТИКА
     CREATE TABLE IF NOT EXISTS analytics_events (
         id SERIAL PRIMARY KEY,
         user_id BIGINT NOT NULL,
@@ -207,18 +233,28 @@ async def create_tables():
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- ИНДЕКСЫ ДЛЯ АНАЛИТИКИ
+    -- 📊 ИНДЕКСЫ ДЛЯ ВЕКТОРНОГО ПОИСКА (ВАЖНО!)
+    CREATE INDEX IF NOT EXISTS idx_document_vectors_user_id ON document_vectors(user_id);
+    CREATE INDEX IF NOT EXISTS idx_document_vectors_document_id ON document_vectors(document_id);
+    CREATE INDEX IF NOT EXISTS idx_document_vectors_embedding ON document_vectors USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+    CREATE INDEX IF NOT EXISTS idx_document_vectors_keywords ON document_vectors USING gin(to_tsvector('russian', keywords));
+
+    -- 📊 ОСТАЛЬНЫЕ ИНДЕКСЫ
     CREATE INDEX IF NOT EXISTS idx_analytics_user_id ON analytics_events(user_id);
     CREATE INDEX IF NOT EXISTS idx_analytics_event ON analytics_events(event);
     CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON analytics_events(timestamp);
     CREATE INDEX IF NOT EXISTS idx_analytics_user_event ON analytics_events(user_id, event);
-
-    -- 📊 ИНДЕКСЫ ДЛЯ ОПТИМИЗАЦИИ
     CREATE INDEX IF NOT EXISTS idx_medical_timeline_user_date ON medical_timeline(user_id, event_date DESC);
     CREATE INDEX IF NOT EXISTS idx_medical_timeline_user_importance ON medical_timeline(user_id, importance);
     CREATE INDEX IF NOT EXISTS idx_medical_timeline_category ON medical_timeline(user_id, category);
+    CREATE INDEX IF NOT EXISTS idx_chat_history_user_id ON chat_history(user_id);
+    CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id);
+    CREATE INDEX IF NOT EXISTS idx_medications_user_id ON medications(user_id);
+    CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_users_gdpr_consent ON users(gdpr_consent);
 
-    -- 🔄 ФУНКЦИЯ ДЛЯ ТРИГГЕРА (создаем только если не существует)
+    -- 🔄 ФУНКЦИЯ ДЛЯ ТРИГГЕРА
     CREATE OR REPLACE FUNCTION update_medical_timeline_timestamp()
     RETURNS TRIGGER AS $$
     BEGIN
@@ -227,7 +263,7 @@ async def create_tables():
     END;
     $$ LANGUAGE plpgsql;
 
-    -- 🔄 ТРИГГЕР С ПРОВЕРКОЙ СУЩЕСТВОВАНИЯ
+    -- 🔄 ТРИГГЕР
     DO $$ 
     BEGIN
         IF NOT EXISTS (
@@ -241,37 +277,27 @@ async def create_tables():
         END IF;
     END $$;
 
-    -- 📚 ИНДЕКСЫ ДЛЯ ПРОИЗВОДИТЕЛЬНОСТИ
-    CREATE INDEX IF NOT EXISTS idx_chat_history_user_id ON chat_history(user_id);
-    CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id);
-    CREATE INDEX IF NOT EXISTS idx_medications_user_id ON medications(user_id);
-    CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
-    CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id);
-
-    -- Добавляем накопительный счетчик сообщений  
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS total_messages_count INTEGER DEFAULT 0;
-    -- ✅ GDPR МИГРАЦИЯ - Добавление полей согласия в таблицу users
-    -- 1. Добавляем поле согласия с GDPR
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS gdpr_consent BOOLEAN DEFAULT FALSE;
-    
-    -- 2. Добавляем время согласия  
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS gdpr_consent_time TIMESTAMP DEFAULT NULL;
-    -- ✅ ПРОМОКОДЫ МИГРАЦИЯ - Добавление поля в transactions
-    ALTER TABLE transactions ADD COLUMN IF NOT EXISTS promo_code TEXT;
-    -- 3. Создаем индекс для быстрого поиска
-    CREATE INDEX IF NOT EXISTS idx_users_gdpr_consent ON users(gdpr_consent);
-    
-    -- 4. Комментарии для документации
+    -- 📝 КОММЕНТАРИИ
     COMMENT ON COLUMN users.gdpr_consent IS 'Пользователь дал согласие на обработку данных (GDPR)';
     COMMENT ON COLUMN users.gdpr_consent_time IS 'Время когда пользователь дал согласие GDPR';
+    COMMENT ON TABLE document_vectors IS 'Векторные эмбеддинги документов для семантического поиска';
     """
     
     conn = await get_db_connection()
     try:
+        # 1. Сначала подключаем pgvector
+        print("🔧 Подключение pgvector расширения...")
+        await conn.execute(pgvector_setup)
+        
+        # 2. Затем создаем таблицы
+        print("🏗️ Создание таблиц...")
         await conn.execute(tables_sql)
-        print("✅ Все таблицы созданы")
+        
+        print("✅ Все таблицы созданы успешно")
+        
     except Exception as e:
         log_error_with_context(e, {"action": "create_tables"})
+        print(f"❌ Ошибка создания таблиц: {e}")
         raise
     finally:
         await release_db_connection(conn)
