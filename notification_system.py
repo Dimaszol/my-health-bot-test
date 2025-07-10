@@ -46,7 +46,7 @@ class NotificationSystem:
             return True
             
         except Exception as e:
-            logger.error(f"Ошибка проверки лимитов для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка проверки лимитов для пользователя")
             return True  # В случае ошибки разрешаем действие
     
     @staticmethod
@@ -78,7 +78,6 @@ class NotificationSystem:
             return True  # Сообщения всегда разрешены
             
         except Exception as e:
-            logger.error(f"Ошибка обработки message upsell для пользователя {user_id}: {e}")
             return True
     
     @staticmethod
@@ -108,7 +107,6 @@ class NotificationSystem:
             return True
             
         except Exception as e:
-            logger.error(f"Ошибка проверки лимитов документов для пользователя {user_id}: {e}")
             return True  # В случае ошибки разрешаем действие
     
     @staticmethod
@@ -139,7 +137,7 @@ class NotificationSystem:
             )
             
         except Exception as e:
-            logger.error(f"Ошибка показа уведомления о лимитах для пользователя {user_id}: {e}")
+            pass
     
     @staticmethod
     async def notify_successful_purchase(user_id: int, package_id: str):
@@ -154,10 +152,9 @@ class NotificationSystem:
             # Сбрасываем счетчик upsell сообщений
             upsell_tracker.reset_count(user_id)
             
-            logger.info(f"Счетчик upsell сброшен для пользователя {user_id} после покупки {package_id}")
             
         except Exception as e:
-            logger.error(f"Ошибка сброса счетчика upsell для пользователя {user_id}: {e}")
+            pass
     
     @staticmethod
     async def check_subscription_expiry_warnings():
@@ -171,7 +168,7 @@ class NotificationSystem:
             pass
             
         except Exception as e:
-            logger.error(f"Ошибка проверки истечения подписок: {e}")
+            logger.error(f"Ошибка проверки истечения подписок")
 
 # Вспомогательные функции для интеграции в существующий код
 
@@ -203,7 +200,7 @@ async def increment_message_counter_for_upsell(user_id: int):
         if not has_gpt4o_limits:
             upsell_tracker.increment_message_count(user_id)
     except Exception as e:
-        logger.error(f"Ошибка увеличения счетчика upsell для пользователя {user_id}: {e}")
+        logger.error(f"Ошибка увеличения счетчика upsell для пользователя")
 
 async def should_show_upsell_for_message(user_id: int) -> bool:
     """Проверяет нужно ли показать upsell для сообщения"""
@@ -213,5 +210,5 @@ async def should_show_upsell_for_message(user_id: int) -> bool:
             return upsell_tracker.should_show_upsell(user_id)
         return False
     except Exception as e:
-        logger.error(f"Ошибка проверки upsell для пользователя {user_id}: {e}")
+        logger.error(f"Ошибка проверки upsell для пользователя")
         return False

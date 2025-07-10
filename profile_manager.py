@@ -59,7 +59,7 @@ class ProfileManager:
             return "\n\n".join(profile_lines)
             
         except Exception as e:
-            logger.error(f"Ошибка получения профиля для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка получения профиля для пользователя")
             return t("profile_load_error", lang)
 
     @staticmethod 
@@ -83,8 +83,6 @@ class ProfileManager:
         """✅ ИСПРАВЛЕННАЯ ВЕРСИЯ: Добавляет эмодзи с поддержкой всех языков"""
         if not activity:
             return activity
-        
-        print(f"🔧 DEBUG _add_activity_emoji: activity='{activity}', lang='{lang}'")
         
         # ✅ ПОЛНЫЙ маппинг активности к эмодзи для всех языков
         emoji_mapping = {
@@ -118,7 +116,6 @@ class ProfileManager:
         }
         
         result = emoji_mapping.get(activity, activity)
-        print(f"🔧 DEBUG _add_activity_emoji result: '{result}'")
         return result
     
     @staticmethod
@@ -139,20 +136,17 @@ class ProfileManager:
             # Специальная обработка языка
             if field == "language":
                 await set_user_language(user_id, processed_value)
-                logger.info(f"Язык пользователя {user_id} изменен на {processed_value}")
                 return True, t("profile_updated", processed_value)  # Сообщение на новом языке
             
             # Обновляем поле в базе
             success = await update_user_field(user_id, field, processed_value)
             
             if success:
-                logger.info(f"Поле {field} пользователя {user_id} обновлено на: {processed_value}")
                 return True, t("profile_updated", lang)
             else:
                 return False, t("profile_update_error", lang)
                 
         except Exception as e:
-            logger.error(f"Ошибка обновления поля {field} для пользователя {user_id}: {e}")
             return False, t("profile_update_error", lang)
     
     @staticmethod

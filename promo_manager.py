@@ -59,24 +59,15 @@ class PromoManager:
             Message с промокодом или None, если показывать не нужно
         """
         try:
-            # 🔍 ОТЛАДОЧНЫЕ ЛОГИ
-            print(f"🔍 PROMO DEBUG: User {user_id}, count = {current_message_count}")
             
             # 1️⃣ Проверяем точный номер сообщения (Промокод1)
             if current_message_count != 30:
-                print(f"🔍 PROMO DEBUG: Счетчик {current_message_count} != 30, выходим")
-                logger.debug(f"User {user_id}: message {current_message_count}/30 - промокод не показываем")
                 return None
                 
-            print(f"🔍 PROMO DEBUG: Счетчик подходит! Показываем промокод!")
-                
             # 2️⃣ Показываем промокод сразу (без проверки БД)!
-            logger.info(f"🎉 User {user_id}: показываем промокод на 30-м сообщении!")
             return await PromoManager._send_promo_message(user_id)
             
         except Exception as e:
-            print(f"🔍 PROMO DEBUG: ОШИБКА! {e}")
-            logger.error(f"Ошибка проверки промокода для user {user_id}: {e}")
             return None
     
     @staticmethod
@@ -151,11 +142,9 @@ class PromoManager:
                 parse_mode="HTML"
             )
             
-            logger.info(f"✅ User {user_id}: промокод успешно отправлен")
             return message
             
         except Exception as e:
-            logger.error(f"Ошибка отправки промокода user {user_id}: {e}")
             return None
     
     @staticmethod
@@ -181,15 +170,12 @@ class PromoManager:
                 # ✅ ЛОКАЛИЗУЕМ ОШИБКУ
                 lang = await get_user_language(callback_query.from_user.id)
                 await callback_query.answer(t('promo_not_found', lang))
-                logger.warning(f"Неизвестный промокод: {promo_type}")
                 return
                 
             user_id = callback_query.from_user.id
             user_name = callback_query.from_user.first_name or "Пользователь"
             lang = await get_user_language(user_id)  # ✅ ПОЛУЧАЕМ ЯЗЫК
-            
-            logger.info(f"User {user_id} выбрал промокод {promo_type}")
-            
+      
             # 2️⃣ Создаем ссылку на оплату с промокодом через Stripe
             from stripe_manager import StripeManager
             
@@ -221,15 +207,12 @@ class PromoManager:
                 
                 # ✅ ЛОКАЛИЗУЕМ ОТВЕТ
                 await callback_query.answer(t('promo_payment_ready', lang))
-                logger.info(f"✅ User {user_id}: создана ссылка на оплату с промокодом {promo_type}")
                 
             else:
                 # ✅ ЛОКАЛИЗУЕМ ОШИБКУ
                 await callback_query.answer(t('promo_payment_error', lang, error=result))
-                logger.error(f"Ошибка создания ссылки для user {user_id}: {result}")
                 
         except Exception as e:
-            logger.error(f"Ошибка обработки промокода: {e}")
             # ✅ ЛОКАЛИЗУЕМ ОБЩУЮ ОШИБКУ
             try:
                 lang = await get_user_language(callback_query.from_user.id)
@@ -254,10 +237,8 @@ class PromoManager:
             )
             
             await callback_query.answer(t('promo_dismiss_answer', lang))
-            logger.info(f"User {callback_query.from_user.id}: отложил промокод")
             
         except Exception as e:
-            logger.error(f"Ошибка обработки dismiss промокода: {e}")
             # ✅ ЛОКАЛИЗУЕМ FALLBACK
             try:
                 lang = await get_user_language(callback_query.from_user.id)

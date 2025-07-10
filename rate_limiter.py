@@ -29,7 +29,6 @@ def get_user_language_sync(user_id: int) -> str:
         
         return result[0] if result and result[0] else "ru"
     except Exception as e:
-        logger.error(f"Ошибка получения языка для пользователя {user_id}: {e}")
         return "ru"  # Fallback
 
 class RateLimiter:
@@ -82,7 +81,6 @@ class RateLimiter:
             """, (user_id,))
             
             if not result:
-                logger.info(f"👶 Пользователь {user_id} не найден в БД - считаем новым")
                 return True
             
             created_at = result[0]
@@ -95,7 +93,6 @@ class RateLimiter:
                     try:
                         created_at = datetime.strptime(created_at, "%Y-%m-%d %H:%M:%S")
                     except:
-                        logger.warning(f"⚠️ Не удалось распарсить дату для пользователя {user_id}: {created_at}")
                         return True
             
             # Проверяем, прошло ли больше 24 часов
@@ -105,16 +102,10 @@ class RateLimiter:
             
             time_diff = now - created_at
             is_new = time_diff < timedelta(hours=24)
-            
-            if is_new:
-                logger.info(f"👶 Пользователь {user_id} - новичок (создан {created_at}, прошло {time_diff})")
-            else:
-                logger.info(f"👨 Пользователь {user_id} - опытный (создан {created_at}, прошло {time_diff})")
-            
+
             return is_new
             
         except Exception as e:
-            logger.error(f"Ошибка проверки нового пользователя {user_id}: {e}")
             return True  # При ошибке считаем новым
     
     def _get_today_key(self) -> str:
@@ -172,7 +163,6 @@ class RateLimiter:
             
             return result[0] if result and result[0] else "free"
         except Exception as e:
-            logger.error(f"Ошибка получения типа подписки для пользователя {user_id}: {e}")
             return "free"
     
     async def check_limit(self, user_id: int, action_type: str = "message") -> Tuple[bool, str]:
@@ -240,7 +230,6 @@ class RateLimiter:
                     except:
                         text = f"📊 Недельный лимит {action_name}: {period_limit}. Обновится в понедельник."
                 
-                logger.warning(f"Period limit exceeded for user {user_id}, action {action_type}: {period_count}/{period_limit}")
                 return False, text
             
             # 3. ✅ МИНУТНЫЕ ЛИМИТЫ: ТОЛЬКО для сообщений!
@@ -250,7 +239,6 @@ class RateLimiter:
                 # Выбираем лимиты в зависимости от статуса пользователя
                 if is_new_user:
                     limit_config = self.message_limits["new_user"]
-                    logger.info(f"👶 Применяем льготные лимиты для нового пользователя {user_id}")
                 else:
                     limit_config = self.message_limits["regular_user"]
                 
@@ -300,7 +288,6 @@ class RateLimiter:
                             text = f"⏳ Лимит {action_name}: {limit_config['count']}/мин. Подождите {cooldown_min}мин."
 
                     status = "новый" if is_new_user else "обычный"
-                    logger.warning(f"Message rate limit exceeded for {status} user {user_id}")
                     return False, text
 
             # 4. ✅ ВСЕ ОСТАЛЬНЫЕ ДЕЙСТВИЯ: проходят без минутных проверок!
@@ -340,7 +327,6 @@ class RateLimiter:
             return subscription_limits.get(action_type, 20)
             
         except Exception as e:
-            logger.error(f"Ошибка получения лимита для пользователя {user_id}: {e}")
             return 20
     
     async def record_request(self, user_id: int, action_type: str = "message"):
@@ -357,8 +343,6 @@ class RateLimiter:
             
             # Записываем для периодических лимитов (все действия)
             self._increment_period_count(user_id, action_type)
-            
-            logger.info(f"Request recorded: user {user_id}, action {action_type}")
     
     def reset_user_counters(self, user_id: int):
         """🧹 ВРЕМЕННАЯ ФУНКЦИЯ: Сбросить счетчики пользователя"""
@@ -368,7 +352,6 @@ class RateLimiter:
             del self.user_requests[user_id]
         if user_id in self.blocked_users:
             del self.blocked_users[user_id]
-        logger.info(f"🧹 Счетчики пользователя {user_id} сброшены")
     
     async def cleanup_old_data(self):
         """Очистка старых данных"""
@@ -459,11 +442,3 @@ async def get_daily_stats(user_id: int) -> Dict[str, Dict[str, int]]:
         stats[action_type] = {"used": used, "limit": limit}
     
     return stats
-
-if __name__ == "__main__":
-    print("🚦 Rate Limiter готов к работе!")
-    print("📋 Правильная логика:")
-    print("   • Минутные лимиты ТОЛЬКО для сообщений (защита от спама GPT)")
-    print("   • Остальные действия - только основные лимиты подписки")
-    print("   • Льготы для новых пользователей (24 часа)")
-    print("   • Автоочистка старых данных")

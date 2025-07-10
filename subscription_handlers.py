@@ -36,7 +36,7 @@ class SubscriptionHandlers:
             try:
                 limits = await SubscriptionManager.get_user_limits(user_id)
             except Exception as limits_error:
-                logger.error(f"Ошибка получения лимитов для пользователя {user_id}: {limits_error}")
+                logger.error(f"Ошибка получения лимитов для пользователя")
                 # ✅ FALLBACK: Создаем дефолтные лимиты
                 limits = {
                     "documents_left": 0,
@@ -67,9 +67,9 @@ class SubscriptionHandlers:
                     has_active_subscription = True
                     package_id = active_subscription['package_id']
                     current_subscription = package_id  # basic_sub, premium_sub
-                    logger.info(f"Найдена активная подписка в БД: {package_id}")
+                    logger.info(f"Найдена активная подписка в БД:")
             except Exception as sub_error:
-                logger.error(f"Ошибка проверки подписки для пользователя {user_id}: {sub_error}")
+                logger.error(f"Ошибка проверки подписки для пользователя")
                 has_active_subscription = False
             
             # Получаем текст меню
@@ -78,7 +78,7 @@ class SubscriptionHandlers:
                     user_id, lang, limits, has_active_subscription
                 )
             except Exception as text_error:
-                logger.error(f"Ошибка генерации текста меню для пользователя {user_id}: {text_error}")
+                logger.error(f"Ошибка генерации текста меню для пользователя")
                 # ✅ FALLBACK текст
                 subscription_text = t("subscription_menu_title", lang) + "\n\n" + t("subscription_menu_error", lang)
             
@@ -87,7 +87,7 @@ class SubscriptionHandlers:
                 from subscription_keyboards import subscription_main_menu
                 keyboard = subscription_main_menu(lang, current_subscription)
             except Exception as keyboard_error:
-                logger.error(f"Ошибка создания клавиатуры для пользователя {user_id}: {keyboard_error}")
+                logger.error(f"Ошибка создания клавиатуры для пользователя")
                 # ✅ FALLBACK: Простая кнопка назад
                 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
                 keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -110,7 +110,7 @@ class SubscriptionHandlers:
                 )
                 
         except Exception as e:
-            logger.error(f"Ошибка показа меню подписок для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка показа меню подписок для пользователя")
             
             # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
             try:
@@ -221,7 +221,7 @@ class SubscriptionHandlers:
             await callback.answer()
             
         except Exception as e:
-            logger.error(f"Ошибка: {e}")
+            logger.error(f"Ошибка")
             
             # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
             try:
@@ -252,7 +252,7 @@ class SubscriptionHandlers:
             return None
             
         except Exception as e:
-            logger.error(f"Ошибка получения активной подписки для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка получения активной подписки для пользователя")
             return None
     
     @staticmethod
@@ -276,7 +276,7 @@ class SubscriptionHandlers:
             new_info = StripeConfig.get_package_info(new_package_id)
             
             if not current_info or not new_info:
-                logger.error(f"Не найдена информация о пакетах: {current_package}, {new_package_id}")
+                logger.error(f"Не найдена информация о пакетах")
                 await callback.answer(t("upgrade_warning_error", lang), show_alert=True)
                 return
             
@@ -300,7 +300,7 @@ class SubscriptionHandlers:
             await callback.answer()
             
         except Exception as e:
-            logger.error(f"Ошибка показа предупреждения об апгрейде: {e}")
+            logger.error(f"Ошибка показа предупреждения об апгрейде")
             
             # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
             try:
@@ -377,7 +377,7 @@ class SubscriptionHandlers:
                 )
             
         except Exception as e:
-            logger.error(f"Ошибка апгрейда подписки для пользователя {callback.from_user.id}: {e}")
+            logger.error(f"Ошибка апгрейда подписки для пользователя")
             
             # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
             try:
@@ -399,7 +399,7 @@ class SubscriptionHandlers:
             active_subscription = await SubscriptionHandlers._get_active_subscription(user_id)
             
             if not active_subscription:
-                logger.warning(f"Нет активной подписки для отмены у пользователя {user_id}")
+                logger.warning(f"Нет активной подписки для отмены у пользователя")
                 return True  # Если нет подписки - считаем успехом
             
             stripe_subscription_id = active_subscription['stripe_subscription_id']
@@ -416,11 +416,11 @@ class SubscriptionHandlers:
                 WHERE stripe_subscription_id = ? AND user_id = ?
             """, (datetime.now(), stripe_subscription_id, user_id))
             
-            logger.info(f"✅ Подписка {stripe_subscription_id} пользователя {user_id} отменена для апгрейда")
+            logger.info(f"✅ Подписка пользователя отменена для апгрейда")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Ошибка отмены старой подписки для пользователя {user_id}: {e}")
+            logger.error(f"❌ Ошибка отмены старой подписки для пользователя")
             return False
     
     @staticmethod
@@ -461,7 +461,7 @@ class SubscriptionHandlers:
                 )
                 
         except Exception as e:
-            logger.error(f"Ошибка подтверждения покупки {package_id} для пользователя {callback.from_user.id}: {e}")
+            logger.error(f"Ошибка подтверждения покупки для пользователя")
             
             # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
             try:
@@ -498,7 +498,7 @@ class SubscriptionHandlers:
             await callback.answer()
             
         except Exception as e:
-            logger.error(f"Ошибка запроса отмены подписки для пользователя {callback.from_user.id}: {e}")
+            logger.error(f"Ошибка запроса отмены подписки для пользователя")
             
             # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
             try:
@@ -540,7 +540,7 @@ class SubscriptionHandlers:
             await callback.answer()
             
         except Exception as e:
-            logger.error(f"Ошибка подтверждения отмены подписки для пользователя {callback.from_user.id}: {e}")
+            logger.error(f"Ошибка подтверждения отмены подписки для пользователя")
             
             # ✅ БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ЯЗЫКА
             try:
@@ -569,7 +569,7 @@ class SubscriptionHandlers:
             )
             
         except Exception as e:
-            logger.error(f"Ошибка показа upsell сообщения для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка показа upsell сообщения для пользователя")
     
     @staticmethod
     async def dismiss_upsell(callback: types.CallbackQuery):
@@ -578,7 +578,7 @@ class SubscriptionHandlers:
             await callback.message.delete()
             await callback.answer()
         except Exception as e:
-            logger.error(f"Ошибка закрытия upsell сообщения: {e}")
+            logger.error(f"Ошибка закрытия upsell сообщения")
             await callback.answer()
 
 # Система отслеживания upsell сообщений (без изменений)

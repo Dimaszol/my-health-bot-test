@@ -34,9 +34,6 @@ class GeminiMedicalAnalyzer:
             Tuple[analysis_text, error_message]
         """
         try:
-            print(f"\n🎓 ОБРАЗОВАТЕЛЬНЫЙ АНАЛИЗ ЧЕРЕЗ GEMINI:")
-            print(f"📁 Файл: {image_path}")
-            print(f"🌐 Язык ответа: {lang}")
             
             # Проверяем существование файла
             if not os.path.exists(image_path):
@@ -44,12 +41,9 @@ class GeminiMedicalAnalyzer:
             
             # Загружаем изображение
             image = Image.open(image_path)
-            print(f"🖼️ Размер изображения: {image.size}")
             
             # Используем хитрый образовательный промпт
             prompt = custom_prompt or self._get_educational_prompt(lang)
-            
-            print(f"⏳ Отправляем образовательный запрос...")
             
             # Более мягкие настройки безопасности
             safety_settings = {
@@ -83,7 +77,6 @@ class GeminiMedicalAnalyzer:
                 # Проверяем finish_reason
                 if hasattr(candidate, 'finish_reason'):
                     if candidate.finish_reason == 2:  # SAFETY
-                        print("⚠️ Первая попытка заблокирована, пробуем альтернативный промпт...")
                         # Пробуем с более нейтральным промптом
                         alt_prompt = self._get_alternative_prompt(lang)
                         response = await asyncio.to_thread(
@@ -115,18 +108,10 @@ class GeminiMedicalAnalyzer:
             if not analysis_text:
                 return "", t("gemini_no_analysis", lang)
             
-            print("\n" + "="*80)
-            print("🎓 ОБРАЗОВАТЕЛЬНЫЙ АНАЛИЗ GEMINI:")
-            print("="*80)
-            print(analysis_text)
-            print("="*80 + "\n")
-            
             return analysis_text, ""
             
         except Exception as e:
             error_msg = f"Ошибка Gemini: {str(e)}"
-            print(f"❌ {error_msg}")
-            
             # Специальная обработка известных ошибок
             if "finish_reason" in str(e) and "2" in str(e):
                 return "", t("gemini_safety_policies", lang)
@@ -236,7 +221,6 @@ async def extract_medical_timeline_gemini(document_text: str, existing_timeline:
         # Проверяем API ключ
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            print("⚠️ GEMINI_API_KEY не установлен")
             return []
         
         genai.configure(api_key=api_key)
@@ -316,7 +300,6 @@ Extract and update medical timeline:"""
         
         # Обрабатываем ответ
         if not response.candidates:
-            print("⚠️ Gemini не вернул кандидатов ответа")
             return []
         
         result_text = ""
@@ -329,14 +312,11 @@ Extract and update medical timeline:"""
                     continue
         
         if not result_text:
-            print("⚠️ Gemini вернул пустой ответ")
             return []
         
-        print(f"🔮 Gemini ответ: {result_text[:200]}...")
         
         # Проверяем на "NO_CHANGES"
         if result_text.upper() in ['NO_CHANGES', 'БЕЗ ИЗМЕНЕНИЙ', 'БЕЗ_ИЗМЕНЕНИЙ']:
-            print("📋 Gemini: Нет изменений в медкарте")
             return []
         
         # Пробуем парсить JSON
@@ -350,22 +330,16 @@ Extract and update medical timeline:"""
                 events = json.loads(json_text)
                 
                 if isinstance(events, list):
-                    print(f"📋 Gemini извлек {len(events)} медицинских событий")
                     return events
                 else:
-                    print(f"⚠️ Gemini вернул не массив: {result_text[:100]}")
                     return []
             else:
-                print(f"⚠️ Gemini: JSON не найден в ответе: {result_text[:200]}")
                 return []
                 
         except json.JSONDecodeError as e:
-            print(f"⚠️ Gemini вернул некорректный JSON: {e}")
-            print(f"Ответ: {result_text[:300]}")
             return []
         
     except Exception as e:
-        print(f"❌ Ошибка извлечения медкарты через Gemini: {e}")
         from error_handler import log_error_with_context
         log_error_with_context(e, {"function": "extract_medical_timeline_gemini"})
         return []

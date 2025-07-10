@@ -61,7 +61,6 @@ async def initialize_db_pool(max_connections: int = 10):
         print("🗄️ Структура базы данных готова")
         
     except Exception as e:
-        print(f"❌ Ошибка подключения к PostgreSQL: {e}")
         log_error_with_context(e, {"action": "db_connection"})
         raise
 
@@ -70,7 +69,6 @@ async def close_db_pool():
     global db_pool
     if db_pool:
         await db_pool.close()
-        print("🔗 Пул PostgreSQL закрыт")
 
 async def create_tables():
     """Создание всех таблиц медицинского бота"""
@@ -273,7 +271,6 @@ async def create_tables():
         await conn.execute(tables_sql)
         print("✅ Все таблицы созданы")
     except Exception as e:
-        print(f"❌ Ошибка создания таблиц: {e}")
         log_error_with_context(e, {"action": "create_tables"})
         raise
     finally:
@@ -614,8 +611,6 @@ async def delete_user_completely(user_id: int) -> bool:
     """
     conn = await get_db_connection()
     try:
-        print(f"🗑️ Начинаем GDPR удаление пользователя {user_id}")
-        
         # 1. Получаем список файлов для удаления
         documents = await conn.fetch(
             "SELECT file_path FROM documents WHERE user_id = $1", 
@@ -629,20 +624,15 @@ async def delete_user_completely(user_id: int) -> bool:
             if file_path and file_path != "memory_note" and os.path.exists(file_path):
                 try:
                     os.remove(file_path)
-                    print(f"🗑️ Удален файл: {file_path}")
                 except OSError as e:
-                    print(f"⚠️ Не удалось удалить файл {file_path}: {e}")
+                    pass
         
         # 3. ✅ НОВОЕ: Удаляем данные из Stripe (GDPR)
         try:
             from stripe_manager import StripeGDPRManager
-            stripe_deleted = await StripeGDPRManager.delete_user_stripe_data_gdpr(user_id)
-            if stripe_deleted:
-                print(f"✅ Stripe данные удалены для пользователя {user_id}")
-            else:
-                print(f"⚠️ Проблемы с удалением Stripe данных для пользователя {user_id}")
+            await StripeGDPRManager.delete_user_stripe_data_gdpr(user_id)
         except Exception as e:
-            print(f"⚠️ Ошибка удаления Stripe данных: {e}")
+            pass
         
         # 4. Удаляем из базы данных (в правильном порядке)
         tables_to_clear = [
@@ -660,20 +650,16 @@ async def delete_user_completely(user_id: int) -> bool:
         
         for table in tables_to_clear:
             try:
-                result = await conn.execute(f"DELETE FROM {table} WHERE user_id = $1", user_id)
-                deleted_count = int(result.split()[-1]) if result.split()[-1].isdigit() else 0
-                if deleted_count > 0:
-                    print(f"🗑️ Удалено {deleted_count} записей из {table}")
+                await conn.execute(f"DELETE FROM {table} WHERE user_id = $1", user_id)
             except Exception as e:
-                print(f"⚠️ Ошибка удаления из {table}: {e}")
+                pass
         
         # 5. Удаляем векторы
         try:
             from vector_db_postgresql import delete_all_chunks_by_user
             await delete_all_chunks_by_user(user_id)
-            print(f"🗑️ Удалены векторы пользователя {user_id}")
         except Exception as e:
-            print(f"⚠️ Ошибка удаления векторов: {e}")
+            pass
         
         # 6. Логируем удаление в аналитику (в самом конце)
         try:
@@ -684,9 +670,8 @@ async def delete_user_completely(user_id: int) -> bool:
                 "stripe_cleaned": True
             })
         except Exception as e:
-            print(f"⚠️ Не удалось залогировать удаление: {e}")
+            pass
         
-        print(f"✅ GDPR удаление пользователя {user_id} завершено полностью")
         return True
         
     except Exception as e:
@@ -742,7 +727,6 @@ async def is_fully_registered(user_id: int) -> bool:
         )
         
         if not row:
-            print(f"🔍 Пользователь {user_id} не найден в базе")
             return False
             
         # ✅ Проверяем обязательные поля для медицинского бота
@@ -751,26 +735,21 @@ async def is_fully_registered(user_id: int) -> bool:
         
         # Имя обязательно
         if not name or len(name.strip()) == 0:
-            print(f"🔍 Пользователь {user_id}: нет имени")
             return False
             
         # Год рождения нужен для возрастных рекомендаций
         if not birth_year:
-            print(f"🔍 Пользователь {user_id}: нет года рождения")
             return False
         
         # Проверяем разумность года рождения (1900-2025)
         current_year = datetime.now().year
         if birth_year < 1900 or birth_year > current_year:
-            print(f"🔍 Пользователь {user_id}: некорректный год рождения {birth_year}")
             return False
         
-        print(f"✅ Пользователь {user_id} зарегистрирован (имя: {name}, год: {birth_year})")
         return True
         
     except Exception as e:
         log_error_with_context(e, {"function": "is_fully_registered", "user_id": user_id})
-        print(f"❌ Ошибка проверки регистрации пользователя {user_id}: {e}")
         return False
     finally:
         await release_db_connection(conn)
@@ -972,8 +951,7 @@ async def set_gdpr_consent(user_id: int, consent: bool = True) -> bool:
                 "timestamp": datetime.now().isoformat(),
                 "user_agent": "telegram_bot"
             })
-        
-        print(f"✅ GDPR согласие установлено для пользователя {user_id}")
+
         return True
         
     except Exception as e:
@@ -1008,8 +986,6 @@ async def delete_user_gdpr_compliant(user_id: int) -> bool:
     """
     conn = await get_db_connection()
     try:
-        print(f"🗑️ Начинаем GDPR удаление пользователя {user_id}")
-        
         # 1. Получаем список файлов для удаления
         documents = await conn.fetch(
             "SELECT file_path FROM documents WHERE user_id = $1", 
@@ -1023,9 +999,8 @@ async def delete_user_gdpr_compliant(user_id: int) -> bool:
             if file_path and os.path.exists(file_path):
                 try:
                     os.remove(file_path)
-                    print(f"🗑️ Удален файл: {file_path}")
                 except OSError as e:
-                    print(f"⚠️ Не удалось удалить файл {file_path}: {e}")
+                    pass
         
         # 3. Удаляем из базы данных (в правильном порядке)
         tables_to_clear = [
@@ -1043,21 +1018,16 @@ async def delete_user_gdpr_compliant(user_id: int) -> bool:
         
         for table in tables_to_clear:
             try:
-                result = await conn.execute(f"DELETE FROM {table} WHERE user_id = $1", user_id)
-                deleted_count = int(result.split()[-1]) if result.split()[-1].isdigit() else 0
-                if deleted_count > 0:
-                    print(f"🗑️ Удалено {deleted_count} записей из {table}")
+                await conn.execute(f"DELETE FROM {table} WHERE user_id = $1", user_id)
             except Exception as e:
-                print(f"⚠️ Ошибка удаления из {table}: {e}")
-        
+                pass
         # 4. Удаляем векторы (если есть отдельная функция)
         try:
             from vector_db_postgresql import delete_all_chunks_by_user
             await delete_all_chunks_by_user(user_id)
-            print(f"🗑️ Удалены векторы пользователя {user_id}")
+
         except Exception as e:
-            print(f"⚠️ Ошибка удаления векторов: {e}")
-        
+            pass
         # 5. Логируем удаление в аналитику (перед полным удалением)
         try:
             from analytics_system import Analytics
@@ -1066,9 +1036,8 @@ async def delete_user_gdpr_compliant(user_id: int) -> bool:
                 "reason": "gdpr_request"
             })
         except Exception as e:
-            print(f"⚠️ Не удалось залогировать удаление: {e}")
-        
-        print(f"✅ GDPR удаление пользователя {user_id} завершено")
+            pass
+
         return True
         
     except Exception as e:

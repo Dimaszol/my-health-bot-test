@@ -37,28 +37,21 @@ async def handle_document_upload(message: types.Message, bot):
     await show_main_menu(message, lang)
 
     try:
-        print(f"\n📄 Начало загрузки документа для пользователя {user_id}")
-        
         file = message.document or message.photo[-1]
         file_id = file.file_id
         file_info = await bot.get_file(file_id)
         file_path = file_info.file_path
 
-        print(f"📁 File info: {file_info}")
-
         # ✅ ИСПРАВЛЕННОЕ ОПРЕДЕЛЕНИЕ ИМЕНИ ФАЙЛА
         if hasattr(file, "file_name") and file.file_name:
             original_filename = file.file_name
-            print(f"📝 Оригинальное имя файла: {original_filename}")
         else:
             # Для фото без имени создаем простое имя
             original_filename = f"document_{file_id[:8]}.jpg"
-            print(f"📝 Сгенерированное имя файла: {original_filename}")
 
         # ✅ СОЗДАНИЕ БЕЗОПАСНОГО ПУТИ - используем простую функцию
         try:
             local_file = create_simple_file_path(user_id, original_filename)
-            print(f"💾 Путь для сохранения: {local_file}")
         except ValueError as e:
             # Локализуем ошибки файловой системы
             error_key = {
@@ -67,19 +60,14 @@ async def handle_document_upload(message: types.Message, bot):
                 "Filename too long": "file_name_too_long_error",
                 "File path outside allowed directory": "file_path_security_error",
             }.get(str(e), "file_creation_error")
-            
-            print(f"❌ Ошибка создания пути: {e}")
             await message.answer(t(error_key, lang))
             return  # ← НЕ записываем лимит при ошибке пути
         except Exception as e:
-            print(f"❌ Неожиданная ошибка создания пути: {e}")
             await message.answer(t("file_creation_error", lang))
             return  # ← НЕ записываем лимит при ошибке
 
         # СКАЧИВАНИЕ ФАЙЛА
-        print("⬇️ Начинаю скачивание файла...")
         await bot.download_file(file_path, destination=local_file)
-        print("✅ Файл скачан успешно")
 
         # ПРОВЕРКА РАЗМЕРА ФАЙЛА ПОСЛЕ СКАЧИВАНИЯ
         if not validate_file_size(local_file):
@@ -93,13 +81,11 @@ async def handle_document_upload(message: types.Message, bot):
             file_ext = '.jpg'  # По умолчанию
         
         file_type = "pdf" if file_ext == ".pdf" else "image"
-        print(f"📋 Тип файла: {file_type} (расширение: {file_ext})")
 
         await message.answer(t("document_received", lang))
 
         # ОБРАБОТКА ФАЙЛА
         if file_ext == '.pdf':
-            print("📄 Обрабатываю PDF...")
             try:
                 image_paths = convert_pdf_to_images(local_file, output_dir=f"files/{user_id}/pages")
                 if not image_paths:
@@ -116,35 +102,26 @@ async def handle_document_upload(message: types.Message, bot):
 
                 vision_text = vision_text.strip()
             except Exception as e:
-                print(f"❌ Ошибка обработки PDF: {e}")
                 await message.answer(t("pdf_processing_error", lang))
                 return  # ← НЕ записываем лимит при ошибке PDF
         else:
-            print("🖼️ Обрабатываю изображение...")
             try:
                 vision_text, _ = await send_to_gpt_vision(local_file)
             except Exception as e:
-                print(f"❌ Ошибка обработки изображения: {e}")
                 await message.answer(t("image_analysis_error", lang))
                 return  # ← НЕ записываем лимит при ошибке изображения
 
-        print("🔍 Проверяю, является ли текст медицинским...")
         if not await is_medical_text(vision_text):
             await message.answer(t("not_medical_doc", lang))
             return  # ← НЕ записываем лимит для немедицинских документов
-
-        print("📝 Создаю структурированный текст и резюме...")
         
         # ✅ НОВЫЙ ПОРЯДОК: Сначала заголовок!
-        print("🏷️ Генерирую заголовок...")
         auto_title = await generate_title_from_text(text=vision_text[:1500], lang=lang)
         
         # ✅ Затем структурированный текст БЕЗ заголовка
-        print("📝 Создаю структурированный текст...")
         raw_text = await ask_structured(vision_text[:8000], lang=lang)
         
         # ✅ И резюме для векторной базы
-        print("📝 Создаю резюме для векторной базы...")
         summary = await generate_medical_summary(vision_text[:8000], lang)
 
         if raw_text:
@@ -172,19 +149,16 @@ async def handle_document_upload(message: types.Message, bot):
                         await asyncio.sleep(0.5)
                         
                 except Exception as e:
-                    print(f"❌ Ошибка отправки части {i+1}: {e}")
                     # Fallback: отправляем без HTML форматирования
                     try:
                         plain_text = part.replace('<b>', '').replace('</b>', '').replace('<i>', '').replace('</i>', '')
                         await message.answer(plain_text)
                     except Exception as fallback_error:
-                        print(f"❌ Критическая ошибка отправки: {fallback_error}")
                         await message.answer(t("display_error", lang))
         else:
             await message.answer(t("vision_failed", lang))
             return  # ← НЕ записываем лимит если обработка не удалась
 
-        print("💾 Сохраняю документ в БД...")
         document_id = await save_document(
             user_id=user_id,
             title=auto_title,
@@ -194,12 +168,10 @@ async def handle_document_upload(message: types.Message, bot):
             summary=summary
         )
         
-        print("🧠 Добавляю в векторную базу...")
         chunks = await split_into_chunks(summary, document_id, user_id)
         await add_chunks_to_vector_db(document_id, user_id, chunks)
 
         try:
-            print(f"\n🏥 Обновление медицинской карты для документа {document_id}")
             
             from medical_timeline import update_medical_timeline_on_document_upload
             
@@ -210,14 +182,8 @@ async def handle_document_upload(message: types.Message, bot):
                 document_text=raw_text,  # Используем исходный текст
                 use_gemini=False  # По умолчанию GPT, можно переключить для тестирования
             )
-            
-            if medical_timeline_success:
-                print(f"✅ Медицинская карта обновлена для документа {document_id}")
-            else:
-                print(f"⚠️ Не удалось обновить медицинскую карту для документа {document_id}")
-                
+
         except Exception as e:
-            print(f"❌ Ошибка обновления медицинской карты: {e}")
             # Не прерываем процесс загрузки документа из-за ошибки медкарты
             from error_handler import log_error_with_context
             log_error_with_context(e, {
@@ -228,11 +194,11 @@ async def handle_document_upload(message: types.Message, bot):
 
         # ✅ ЗАПИСЫВАЕМ ЛИМИТ ТОЛЬКО ПОСЛЕ ПОЛНОЙ УСПЕШНОЙ ОБРАБОТКИ
         await record_user_action(user_id, "document")
-        logger.info(f"✅ Rate limiter записан для пользователя {user_id}")
+        logger.info(f"✅ Rate limiter записан для пользователя")
 
         from subscription_manager import SubscriptionManager
         await SubscriptionManager.spend_limits(user_id, documents=1)
-        logger.info(f"✅ Основной лимит списан для пользователя {user_id}")
+        logger.info(f"✅ Основной лимит списан для пользователя")
 
         await message.answer(t("document_saved", lang, title=auto_title), parse_mode="HTML")
 
@@ -248,13 +214,15 @@ async def handle_document_upload(message: types.Message, bot):
         )
         
         user_states[user_id] = None
-        
-        print("✅ Документ успешно обработан")
+
 
     except Exception as e:
-        # ❌ НЕ записываем лимит при любой неожиданной ошибке
-        print(f"❌ Ошибка обработки документа: {e}")
-        import traceback
-        print(f"📊 Полная трассировка: {traceback.format_exc()}")
+        # Безопасное логирование через централизованную систему
+        from error_handler import log_error_with_context
+        log_error_with_context(e, {
+            "function": "document_processing",
+            "user_id": getattr(message, 'from_user', {}).id if hasattr(message, 'from_user') else None,
+            "file_type": "document"  # без деталей файла
+        })
+        
         await message.answer(t("processing_error", lang))
-        # НЕ вызываем record_user_action здесь!

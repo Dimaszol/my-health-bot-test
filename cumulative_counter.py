@@ -41,14 +41,11 @@ class CumulativeCounter:
             
             if result:
                 new_count = result[0] if isinstance(result, tuple) else result['total_messages_count']
-                logger.debug(f"User {user_id}: накопительный счетчик = {new_count}")
                 return new_count
             else:
-                logger.warning(f"User {user_id} не найден после обновления счетчика")
                 return 0
                 
         except Exception as e:
-            logger.error(f"Ошибка увеличения счетчика для user {user_id}: {e}")
             return 0
     
     @staticmethod
@@ -69,14 +66,11 @@ class CumulativeCounter:
             
             if result and result[0] is not None:
                 count = result[0] if isinstance(result, tuple) else result['total_messages_count']
-                logger.debug(f"User {user_id}: текущий накопительный счетчик = {count}")
                 return count
             else:
-                logger.debug(f"User {user_id}: счетчик не инициализирован, возвращаем 0")
                 return 0
                 
         except Exception as e:
-            logger.error(f"Ошибка получения счетчика для user {user_id}: {e}")
             return 0
     
     @staticmethod
@@ -95,11 +89,9 @@ class CumulativeCounter:
                 UPDATE users SET total_messages_count = 0 WHERE user_id = ?
             """, (user_id,))
             
-            logger.info(f"User {user_id}: накопительный счетчик сброшен")
             return True
             
         except Exception as e:
-            logger.error(f"Ошибка сброса счетчика для user {user_id}: {e}")
             return False
     
     @staticmethod
@@ -124,13 +116,11 @@ class CumulativeCounter:
                     SET total_messages_count = 0 
                     WHERE user_id = ? AND total_messages_count IS NULL
                 """, (user_id,))
-                
-                logger.debug(f"User {user_id}: накопительный счетчик инициализирован")
+              
             
             return True
             
         except Exception as e:
-            logger.error(f"Ошибка инициализации счетчика для user {user_id}: {e}")
             return False
     
     @staticmethod
@@ -159,12 +149,10 @@ class CumulativeCounter:
             """, (target_count, limit))
             
             user_ids = [row['user_id'] for row in results] if results else []
-            logger.info(f"Найдено {len(user_ids)} пользователей с {target_count} сообщениями")
             
             return user_ids
             
         except Exception as e:
-            logger.error(f"Ошибка поиска пользователей с {target_count} сообщениями: {e}")
             return []
 
 # 🔧 Функции для интеграции с main.py

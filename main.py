@@ -10,13 +10,11 @@ from aiogram.filters import CommandStart
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.client.default import DefaultBotProperties
 
-# ✅ ОБНОВЛЕННЫЕ ИМПОРТЫ - PostgreSQL версии
 from db_postgresql import (
     get_user, save_document, update_document_title, is_fully_registered, get_user_name,
     get_document_by_id, delete_document, save_message, get_last_messages, get_conversation_summary,
     get_user_language, t, get_all_values_for_key, initialize_db_pool, close_db_pool, set_user_language
 )
-
 from registration import user_states, start_registration, handle_registration_step
 from error_handler import handle_telegram_errors, BotError, OpenAIError, get_user_friendly_message, log_error_with_context, check_openai_health
 from keyboards import main_menu_keyboard, settings_keyboard, show_main_menu
@@ -28,10 +26,7 @@ from profile_manager import ProfileManager, CHOICE_MAPPINGS
 from documents import handle_show_documents, handle_ignore_document
 from save_utils import maybe_update_summary, format_user_profile
 from rate_limiter import check_rate_limit, record_user_action
-
-# ✅ ОБНОВЛЕННЫЕ ИМПОРТЫ - Vector DB PostgreSQL
 from vector_db_postgresql import initialize_vector_db, search_similar_chunks, keyword_search_chunks
-
 from gpt import ask_doctor, check_openai_status, fallback_summarize
 from subscription_manager import SubscriptionManager, check_gpt4o_limit, spend_gpt4o_limit
 from stripe_config import check_stripe_setup
@@ -44,6 +39,21 @@ from analytics_system import Analytics
 from faq_handler import handle_faq_main, handle_faq_section
 from promo_manager import PromoManager, check_promo_on_message
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('bot.log', encoding='utf-8'),  # Логи в файл
+        logging.StreamHandler()  # Логи в консоль
+    ]
+)
+
+# Убираем спам от сторонних библиотек
+logging.getLogger('aiogram').setLevel(logging.WARNING)
+logging.getLogger('aiohttp').setLevel(logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.WARNING)
+
+# Основной логгер
 logger = logging.getLogger(__name__)
 
 load_dotenv()
@@ -58,7 +68,6 @@ dp = Dispatcher()
 def detect_user_language(user: types.User) -> str:
     """Автоопределение языка по Telegram"""
     phone_lang = user.language_code if user.language_code else 'en'
-    print(f"🌍 Язык телефона: {phone_lang}")
     
     # Простой маппинг на 4 языка
     if phone_lang == 'ru':
@@ -76,7 +85,6 @@ async def send_welcome(message: types.Message):
     """✅ ИСПРАВЛЕННЫЙ обработчик команды /start"""
     
     user_id = message.from_user.id
-    print(f"🚀 Команда /start от пользователя {user_id}")
     
     try:
         # 1️⃣ Получаем данные пользователя
@@ -91,7 +99,6 @@ async def send_welcome(message: types.Message):
         
         # 3️⃣ НОВЫЙ ПОЛЬЗОВАТЕЛЬ
         if user_data is None:
-            print(f"🆕 Новый пользователь {user_id}")
             await set_user_language(user_id, auto_lang, message.from_user)
             
             from registration import show_gdpr_welcome
@@ -101,7 +108,6 @@ async def send_welcome(message: types.Message):
         # 4️⃣ СУЩЕСТВУЮЩИЙ ПОЛЬЗОВАТЕЛЬ - проверяем GDPR согласие
         from db_postgresql import has_gdpr_consent
         if not await has_gdpr_consent(user_id):
-            print(f"🔒 Пользователь {user_id} без GDPR согласия")
             lang = await get_user_language(user_id) 
             from registration import show_gdpr_welcome
             await show_gdpr_welcome(user_id, message, lang)
@@ -114,21 +120,16 @@ async def send_welcome(message: types.Message):
             # ✅ У пользователя есть имя и год рождения - показываем главное меню
             name = user_data.get('name', 'Пользователь')
             
-            print(f"✅ Пользователь {user_id} ({name}) зарегистрирован")
-            
             await message.answer(
                 t("welcome_back", lang, name=name), 
                 reply_markup=main_menu_keyboard(lang)
             )
         else:
-            # ⚠️ Нет имени или года рождения - продолжаем регистрацию
-            print(f"⚠️ Пользователь {user_id} не завершил базовую регистрацию")
             
             from registration import start_registration
             await start_registration(user_id, message)
             
     except Exception as e:
-        print(f"❌ Ошибка в команде /start для пользователя {user_id}: {e}")
         log_error_with_context(e, {"action": "start_command", "user_id": user_id})
         await message.answer(t("start_command_error", lang))
 
@@ -205,13 +206,10 @@ async def handle_set_language_during_registration(callback: types.CallbackQuery)
             await start_registration(user_id, callback.message)
     
     except Exception as e:
-        print(f"❌ Ошибка установки языка: {e}")
-        # Fallback - показываем GDPR экран
         try:
             from registration import show_gdpr_welcome
             await show_gdpr_welcome(user_id, callback.message, selected_lang)
         except Exception as e2:
-            print(f"❌ Критическая ошибка: {e2}")
             await callback.answer("❌ Произошла ошибка. Попробуйте /start", show_alert=True)
     
     await callback.answer()
@@ -244,7 +242,6 @@ async def handle_gdpr_consent(callback: types.CallbackQuery):
             await callback.answer("❌ Ошибка сохранения. Попробуйте еще раз.", show_alert=True)
             
     except Exception as e:
-        print(f"❌ Ошибка обработки GDPR согласия: {e}")
         await callback.answer("❌ Произошла ошибка. Попробуйте еще раз.", show_alert=True)
     
     await callback.answer()
@@ -452,7 +449,6 @@ async def handle_delete_confirmation_code(message: types.Message):
                 await message.answer(t("delete_error_contact_support", lang))
                 
         except Exception as e:
-            print(f"❌ Ошибка GDPR удаления: {e}")
             await message.answer(t("delete_error_contact_support", lang))
             
     else:
@@ -567,8 +563,6 @@ async def handle_user_message(message: types.Message):
 
     from db_postgresql import has_gdpr_consent
     if not await has_gdpr_consent(user_id):
-        print(f"🔒 Заблокировано сообщение от пользователя {user_id} без GDPR согласия")
-        
         # Показываем GDPR дисклеймер вместо обработки сообщения
         from registration import show_gdpr_welcome
         await show_gdpr_welcome(user_id, message, lang)
@@ -908,18 +902,17 @@ async def handle_user_message(message: types.Message):
                 lang = prompt_data["lang"]
                 
             except Exception as e:
-                # Fallback на старую логику если что-то пошло не так
-                print(f"❌ Ошибка детального логирования: {e}")
-                print("🔄 Переключаемся на упрощенную обработку...")
-                
-                # Упрощенная версия (ваш старый код)
+                from error_handler import log_error_with_context
+                log_error_with_context(e, {
+                    "function": "search_fallback", 
+                    "user_id": user_id
+                })
+
                 from gpt import enrich_query_for_vector_search
                 try:
                     refined_query = await enrich_query_for_vector_search(user_input)
-                    print(f"🔍 Запрос: '{user_input}' → улучшен для поиска ({len(refined_query)} симв.)")
                 except OpenAIError:
                     refined_query = user_input
-                    print(f"🔍 Запрос: '{user_input}' (GPT недоступен)")
 
                 # Простой поиск БЕЗ исключений
                 vector_chunks = await search_similar_chunks(user_id, refined_query, limit=10)
@@ -944,10 +937,7 @@ async def handle_user_message(message: types.Message):
                 all_chunks = list(dict.fromkeys(vector_texts + keyword_texts))
                 chunks_text = "\n\n".join(all_chunks[:6])
                 chunks_found = len(all_chunks)
-                
-                # Краткое логирование БЕЗ excluded_doc_id
-                print(f"🧠 Найдено: {len(vector_chunks)} векторных + {len(keyword_chunks)} ключевых = {chunks_found} итого")
-                
+
                 # Создаем данные для fallback
                 profile_text = await format_user_profile(user_id)
                 lang = await get_user_language(user_id)
@@ -961,7 +951,6 @@ async def handle_user_message(message: types.Message):
                 if 'prompt_data' in locals() and prompt_data and 'context_text' in prompt_data:
                     # Используем готовый контекст из prompt_logger
                     full_context = prompt_data["context_text"]
-                    print("✅ Используем полный контекст из prompt_logger")
                 else:
                     # Fallback: собираем контекст из частей
                     context_parts = []
@@ -982,10 +971,9 @@ async def handle_user_message(message: types.Message):
                         recent_context = "\n".join(context_lines)
                         context_parts.append(f"💬 Recent messages:\n{recent_context}")
                     except Exception as e:
-                        print(f"⚠️ Не удалось получить последние сообщения: {e}")
+                        pass
                     
                     full_context = "\n\n".join(context_parts)
-                    print("⚠️ Используем fallback контекст")
 
                 # ✅ ОПРЕДЕЛЯЕМ КАКУЮ МОДЕЛЬ ИСПОЛЬЗОВАТЬ
                 has_premium_limits = await check_gpt4o_limit(user_id)
@@ -993,11 +981,9 @@ async def handle_user_message(message: types.Message):
                 if has_premium_limits:
                     use_gemini = True
                     model_name = "Gemini 2.5 Flash"
-                    print(f"💎 Пользователь {user_id} имеет лимиты → используем {model_name}")
                 else:
                     use_gemini = False
                     model_name = "GPT-4o-mini"
-                    print(f"🆓 Пользователь {user_id} без лимитов → используем {model_name}")
 
                 # ✅ ПРАВИЛЬНЫЙ ВЫЗОВ ask_doctor (НОВАЯ СИГНАТУРА):
                 response = await ask_doctor(
@@ -1007,8 +993,6 @@ async def handle_user_message(message: types.Message):
                     user_id=user_id,
                     use_gemini=use_gemini
                 )
-
-                print(f"🤖 {'Gemini/GPT-4o' if use_gemini else 'GPT-4o-mini'} | Чанков: {chunks_found if 'chunks_found' in locals() else 0}")
 
                 # Отправляем ответ пользователю
                 if response:
@@ -1039,7 +1023,6 @@ async def handle_user_message(message: types.Message):
                                 await SubscriptionHandlers.show_subscription_upsell(
                                     message, user_id, reason="summary_updated"
                                 )
-                    print(f"✅ Ответ отправлен: {len(response)} символов")
                 else:
                     await message.answer(get_user_friendly_message("Не удалось получить ответ", lang))
                     
@@ -1204,8 +1187,7 @@ async def handle_choice_selection(callback: types.CallbackQuery):
     
     field = state.get("field")
     choice = callback.data
-    
-    print(f"🔧 DEBUG: field={field}, choice={choice}")  # Для отладки
+
     
     # Обработка выбора языка
     if choice.startswith("lang_"):
@@ -1240,11 +1222,9 @@ async def handle_choice_selection(callback: types.CallbackQuery):
     # ✅ ИСПРАВЛЕНО: получаем читаемое значение из CHOICE_MAPPINGS
     if db_field in CHOICE_MAPPINGS and choice in CHOICE_MAPPINGS[db_field]:
         readable_value = CHOICE_MAPPINGS[db_field][choice][lang]
-        print(f"🔧 DEBUG: readable_value={readable_value}")  # Для отладки
     else:
         # Fallback на прямое значение
         readable_value = choice
-        print(f"⚠️ DEBUG: Fallback value={readable_value}")
     
     # Обновляем поле
     success, message = await ProfileManager.update_field(user_id, db_field, readable_value, lang)
@@ -1522,7 +1502,6 @@ async def main():
         print("✅ Бот запущен. Ожидаю сообщения...")
         
         # 💳 2. ПРОВЕРКА STRIPE
-        print("🔍 Проверка настройки Stripe...")
         stripe_ok = check_stripe_setup()  # БЕЗ await - функция не async!
         if stripe_ok:
             print("✅ Соединение с Stripe API успешно")

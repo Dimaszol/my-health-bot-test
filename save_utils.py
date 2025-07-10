@@ -85,12 +85,10 @@ def format_dialogue(messages, max_len=300):
                 
             else:
                 # ❌ Неизвестный формат - пропускаем
-                print(f"⚠️ Неизвестный формат сообщения: {type(msg)} - {msg}")
                 continue
                 
         except (KeyError, IndexError, TypeError) as e:
             # ❌ Ошибка доступа к данным - пропускаем это сообщение
-            print(f"⚠️ Ошибка обработки сообщения: {e} - {msg}")
             continue
     
     return "\n".join(result)
@@ -112,13 +110,11 @@ async def maybe_update_summary(user_id):
         user_lang = await get_user_language(user_id)
         
         # Проверяем корректность языка
-        if user_lang not in ['ru', 'uk', 'en']:
-            user_lang = 'ru'  # fallback для неподдерживаемых языков
+        if user_lang not in ['ru', 'uk', 'en', 'de']:
+            user_lang = 'en'  # fallback для неподдерживаемых языков
             
-        print(f"🌐 Язык пользователя {user_id}: {user_lang}")
     except Exception as e:
-        user_lang = "ru"  # fallback
-        print(f"❌ Ошибка получения языка, используем русский: {e}")
+        user_lang = "en"  # fallback
     
     old_summary, last_id = await get_conversation_summary(user_id)
     new_messages = await get_messages_after(user_id, last_id)
@@ -146,7 +142,6 @@ async def maybe_update_summary(user_id):
                     user_messages.append(msg)
                     
         except (KeyError, IndexError, TypeError) as e:
-            print(f"⚠️ Ошибка обработки сообщения в maybe_update_summary: {e} - {msg}")
             continue
     
     if len(user_messages) < 6:
@@ -212,21 +207,16 @@ async def maybe_update_summary(user_id):
             # ✅ БЕЗОПАСНОЕ получение ответа
             response_content = response.choices[0].message.content
             if not response_content:
-                print(f"⚠️ GPT вернул None для пользователя {user_id}")
                 return False
                 
             new_summary = response_content.strip()
             
             # ✅ ПРОВЕРКА: убеждаемся что получили корректный ответ
             if not new_summary:
-                print(f"⚠️ GPT вернул пустую сводку для пользователя {user_id}")
                 return False
-                
-            print(f"✅ Сводка успешно обновлена для пользователя {user_id} на языке {user_lang}")
-            print(f"📄 Превью сводки: {new_summary[:100]}...")
+               
             
     except Exception as e:
-        print(f"❌ Ошибка создания сводки для пользователя {user_id}: {e}")
         return False  # Не обновляем сводку при ошибке
 
     # Сохраняем сводку только если она отличается от предыдущей
@@ -249,14 +239,16 @@ async def maybe_update_summary(user_id):
             else:
                 last_message_id = await get_last_message_id(user_id)
         except Exception as e:
-            print(f"❌ Ошибка получения last_message_id: {e}")
+            from error_handler import log_error_with_context
+            log_error_with_context(e, {
+                "function": "get_last_message_id_fallback",
+                "user_id": user_id
+            })
             last_message_id = await get_last_message_id(user_id)  # Fallback
         
         await save_conversation_summary(user_id, new_summary, last_message_id)
-        print(f"💾 Сводка сохранена для пользователя {user_id}")
         return True
     else:
-        print(f"📝 Сводка не изменилась для пользователя {user_id}")
         try:
             if new_messages:
                 last_msg = new_messages[-1]
@@ -269,10 +261,9 @@ async def maybe_update_summary(user_id):
             
             # Сохраняем ту же сводку, но с обновленным last_message_id
             await save_conversation_summary(user_id, old_summary, last_message_id)
-            print(f"🔄 Обновлен last_message_id для предотвращения повторной обработки")
             
         except Exception as e:
-            print(f"❌ Ошибка обновления last_message_id: {e}")
+            pass
         
         return True  # ← ВАЖНО: возвращаем True чтобы считалось что обработка завершена
 
@@ -337,7 +328,7 @@ async def format_user_profile(user_id: int) -> str:
     except Exception as e:
         import logging
         logger = logging.getLogger(__name__)
-        logger.error(f"❌ Ошибка формирования профиля для пользователя {user_id}: {e}")
+        logger.error(f"❌ Ошибка формирования профиля для пользователя")
         return "Ошибка загрузки профиля пациента"
 
 async def update_user_profile_medications(user_id: int):

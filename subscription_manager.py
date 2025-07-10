@@ -18,7 +18,7 @@ class SubscriptionManager:
         Когда в БД есть запись о подписке, но в Stripe её нет
         """
         try:
-            logger.info(f"🔧 Исправляем состояние подписки для пользователя {user_id}")
+            logger.info(f"🔧 Исправляем состояние подписки для пользователя")
             
             # Проверяем реальное состояние в Stripe
             stripe_check = await SubscriptionManager.check_real_stripe_subscription(user_id)
@@ -58,14 +58,14 @@ class SubscriptionManager:
                         WHERE user_id = ?
                     """, (new_type, user_id))
                     
-                    logger.info(f"✅ Состояние исправлено: user_id={user_id}, type={new_type}, docs={docs}, queries={queries}")
+                    logger.info(f"✅ Состояние исправлено")
                     return True
             else:
-                logger.info(f"✅ Состояние корректно: у пользователя {user_id} есть активная подписка в Stripe")
+                logger.info(f"✅ Состояние корректно: у пользователя есть активная подписка в Stripe")
                 return True
                 
         except Exception as e:
-            logger.error(f"❌ Ошибка исправления состояния для пользователя {user_id}: {e}")
+            logger.error(f"❌ Ошибка исправления состояния для пользователя")
             return False
 
     @staticmethod
@@ -104,7 +104,7 @@ class SubscriptionManager:
                     }
                 elif subscription.status in ['active', 'trialing'] and is_cancelled_at_period_end:
                     # ✅ НОВАЯ ЛОГИКА: Подписка активна, но отменена → считаем неактивной
-                    logger.info(f"🔄 Подписка {stripe_subscription_id} активна, но отменена в конце периода")
+                    logger.info(f"🔄 Подписка активна, но отменена в конце периода")
                     return {
                         "has_active": False, 
                         "subscription_id": stripe_subscription_id,
@@ -122,7 +122,7 @@ class SubscriptionManager:
                 return {"has_active": False, "subscription_id": None, "status": "deleted"}
                 
         except Exception as e:
-            logger.error(f"Ошибка проверки Stripe подписки для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка проверки Stripe подписки для пользователя")
             return {"has_active": False, "subscription_id": None, "status": "error"}
     
     @staticmethod
@@ -135,10 +135,10 @@ class SubscriptionManager:
                 WHERE user_id = ? AND stripe_subscription_id = ?
             """, (datetime.now(), user_id, stripe_subscription_id))
             
-            logger.info(f"✅ Синхронизирована неактивная подписка {stripe_subscription_id} для пользователя {user_id}")
+            logger.info(f"✅ Синхронизирована неактивная подписка для пользователя")
             
         except Exception as e:
-            logger.error(f"Ошибка синхронизации неактивной подписки: {e}")
+            logger.error(f"Ошибка синхронизации неактивной подписки")
     
     @staticmethod
     async def _sync_deleted_subscription(user_id: int, stripe_subscription_id: str):
@@ -149,10 +149,10 @@ class SubscriptionManager:
                 WHERE user_id = ? AND stripe_subscription_id = ?
             """, (user_id, stripe_subscription_id))
             
-            logger.info(f"✅ Удалена несуществующая подписка {stripe_subscription_id} для пользователя {user_id}")
+            logger.info(f"✅ Удалена несуществующая подписка для пользователя")
             
         except Exception as e:
-            logger.error(f"Ошибка удаления несуществующей подписки: {e}")
+            logger.error(f"Ошибка удаления несуществующей подписки")
     
     @staticmethod
     async def purchase_package(user_id: int, package_id: str, payment_method: str = 'stripe'):
@@ -178,7 +178,7 @@ class SubscriptionManager:
             stripe_check = await SubscriptionManager.check_real_stripe_subscription(user_id)
             has_active_subscription = stripe_check["has_active"]
             
-            logger.info(f"Покупка {package_id} для пользователя {user_id}. Активная подписка: {has_active_subscription}")
+            logger.info(f"Покупка для пользователя. Активная подписка")
             
             # Получаем текущие лимиты пользователя
             current = await fetch_one("""
@@ -203,21 +203,20 @@ class SubscriptionManager:
                 # Заменяем лимиты (не добавляем)
                 new_docs = docs
                 new_queries = queries
-                logger.info(f"Подписка {package_id}: заменяем лимиты на {docs}/{queries}")
+                logger.info(f"Подписка: заменяем лимиты")
             elif has_active_subscription:
                 # ✅ ГЛАВНОЕ ИСПРАВЛЕНИЕ: Есть активная подписка - НЕ МЕНЯЕМ тип
                 final_subscription_type = 'subscription'  # Оставляем subscription!
                 # Добавляем к текущим лимитам
                 new_docs = current_docs + docs
                 new_queries = current_queries + queries
-                logger.info(f"Extra Pack при подписке: добавляем {docs}/{queries} к {current_docs}/{current_queries}")
             else:
                 # Нет активной подписки - можно установить one_time
                 final_subscription_type = 'one_time'
                 # Добавляем к текущим лимитам
                 new_docs = current_docs + docs
                 new_queries = current_queries + queries
-                logger.info(f"Extra Pack без подписки: устанавливаем one_time, добавляем {docs}/{queries}")
+                logger.info(f"Extra Pack без подписки: устанавливаем one_time, добавляем")
             
             # Устанавливаем дату истечения
             expiry_date = datetime.now() + timedelta(days=30)
@@ -240,9 +239,7 @@ class SubscriptionManager:
                     updated_at = CURRENT_TIMESTAMP
                 WHERE user_id = ?
             """, (new_docs, new_queries, final_subscription_type, expiry_date, user_id))
-            
-            logger.info(f"✅ Пакет {package_id} куплен пользователем {user_id}. Тип: {final_subscription_type}, Новые лимиты: {new_docs} docs, {new_queries} queries")
-            
+
             return {
                 "success": True,
                 "transaction_id": transaction_id,
@@ -253,7 +250,7 @@ class SubscriptionManager:
             }
             
         except Exception as e:
-            logger.error(f"Ошибка покупки пакета {package_id} для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка покупки пакета для пользователя")
             return {"success": False, "error": str(e)}
     
     # subscription_manager.py - ЗАМЕНИТЬ функцию cancel_stripe_subscription
@@ -307,7 +304,7 @@ class SubscriptionManager:
                     WHERE user_id = ?
                 """, (user_id,))
                 
-                logger.info(f"✅ Подписка {stripe_subscription_id} пользователя {user_id} отменена")
+                logger.info(f"✅ Подписка пользователя отменена")
                 
                 return True, t("subscription_cancelled_success", lang)
                 
@@ -322,7 +319,7 @@ class SubscriptionManager:
                     raise stripe_error
                 
         except Exception as e:
-            logger.error(f"❌ Ошибка отмены подписки для пользователя {user_id}: {e}")
+            logger.error(f"❌ Ошибка отмены подписки для пользователя")
             try:
                 from db_postgresql import get_user_language, t
                 lang = await get_user_language(user_id)
@@ -367,7 +364,7 @@ class SubscriptionManager:
             }
             
         except Exception as e:
-            logger.error(f"Ошибка получения лимитов для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка получения лимитов для пользователя")
             return None
     
     @staticmethod
@@ -411,8 +408,7 @@ class SubscriptionManager:
                     updated_at = CURRENT_TIMESTAMP
                 WHERE user_id = ?
             """, (new_docs, new_queries, user_id))
-            
-            logger.info(f"Списаны лимиты пользователя {user_id}: -{documents} docs, -{queries} queries")
+          
             
             return {
                 "success": True,
@@ -421,7 +417,7 @@ class SubscriptionManager:
             }
             
         except Exception as e:
-            logger.error(f"Ошибка списания лимитов для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка списания лимитов для пользователя")
             return {"success": False, "error": str(e)}
     
     @staticmethod
@@ -449,7 +445,7 @@ class SubscriptionManager:
             now = datetime.now()
             
             if now >= expiry_date:
-                logger.info(f"Лимиты пользователя {user_id} истекли. Тип: {sub_type}")
+                logger.info(f"Лимиты пользователя истекли")
                 
                 if sub_type == 'subscription':
                     await SubscriptionManager._auto_renew_subscription(user_id)
@@ -457,7 +453,7 @@ class SubscriptionManager:
                     await SubscriptionManager._reset_to_zero(user_id)
                     
         except Exception as e:
-            logger.error(f"Ошибка проверки лимитов для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка проверки лимитов для пользователя")
     
     @staticmethod
     async def _auto_renew_subscription(user_id: int):
@@ -471,7 +467,7 @@ class SubscriptionManager:
             """, (user_id,))
             
             if not transaction:
-                logger.warning(f"Не найдена активная подписка для пользователя {user_id}")
+                logger.warning(f"Не найдена активная подписка для пользователя")
                 await SubscriptionManager._reset_to_zero(user_id)
                 return
             
@@ -487,10 +483,10 @@ class SubscriptionManager:
                 WHERE user_id = ?
             """, (docs, queries, new_expiry, user_id))
             
-            logger.info(f"Подписка пользователя {user_id} автопродлена до {new_expiry.date()}")
+            logger.info(f"Подписка пользователя автопродлена до {new_expiry.date()}")
             
         except Exception as e:
-            logger.error(f"Ошибка автопродления подписки для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка автопродления подписки для пользователя")
             await SubscriptionManager._reset_to_zero(user_id)
     
     @staticmethod
@@ -507,10 +503,10 @@ class SubscriptionManager:
                 WHERE user_id = ?
             """, (user_id,))
             
-            logger.info(f"Лимиты пользователя {user_id} сброшены до нуля")
+            logger.info(f"Лимиты пользователя сброшены до нуля")
             
         except Exception as e:
-            logger.error(f"Ошибка сброса лимитов для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка сброса лимитов для пользователя")
 
     @staticmethod
     async def force_sync_with_stripe(user_id: int) -> dict:
@@ -518,7 +514,7 @@ class SubscriptionManager:
         🔄 Принудительная синхронизация с Stripe - только статусы, без изменения лимитов
         """
         try:
-            logger.info(f"🔄 Принудительная синхронизация для пользователя {user_id}")
+            logger.info(f"🔄 Принудительная синхронизация для пользователя")
             
             # 1. Получаем реальное состояние из Stripe
             stripe_check = await SubscriptionManager.check_real_stripe_subscription(user_id)
@@ -616,7 +612,7 @@ class SubscriptionManager:
                     sync_actions.append(f"🔄 Исправлен subscription_type на {expected_type}")
             
             if sync_actions:
-                logger.info(f"✅ Синхронизация завершена для {user_id}: {'; '.join(sync_actions)}")
+                logger.info(f"Sync completed: {len(sync_actions)} actions performed")
             
             return {
                 "synced": True,
@@ -626,8 +622,8 @@ class SubscriptionManager:
             }
             
         except Exception as e:
-            logger.error(f"❌ Ошибка принудительной синхронизации для {user_id}: {e}")
-            return {"synced": False, "error": str(e), "actions": []}
+            logger.error("Subscription sync failed")
+            return {"synced": False, "error": "Sync failed", "actions": []}
 
     @staticmethod
     async def _detect_package_from_stripe(stripe_subscription_id: str) -> str:
@@ -649,7 +645,7 @@ class SubscriptionManager:
                 return "basic_sub"  # По умолчанию
                 
         except Exception as e:
-            logger.error(f"❌ Ошибка определения пакета из Stripe: {e}")
+            logger.error(f"❌ Ошибка определения пакета из Stripe")
             return "basic_sub"
 
 # Вспомогательные функции для интеграции в существующий код
@@ -689,7 +685,6 @@ async def spend_gpt4o_limit(user_id: int, message=None, bot=None) -> bool:
             current_limits = await SubscriptionManager.get_user_limits(user_id)
             current_gpt4o = current_limits.get('gpt4o_queries_left', 0)
             subscription_type = current_limits.get('subscription_type', 'free')
-            print(f"💎 Лимиты до траты: {current_gpt4o}")
             
             # Запоминаем нужно ли показывать уведомление
             should_notify = (current_gpt4o == 1)
@@ -699,13 +694,12 @@ async def spend_gpt4o_limit(user_id: int, message=None, bot=None) -> bool:
         
         # ✅ ПРОСТОЕ РЕШЕНИЕ: Показываем уведомление сразу после ответа
         if result["success"] and should_notify:
-            print(f"🚨 Лимиты закончились у пользователя {user_id}! Показываем уведомление")
             await _show_limits_exhausted_notification(user_id, message, bot, subscription_type)
         
         return result["success"]
         
     except Exception as e:
-        logger.error(f"Ошибка траты лимита для пользователя {user_id}: {e}")
+        logger.error(f"Ошибка траты лимита для пользователя")
         return False
 
 
@@ -753,9 +747,7 @@ async def _show_limits_exhausted_notification(user_id: int, message, bot, subscr
             parse_mode="Markdown"
         )
         
-        # ✅ ЛОГИ ДЛЯ РАЗРАБОТЧИКОВ - НЕ ЛОКАЛИЗУЮТСЯ
-        status_msg = "с кнопкой подписки" if show_subscription_button else "без кнопки"
-        print(f"✅ Уведомление об исчерпанных лимитах отправлено пользователю {user_id} ({subscription_type}, {status_msg})")
+        logger.info(f"Limit notification sent to user")
         
     except Exception as e:
-        logger.error(f"Ошибка отправки уведомления пользователю {user_id}: {e}")
+        logger.error(f"Ошибка отправки уведомления пользователю")

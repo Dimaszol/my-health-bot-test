@@ -57,7 +57,6 @@ async def delete_medical_timeline_entries(user_id: int, entry_ids: List[int]) ->
         query = f"DELETE FROM medical_timeline WHERE user_id = $1 AND id IN ({placeholders})"
         
         await conn.execute(query, user_id, *entry_ids)
-        print(f"✅ Удалено {len(entry_ids)} записей медкарты для пользователя {user_id}")
         return True
         
     except Exception as e:
@@ -104,7 +103,6 @@ async def save_medical_timeline_entries(user_id: int, entries: List[Dict], sourc
                 entry.get('description', '')
             )
         
-        print(f"✅ Сохранено {len(entries)} записей медкарты для пользователя {user_id}")
         return True
         
     except Exception as e:
@@ -210,7 +208,6 @@ Extract ONLY 1-2 most critical medical facts. If nothing is critically important
             
             # Проверяем на "NO_CHANGES"
             if result.upper() in ['NO_CHANGES', 'БЕЗ ИЗМЕНЕНИЙ', 'БЕЗ_ИЗМЕНЕНИЙ']:
-                print("📋 GPT: Нет критически важных событий для медкарты")
                 return []
             
             # Пробуем парсить JSON
@@ -219,13 +216,10 @@ Extract ONLY 1-2 most critical medical facts. If nothing is critically important
                 if isinstance(events, list):
                     # Ограничиваем до 2 событий максимум
                     events = events[:2]
-                    print(f"📋 GPT извлек {len(events)} критических событий")
                     return events
                 else:
-                    print(f"⚠️ GPT вернул не массив: {result[:100]}")
                     return []
             except json.JSONDecodeError:
-                print(f"⚠️ GPT вернул некорректный JSON: {result[:200]}")
                 return []
                 
     except Exception as e:
@@ -283,7 +277,6 @@ Respond in {lang} but use only numbers and commas."""
             
             # Парсим результат валидации
             if validation_result.upper() in ['NONE', 'НЕТ', 'НЕМАЄ']:
-                print("🚫 Валидация: все события отфильтрованы")
                 return []
             
             # Извлекаем номера валидных событий
@@ -296,22 +289,12 @@ Respond in {lang} but use only numbers and commas."""
                             valid_indices.append(idx)
                 
                 validated_events = [events[i] for i in valid_indices]
-                
-                # Логируем что было отфильтровано
-                for i, event in enumerate(events):
-                    if i not in valid_indices:
-                        print(f"🚫 Отфильтровано валидацией: {event.get('description', '')}")
-                
                 return validated_events
                 
             except (ValueError, IndexError) as e:
-                print(f"⚠️ Ошибка парсинга валидации: {validation_result}")
-                # В случае ошибки возвращаем исходные события
                 return events
             
     except Exception as e:
-        print(f"⚠️ Ошибка валидации событий: {e}")
-        # В случае ошибки возвращаем исходные события  
         return events
 
 async def extract_medical_events_gemini(document_text: str, existing_timeline: List[Dict], lang: str = "ru") -> List[Dict]:
@@ -322,7 +305,6 @@ async def extract_medical_events_gemini(document_text: str, existing_timeline: L
         from gemini_analyzer import extract_medical_timeline_gemini
         return await extract_medical_timeline_gemini(document_text, existing_timeline, lang)
     except ImportError:
-        print("⚠️ Функция extract_medical_timeline_gemini не найдена в gemini_analyzer.py")
         return []
     except Exception as e:
         log_error_with_context(e, {"function": "extract_medical_events_gemini"})
@@ -336,9 +318,6 @@ async def update_medical_timeline_on_document_upload(user_id: int, document_id: 
     """
     Универсальная функция обновления медкарты - добавляет ОДНУ сжатую запись с самыми важными данными
     """
-    
-    print(f"\n🏥 Обновление медкарты пользователя {user_id} для документа {document_id}")
-    
     try:
         # Получаем язык пользователя
         from db_postgresql import get_user_language
@@ -351,17 +330,9 @@ async def update_medical_timeline_on_document_upload(user_id: int, document_id: 
             medical_summary = await extract_medical_summary_universal_gpt(document_text, lang)
         
         if not medical_summary:
-            print("📋 Нет важных медицинских данных для добавления")
             return True
-        
         # Сохраняем одну запись
         success = await save_single_medical_entry(user_id, medical_summary, document_id)
-        
-        if success:
-            print(f"✅ В медкарту добавлена запись: {medical_summary['description']}")
-        else:
-            print("❌ Ошибка сохранения медкарты")
-        
         return success
         
     except Exception as e:
@@ -439,19 +410,15 @@ Create ONE comprehensive timeline entry combining all important medical findings
                 data = json.loads(result)
                 
                 if data.get("no_data"):
-                    print("📋 GPT: Нет важной медицинской информации")
                     return None
                 
                 required_fields = ['event_date', 'category', 'importance', 'description']
                 if all(field in data for field in required_fields):
-                    print(f"📋 GPT извлек: {data['description']}")
                     return data
                 else:
-                    print(f"⚠️ GPT вернул неполные данные")
                     return None
                     
             except json.JSONDecodeError:
-                print(f"⚠️ GPT вернул некорректный JSON: {result}")
                 return None
                 
     except Exception as e:
@@ -469,7 +436,6 @@ async def extract_medical_summary_universal_gemini(document_text: str, lang: str
         
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            print("⚠️ GEMINI_API_KEY не установлен")
             return None
         
         genai.configure(api_key=api_key)
@@ -539,7 +505,6 @@ Create ONE comprehensive entry combining all important findings with specific va
         )
         
         if not response.candidates:
-            print("⚠️ Gemini не вернул ответ")
             return None
         
         result_text = ""
@@ -552,10 +517,7 @@ Create ONE comprehensive entry combining all important findings with specific va
                     continue
         
         if not result_text:
-            print("⚠️ Gemini вернул пустой ответ")
             return None
-        
-        print(f"🔮 Gemini ответ: {result_text}")
         
         try:
             # Ищем JSON в ответе
@@ -567,26 +529,20 @@ Create ONE comprehensive entry combining all important findings with specific va
                 data = json.loads(json_text)
                 
                 if data.get("no_data"):
-                    print("📋 Gemini: Нет важной медицинской информации")
                     return None
                 
                 required_fields = ['event_date', 'category', 'importance', 'description']
                 if all(field in data for field in required_fields):
-                    print(f"📋 Gemini извлек: {data['description']}")
                     return data
                 else:
-                    print("⚠️ Gemini вернул неполные данные")
                     return None
             else:
-                print(f"⚠️ Gemini: JSON не найден в ответе")
                 return None
                 
         except json.JSONDecodeError as e:
-            print(f"⚠️ Gemini вернул некорректный JSON: {e}")
             return None
         
     except Exception as e:
-        print(f"❌ Ошибка Gemini: {e}")
         log_error_with_context(e, {"function": "extract_medical_summary_universal_gemini"})
         return None
 
@@ -627,8 +583,7 @@ async def save_single_medical_entry(user_id: int, entry_data: Dict, source_docum
             entry_data.get('importance', 'normal'),
             entry_data.get('description', '')
         )
-        
-        print(f"✅ Сохранена запись медкарты для пользователя {user_id}")
+
         return True
         
     except Exception as e:
@@ -709,7 +664,6 @@ async def cleanup_old_timeline_entries(user_id: int, max_entries: int = 20) -> b
         
         result = await conn.execute(cleanup_query, user_id, max_entries)
         deleted_count = total_count - max_entries
-        print(f"🧹 Удалено {deleted_count} старых записей медкарты для пользователя {user_id}")
         
         return True
         

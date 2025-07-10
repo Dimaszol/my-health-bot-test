@@ -83,10 +83,10 @@ class StripeConfig:
         missing_keys = [key for key in required_keys if not key]
         
         if missing_keys:
-            logger.error("❌ Отсутствуют ключи Stripe в .env файле")
+            logger.error("Отсутствуют ключи Stripe")
             return False
             
-        logger.info("✅ Конфигурация Stripe корректна")
+        logger.info("Конфигурация Stripe корректна")
         return True
     
     @classmethod
@@ -117,7 +117,7 @@ class StripeConfig:
             return package_info.get("name", "Unknown Package")
             
         except Exception as e:
-            logger.error(f"Ошибка локализации названия пакета {package_id}: {e}")
+            logger.error(f"Ошибка локализации названия пакета")
             # Fallback на английское название
             package_info = cls.get_package_info(package_id)
             return package_info.get("name", "Unknown Package") if package_info else "Unknown Package"
@@ -140,14 +140,12 @@ class StripeConfig:
                     localized_feature = t(feature_key, lang)
                     localized_features.append(localized_feature)
                 except:
-                    # Если ключ не найден, пропускаем
-                    logger.warning(f"Ключ локализации {feature_key} не найден для языка {lang}")
                     continue
             
             return localized_features
             
         except Exception as e:
-            logger.error(f"Ошибка локализации особенностей пакета {package_id}: {e}")
+            logger.error(f"Ошибка локализации особенностей пакета")
             return []
     
     @classmethod  
@@ -186,7 +184,7 @@ class StripeConfig:
             return "\n".join(text_parts)
             
         except Exception as e:
-            logger.error(f"Ошибка формирования описания пакета {package_id}: {e}")
+            logger.error(f"Ошибка формирования описания пакета")
             
             # Fallback описание
             package_info = cls.get_package_info(package_id)
@@ -197,32 +195,21 @@ class StripeConfig:
 # Функция для проверки при запуске
 def check_stripe_setup() -> bool:
     """Проверяет настройку Stripe при запуске бота"""
-    print("🔍 Проверка настройки Stripe...")
     
     if not StripeConfig.validate_config():
-        print("❌ Stripe не настроен. Проверьте .env файл")
+        logger.warning("Stripe configuration not found or invalid")
         return False
     
     try:
         # Тестовый запрос к Stripe API
         stripe.Account.retrieve()
-        print("✅ Соединение с Stripe API успешно")
+        logger.info("Stripe API connection successful")
         return True
         
     except stripe.error.AuthenticationError:
-        print("❌ Неверный Stripe API ключ")
+        logger.error("Invalid Stripe API key")
         return False
         
     except Exception as e:
-        print(f"❌ Ошибка подключения к Stripe: {e}")
+        logger.error(f"Stripe connection error: {e}")
         return False
-
-if __name__ == "__main__":
-    # Тест конфигурации
-    success = check_stripe_setup()
-    if success:
-        print("\n📦 Доступные пакеты:")
-        for pkg_id, pkg_info in StripeConfig.get_all_packages().items():
-            print(f"  • {pkg_info['name']}: {pkg_info['price_display']}")
-    else:
-        print("\n💡 Добавьте ключи Stripe в .env файл")

@@ -92,40 +92,31 @@ def safe_openai_call(max_retries: int = 3, delay: float = 1.0):
                     
                 except APITimeoutError as e:
                     last_error = e
-                    # ❌ ЭТО ЛОГИ - НЕ локализуем (только для разработчиков)
-                    logger.warning(f"OpenAI timeout на попытке {attempt + 1}: {e}")
+                    logger.warning(f"OpenAI timeout on attempt {attempt + 1}")
                     if attempt < max_retries - 1:
                         time.sleep(delay * (attempt + 1))
                     
                 except RateLimitError as e:
                     last_error = e
-                    # ❌ ЭТО ЛОГИ - НЕ локализуем
-                    logger.warning(f"Rate limit на попытке {attempt + 1}: {e}")
+                    logger.warning(f"Rate limit на попытке {attempt + 1}")
                     if attempt < max_retries - 1:
                         time.sleep(delay * 2)
                     
                 except APIConnectionError as e:
                     last_error = e
-                    # ❌ ЭТО ЛОГИ - НЕ локализуем
-                    logger.error(f"Ошибка соединения с OpenAI на попытке {attempt + 1}: {e}")
+                    logger.error(f"Ошибка соединения с OpenAI на попытке {attempt + 1}")
                     if attempt < max_retries - 1:
                         time.sleep(delay)
                     
                 except APIError as e:
                     last_error = e
-                    # ❌ ЭТО ЛОГИ - НЕ локализуем
-                    logger.error(f"OpenAI API error на попытке {attempt + 1}: {e}")
+                    logger.error(f"OpenAI API error на попытке {attempt + 1}")
                     break
                     
                 except Exception as e:
                     last_error = e
-                    # ❌ ЭТО ЛОГИ - НЕ локализуем
-                    logger.error(f"Неожиданная ошибка в {func.__name__}: {e}")
-                    logger.error(traceback.format_exc())
+                    logger.error(f"Unexpected error in {func.__name__}")
                     break
-            
-            # ❌ ЭТО ЛОГИ - НЕ локализуем
-            logger.error(f"Все попытки вызова {func.__name__} исчерпаны. Последняя ошибка: {last_error}")
             
             # ✅ А ВОТ ЭТО видит пользователь - локализуем через get_user_friendly_message
             raise OpenAIError(
@@ -152,7 +143,7 @@ def safe_async_call(max_retries: int = 3, delay: float = 1.0):
                 except Exception as e:
                     last_error = e
                     # ❌ ЭТО ЛОГИ - НЕ локализуем
-                    logger.error(f"Ошибка в асинхронной функции {func.__name__} на попытке {attempt + 1}: {e}")
+                    logger.error(f"Ошибка в асинхронной функции {func.__name__} на попытке {attempt + 1}")
                     
                     if attempt < max_retries - 1:
                         await asyncio.sleep(delay * (attempt + 1))
@@ -216,7 +207,7 @@ def handle_telegram_errors(func: Callable) -> Callable:
         except Exception as e:
             # ❌ ЭТО ЛОГИ - НЕ локализуем
             logger.error(f"Неожиданная ошибка в {func.__name__}: {e}")
-            logger.error(traceback.format_exc())
+            logger.error(f"Unexpected error in {func.__name__}")
             
             # Получаем message object и user_id для ПОЛЬЗОВАТЕЛЯ
             message = None
@@ -275,13 +266,11 @@ def check_openai_health() -> bool:
         
     except Exception as e:
         # ❌ ЭТО ЛОГИ - НЕ локализуем
-        logger.error(f"OpenAI API недоступен: {e}")
+        logger.error(f"OpenAI API недоступен")
         return False
 
 def log_error_with_context(error: Exception, context: dict = None):
-    """
-    ❌ ЭТО ВСЕ ЛОГИ - НЕ локализуем (только для разработчиков)
-    """
+    
     context = context or {}
     
     error_info = {
@@ -297,15 +286,3 @@ def log_error_with_context(error: Exception, context: dict = None):
     if isinstance(error, (DatabaseError, APIError)):
         # ❌ ЭТО ЛОГИ - НЕ локализуем
         logger.critical(f"КРИТИЧЕСКАЯ ОШИБКА: {error_info}")
-
-# Пример использования (для справки)
-if __name__ == "__main__":
-    @safe_openai_call(max_retries=2, delay=1.0)
-    def test_openai():
-        raise APITimeoutError("Test timeout")
-    
-    try:
-        test_openai()
-    except OpenAIError as e:
-        # ❌ ЭТО ЛОГИ/ТЕСТ - НЕ локализуем
-        print(f"Поймана ошибка: {e.user_message}")

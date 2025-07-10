@@ -83,7 +83,6 @@ def create_safe_file_path(user_id: int, filename: str) -> str:
             # ✅ ИСПРАВЛЕНИЕ: Попробуем исправить расширение автоматически
             name_without_ext = os.path.splitext(filename)[0]
             filename = f"{name_without_ext}.jpg"
-            print(f"🔧 Автоматически изменено расширение на: {filename}")
         
         # Очищаем имя файла
         safe_filename = validate_filename(filename)
@@ -107,9 +106,6 @@ def create_safe_file_path(user_id: int, filename: str) -> str:
         return str(file_path)
         
     except Exception as e:
-        print(f"❌ Ошибка в create_safe_file_path: {e}")
-        print(f"   user_id: {user_id}")
-        print(f"   filename: {filename}")
         raise ValueError(f"Failed to create safe path: {e}")
 
 def validate_file_size(file_path: str) -> bool:
@@ -168,20 +164,4 @@ def create_simple_file_path(user_id: int, filename: str) -> str:
         safe_name += '.jpg'
     
     full_path = os.path.join(user_dir, safe_name)
-    print(f"🔧 Создан путь: {full_path}")
     return full_path
-
-# Пример использования:
-if __name__ == "__main__":
-    # Тестирование функций
-    try:
-        # Безопасное имя файла
-        safe_path = create_safe_file_path(123, "document.pdf")
-        print(f"Безопасный путь: {safe_path}")
-        
-        # Тест с простой функцией
-        simple_path = create_simple_file_path(123, "test_image")
-        print(f"Простой путь: {simple_path}")
-        
-    except Exception as e:
-        print(f"Ошибка: {e}")

@@ -39,11 +39,8 @@ class SubscriptionWebhookHandler:
             # Получаем данные от Make.com
             data = await request.json()
             
-            # ✅ ИСПРАВЛЕНО: Добавляем print для отладки
-            print(f"🎯 Получен webhook от Make.com: {json.dumps(data, indent=2)}")
-            
             # Логируем полученные данные
-            logger.info(f"🎯 Получен webhook от Make.com: {json.dumps(data, indent=2)}")
+            logger.info("Webhook received from payment provider")
             
             # Извлекаем информацию
             event_type = data.get('event_type')
@@ -55,7 +52,6 @@ class SubscriptionWebhookHandler:
             try:
                 amount = int(amount_raw) if amount_raw else 0
             except (ValueError, TypeError):
-                print(f"⚠️ Ошибка конвертации amount: {amount_raw}")
                 amount = 0
             
             if not event_type:
@@ -83,8 +79,6 @@ class SubscriptionWebhookHandler:
                 user_id_from_metadata = data.get('user_id')
                 
                 if session_id:
-                    print(f"💳 Обработка разового платежа: {session_id}")
-                    
                     # Автоматически обрабатываем через существующую логику
                     try:
                         from stripe_manager import StripeManager
@@ -96,7 +90,6 @@ class SubscriptionWebhookHandler:
                                 "message": f"One-time payment processed: {message}",
                                 "session_id": session_id
                             }
-                            print(f"✅ Разовый платеж {session_id} обработан успешно")
                             
                             # ✅ ЛОКАЛИЗОВАННОЕ уведомление пользователю
                             if user_id_from_metadata:
@@ -112,26 +105,22 @@ class SubscriptionWebhookHandler:
                                         localized_message,
                                         parse_mode="HTML"
                                     )
-                                    print(f"📧 Уведомление отправлено пользователю {user_id_from_metadata}")
                                 except Exception as notify_error:
-                                    print(f"❌ Ошибка отправки уведомления: {notify_error}")
+                                    pass
                         else:
                             result = {
                                 "status": "error", 
                                 "message": f"Payment processing failed: {message}"
                             }
-                            print(f"❌ Ошибка обработки разового платежа: {message}")
                     except Exception as e:
                         result = {
                             "status": "error",
                             "message": f"Exception during payment processing: {str(e)}"
                         }
-                        print(f"❌ Исключение при обработке платежа: {e}")
                 else:
                     result = {"status": "error", "message": "Missing session_id"}
-                    print("❌ Отсутствует session_id в данных webhook")
             else:
-                logger.warning(f"⚠️ Неизвестный тип события: {event_type}")
+                logger.warning("Unknown webhook event type received")
                 result = {"status": "ignored", "message": f"Event {event_type} ignored"}
             
             # Возвращаем результат
@@ -144,8 +133,7 @@ class SubscriptionWebhookHandler:
             })
             
         except Exception as e:
-            print(f"❌ Критическая ошибка обработки webhook: {e}")
-            logger.error(f"❌ Ошибка обработки webhook: {e}")
+            logger.error("Webhook processing error")
             return web.json_response(
                 {"status": "error", "message": str(e)}, 
                 status=500
@@ -155,14 +143,13 @@ class SubscriptionWebhookHandler:
         """Обрабатывает успешное продление подписки"""
         try:
             # ✅ ИСПРАВЛЕНО: Убираем деление, так как amount уже в центах
-            print(f"💳 Успешное продление: customer={stripe_customer_id}, amount=${amount/100}")
-            logger.info(f"💳 Успешное продление: customer={stripe_customer_id}, amount=${amount/100}")
+            logger.info("Subscription payment processed successfully")
             
             # TODO: Найти user_id по stripe_customer_id
             user_id = int(stripe_customer_id)
             
             if not user_id:
-                logger.warning(f"⚠️ Пользователь не найден для customer {stripe_customer_id}")
+                logger.warning("User not found for webhook")
                 return {"status": "error", "message": "User not found"}
             
             # Определяем тип подписки по сумме
@@ -195,7 +182,7 @@ class SubscriptionWebhookHandler:
                 # ✅ ЛОКАЛИЗОВАННОЕ уведомление пользователю
                 await self._send_renewal_notification(user_id, package_id)
                 
-                logger.info(f"✅ Лимиты пополнены для пользователя {user_id}")
+                logger.info("User limits updated successfully")
                 return {
                     "status": "success",
                     "message": "Subscription renewed",
@@ -207,17 +194,17 @@ class SubscriptionWebhookHandler:
                     }
                 }
             else:
-                logger.error(f"❌ Ошибка пополнения лимитов: {result.get('error')}")
+                logger.error("Limits update failed")
                 return {"status": "error", "message": result.get('error')}
                 
         except Exception as e:
-            logger.error(f"❌ Ошибка обработки успешного платежа: {e}")
+            logger.error("Payment processing error")
             return {"status": "error", "message": str(e)}
     
     async def _handle_failed_payment(self, stripe_customer_id, subscription_id):
         """Обрабатывает неудачное продление подписки"""
         try:
-            logger.warning(f"💳 Неудачное продление: customer={stripe_customer_id}")
+            logger.warning("Subscription payment failed")
             
             user_id = await self._get_user_id_by_stripe_customer(stripe_customer_id)
             
@@ -242,8 +229,8 @@ class SubscriptionWebhookHandler:
                     WHERE user_id = $1
                 """, (user_id,))
                 
-                logger.info(f"📧 Уведомление о неудачном платеже отправлено пользователю {user_id}")
-                logger.info(f"🚫 Подписка деактивирована для пользователя {user_id}")
+                logger.info("Payment failure notification sent")
+                logger.info("Subscription deactivated")
                 
                 return {
                     "status": "success",
@@ -254,13 +241,13 @@ class SubscriptionWebhookHandler:
                 return {"status": "error", "message": "User not found"}
                 
         except Exception as e:
-            logger.error(f"❌ Ошибка обработки неудачного платежа: {e}")
+            logger.error("Failed payment processing error")
             return {"status": "error", "message": str(e)}
     
     async def _handle_invoice_created(self, stripe_customer_id, subscription_id):
         """Обрабатывает создание нового счета"""
         try:
-            logger.info(f"📄 Создан счет: customer={stripe_customer_id}")
+            logger.info("Invoice created")
             
             # Пока просто логируем
             # В будущем можно добавить предварительные уведомления
@@ -271,7 +258,7 @@ class SubscriptionWebhookHandler:
             }
             
         except Exception as e:
-            logger.error(f"❌ Ошибка обработки создания счета: {e}")
+            logger.error("Invoice processing error")
             return {"status": "error", "message": str(e)}
     
     async def _get_user_id_by_stripe_customer(self, stripe_customer_id):
@@ -299,15 +286,15 @@ class SubscriptionWebhookHandler:
         
         # ✅ ПРОМОКОДЫ (ДОБАВЛЯЕМ ЭТИ СТРОКИ!)
         elif amount_cents == 99:   # $0.99 - Промокод Basic (было $3.99)
-            logger.info(f"🎫 Обнаружен промокод Basic: ${amount_cents/100}")
+            logger.info("Promotional pricing detected")
             return "basic_sub"
         elif amount_cents == 199:  # $1.99 - Промокод Premium (было $9.99) 
-            logger.info(f"🎫 Обнаружен промокод Premium: ${amount_cents/100}")
+            logger.info("Premium subscription processed")
             return "premium_sub"
         
         # ✅ НЕИЗВЕСТНАЯ СУММА
         else:
-            logger.warning(f"⚠️ Неизвестная сумма платежа: ${amount_cents/100}")
+            logger.warning("Unrecognized payment amount")
             return "basic_sub"  # По умолчанию
     
     async def _send_renewal_notification(self, user_id, package_id):
@@ -322,7 +309,7 @@ class SubscriptionWebhookHandler:
             await self.bot.send_message(user_id, message)
             
         except Exception as e:
-            logger.error(f"❌ Ошибка отправки уведомления о продлении: {e}")
+            logger.error("Renewal notification failed")
     
     async def _send_payment_failed_notification(self, user_id):
         """✅ ЛОКАЛИЗОВАННАЯ версия - Отправляет уведомление о неудачном платеже"""
@@ -336,7 +323,7 @@ class SubscriptionWebhookHandler:
             await self.bot.send_message(user_id, message)
             
         except Exception as e:
-            logger.error(f"❌ Ошибка отправки уведомления о неудачном платеже: {e}")
+            logger.error("Payment failure notification failed")
 
 # Функция для создания веб-приложения
 def create_webhook_app(bot):
@@ -372,11 +359,6 @@ async def start_webhook_server(bot, host='0.0.0.0', port=8080):
     site = web.TCPSite(runner, host, port)
     await site.start()
     
-    # ✅ ИСПРАВЛЕНО: Добавляем print для отладки
-    print(f"🚀 Webhook сервер запущен на {host}:{port}")
-    print(f"📡 Endpoint: http://{host}:{port}/webhook")
-    
-    logger.info(f"🚀 Webhook сервер запущен на {host}:{port}")
-    logger.info(f"📡 Endpoint: http://{host}:{port}/webhook")
+    logger.info(f"Webhook server started on port {port}")
     
     return runner

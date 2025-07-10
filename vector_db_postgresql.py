@@ -62,7 +62,7 @@ class PostgreSQLVectorDB:
             await conn.execute(create_tables_sql)
             logger.info("✅ Векторные таблицы PostgreSQL созданы")
         except Exception as e:
-            logger.error(f"❌ Ошибка создания векторных таблиц: {e}")
+            logger.error(f"❌ Ошибка создания векторных таблиц")
             raise
         finally:
             await self.db_pool.release(conn)
@@ -79,7 +79,6 @@ class PostgreSQLVectorDB:
             )
             return response.data[0].embedding
         except Exception as e:
-            logger.error(f"❌ Ошибка получения эмбеддинга: {e}")
             raise
     
     async def add_document_chunks(self, document_id: int, user_id: int, chunks: List[Dict]) -> bool:
@@ -118,12 +117,10 @@ class PostgreSQLVectorDB:
                     json.dumps(chunk['metadata']),
                     chunk['metadata'].get('keywords', '')
                 )
-            
-            logger.info(f"✅ Добавлено {len(chunks)} векторов для документа {document_id}")
+
             return True
             
         except Exception as e:
-            logger.error(f"❌ Ошибка добавления векторов: {e}")
             return False
         finally:
             await self.db_pool.release(conn)
@@ -219,23 +216,10 @@ class PostgreSQLVectorDB:
                     "chunk_length": row['chunk_length']
                 }
                 chunks.append(chunk_data)
-            
-            # 📈 Логирование для отладки
-            if chunks:
-                best_similarity = chunks[0]['similarity']
-                worst_similarity = chunks[-1]['similarity']
-                logger.info(f"🔍 Найдено {len(chunks)} релевантных чанков для пользователя {user_id}")
-                                
-                # 🚨 Предупреждение о низкой релевантности
-                if best_similarity < 0.6:
-                    logger.warning(f"⚠️ Низкая релевантность запроса: '{query[:50]}...' (max={best_similarity:.3f})")
-            else:
-                logger.info(f"❌ Не найдено релевантных чанков для запроса: '{query[:50]}...' (threshold={similarity_threshold})")
                 
             return chunks
             
         except Exception as e:
-            logger.error(f"❌ Ошибка векторного поиска: {e}")
             return []
         finally:
             await self.db_pool.release(conn)
@@ -250,17 +234,13 @@ class PostgreSQLVectorDB:
         """
         conn = await self.db_pool.acquire()
         try:
-            logger.info(f"🔍 Поиск по ключевым словам: '{keywords}' для пользователя {user_id}")
             
             # 🔹 Разбиваем и очищаем ключевые слова
             keyword_list = [k.strip().lower() for k in keywords.split(',') if k.strip()]
             
             if not keyword_list:
-                logger.info("❌ Пустой список ключевых слов")
                 return []
-            
-            print(f"🔑 Ищем совпадения для: {keyword_list}")
-            
+
             # 🔧 Создаем SQL с точным подсчетом каждого ключевого слова
             params = [user_id]
             param_index = 2
@@ -369,22 +349,9 @@ class PostgreSQLVectorDB:
                 }
                 chunks.append(chunk_data)
             
-            # 📈 Улучшенное логирование
-            logger.info(f"🔍 Найдено {len(chunks)} чанков по ключевым словам")
-            
-            if chunks:
-                print(f"\n📊 РЕЗУЛЬТАТЫ УЛУЧШЕННОГО КЛЮЧЕВОГО ПОИСКА:")
-                print(f"   🔑 Искали слова: {keyword_list}")
-                for i, chunk in enumerate(chunks[:3]):  # Показываем топ-3
-                    matches = chunk['exact_matches_count']
-                    score = chunk['advanced_score']
-                    preview = chunk['chunk_text'][:50] + "..."
-                    print(f"   {i+1}. ✅ {matches}/{len(keyword_list)} совпадений | Score: {score} | {preview}")
-            
             return chunks
             
         except Exception as e:
-            logger.error(f"❌ Ошибка поиска по ключевым словам: {e}")
             return []
         finally:
             await self.db_pool.release(conn)
@@ -398,10 +365,8 @@ class PostgreSQLVectorDB:
                 document_id
             )
             deleted_count = int(result.split()[-1])  # Извлекаем количество удаленных строк
-            logger.info(f"🗑️ Удалено {deleted_count} векторов документа {document_id}")
             return True
         except Exception as e:
-            logger.error(f"❌ Ошибка удаления векторов документа {document_id}: {e}")
             return False
         finally:
             await self.db_pool.release(conn)
@@ -415,10 +380,8 @@ class PostgreSQLVectorDB:
                 user_id
             )
             deleted_count = int(result.split()[-1])
-            logger.info(f"🗑️ Удалено {deleted_count} векторов пользователя {user_id}")
             return True
         except Exception as e:
-            logger.error(f"❌ Ошибка удаления векторов пользователя {user_id}: {e}")
             return False
         finally:
             await self.db_pool.release(conn)
@@ -444,7 +407,6 @@ class PostgreSQLVectorDB:
             }
             
         except Exception as e:
-            logger.error(f"❌ Ошибка получения статистики: {e}")
             return {"total_vectors": 0, "unique_users": 0, "unique_documents": 0}
         finally:
             await self.db_pool.release(conn)
@@ -468,11 +430,9 @@ class PostgreSQLVectorDB:
             """, user_id)
             
             count = result or 0
-            logger.info(f"📊 Пользователь {user_id} имеет {count} векторов")
             return count
             
         except Exception as e:
-            logger.error(f"❌ Ошибка подсчета векторов для пользователя {user_id}: {e}")
             return 0
         finally:
             await self.db_pool.release(conn)
@@ -522,11 +482,9 @@ class PostgreSQLVectorDB:
                 }
                 chunks.append(chunk_data)
             
-            logger.info(f"📦 Получено {len(chunks)} чанков для пользователя {user_id}")
             return chunks
             
         except Exception as e:
-            logger.error(f"❌ Ошибка получения всех чанков для пользователя {user_id}: {e}")
             return []
         finally:
             await self.db_pool.release(conn)
@@ -621,7 +579,6 @@ async def initialize_vector_db(db_pool=None):
     
     vector_db = PostgreSQLVectorDB(db_pool)
     await vector_db.initialize_vector_tables()
-    logger.info("✅ PostgreSQL Vector DB инициализирована")
 
 # 🛠️ ИСПРАВЛЕНИЯ В СУЩЕСТВУЮЩИХ ФУНКЦИЯХ
 
@@ -655,7 +612,6 @@ async def split_into_chunks(summary: str, document_id: int, user_id: int) -> Lis
             from gpt import extract_keywords
             keywords = await extract_keywords(clean_text)
         except Exception as e:
-            logger.warning(f"Ошибка извлечения ключевых слов: {e}")
             keywords = []  # Используем пустой список при ошибке
 
         chunks.append({
@@ -685,14 +641,12 @@ async def initialize_vector_db_safe():
         from db_postgresql import db_pool
         
         if db_pool is None:
-            logger.error("❌ db_pool не инициализирован!")
             return False
             
         await initialize_vector_db(db_pool)
         return True
         
     except Exception as e:
-        logger.error(f"❌ Ошибка инициализации векторной базы: {e}")
         return False
     
 def create_hybrid_ranking(vector_chunks: List[Dict], keyword_chunks: List[Dict], 
@@ -710,11 +664,6 @@ def create_hybrid_ranking(vector_chunks: List[Dict], keyword_chunks: List[Dict],
     """
     
     chunk_scores = {}  # chunk_text -> score_data
-    
-    print(f"\n🔍 ГИБРИДНОЕ РАНЖИРОВАНИЕ:")
-    print(f"   📊 Векторных результатов: {len(vector_chunks)}")
-    print(f"   🔑 Ключевых результатов: {len(keyword_chunks)}")
-    print(f"   ⚡ Boost-фактор: {boost_factor}")
     
     # ==========================================
     # ШАГ 1: ОБРАБАТЫВАЕМ ВЕКТОРНЫЕ РЕЗУЛЬТАТЫ
@@ -758,7 +707,6 @@ def create_hybrid_ranking(vector_chunks: List[Dict], keyword_chunks: List[Dict],
             chunk_scores[chunk_text]["keyword_score"] = keyword_score + position_bonus
             chunk_scores[chunk_text]["keyword_matches"] = keyword_matches
             chunk_scores[chunk_text]["found_in_keywords"] = True
-            print(f"   🔥 BOOST: {keyword_matches} совпадений | '{chunk_text[:40]}...'")
         else:
             # Найден только в ключевом поиске
             chunk_scores[chunk_text] = {
@@ -817,17 +765,12 @@ def create_hybrid_ranking(vector_chunks: List[Dict], keyword_chunks: List[Dict],
     
     # 📊 Подробное логирование
     hybrid_count = sum(1 for c in scored_chunks if c["is_hybrid"])
-    print(f"\n📊 РЕЗУЛЬТАТЫ ГИБРИДНОГО РАНЖИРОВАНИЯ:")
-    print(f"   🔥 Гибридных результатов: {hybrid_count}")
-    print(f"   📋 Всего уникальных: {len(scored_chunks)}")
     
     # Показываем топ-5 результатов
-    print(f"\n🏆 ТОП-5 РЕЗУЛЬТАТОВ:")
     for i, item in enumerate(scored_chunks[:5]):
         score = item["final_score"]
         search_type = item["search_type"]
         preview = item["chunk_text"][:50] + "..."
-        print(f"   {i+1}. [{search_type}] Score: {score:.1f} | {preview}")
     
     # Возвращаем только тексты чанков (для совместимости)
     return [item["chunk_text"] for item in scored_chunks]

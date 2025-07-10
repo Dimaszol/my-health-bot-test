@@ -24,7 +24,7 @@ class UserStateManager:
         """Установить состояние пользователя"""
         self.states[user_id] = state
         self.timestamps[user_id] = datetime.now()
-        logger.debug(f"State set for user {user_id}: {type(state).__name__}")
+        logger.debug(f"State set for user")
     
     def get_state(self, user_id: int) -> Optional[Any]:
         """Получить состояние пользователя"""
@@ -32,7 +32,6 @@ class UserStateManager:
             # Проверяем, не истекло ли время
             if datetime.now() - self.timestamps[user_id] > self.ttl:
                 self.clear_state(user_id)
-                logger.debug(f"State expired and cleared for user {user_id}")
                 return None
             return self.states[user_id]
         return None
@@ -41,7 +40,6 @@ class UserStateManager:
         """Очистить состояние пользователя"""
         self.states.pop(user_id, None)
         self.timestamps.pop(user_id, None)
-        logger.debug(f"State manually cleared for user {user_id}")
     
     async def start_cleanup_loop(self):
         """Запустить автоматическую очистку"""
@@ -69,7 +67,7 @@ class UserStateManager:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in cleanup loop: {e}")
+                logger.error(f"Error in cleanup loop")
     
     async def _cleanup_expired(self):
         """Очистить истекшие состояния"""
@@ -83,7 +81,7 @@ class UserStateManager:
             self.clear_state(user_id)
         
         if expired_users:
-            logger.info(f"🧹 Cleaned up {len(expired_users)} expired user states")
+            logger.info(f"🧹 Cleaned up expired user states")
     
     def get_stats(self) -> Dict[str, int]:
         """Получить статистику для мониторинга"""

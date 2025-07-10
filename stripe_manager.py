@@ -88,11 +88,10 @@ class StripeManager:
                 amount_cents=package_info['price_cents']
             )
             
-            logger.info(f"✅ Создана {'подписка' if package_info['type'] == 'subscription' else 'разовая оплата'} для пользователя {user_id}: {session.id}")
             return True, session.url
             
         except Exception as e:
-            logger.error(f"❌ Ошибка создания сессии: {e}")
+            logger.error(f"❌ Ошибка создания сессии")
             
             # ✅ ДОБАВЛЕНО: локализованная ошибка
             try:
@@ -122,10 +121,10 @@ class StripeManager:
                 datetime.now()
             ))
             
-            logger.info(f"💾 Сохранена информация о сессии {session_id}")
+            logger.info(f"💾 Сохранена информация о сессии")
             
         except Exception as e:
-            logger.error(f"❌ Ошибка сохранения сессии в БД: {e}")
+            logger.error(f"❌ Ошибка сохранения сессии в БД")
     
     @staticmethod
     async def handle_successful_payment(session_id: str):
@@ -228,12 +227,10 @@ class StripeManager:
                 session_id
             ))
             
-            logger.info(f"✅ Успешно обработан {'подписка' if package_info['type'] == 'subscription' else 'платеж'} {session_id} для пользователя {user_id}")
-            
             return True, message
             
         except Exception as e:
-            logger.error(f"❌ Ошибка обработки платежа {session_id}: {e}")
+            logger.error(f"❌ Ошибка обработки платежа")
             
             # ✅ ДОБАВЛЕНО: локализованная ошибка
             try:
@@ -258,11 +255,11 @@ class StripeManager:
                 WHERE stripe_session_id = ?
             """, (session_id,))
             
-            logger.warning(f"⚠️ Неуспешный платеж {session_id}: {reason}")
+            logger.warning(f"Неуспешный платеж")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Ошибка обработки неуспешного платежа {session_id}: {e}")
+            logger.error(f"Ошибка обработки неуспешного платежа")
             return False
     
     @staticmethod
@@ -296,7 +293,7 @@ class StripeManager:
             ]
             
         except Exception as e:
-            logger.error(f"❌ Ошибка получения истории платежей для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка получения истории платежей для пользователя")
             return []
         
     
@@ -315,7 +312,7 @@ class StripeManager:
             Tuple[bool, str]: (успех, ссылка_или_ошибка)
         """
         try:
-            logger.info(f"🎫 Создание ссылки с промокодом {promo_code} для user {user_id}, package {package_id}")
+            logger.info(f"Создание ссылки с промокодом")
             
             # 1️⃣ Проверяем существование пакета
             package_info = StripeConfig.get_package_info(package_id)
@@ -326,12 +323,10 @@ class StripeManager:
                 except:
                     error_msg = f"Package {package_id} not found"
                 
-                logger.error(f"Package {package_id} не найден")
                 return False, error_msg
             
             # 2️⃣ Проверяем, что это подписка (промокоды только для подписок)
             if package_info['type'] != 'subscription':
-                logger.error(f"Промокоды работают только для подписок, а {package_id} - {package_info['type']}")
                 return False, "Промокоды доступны только для подписок"
             
             # 3️⃣ Создаем сессию подписки с промокодом
@@ -378,17 +373,15 @@ class StripeManager:
                 promo_code=promo_code
             )
             
-            logger.info(f"✅ Создана промо-ссылка для user {user_id}: {session.id} с кодом {promo_code}")
             return True, session.url
             
         except stripe.error.InvalidRequestError as e:
             # Ошибка промокода (не существует, неактивен, не подходит)
             error_msg = f"Промокод недействителен: {str(e)}"
-            logger.error(f"❌ Ошибка промокода {promo_code}: {e}")
             return False, error_msg
             
         except Exception as e:
-            logger.error(f"❌ Ошибка создания промо-сессии: {e}")
+            logger.error(f"Ошибка создания промо-сессии")
             
             try:
                 lang = await get_user_language(user_id)
@@ -419,11 +412,10 @@ class StripeManager:
                 promo_code,      # Сохраняем использованный промокод
                 datetime.now()
             ))
-            
-            logger.info(f"💾 Сохранена промо-сессия {session_id} с кодом {promo_code}")
+           
             
         except Exception as e:
-            logger.error(f"❌ Ошибка сохранения промо-сессии в БД: {e}")
+            logger.error(f"Ошибка сохранения промо-сессии в БД")
     
     @staticmethod
     async def get_promo_usage_stats(promo_code: str) -> Dict[str, Any]:
@@ -455,7 +447,7 @@ class StripeManager:
             }
             
         except Exception as e:
-            logger.error(f"❌ Ошибка получения статистики промокода {promo_code}: {e}")
+            logger.error(f"Ошибка получения статистики промокода")
             return {"promo_code": promo_code, "total_uses": 0, "successful_payments": 0, "revenue_usd": 0.0}
 
 # Функция для webhook (обработка событий от Stripe)
@@ -481,19 +473,19 @@ async def handle_stripe_webhook(payload: str, sig_header: str) -> Tuple[bool, st
             return True, "Session expired processed"
             
         else:
-            logger.info(f"🔄 Необработанное Stripe событие: {event['type']}")
+            logger.info(f"Необработанное Stripe событие")
             return True, f"Event {event['type']} ignored"
             
     except ValueError as e:
-        logger.error(f"❌ Неверный payload от Stripe: {e}")
+        logger.error(f"Неверный payload от Stripe")
         return False, "Invalid payload"
         
     except stripe.error.SignatureVerificationError as e:
-        logger.error(f"❌ Неверная подпись Stripe webhook: {e}")
+        logger.error(f"Неверная подпись Stripe webhook")
         return False, "Invalid signature"
         
     except Exception as e:
-        logger.error(f"❌ Ошибка обработки Stripe webhook: {e}")
+        logger.error(f"Ошибка обработки Stripe webhook")
         return False, f"Webhook error: {e}"
     
 class StripeGDPRManager:
@@ -505,8 +497,6 @@ class StripeGDPRManager:
         GDPR-совместимое удаление всех данных пользователя из Stripe
         """
         try:
-            # ✅ ИСПРАВЛЕНО: Используем логирование вместо print
-            logger.info(f"💳 Начинаем GDPR удаление Stripe данных для пользователя {user_id}")
             
             # 1. Находим все Stripe подписки пользователя
             stripe_subscriptions = await StripeGDPRManager._find_user_subscriptions(user_id)
@@ -524,13 +514,11 @@ class StripeGDPRManager:
             
             # 5. Очищаем Stripe ссылки из нашей базы
             await StripeGDPRManager._clean_stripe_references(user_id)
-            
-            # ✅ ИСПРАВЛЕНО: Используем логирование вместо print
-            logger.info(f"✅ GDPR удаление Stripe данных завершено для пользователя {user_id}")
+
             return True
             
         except Exception as e:
-            logger.error(f"❌ Ошибка GDPR удаления Stripe данных для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка GDPR удаления Stripe данных для пользователя")
             return False
     
     @staticmethod
@@ -550,14 +538,13 @@ class StripeGDPRManager:
                 
                 # ✅ ПРАВИЛЬНО ИЗВЛЕКАЕМ ДАННЫЕ ИЗ СТРОК
                 subscriptions = [row['stripe_subscription_id'] for row in rows if row['stripe_subscription_id']]
-                logger.info(f"🔍 Найдено {len(subscriptions)} Stripe подписок для пользователя {user_id}")
                 return subscriptions
                 
             finally:
                 await release_db_connection(conn)
                 
         except Exception as e:
-            logger.error(f"❌ Ошибка поиска подписок для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка поиска подписок для пользователя")
             return []
     
     @staticmethod
@@ -566,26 +553,25 @@ class StripeGDPRManager:
         try:
             # Немедленная отмена подписки
             stripe.Subscription.delete(subscription_id)
-            logger.info(f"✅ Отменена Stripe подписка: {subscription_id}")
+            logger.info(f"Отменена Stripe подписка")
             
         except stripe.error.InvalidRequestError as e:
             if "No such subscription" in str(e):
-                logger.warning(f"⚠️ Подписка {subscription_id} уже не существует в Stripe")
+                logger.warning(f"⚠️ Подписка уже не существует в Stripe")
             else:
-                logger.error(f"❌ Ошибка отмены подписки {subscription_id}: {e}")
+                logger.error(f"❌ Ошибка отмены подписки")
         except Exception as e:
-            logger.error(f"❌ Ошибка отмены подписки {subscription_id}: {e}")
+            logger.error(f"❌ Ошибка отмены подписки")
     
     @staticmethod
     async def _find_stripe_customer(user_id: int) -> str:
         """Находит Stripe customer_id по user_id"""
         try:
-            # ✅ ИСПРАВЛЕНО: Используем логирование вместо print
-            logger.info(f"⚠️ Поиск Stripe customer пропущен (поле отсутствует) для пользователя {user_id}")
+            logger.info(f"Поиск Stripe customer пропущен (поле отсутствует) для пользователя")
             return None
             
         except Exception as e:
-            logger.error(f"❌ Ошибка поиска Stripe customer для пользователя {user_id}: {e}")
+            logger.error(f"Ошибка поиска Stripe customer для пользователя")
             return None
     
     @staticmethod
@@ -593,15 +579,15 @@ class StripeGDPRManager:
         """Удаляет customer из Stripe"""
         try:
             stripe.Customer.delete(customer_id)
-            logger.info(f"✅ Удален Stripe customer: {customer_id}")
+            logger.info(f"✅ Удален Stripe customer")
             
         except stripe.error.InvalidRequestError as e:
             if "No such customer" in str(e):
-                logger.warning(f"⚠️ Customer {customer_id} уже не существует в Stripe")
+                logger.warning(f"⚠️ Customer уже не существует в Stripe")
             else:
-                logger.error(f"❌ Ошибка удаления customer {customer_id}: {e}")
+                logger.error(f"❌ Ошибка удаления customer")
         except Exception as e:
-            logger.error(f"❌ Ошибка удаления customer {customer_id}: {e}")
+            logger.error(f"❌ Ошибка удаления customer")
     
     @staticmethod
     async def _clean_stripe_references(user_id: int):
@@ -617,10 +603,10 @@ class StripeGDPRManager:
                     WHERE user_id = $1 AND stripe_subscription_id IS NOT NULL
                 """, user_id)
                 
-                logger.info(f"✅ Stripe ссылки очищены из базы для пользователя {user_id}")
+                logger.info(f"✅ Stripe ссылки очищены из базы для пользователя")
                 
             finally:
                 await release_db_connection(conn)
                 
         except Exception as e:
-            logger.error(f"❌ Ошибка очистки Stripe ссылок для пользователя {user_id}: {e}")
+            logger.error(f"❌ Ошибка очистки Stripe ссылок для пользователя")

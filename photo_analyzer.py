@@ -27,25 +27,19 @@ async def handle_photo_analysis(message: types.Message, bot):
     lang = await get_user_language(user_id)
     
     try:
-        print(f"\n📸 Начало анализа фото для пользователя {user_id}")
         
         # ✅ НАПРЯМУЮ проверяем лимиты из базы (без лишних вызовов)
         from db_postgresql import get_user_limits
         limits = await get_user_limits(user_id)
         gpt4o_limit = limits.get('gpt4o_queries_left', 0)
         
-        print(f"🔍 Лимиты gpt4o_queries_left: {gpt4o_limit}")
-        
         if gpt4o_limit <= 0:
-            print(f"🆓 Нет лимитов на анализ фото для пользователя {user_id}")
             
             # ✅ ИСПРАВЛЕНИЕ: Показываем уведомление и останавливаемся
             await NotificationSystem._show_limits_exceeded_notification(
                 message, user_id, action_type="image"
             )
             return  # ✅ Останавливаемся сразу
-        
-        print(f"💎 У пользователя {user_id} есть лимиты ({gpt4o_limit}), начинаем анализ фото")
         
         # Получаем фото (берем самое большое разрешение)
         if not message.photo:
@@ -59,7 +53,6 @@ async def handle_photo_analysis(message: types.Message, bot):
         # Создаем временный путь для сохранения
         try:
             local_file = create_simple_file_path(user_id, f"photo_{photo.file_id[:8]}.jpg")
-            print(f"💾 Путь для сохранения фото: {local_file}")
         except ValueError as e:
             # Локализуем ошибки файловой системы
             error_key = {
@@ -76,7 +69,6 @@ async def handle_photo_analysis(message: types.Message, bot):
             return
         
         # Скачиваем файл
-        print("⬇️ Скачиваю фото...")
         await bot.download_file(file_path, destination=local_file)
         
         # Проверяем размер
@@ -102,11 +94,8 @@ async def handle_photo_analysis(message: types.Message, bot):
                 [InlineKeyboardButton(text=t("cancel_analysis", lang), callback_data="cancel_photo_analysis")]
             ])
         )
-        
-        print("✅ Фото сохранено, ожидаем вопрос пользователя")
-        
     except Exception as e:
-        logger.error(f"Ошибка при обработке фото: {e}")
+        logger.error(f"Ошибка при обработке фото")
         await message.answer(t("photo_analysis_error", lang))
         # Очищаем состояние
         if user_id in user_states:
@@ -190,7 +179,7 @@ async def handle_photo_question(message: types.Message, bot):
         print("✅ Анализ фото завершен успешно")
         
     except Exception as e:
-        logger.error(f"Ошибка при анализе фото: {e}")
+        logger.error(f"Ошибка при анализе фото")
         await message.answer(t("photo_analysis_general_error", lang))
         await cleanup_photo_analysis(user_id, photo_path if 'photo_path' in locals() else None)
 
@@ -230,7 +219,7 @@ async def prepare_user_context(user_id: int, lang: str) -> str:
         return "\n\n".join(context_parts) if context_parts else "Нет дополнительного контекста"
         
     except Exception as e:
-        logger.error(f"Ошибка подготовки контекста для пользователя {user_id}: {e}")
+        logger.error(f"Ошибка подготовки контекста для пользователя")
         return "Нет дополнительного контекста"
 
 def create_photo_analysis_prompt(user_question: str, context: str, lang: str) -> str:
@@ -300,7 +289,7 @@ async def send_analysis_result(message: types.Message, analysis_result: str, lan
         # ✅ Убираем disclaimer - ИИ и так пишет про консультацию врача
         
     except Exception as e:
-        logger.error(f"Ошибка отправки результата анализа: {e}")
+        logger.error(f"Ошибка отправки результата анализа")
         await message.answer(t("analysis_complete_send_error", lang))
 
 async def cleanup_photo_analysis(user_id: int, photo_path: Optional[str] = None):
@@ -321,7 +310,7 @@ async def cleanup_photo_analysis(user_id: int, photo_path: Optional[str] = None)
             print(f"🗑️ Временный файл удален: {photo_path}")
             
     except Exception as e:
-        logger.error(f"Ошибка очистки после анализа фото: {e}")
+        logger.error(f"Ошибка очистки после анализа фото")
 
 async def cancel_photo_analysis(callback_query: types.CallbackQuery):
     """
@@ -350,5 +339,5 @@ async def cancel_photo_analysis(callback_query: types.CallbackQuery):
         await callback_query.answer(t("canceled", lang))
         
     except Exception as e:
-        logger.error(f"Ошибка отмены анализа фото: {e}")
+        logger.error(f"Ошибка отмены анализа фото")
         await callback_query.answer("Ошибка отмены")

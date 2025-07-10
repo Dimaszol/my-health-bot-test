@@ -346,8 +346,6 @@ async def update_medications_via_gpt(user_input: str, current_list: list, user_l
     )
     
     raw_text = response.choices[0].message.content.strip()
-    print(f"\n[🧪 GPT ответ — update_medications_via_gpt] ({user_lang}):")
-    print(raw_text)
 
     import json
     try:
@@ -359,16 +357,13 @@ async def update_medications_via_gpt(user_input: str, current_list: list, user_l
                 if isinstance(item, dict) and all(key in item for key in ['name', 'time', 'label']):
                     # Проверяем что время в правильном формате
                     if not re.match(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$', item['time']):
-                        print(f"⚠️ Некорректное время: {item['time']}")
                         item['time'] = '08:00'  # Fallback
                 else:
-                    print(f"⚠️ Некорректная структура элемента: {item}")
                     return current_list  # Возвращаем старый список
         
         return result
         
     except Exception as e:
-        print("❌ Ошибка парсинга JSON:", e)
         log_error_with_context(e, {
             "function": "update_medications_via_gpt", 
             "raw_response": raw_text[:200],
@@ -543,12 +538,9 @@ async def extract_keywords(text: str) -> list[str]:
     try:
         raw = await ask_gpt_keywords(prompt)
         keywords_list = [w.strip().lower() for w in raw.split(",") if len(w.strip()) > 1]
-        
-        print(f"   🔎 Ключевые слова: {keywords_list}")
         return keywords_list
         
     except Exception as e:
-        print(f"   🔎 Ключевые слова: Ошибка - {e}")
         log_error_with_context(e, {"function": "extract_keywords", "text_length": len(text)})
         return []
 
@@ -623,11 +615,8 @@ async def ask_doctor(context_text: str, user_question: str,
             f.write("\n\n👤 USER PROMPT:\n")
             f.write(full_prompt)
             f.write(f"\n{'='*80}\n\n")
-        
-        print(f"💾 Промпт сохранен в prompts_log.txt (User {user_id})")
-        
     except Exception as e:
-        print(f"⚠️ Не удалось сохранить промпт в файл: {e}")
+        pass
 
     # ✅ НОВАЯ ЛОГИКА: Gemini или GPT
     if use_gemini:
@@ -636,25 +625,16 @@ async def ask_doctor(context_text: str, user_question: str,
             try:
                 # Вызываем Gemini
                 response = await ask_doctor_gemini(system_prompt, full_prompt, lang)
-                
                 # ✅ ВАЖНО: Тратим лимит после успешного ответа
-                
-                print(f"💎 Лимит потрачен для пользователя {user_id} (Gemini)")
-                
                 return response
                 
             except Exception as e:
-                logger.warning(f"⚠️ Gemini недоступен, fallback на GPT-4o-mini: {e}")
+                logger.warning(f"⚠️ Gemini недоступен, fallback на GPT-4o-mini")
                 # При ошибке Gemini переходим на GPT-4o-mini (без трат лимитов)
-                print(f"🔄 Fallback на GPT-4o-mini для пользователя {user_id}")
         else:
-            # Нет лимитов → используем GPT-4o-mini
-            print(f"🆓 Нет лимитов, используем GPT-4o-mini для пользователя {user_id}")
+            pass
     
     # ✅ ОРИГИНАЛЬНАЯ ЛОГИКА GPT (без изменений)
-        
-    interaction_type = "🔄 Продолжение" if recent_interaction and not is_greeting else "🆕 Новое/Приветствие"
-    print(f"💬 {interaction_type} | Вопрос: '{user_question[:50]}{'...' if len(user_question) > 50 else ''}'")
     
     if not use_gemini and user_id and await check_gpt4o_limit(user_id):
         model = "gpt-4o"
@@ -674,7 +654,7 @@ async def ask_doctor(context_text: str, user_question: str,
             return safe_telegram_text(answer)
             
         except Exception as e:
-            logger.warning(f"⚠️ GPT-4o недоступен, fallback на mini: {e}")
+            logger.warning(f"⚠️ GPT-4o недоступен, fallback на mini")
             model = "gpt-4o-mini"
     else:
         model = "gpt-4o-mini"
@@ -735,12 +715,7 @@ Never mix languages within a single response.
         
         # Объединяем enhanced system и user промпты
         combined_prompt = f"{enhanced_system_prompt}\n\n{full_prompt}"
-        
-        # 🔧 ДИАГНОСТИКА
-        prompt_length = len(combined_prompt)
-        estimated_tokens = prompt_length // 2
-        print(f"📊 Gemini промпт: {prompt_length} символов ≈ {estimated_tokens} токенов (язык: {lang})")
-        
+
         # Отправляем запрос
         response = model.generate_content(
             combined_prompt,
@@ -772,38 +747,14 @@ Never mix languages within a single response.
         # Обработка ответа
         if response.candidates and len(response.candidates) > 0:
             candidate = response.candidates[0]
-            
-            # Диагностика finish_reason
-            if hasattr(candidate, 'finish_reason'):
-                finish_reason = candidate.finish_reason
-                print(f"🔍 Gemini finish_reason: {finish_reason}")
-                
-                if finish_reason == 2:
-                    print("⚠️ Ответ заблокирован системой безопасности")
-                elif finish_reason == 3:
-                    print("⚠️ Ответ заблокирован из-за авторских прав")
-                elif finish_reason == 4:
-                    print("⚠️ Ответ заблокирован по другим причинам")
-            
+
             if hasattr(candidate, 'content') and candidate.content.parts:
                 answer = candidate.content.parts[0].text.strip()
-                
-                # 🔧 ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА ЯЗЫКА
-                print(f"✅ Gemini ответ получен: {len(answer)} символов")
-                
-                # Проверяем первые 100 символов на соответствие языку
-                answer_start = answer[:100].lower()
-                if lang == "ru" and any(word in answer_start for word in ["що", "відповідь", "зверніться", "рекомендую"]):
-                    print("⚠️ Gemini ответил на украинском вместо русского!")
-                elif lang == "uk" and any(word in answer_start for word in ["что", "ответ", "обратитесь", "рекомендую"]):
-                    print("⚠️ Gemini ответил на русском вместо украинского!")
-                
                 return safe_telegram_text(answer)
         
         raise Exception("Gemini не вернул валидный ответ")
         
     except Exception as e:
-        print(f"❌ Ошибка Gemini: {e}")
         error_msg = "Извините, временная техническая ошибка. Попробуйте повторить запрос."
         return safe_telegram_text(error_msg)
 

@@ -47,7 +47,6 @@ async def show_gdpr_welcome(user_id: int, message: Message, lang: str):
                 disable_web_page_preview=True
             )
     except Exception as e:
-        print(f"❌ Ошибка показа GDPR дисклеймера: {e}")
         # Fallback - ВСЕГДА отправляем новое сообщение
         await message.answer(
             disclaimer_text,

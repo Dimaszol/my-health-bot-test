@@ -24,16 +24,11 @@ class Analytics:
                     "INSERT INTO analytics_events (user_id, event, properties, timestamp) VALUES ($1, $2, $3, $4)",
                     user_id, event, json.dumps(properties), datetime.now()
                 )
-                
-                # Логируем для отладки
-                print(f"📊 Analytics: {event} | User: {user_id}")
-                
             finally:
                 await release_db_connection(conn)
                 
         except Exception as e:
-            # НЕ ПАДАЕМ если аналитика не работает
-            print(f"❌ Analytics error: {e}")
+            pass
 
     # КЛЮЧЕВЫЕ СОБЫТИЯ ДЛЯ MVP
     
@@ -130,5 +125,5 @@ class Analytics:
                 await release_db_connection(conn)
                 
         except Exception as e:
-            print(f"❌ Stats error: {e}")
+            pass
             return {}
