@@ -72,7 +72,7 @@ class ProfileManager:
             # Fallback на английские названия
             fallback_names = {
                 "ru": "Русский", 
-                "ua": "Українська", 
+                "uk": "Українська", 
                 "en": "English", 
                 "de": "Deutsch"
             }
@@ -191,7 +191,7 @@ class ProfileManager:
             
         elif field == "language":
             # ✅ ИСПРАВЛЕНИЕ: поддержка всех 4 языков
-            if value in ["ru", "ua", "en", "de"]:
+            if value in ["ru", "uk", "en", "de"]:
                 return value
             return None
             

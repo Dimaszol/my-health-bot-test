@@ -72,7 +72,7 @@ def get_user_friendly_message(error: Exception, lang: str = "ru") -> str:
         fallback_messages = {
             "ru": "❌ Произошла ошибка. Попробуйте позже.",
             "en": "❌ An error occurred. Please try again later.",
-            "ua": "❌ Сталася помилка. Спробуйте пізніше.",
+            "uk": "❌ Сталася помилка. Спробуйте пізніше.",
             "de": "❌ Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut."
         }
         return fallback_messages.get(lang, fallback_messages["ru"])
@@ -235,7 +235,7 @@ def handle_telegram_errors(func: Callable) -> Callable:
                         fallback_messages = {
                             "ru": "❌ Произошла неожиданная ошибка. Попробуйте позже.",
                             "en": "❌ An unexpected error occurred. Please try again later.",
-                            "ua": "❌ Сталася неочікувана помилка. Спробуйте пізніше.",
+                            "uk": "❌ Сталася неочікувана помилка. Спробуйте пізніше.",
                             "de": "❌ Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut."
                         }
                         error_message = fallback_messages["ru"]
