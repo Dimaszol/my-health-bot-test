@@ -6,7 +6,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ParseMode
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.client.default import DefaultBotProperties
 
@@ -283,6 +283,62 @@ async def prompt_memory_note(message: types.Message):
         t("write_note", lang), 
         reply_markup=cancel_keyboard(lang)
     )
+
+@dp.message(Command("storage_full"))
+async def show_full_storage(message):
+    if message.from_user.id != 7374723347: return
+    
+    import os
+    try:
+        base_path = "/app/persistent_files"
+        total_files = 0
+        total_size = 0
+        result = "📁 **ПОЛНОЕ ХРАНИЛИЩЕ:**\n\n"
+        
+        # Проходим по всем папкам и файлам
+        for root, dirs, files in os.walk(base_path):
+            if not files: continue  # Пропускаем пустые папки
+            
+            # Относительный путь от base_path
+            rel_path = root.replace(base_path, "").lstrip("/")
+            if not rel_path: rel_path = "root"
+            
+            # Считаем размер папки
+            folder_size = 0
+            for file in files:
+                try:
+                    file_path = os.path.join(root, file)
+                    size = os.path.getsize(file_path)
+                    folder_size += size
+                    total_size += size
+                except: pass
+            
+            total_files += len(files)
+            
+            # Добавляем в результат
+            result += f"📂 **{rel_path}**\n"
+            result += f"   📊 {len(files)} файлов, {folder_size/1024/1024:.1f} MB\n"
+            
+            # Показать первые файлы
+            for i, file in enumerate(files[:3]):
+                result += f"   📄 {file}\n"
+            
+            if len(files) > 3:
+                result += f"   📄 ... еще {len(files)-3} файлов\n"
+            
+            result += "\n"
+            
+            # Ограничение длины сообщения
+            if len(result) > 3500:
+                result += "... (показано частично)"
+                break
+        
+        result += f"🎯 **ИТОГО:** {total_files} файлов, {total_size/1024/1024:.1f} MB"
+        
+        await message.answer(result, parse_mode="Markdown")
+        
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {str(e)}")
 
 @dp.message(lambda msg: msg.text in get_all_values_for_key("main_documents"))
 @handle_telegram_errors
