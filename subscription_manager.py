@@ -69,12 +69,22 @@ class SubscriptionManager:
     async def check_real_stripe_subscription(user_id: int):
         """✅ НАТИВНЫЙ PostgreSQL синтаксис"""
         try:
+            # ✅ ИСПРАВЛЕНИЕ: Сначала ищем подписку с stripe_subscription_id
             subscription_data = await fetch_one("""
                 SELECT stripe_subscription_id, package_id, status 
                 FROM user_subscriptions 
-                WHERE user_id = $1
+                WHERE user_id = $1 AND stripe_subscription_id IS NOT NULL
                 ORDER BY created_at DESC LIMIT 1
             """, (user_id,))
+            
+            # Если нет подписки с stripe_subscription_id, ищем любую
+            if not subscription_data:
+                subscription_data = await fetch_one("""
+                    SELECT stripe_subscription_id, package_id, status 
+                    FROM user_subscriptions 
+                    WHERE user_id = $1
+                    ORDER BY created_at DESC LIMIT 1
+                """, (user_id,))
             
             logger.info(f"🔍 Поиск подписки в БД: найдено {len(subscription_data) if subscription_data else 0} записей")
             
