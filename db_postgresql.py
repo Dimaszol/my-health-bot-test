@@ -711,25 +711,49 @@ async def update_user_field(user_id: int, field: str, value: Any) -> bool:
     """Совместимость: update_user_field -> update_user_profile"""
     return await update_user_profile(user_id, field, value)
 
-async def save_user(user_id: int, name: str, birth_year: int = None) -> bool:
-    """Сохранить/обновить данные пользователя"""
+async def save_user(user_id: int, name: str = None, birth_year: int = None, 
+                   gdpr_consent: bool = None, username: str = None) -> bool:
+    """
+    ✅ ОБНОВЛЕННАЯ версия: поддерживает создание с GDPR согласием
+    """
     conn = await get_db_connection()
     try:
-        # Обновляем имя
-        if name:
-            await conn.execute(
-                "UPDATE users SET name = $1 WHERE user_id = $2",
-                name, user_id
-            )
+        # Проверяем есть ли пользователь
+        existing_user = await conn.fetchrow(
+            "SELECT user_id FROM users WHERE user_id = $1", user_id
+        )
         
-        # Обновляем год рождения
-        if birth_year is not None:
-            await conn.execute(
-                "UPDATE users SET birth_year = $1 WHERE user_id = $2",
-                birth_year, user_id
-            )
+        if existing_user:
+            # Обновляем существующего
+            await conn.execute("""
+                UPDATE users SET 
+                    name = COALESCE($2, name),
+                    birth_year = COALESCE($3, birth_year),
+                    gdpr_consent = COALESCE($4, gdpr_consent),
+                    gdpr_consent_time = CASE WHEN $4 = TRUE THEN CURRENT_TIMESTAMP ELSE gdpr_consent_time END,
+                    username = COALESCE($5, username),
+                    last_updated = CURRENT_TIMESTAMP
+                WHERE user_id = $1
+            """, user_id, name, birth_year, gdpr_consent, username)
+        else:
+            # Создаем нового пользователя
+            await conn.execute("""
+                INSERT INTO users 
+                (user_id, name, birth_year, gdpr_consent, gdpr_consent_time, username, created_at)
+                VALUES ($1, $2, $3, $4, 
+                        CASE WHEN $4 = TRUE THEN CURRENT_TIMESTAMP ELSE NULL END,
+                        $5, CURRENT_TIMESTAMP)
+            """, user_id, name, birth_year, gdpr_consent, username)
+            
+            # ✅ СОЗДАЕМ ДЕФОЛТНЫЕ ЛИМИТЫ для нового пользователя
+            await conn.execute("""
+                INSERT INTO user_limits (user_id, documents_left, gpt4o_queries_left, subscription_type)
+                VALUES ($1, 2, 10, 'free')
+                ON CONFLICT (user_id) DO NOTHING
+            """, user_id)
         
         return True
+        
     except Exception as e:
         log_error_with_context(e, {"function": "save_user", "user_id": user_id})
         return False

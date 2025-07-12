@@ -13,7 +13,7 @@ from aiogram.client.default import DefaultBotProperties
 from db_postgresql import (
     get_user, save_document, update_document_title, is_fully_registered, get_user_name,
     get_document_by_id, delete_document, save_message, get_last_messages, get_conversation_summary,
-    get_user_language, t, get_all_values_for_key, initialize_db_pool, close_db_pool, set_user_language
+    get_user_language, t, get_all_values_for_key, initialize_db_pool, close_db_pool, set_user_language, save_user
 )
 from registration import user_states, start_registration, handle_registration_step
 from error_handler import handle_telegram_errors, BotError, OpenAIError, get_user_friendly_message, log_error_with_context, check_openai_health
@@ -214,35 +214,66 @@ async def handle_set_language_during_registration(callback: types.CallbackQuery)
     
     await callback.answer()
 
-
-
 @dp.callback_query(lambda c: c.data == "gdpr_consent_agree")
+@handle_telegram_errors
 async def handle_gdpr_consent(callback: types.CallbackQuery):
-    """Единственный новый обработчик для GDPR согласия"""
+    """✅ ИСПРАВЛЕННЫЙ обработчик GDPR согласия с созданием пользователя"""
     user_id = callback.from_user.id
     lang = await get_user_language(user_id)
     
     try:
-        # Сохраняем согласие в базу
-        from db_postgresql import set_gdpr_consent
-        success = await set_gdpr_consent(user_id, True)
+        # ✅ СНАЧАЛА ПРОВЕРЯЕМ: есть ли пользователь в базе
+        user_data = await get_user(user_id)
         
-        if success:
-            await callback.message.edit_text(
-                t("gdpr_consent_given", lang)
+        if user_data is None:
+            # ✅ ПОЛЬЗОВАТЕЛЯ НЕТ - СОЗДАЕМ ЕГО!
+            logger.info("🆕 Создаем пользователя через GDPR согласие")
+            
+            # Получаем данные из Telegram
+            telegram_name = callback.from_user.first_name or "User"
+            username = callback.from_user.username
+            
+            # Создаем пользователя с GDPR согласием
+            await save_user(
+                user_id=user_id,
+                name=telegram_name,
+                birth_year=None,  # Будет заполнен при регистрации
+                gdpr_consent=True,  # ← ВАЖНО: сразу ставим согласие
+                username=username
             )
             
-            # Небольшая задержка для лучшего UX
-            await asyncio.sleep(1)
+            logger.info("✅ Пользователь создан через GDPR")
             
-            # Запускаем обычную регистрацию
-            from registration import start_registration
-            await start_registration(user_id, callback.message)
         else:
-            await callback.answer("❌ Ошибка сохранения. Попробуйте еще раз.", show_alert=True)
+            # ✅ ПОЛЬЗОВАТЕЛЬ ЕСТЬ - ОБНОВЛЯЕМ СОГЛАСИЕ
+            from db_postgresql import set_gdpr_consent
+            success = await set_gdpr_consent(user_id, True)
             
+            if not success:
+                await callback.answer(
+                    t("error_database_error", lang), 
+                    show_alert=True
+                )
+                return
+        
+        # ✅ ПОКАЗЫВАЕМ ПОДТВЕРЖДЕНИЕ
+        await callback.message.edit_text(
+            t("gdpr_consent_given", lang)
+        )
+        
+        # Небольшая задержка для лучшего UX
+        await asyncio.sleep(1)
+        
+        # ✅ ЗАПУСКАЕМ РЕГИСТРАЦИЮ
+        from registration import start_registration
+        await start_registration(user_id, callback.message)
+        
     except Exception as e:
-        await callback.answer("❌ Произошла ошибка. Попробуйте еще раз.", show_alert=True)
+        logger.error("❌ Ошибка в handle_gdpr_consent")
+        await callback.answer(
+            t("start_command_error", lang), 
+            show_alert=True
+        )
     
     await callback.answer()
 
@@ -624,6 +655,63 @@ async def handle_user_message(message: types.Message):
         await show_gdpr_welcome(user_id, message, lang)
         return  # ⚠️ ВАЖНО: Прерываем обработку!
     
+    # ✅ НОВАЯ ПРОВЕРКА: Обработка устаревших Reply-кнопок (ДОБАВИТЬ ЗДЕСЬ)
+    if message.text:
+        # ✅ ПОЛНЫЙ СПИСОК всех Reply-кнопок из всех состояний
+        reply_buttons = [
+            # Основные кнопки управления
+            t("skip", lang),                    # ⏭ Пропустить
+            t("cancel", lang),                  # ❌ Отмена
+            t("cancel_analysis", lang),         # ❌ Отменить (анализ фото)
+            
+            # Кнопки регистрации - пол
+            t("gender_male", lang),             # Мужской/Male/Männlich/Чоловіча
+            t("gender_female", lang),           # Женский/Female/Weiblich/Жіноча  
+            t("gender_other", lang),            # Другое/Other/Andere/Інше
+            
+            # Кнопки регистрации - курение
+            t("smoking_yes", lang),             # Да/Yes/Ja/Так
+            t("smoking_no", lang),              # Нет/No/Nein/Ні
+            "Vape",                             # Vape (на всех языках одинаково)
+            
+            # Кнопки регистрации - алкоголь
+            t("alcohol_never", lang),           # Не употребляю/Never/Nie/Не вживаю
+            t("alcohol_sometimes", lang),       # Иногда/Sometimes/Manchmal/Іноді
+            t("alcohol_often", lang),           # Часто/Often/Oft/Часто
+            
+            # Кнопки завершения регистрации
+            t("complete_profile", lang),        # 📝 Дополнить анкету
+            t("finish_registration", lang),     # ✅ Завершить регистрацию
+            
+            # Кнопки активности (с эмодзи для всех языков)
+            "❌ Нет активности", "🚶 Низкая", "🏃 Средняя", "💪 Высокая", "🏆 Профессиональная",
+            "❌ Відсутня активність", "🚶 Низька", "🏃 Середня", "💪 Висока", "🏆 Професійна", 
+            "❌ No activity", "🚶 Low", "🏃 Medium", "💪 High", "🏆 Professional",
+            "❌ Keine Aktivität", "🚶 Niedrig", "🏃 Mittel", "💪 Hoch", "🏆 Professionell",
+            
+            # Дополнительные варианты на разных языках (для совместимости)
+            "Да", "Нет", "Так", "Ні", "Yes", "No", "Ja", "Nein",
+            "Мужской", "Женский", "Другое", "Чоловіча", "Жіноча", "Інше",
+            "Male", "Female", "Other", "Männlich", "Weiblich", "Andere",
+            "Не употребляю", "Иногда", "Часто", "Не вживаю", "Іноді",
+            "Never", "Sometimes", "Often", "Nie", "Manchmal", "Oft"
+        ]
+        
+        # Проверяем: это Reply-кнопка И нет активного состояния?
+        current_state = user_states.get(user_id)
+        is_in_delete_state = user_id in delete_confirmation_states
+        
+        if message.text in reply_buttons and not current_state and not is_in_delete_state:
+            # ✅ Это устаревшая Reply-кнопка!
+            await message.answer(
+                t("button_expired", lang),
+                reply_markup=types.ReplyKeyboardRemove()  # Убираем старую клавиатуру
+            )
+            
+            # Показываем актуальное главное меню
+            await show_main_menu(message, lang)
+            return
+
     # Проверяем rate limits
     allowed, rate_message = await check_rate_limit(user_id, "message")
     if not allowed:
