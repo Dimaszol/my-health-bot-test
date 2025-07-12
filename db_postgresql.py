@@ -712,7 +712,7 @@ async def update_user_field(user_id: int, field: str, value: Any) -> bool:
     return await update_user_profile(user_id, field, value)
 
 async def save_user(user_id: int, name: str = None, birth_year: int = None, 
-                   gdpr_consent: bool = None, username: str = None) -> bool:
+                   gdpr_consent: bool = None) -> bool:
     """
     ✅ ОБНОВЛЕННАЯ версия: поддерживает создание с GDPR согласием
     """
@@ -731,19 +731,18 @@ async def save_user(user_id: int, name: str = None, birth_year: int = None,
                     birth_year = COALESCE($3, birth_year),
                     gdpr_consent = COALESCE($4, gdpr_consent),
                     gdpr_consent_time = CASE WHEN $4 = TRUE THEN CURRENT_TIMESTAMP ELSE gdpr_consent_time END,
-                    username = COALESCE($5, username),
                     last_updated = CURRENT_TIMESTAMP
                 WHERE user_id = $1
-            """, user_id, name, birth_year, gdpr_consent, username)
+            """, user_id, name, birth_year, gdpr_consent)
         else:
             # Создаем нового пользователя
             await conn.execute("""
                 INSERT INTO users 
-                (user_id, name, birth_year, gdpr_consent, gdpr_consent_time, username, created_at)
+                (user_id, name, birth_year, gdpr_consent, gdpr_consent_time, created_at)
                 VALUES ($1, $2, $3, $4, 
                         CASE WHEN $4 = TRUE THEN CURRENT_TIMESTAMP ELSE NULL END,
-                        $5, CURRENT_TIMESTAMP)
-            """, user_id, name, birth_year, gdpr_consent, username)
+                        CURRENT_TIMESTAMP)
+            """, user_id, name, birth_year, gdpr_consent)
             
             # ✅ СОЗДАЕМ ДЕФОЛТНЫЕ ЛИМИТЫ для нового пользователя
             await conn.execute("""

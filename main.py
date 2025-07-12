@@ -227,22 +227,24 @@ async def handle_gdpr_consent(callback: types.CallbackQuery):
         
         if user_data is None:
             # ✅ ПОЛЬЗОВАТЕЛЯ НЕТ - СОЗДАЕМ ЕГО!
-            logger.info("🆕 Создаем пользователя через GDPR согласие")
             
             # Получаем данные из Telegram
             telegram_name = callback.from_user.first_name or "User"
-            username = callback.from_user.username
             
-            # Создаем пользователя с GDPR согласием
-            await save_user(
+            # Создаем пользователя с GDPR согласием (без username)
+            success = await save_user(
                 user_id=user_id,
                 name=telegram_name,
                 birth_year=None,  # Будет заполнен при регистрации
-                gdpr_consent=True,  # ← ВАЖНО: сразу ставим согласие
-                username=username
+                gdpr_consent=True   # ← ВАЖНО: сразу ставим согласие
             )
             
-            logger.info("✅ Пользователь создан через GDPR")
+            if not success:
+                await callback.answer(
+                    t("error_database_error", lang), 
+                    show_alert=True
+                )
+                return
             
         else:
             # ✅ ПОЛЬЗОВАТЕЛЬ ЕСТЬ - ОБНОВЛЯЕМ СОГЛАСИЕ
@@ -269,7 +271,7 @@ async def handle_gdpr_consent(callback: types.CallbackQuery):
         await start_registration(user_id, callback.message)
         
     except Exception as e:
-        logger.error("❌ Ошибка в handle_gdpr_consent")
+        log_error_with_context(e, {"function": "handle_gdpr_consent", "user_id": user_id})
         await callback.answer(
             t("start_command_error", lang), 
             show_alert=True
