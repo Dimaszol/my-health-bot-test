@@ -438,40 +438,59 @@ class SubscriptionManager:
             logger.error("Ошибка списания лимитов")
             return {"success": False, "error": str(e)}
     
+    
     @staticmethod
     async def check_and_reset_expired_limits(user_id: int):
-        """✅ PostgreSQL синтаксис"""
+        """
+        ✅ МАКСИМАЛЬНО ПРОСТАЯ ЛОГИКА:
+        - Если нет даты истечения - ничего не делаем (новый пользователь)
+        - Если дата истечения + 1 день прошли - обнуляем лимиты
+        - Не важно какой тип подписки, не вызываем Stripe API
+        """
         try:
             user_data = await fetch_one("""
-                SELECT documents_left, gpt4o_queries_left, subscription_expires_at, subscription_type
+                SELECT subscription_expires_at
                 FROM user_limits 
                 WHERE user_id = $1
             """, (user_id,))
             
-            if not user_data:
+            if not user_data or not user_data[0]:
+                # Новый пользователь без даты истечения - ничего не делаем
                 return
             
-            documents_left, queries_left, expires_at, sub_type = user_data
+            expires_at = user_data[0]
             
-            if not expires_at:
-                return
-            
+            # Парсим дату
             if isinstance(expires_at, str):
                 expiry_date = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
             else:
                 expiry_date = expires_at
+                
             now = datetime.now()
             
-            if now >= expiry_date:
-                logger.info("Лимиты истекли")
+            # ✅ ДАЕМ +1 ДЕНЬ НА АВТОПРОДЛЕНИЕ ПОДПИСКИ
+            grace_period = expiry_date + timedelta(days=1)
+            
+            if now >= grace_period:
+                logger.info("🕒 Лимиты истекли, прошло более 1 дня")
                 
-                if sub_type == 'subscription':
-                    await SubscriptionManager._auto_renew_subscription(user_id)
-                else:
-                    await SubscriptionManager._reset_to_zero(user_id)
-                    
+                # Обнуляем лимиты для ВСЕХ типов покупок
+                await execute_query("""
+                    UPDATE user_limits SET 
+                        documents_left = 0,
+                        gpt4o_queries_left = 0,
+                        subscription_expires_at = NULL,
+                        subscription_type = 'free',
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = $1
+                """, (user_id,))
+                
+                logger.info("✅ Лимиты обнулены")
+            else:
+                logger.debug("⏰ Лимиты еще действуют")
+                        
         except Exception as e:
-            logger.error("Ошибка проверки лимитов")
+            logger.error("❌ Ошибка проверки лимитов")
     
     @staticmethod
     async def _auto_renew_subscription(user_id: int):
