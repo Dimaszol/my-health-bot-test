@@ -27,8 +27,6 @@ class SubscriptionWebhookHandler:
         ✅ ИСПРАВЛЕННАЯ версия - фикс JSON serialization + правильное извлечение данных
         """
         try:
-            # ... существующий код получения данных ...
-            # (оставляем как есть до строки с event_type)
             
             try:
                 import stripe
@@ -144,7 +142,7 @@ class SubscriptionWebhookHandler:
                 )
                 
             elif event_type == 'checkout.session.completed':
-                # Разовые покупки
+                # Разовые покупки и первичные подписки
                 session_id = data.get('session_id') or data.get('data', {}).get('object', {}).get('id')
                 
                 if session_id:
@@ -159,21 +157,26 @@ class SubscriptionWebhookHandler:
                                 "session_id": session_id
                             }
                             
-                            # Уведомление пользователю
-                            if stripe_customer_id:
-                                try:
-                                    user_id = int(stripe_customer_id)
-                                    lang = await get_user_language(user_id)
-                                    localized_message = t("webhook_payment_processed_auto", lang, message=message)
-                                    await self.bot.send_message(user_id, localized_message, parse_mode="HTML")
-                                except Exception as notify_error:
-                                    logger.warning(f"Notification failed: {notify_error}")
+                            # ✅ ИСПРАВЛЕНИЕ: Всегда отправляем уведомление пользователю
+                            try:
+                                import stripe
+                                session = stripe.checkout.Session.retrieve(session_id)
+                                user_id = int(session.metadata.get('user_id'))
+                                lang = await get_user_language(user_id)
+                                localized_message = t("webhook_payment_processed_auto", lang, message=message)
+                                await self.bot.send_message(user_id, localized_message, parse_mode="HTML")
+                                logger.info(f"✅ Notification sent for checkout session: {session_id}")
+                            except Exception as notify_error:
+                                logger.warning(f"❌ Notification failed for checkout session: {notify_error}")
                         else:
                             result = {"status": "error", "message": f"Payment processing failed: {message}"}
+                            logger.error(f"❌ Payment processing failed: {message}")
                     except Exception as e:
                         result = {"status": "error", "message": f"Exception during payment processing: {str(e)}"}
+                        logger.error(f"❌ Exception during checkout processing: {e}")
                 else:
                     result = {"status": "error", "message": "Missing session_id"}
+                    logger.error("❌ Missing session_id in checkout.session.completed")
                     
             else:
                 # Игнорируем все остальные события

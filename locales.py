@@ -1,5 +1,6 @@
 translations = {
-    "ru": {                
+    "ru": {           
+        "buttons_expired": "⚠️ Кнопки устарели. Обновляю меню...",     
         "file_storage_error": "❌ Ошибка сохранения файла в хранилище",
         # 🤖 Уведомления о лимитах
         "limits_exhausted_free_message": (
@@ -69,8 +70,8 @@ translations = {
         "start_command_error": "❌ Произошла ошибка. Попробуйте еще раз.",
         "payment_proceed_button": "💳 Перейти к оплате", 
         "back_to_settings": "⬅️ К настройкам",
-        "webhook_payment_processed_auto": "✅ <b>Платеж обработан автоматически!</b>\n\n💳 Разовая покупка завершена\n🎉 Ваши лимиты обновлены!\n\n📝 {message}",
-        "webhook_subscription_renewed": "✅ Ваша подписка {package_id} успешно продлена! Лимиты пополнены.",
+        "webhook_payment_processed_auto": "✅ <b>Платеж обработан!</b>\n\n🎉 Ваши лимиты обновлены!",
+        "webhook_subscription_renewed": "🔄 Ваша подписка успешно продлена!",
         "webhook_payment_failed": "⚠️ Проблема с продлением подписки. Проверьте данные карты в настройках Stripe.",
          # Ошибки создания сессии
         "stripe_session_creation_error": "❌ Ошибка создания сессии оплаты. Попробуйте позже.",
@@ -431,7 +432,8 @@ translations = {
         "cancel_analysis": "❌ Отменить"
     },
 
-    "uk": {                
+    "uk": {   
+    "button_expired": "⚠️ Кнопки застаріли. Оновлюю меню...",             
     # 🤖 Уведомления о лимитах
     "limits_exhausted_free_message": (
         "🤖 <b>Детальні відповіді закінчилися!</b>\n\n"
@@ -500,8 +502,8 @@ translations = {
     "start_command_error": "❌ Сталася помилка. Спробуйте ще раз.",
     "payment_proceed_button": "💳 Перейти до оплати", 
     "back_to_settings": "⬅️ До налаштувань",
-    "webhook_payment_processed_auto": "✅ <b>Платіж оброблено автоматично!</b>\n\n💳 Разова покупка завершена\n🎉 Ваші ліміти оновлено!\n\n📝 {message}",
-    "webhook_subscription_renewed": "✅ Вашу підписку {package_id} успішно продовжено! Ліміти поповнено.",
+    "webhook_payment_processed_auto": "✅ <b>Платіж оброблено!</b>\n\n🎉 Ваші ліміти оновлено!",
+    "webhook_subscription_renewed": "🔄 Вашу підписку успішно продовжено!",
     "webhook_payment_failed": "⚠️ Проблема з продовженням підписки. Перевірте дані картки в налаштуваннях Stripe.",
      # Ошибки создания сессии
     "stripe_session_creation_error": "❌ Помилка створення сесії оплати. Спробуйте пізніше.",
@@ -861,7 +863,8 @@ translations = {
     "photo_file_not_found": "⚠️ Фото не знайдено. Завантажте фото заново.",
     "cancel_analysis": "❌ Скасувати"
 },
-    "en": {                
+    "en": {       
+        "button_expired": "⚠️ Кнопки застаріли. Оновлюю меню...",         
     # 🤖 Limit notifications
     "limits_exhausted_free_message": (
         "🤖 <b>Detailed responses are finished!</b>\n\n"
@@ -930,8 +933,8 @@ translations = {
     "start_command_error": "❌ An error occurred. Try again.",
     "payment_proceed_button": "💳 Proceed to payment", 
     "back_to_settings": "⬅️ Back to settings",
-    "webhook_payment_processed_auto": "✅ <b>Payment processed automatically!</b>\n\n💳 One-time purchase completed\n🎉 Your limits have been updated!\n\n📝 {message}",
-    "webhook_subscription_renewed": "✅ Your subscription {package_id} has been successfully renewed! Limits replenished.",
+    "webhook_payment_processed_auto": "✅ <b>Payment processed!</b>\n\n🎉 Your limits have been updated!",
+    "webhook_subscription_renewed": "🔄 Your subscription has been successfully renewed!",
     "webhook_payment_failed": "⚠️ Subscription renewal issue. Check your card details in Stripe settings.",
      # Session creation errors
     "stripe_session_creation_error": "❌ Payment session creation error. Try again later.",
@@ -1293,6 +1296,7 @@ translations = {
 },
 
 "de": {                
+    "button_expired": "⚠️ Кнопки застаріли. Оновлюю меню...",
     # 🤖 Benachrichtigungen über Limits
     "limits_exhausted_free_message": (
         "🤖 <b>Detaillierte Antworten sind aufgebraucht!</b>\n\n"
@@ -1361,8 +1365,8 @@ translations = {
     "start_command_error": "❌ Ein Fehler ist aufgetreten. Versuchen Sie es erneut.",
     "payment_proceed_button": "💳 Zur Zahlung", 
     "back_to_settings": "⬅️ Zu Einstellungen",
-    "webhook_payment_processed_auto": "✅ <b>Zahlung automatisch verarbeitet!</b>\n\n💳 Einmalkauf abgeschlossen\n🎉 Ihre Limits wurden aktualisiert!\n\n📝 {message}",
-    "webhook_subscription_renewed": "✅ Ihr Abonnement {package_id} wurde erfolgreich verlängert! Limits aufgefüllt.",
+    "webhook_payment_processed_auto": "✅ <b>Zahlung verarbeitet!</b>\n\n🎉 Ihre Limits wurden aktualisiert!",
+    "webhook_subscription_renewed": "🔄 Ihr Abonnement wurde erfolgreich verlängert!",
     "webhook_payment_failed": "⚠️ Problem mit Abonnement-Verlängerung. Überprüfen Sie Ihre Kartendaten in den Stripe-Einstellungen.",
      # Session-Erstellungsfehler
     "stripe_session_creation_error": "❌ Fehler beim Erstellen der Zahlungssession. Versuchen Sie es später.",
