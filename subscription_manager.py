@@ -330,7 +330,7 @@ class SubscriptionManager:
                 
                 logger.info("✅ Подписка отменена")
                 
-                return True, t("subscription_cancelled_success", lang)
+                return True, ""
                 
             except stripe.error.InvalidRequestError as stripe_error:
                 # Подписка уже отменена в Stripe

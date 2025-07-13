@@ -64,7 +64,7 @@ class StripeManager:
                             'unit_amount': package_info['price_cents'],
                             'product_data': {
                                 'name': package_info['name'],
-                                'description': f"{package_info['documents']} documents + {package_info['gpt4o_queries']} GPT-4o queries",
+                                'description': f"{package_info['documents']} documents + {package_info['gpt4o_queries']} Detailed responses",
                             },
                         },
                         'quantity': 1,

@@ -34,7 +34,7 @@ class StripeConfig:
             "gpt4o_queries": 100,
             "type": "subscription",
             "duration_days": 30,
-            "stripe_price_id": "price_1RXp3eCS4n1EZxNVbn0G3WsQ",  # Заменить на реальный
+            "stripe_price_id": "price_1RkSNlCS4n1EZxNVsvI16u91",  # Заменить на реальный
             "user_friendly_name_key": "package_basic_name",  # ✅ КЛЮЧ ЛОКАЛИЗАЦИИ
             "features_keys": [  # ✅ КЛЮЧИ ВМЕСТО ЗАХАРДКОЖЕННОГО ТЕКСТА
                 "package_basic_feature_1",
@@ -50,7 +50,7 @@ class StripeConfig:
             "gpt4o_queries": 400,
             "type": "subscription",
             "duration_days": 30,
-            "stripe_price_id": "price_1RXp4qCS4n1EZxNVjJX9xNgf",  # Заменить на реальный
+            "stripe_price_id": "price_1RkSPZCS4n1EZxNVlAlH8480",  # Заменить на реальный
             "user_friendly_name_key": "package_premium_name",  # ✅ КЛЮЧ ЛОКАЛИЗАЦИИ
             "features_keys": [  # ✅ КЛЮЧИ ВМЕСТО ЗАХАРДКОЖЕННОГО ТЕКСТА
                 "package_premium_feature_1",
