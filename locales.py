@@ -1,5 +1,15 @@
 translations = {
-    "ru": {           
+    "ru": {       
+            "weekly_limit_exceeded_free_with_purchase_option": (
+            "😴 <b>Недельный лимит исчерпан</b>\n\n"
+            "Вы достигли лимита: {weekly_limit} {action_name} в неделю.\n\n"
+            "📅 В понедельник в 00:00 лимиты обновятся!\n\n"
+            "💡 <b>Или получите ответы прямо сейчас:</b>\n"
+            "• Купите 30 детальных консультаций ($1.99)\n"
+            "• Оформите подписку для ежедневных лимитов\n\n"
+            "🛍️ Перейдите в меню настройки для покупки!"
+        ),
+            
         "buttons_expired": "⚠️ Кнопки устарели. Обновляю меню...",     
         "file_storage_error": "❌ Ошибка сохранения файла в хранилище",
         # 🤖 Уведомления о лимитах
@@ -433,6 +443,15 @@ translations = {
     },
 
     "uk": {   
+        "weekly_limit_exceeded_free_with_purchase_option": (
+        "😴 <b>Тижневий ліміт вичерпано</b>\n\n"
+        "Ви досягли ліміту: {weekly_limit} {action_name} на тиждень.\n\n"
+        "📅 У понеділок о 00:00 ліміти оновляться!\n\n"
+        "💡 <b>Або отримайте відповіді прямо зараз:</b>\n"
+        "• Купіть 30 детальних консультацій ($1.99)\n"
+        "• Оформте підписку для щоденних лімітів\n\n"
+        "🛍️ Перейдіть в меню налаштувань для покупки!"
+    ),
     "button_expired": "⚠️ Кнопки застаріли. Оновлюю меню...",             
     # 🤖 Уведомления о лимитах
     "limits_exhausted_free_message": (
@@ -864,6 +883,15 @@ translations = {
     "cancel_analysis": "❌ Скасувати"
 },
     "en": {       
+        "weekly_limit_exceeded_free_with_purchase_option": (
+        "😴 <b>Weekly limit exhausted</b>\n\n"
+        "You've reached the limit: {weekly_limit} {action_name} per week.\n\n"
+        "📅 Limits will reset Monday at 00:00!\n\n"
+        "💡 <b>Or get answers right now:</b>\n"
+        "• Buy 30 detailed consultations ($1.99)\n"
+        "• Get subscription for daily limits\n\n"
+        "🛍️ Go to settings menu to purchase!"
+    ),
         "button_expired": "⚠️ Кнопки застаріли. Оновлюю меню...",         
     # 🤖 Limit notifications
     "limits_exhausted_free_message": (
@@ -1295,7 +1323,16 @@ translations = {
     "cancel_analysis": "❌ Cancel"
 },
 
-"de": {                
+"de": {       
+    "weekly_limit_exceeded_free_with_purchase_option": (
+        "😴 <b>Wochenlimit erschöpft</b>\n\n"
+        "Sie haben das Limit erreicht: {weekly_limit} {action_name} pro Woche.\n\n"
+        "📅 Montag um 00:00 werden die Limits zurückgesetzt!\n\n"
+        "💡 <b>Oder erhalten Sie Antworten sofort:</b>\n"
+        "• Kaufen Sie 30 detaillierte Beratungen ($1.99)\n"
+        "• Holen Sie sich Abonnement für tägliche Limits\n\n"
+        "🛍️ Gehen Sie zum Einstellungsmenü zum Kauf!"
+    ),         
     "button_expired": "⚠️ Кнопки застаріли. Оновлюю меню...",
     # 🤖 Benachrichtigungen über Limits
     "limits_exhausted_free_message": (

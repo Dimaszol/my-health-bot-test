@@ -167,8 +167,8 @@ class RateLimiter:
     
     async def check_limit(self, user_id: int, action_type: str = "message") -> Tuple[bool, str]:
         """
-        ✅ УПРОЩЕННАЯ ПРАВИЛЬНАЯ ЛОГИКА:
-        - Для сообщений: минутные лимиты + основные лимиты
+        ✅ ИСПРАВЛЕННАЯ ЛОГИКА с учетом купленных gpt4o консультаций:
+        - Для сообщений: сначала проверяем gpt4o_queries_left, потом минутные лимиты + основные лимиты
         - Для остального: ТОЛЬКО основные лимиты подписки
         """
         current_time = time.time()
@@ -194,7 +194,83 @@ class RateLimiter:
                 else:
                     del self.blocked_users[user_id]
             
-            # 2. ✅ ОСНОВНЫЕ ЛИМИТЫ: Проверяем периодические лимиты (день/неделя)
+            # 🆕 2. НОВАЯ ЛОГИКА: Для сообщений проверяем сначала gpt4o_queries_left
+            if action_type == "message":
+                try:
+                    # Проверяем есть ли купленные детальные консультации
+                    limits_info = await SubscriptionManager.get_user_limits(user_id)
+                    gpt4o_queries_left = limits_info.get('gpt4o_queries_left', 0)
+                    
+                    # Если есть купленные консультации - РАЗРЕШАЕМ использовать их!
+                    if gpt4o_queries_left > 0:
+                        logger.info(f"Пользователь {user_id}: использует купленные консультации ({gpt4o_queries_left} осталось)")
+                        
+                        # ✅ Все равно проверяем минутные лимиты (защита от спама)
+                        is_new_user = await self._is_new_user(user_id)
+                        
+                        # Выбираем лимиты в зависимости от статуса пользователя
+                        if is_new_user:
+                            limit_config = self.message_limits["new_user"]
+                        else:
+                            limit_config = self.message_limits["regular_user"]
+                        
+                        # Проверяем минутные лимиты для сообщений
+                        window_start = current_time - limit_config["window"]
+                        
+                        if user_id not in self.user_requests:
+                            self.user_requests[user_id] = []
+                            
+                        self.user_requests[user_id] = [
+                            req_time for req_time in self.user_requests[user_id] 
+                            if req_time > window_start
+                        ]
+                        
+                        request_count = len(self.user_requests[user_id])
+                        
+                        if request_count >= limit_config["count"]:
+                            # Блокируем пользователя даже при наличии gpt4o консультаций (защита от спама)
+                            self.blocked_users[user_id] = current_time + limit_config["cooldown"]
+                            
+                            lang = get_user_language_sync(user_id)
+                            
+                            try:
+                                action_name = t("action_messages", lang)
+                            except:
+                                action_name = "сообщений"
+                            
+                            cooldown_min = limit_config["cooldown"] // 60
+                            
+                            # Сообщение для новых пользователей
+                            if is_new_user:
+                                try:
+                                    text = t("rate_limit_new_user", lang, 
+                                            count=limit_config['count'], 
+                                            action_name=action_name, 
+                                            cooldown_min=cooldown_min)
+                                except:
+                                    text = f"👶 Для новых пользователей: лимит {action_name} {limit_config['count']}. Подождите {cooldown_min} мин."
+                            else:
+                                try:
+                                    text = t("rate_limit_short", lang, 
+                                            count=limit_config['count'], 
+                                            action_name=action_name, 
+                                            window_min=1, 
+                                            cooldown_min=cooldown_min)
+                                except:
+                                    text = f"⏳ Лимит {action_name}: {limit_config['count']}/мин. Подождите {cooldown_min}мин."
+
+                            status = "новый" if is_new_user else "обычный"
+                            return False, text
+                        else:
+                            # ✅ Минутные лимиты не превышены - РАЗРЕШАЕМ использовать gpt4o консультацию
+                            return True, ""
+                    
+                except Exception as e:
+                    logger.error(f"Ошибка проверки gpt4o_queries_left для пользователя {user_id}: {e}")
+                    # Если ошибка - продолжаем обычную проверку
+            
+            # 3. ✅ ОСНОВНЫЕ ЛИМИТЫ: Проверяем только если нет купленных консультаций (для сообщений)
+            #    Или для всех остальных действий (document, image, note, pills)
             period_count = self._get_period_count(user_id, action_type)
             period_limit = await self._get_daily_limit_for_user(user_id, action_type)
             
@@ -225,14 +301,22 @@ class RateLimiter:
                         text = f"📊 Дневной лимит {action_name}: {period_limit}. Попробуйте завтра."
                 else:
                     try:
-                        text = t("weekly_limit_exceeded_free", lang, 
-                                weekly_limit=period_limit, action_name=action_name)
+                        # 🆕 УЛУЧШЕННОЕ СООБЩЕНИЕ: подсказываем о возможности покупки
+                        if action_type == "message":
+                            text = t("weekly_limit_exceeded_free_with_purchase_option", lang, 
+                                    weekly_limit=period_limit, action_name=action_name)
+                        else:
+                            text = t("weekly_limit_exceeded_free", lang, 
+                                    weekly_limit=period_limit, action_name=action_name)
                     except:
-                        text = f"📊 Недельный лимит {action_name}: {period_limit}. Обновится в понедельник."
+                        if action_type == "message":
+                            text = f"📊 Недельный лимит {action_name}: {period_limit}. Обновится в понедельник.\n\n💡 Или купите дополнительные консультации в меню подписок!"
+                        else:
+                            text = f"📊 Недельный лимит {action_name}: {period_limit}. Обновится в понедельник."
                 
                 return False, text
             
-            # 3. ✅ МИНУТНЫЕ ЛИМИТЫ: ТОЛЬКО для сообщений!
+            # 4. ✅ МИНУТНЫЕ ЛИМИТЫ: ТОЛЬКО для сообщений БЕЗ gpt4o консультаций!
             if action_type == "message":
                 is_new_user = await self._is_new_user(user_id)
                 
@@ -290,7 +374,7 @@ class RateLimiter:
                     status = "новый" if is_new_user else "обычный"
                     return False, text
 
-            # 4. ✅ ВСЕ ОСТАЛЬНЫЕ ДЕЙСТВИЯ: проходят без минутных проверок!
+            # 5. ✅ ВСЕ ОСТАЛЬНЫЕ ДЕЙСТВИЯ: проходят без минутных проверок!
             # Документы, заметки, изображения проверяются только основными лимитами выше
             
             return True, ""
@@ -317,7 +401,7 @@ class RateLimiter:
                 # Бесплатные пользователи - НЕДЕЛЬНЫЕ лимиты                 
                 subscription_limits = {                     
                     "message": 50,    # сообщений в НЕДЕЛЮ                     
-                    "document": 10,   # документов в НЕДЕЛЮ                     
+                    "document": 40,   # документов в НЕДЕЛЮ                     
                     "image": 15,      # изображений в НЕДЕЛЮ                     
                     "note": 5,        # заметок в НЕДЕЛЮ
                     "pills": 5,       # изменений лекарств в НЕДЕЛЮ               

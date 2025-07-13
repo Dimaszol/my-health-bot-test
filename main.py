@@ -1598,9 +1598,9 @@ async def handle_button_action(callback: types.CallbackQuery):
             return
 
         if action == "view":
-            title = html.escape(doc["title"])
+            title = doc["title"]
             text = doc["raw_text"] or t("empty_document", lang)
-            clean_text = html.escape(text[:4000])
+            clean_text = text[:4000]
             from utils.security import safe_send_message
             await safe_send_message(callback.message, clean_text, title=title)
 
