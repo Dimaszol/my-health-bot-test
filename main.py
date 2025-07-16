@@ -230,13 +230,15 @@ async def handle_gdpr_consent(callback: types.CallbackQuery):
             
             # Получаем данные из Telegram
             telegram_name = callback.from_user.first_name or "User"
+            telegram_username = callback.from_user.username
             
             # Создаем пользователя с GDPR согласием (без username)
             success = await save_user(
                 user_id=user_id,
                 name=telegram_name,
                 birth_year=None,  # Будет заполнен при регистрации
-                gdpr_consent=True   # ← ВАЖНО: сразу ставим согласие
+                gdpr_consent=True,
+                username=telegram_username
             )
             
             if not success:
