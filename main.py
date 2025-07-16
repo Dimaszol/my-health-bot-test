@@ -214,58 +214,25 @@ async def handle_set_language_during_registration(callback: types.CallbackQuery)
     
     await callback.answer()
 
-@dp.callback_query(lambda c: c.data == "gdpr_consent_agree")
+@dp.callback_query(lambda callback: callback.data == "gdpr_consent_agree")
 @handle_telegram_errors
 async def handle_gdpr_consent(callback: types.CallbackQuery):
-    """✅ ИСПРАВЛЕННЫЙ обработчик GDPR согласия с созданием пользователя"""
+    """Обработка GDPR согласия"""
     user_id = callback.from_user.id
     lang = await get_user_language(user_id)
     
     try:
-        # ✅ СНАЧАЛА ПРОВЕРЯЕМ: есть ли пользователь в базе
-        user_data = await get_user(user_id)
+        # ✅ ПОЛЬЗОВАТЕЛЬ УЖЕ СУЩЕСТВУЕТ (создан в set_user_language)
+        # Просто обновляем GDPR согласие
+        from db_postgresql import set_gdpr_consent
+        success = await set_gdpr_consent(user_id, True)
         
-        if user_data is None:
-            # ✅ ПОЛЬЗОВАТЕЛЯ НЕТ - СОЗДАЕМ ЕГО!
-            
-            # Получаем данные из Telegram
-            telegram_name = callback.from_user.first_name or "User"
-            telegram_username = callback.from_user.username
-
-            # ✅ ДОБАВЬТЕ ЭТИ ОТЛАДОЧНЫЕ ЛОГИ:
-            print(f"🔍 [DEBUG] User ID: {callback.from_user.id}")
-            print(f"🔍 [DEBUG] Name: {telegram_name}")
-            print(f"🔍 [DEBUG] Username: {telegram_username}")
-            print(f"🔍 [DEBUG] Has username: {telegram_username is not None}")
-            
-            # Создаем пользователя с GDPR согласием (без username)
-            success = await save_user(
-                user_id=user_id,
-                name=telegram_name,
-                birth_year=None,  # Будет заполнен при регистрации
-                gdpr_consent=True,
-                username=telegram_username
+        if not success:
+            await callback.answer(
+                t("error_database_error", lang), 
+                show_alert=True
             )
-            print(f"🔍 [DEBUG] Save result: {success}")
-            
-            if not success:
-                await callback.answer(
-                    t("error_database_error", lang), 
-                    show_alert=True
-                )
-                return
-            
-        else:
-            # ✅ ПОЛЬЗОВАТЕЛЬ ЕСТЬ - ОБНОВЛЯЕМ СОГЛАСИЕ
-            from db_postgresql import set_gdpr_consent
-            success = await set_gdpr_consent(user_id, True)
-            
-            if not success:
-                await callback.answer(
-                    t("error_database_error", lang), 
-                    show_alert=True
-                )
-                return
+            return
         
         # ✅ ПОКАЗЫВАЕМ ПОДТВЕРЖДЕНИЕ
         await callback.message.edit_text(

@@ -546,14 +546,16 @@ async def set_user_language(user_id: int, language: str, telegram_user=None) -> 
     try:
         # Получаем имя из Telegram
         name = None
+        username = None
         if telegram_user:
             name = telegram_user.first_name or "Пользователь"
+            username = telegram_user.username
         
         # ✅ СОЗДАЕМ пользователя с именем и языком
         if name:
             await conn.execute(
-                "INSERT INTO users (user_id, language, name) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO NOTHING",
-                user_id, language, name
+                "INSERT INTO users (user_id, language, name, username) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO NOTHING",
+                user_id, language, name, username
             )
         else:
             # Fallback если нет telegram_user
@@ -714,43 +716,23 @@ async def update_user_field(user_id: int, field: str, value: Any) -> bool:
 async def save_user(user_id: int, name: str = None, birth_year: int = None,
                    gdpr_consent: bool = None, username: str = None) -> bool:
     """
-    ✅ ОБНОВЛЕННАЯ версия: поддерживает создание с GDPR согласием
+    ✅ УПРОЩЕННАЯ версия: только обновляет существующих пользователей
+    (новые пользователи создаются через set_user_language)
     """
     conn = await get_db_connection()
     try:
-        # Проверяем есть ли пользователь
-        existing_user = await conn.fetchrow(
-            "SELECT user_id FROM users WHERE user_id = $1", user_id
-        )
-        
-        if existing_user:
-            # Обновляем существующего
-            await conn.execute("""
-                UPDATE users SET 
-                    name = COALESCE($2, name),
-                    birth_year = COALESCE($3, birth_year),
-                    gdpr_consent = COALESCE($4, gdpr_consent),
-                    username = COALESCE($5, username),
-                    gdpr_consent_time = CASE WHEN $4 = TRUE THEN CURRENT_TIMESTAMP ELSE gdpr_consent_time END,
-                    last_updated = CURRENT_TIMESTAMP
-                WHERE user_id = $1
-            """, user_id, name, birth_year, gdpr_consent, username)
-        else:
-            # Создаем нового пользователя
-            await conn.execute("""
-                INSERT INTO users 
-                (user_id, name, birth_year, gdpr_consent, username, gdpr_consent_time, created_at)
-                VALUES ($1, $2, $3, $4, $5,
-                        CASE WHEN $4 = TRUE THEN CURRENT_TIMESTAMP ELSE NULL END,
-                        CURRENT_TIMESTAMP)
-            """, user_id, name, birth_year, gdpr_consent, username)
-            
-            # ✅ СОЗДАЕМ ДЕФОЛТНЫЕ ЛИМИТЫ для нового пользователя
-            await conn.execute("""
-                INSERT INTO user_limits (user_id, documents_left, gpt4o_queries_left, subscription_type)
-                VALUES ($1, 2, 10, 'free')
-                ON CONFLICT (user_id) DO NOTHING
-            """, user_id)
+        # Пользователь уже должен существовать (создан через set_user_language)
+        # Просто обновляем его данные
+        await conn.execute("""
+            UPDATE users SET 
+                name = COALESCE($2, name),
+                birth_year = COALESCE($3, birth_year),
+                gdpr_consent = COALESCE($4, gdpr_consent),
+                username = COALESCE($5, username),
+                gdpr_consent_time = CASE WHEN $4 = TRUE THEN CURRENT_TIMESTAMP ELSE gdpr_consent_time END,
+                last_updated = CURRENT_TIMESTAMP
+            WHERE user_id = $1
+        """, user_id, name, birth_year, gdpr_consent, username)
         
         return True
         
