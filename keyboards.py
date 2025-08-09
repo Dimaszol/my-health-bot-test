@@ -1,17 +1,14 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, Message
-import asyncio
 from db_postgresql import get_user_language, t
 
 async def show_main_menu(message: Message, lang: str = None):
     if lang is None:
         lang = await get_user_language(message.from_user.id)
-    menu_msg = await message.answer(
+    await message.answer(
         t("main_menu", lang),
         reply_markup=main_menu_keyboard(lang)
     )
-    # Ждем немного и удаляем
-    await asyncio.sleep(1)  # 1 секунда
-    await menu_msg.delete()
+    
 
 def main_menu_keyboard(lang):
     """Главное меню с кнопкой настроек"""
