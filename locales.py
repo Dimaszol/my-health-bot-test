@@ -14,10 +14,11 @@ translations = {
         "file_storage_error": "❌ Ошибка сохранения файла в хранилище",
         # 🤖 Уведомления о лимитах
         "limits_exhausted_free_message": (
-            "🤖 <b>Детальные ответы закончились!</b>\n\n"
+            "🤖 Детальные ответы закончились!\n\n"
             "🔹 Теперь будет использоваться базовая модель для ответов\n\n"
             "💎 Оформите подписку для возврата к детальным медицинским консультациям!"
         ),
+        "limits_exhausted_subscription_button": "💎 Оформить подписку",
         "limits_exhausted_subscription_message": (
             "🤖 <b>Лимит детальных ответов исчерпан</b>\n\n"
             "🔹 В этом месяце вы использовали все детальные ответы\n"
@@ -459,6 +460,7 @@ translations = {
         "🔹 Тепер буде використовуватися базова модель для відповідей\n\n"
         "💎 Оформіть підписку для повернення до детальних медичних консультацій!"
     ),
+    "limits_exhausted_subscription_button": "💎 Оформити підписку",
     "limits_exhausted_subscription_message": (
         "🤖 <b>Ліміт детальних відповідей вичерпано</b>\n\n"
         "🔹 У цьому місяці ви використали всі детальні відповіді\n"
@@ -899,6 +901,7 @@ translations = {
         "🔹 Basic model will now be used for responses\n\n"
         "💎 Get a subscription to return to detailed medical consultations!"
     ),
+    "limits_exhausted_subscription_button": "💎 Get subscription",
     "limits_exhausted_subscription_message": (
         "🤖 <b>Detailed response limit exhausted</b>\n\n"
         "🔹 You have used all detailed responses this month\n"
@@ -1340,6 +1343,7 @@ translations = {
         "🔹 Es wird nun das Basismodell für Antworten verwendet\n\n"
         "💎 Schließen Sie ein Abonnement ab, um zu detaillierten medizinischen Beratungen zurückzukehren!"
     ),
+    "limits_exhausted_subscription_button": "💎 Abonnement erhalten",
     "limits_exhausted_subscription_message": (
         "🤖 <b>Limit für detaillierte Antworten erschöpft</b>\n\n"
         "🔹 Sie haben diesen Monat alle detaillierten Antworten verwendet\n"
