@@ -66,22 +66,39 @@ class SupabaseStorage:
             # Генерируем путь в хранилище
             storage_path = self._generate_file_path(user_id, filename)
             
-            # Читаем файл
+            # ✅ ИСПРАВЛЯЕМ ЧТЕНИЕ ФАЙЛА
             with open(file_path, 'rb') as file:
                 file_data = file.read()
             
-            # Загружаем в Supabase Storage
-            response = self.supabase.storage.from_(self.bucket_name).upload(
-                path=storage_path,
-                file=file_data,
-                file_options={
-                    "content-type": self._get_content_type(filename),
-                    "upsert": False  # Не перезаписывать существующие файлы
-                }
-            )
+            # ✅ ПРОВЕРЯЕМ ЧТО file_data это bytes
+            if not isinstance(file_data, bytes):
+                return False, f"Ошибка чтения файла: неверный тип данных"
             
-            logger.info(f"✅ [SUPABASE] Файл загружен: {storage_path}")
-            return True, storage_path
+            logger.info(f"🔍 [DEBUG] Читаем файл: {len(file_data)} bytes")
+            
+            # ✅ ИСПРАВЛЯЕМ ЗАГРУЗКУ В SUPABASE
+            try:
+                response = self.supabase.storage.from_(self.bucket_name).upload(
+                    path=storage_path,
+                    file=file_data,
+                    file_options={
+                        "content-type": self._get_content_type(filename),
+                        "upsert": False
+                    }
+                )
+                
+                logger.info(f"🔍 [DEBUG] Supabase response: {response}")
+                
+                # ✅ ПРОВЕРЯЕМ ОТВЕТ SUPABASE
+                if hasattr(response, 'error') and response.error:
+                    return False, f"Supabase error: {response.error}"
+                
+                logger.info(f"✅ [SUPABASE] Файл загружен: {storage_path}")
+                return True, storage_path
+                
+            except Exception as upload_error:
+                logger.error(f"❌ [SUPABASE] Ошибка API: {upload_error}")
+                return False, f"Upload API error: {str(upload_error)}"
             
         except Exception as e:
             logger.error(f"❌ [SUPABASE] Ошибка загрузки файла: {e}")

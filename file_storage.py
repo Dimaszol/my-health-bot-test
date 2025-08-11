@@ -269,13 +269,14 @@ def check_storage_setup() -> dict:
             stats = {
                 'storage_type': 'supabase',
                 'status': 'connected',
-                'bucket': 'medical-documents'
+                'bucket': 'medical-documents',
+                'storage_path': 'Supabase Cloud Storage'  # ← ДОБАВЛЯЕМ ЭТО ПОЛЕ
             }
         else:
             stats = {
                 'storage_type': 'local_fallback',
                 'status': 'fallback_mode',
-                'storage_path': storage.temp_dir
+                'storage_path': getattr(storage, 'temp_dir', '/app/files')  # ← БЕЗОПАСНО ПОЛУЧАЕМ
             }
         
         logger.info(f"📊 Статистика хранилища: {stats}")
