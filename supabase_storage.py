@@ -76,29 +76,52 @@ class SupabaseStorage:
             
             logger.info(f"🔍 [DEBUG] Читаем файл: {len(file_data)} bytes")
             
-            # ✅ ИСПРАВЛЯЕМ ЗАГРУЗКУ В SUPABASE
+            # ✅ ИСПРАВЛЯЕМ ЗАГРУЗКУ В SUPABASE - используем правильные параметры
             try:
+                # Попробуем загрузить без file_options
                 response = self.supabase.storage.from_(self.bucket_name).upload(
                     path=storage_path,
-                    file=file_data,
-                    file_options={
-                        "content-type": self._get_content_type(filename),
-                        "upsert": False
-                    }
+                    file=file_data
                 )
                 
+                logger.info(f"🔍 [DEBUG] Supabase response type: {type(response)}")
                 logger.info(f"🔍 [DEBUG] Supabase response: {response}")
                 
-                # ✅ ПРОВЕРЯЕМ ОТВЕТ SUPABASE
-                if hasattr(response, 'error') and response.error:
-                    return False, f"Supabase error: {response.error}"
+                # ✅ ПРОВЕРЯЕМ РЕЗУЛЬТАТ
+                if response is None:
+                    return False, "Supabase вернул None"
                 
-                logger.info(f"✅ [SUPABASE] Файл загружен: {storage_path}")
-                return True, storage_path
+                # Supabase должен вернуть словарь с путем к файлу
+                if isinstance(response, dict):
+                    if 'error' in response and response['error']:
+                        return False, f"Supabase error: {response['error']}"
+                    
+                    logger.info(f"✅ [SUPABASE] Файл загружен: {storage_path}")
+                    return True, storage_path
+                else:
+                    logger.info(f"✅ [SUPABASE] Файл загружен (неожиданный формат ответа): {storage_path}")
+                    return True, storage_path
                 
             except Exception as upload_error:
                 logger.error(f"❌ [SUPABASE] Ошибка API: {upload_error}")
-                return False, f"Upload API error: {str(upload_error)}"
+                
+                # Попробуем альтернативный способ
+                try:
+                    # Используем другой метод загрузки
+                    import io
+                    file_like = io.BytesIO(file_data)
+                    
+                    response2 = self.supabase.storage.from_(self.bucket_name).upload(
+                        path=storage_path,
+                        file=file_like
+                    )
+                    
+                    logger.info(f"✅ [SUPABASE] Файл загружен (способ 2): {storage_path}")
+                    return True, storage_path
+                    
+                except Exception as e2:
+                    logger.error(f"❌ [SUPABASE] Альтернативный способ тоже не работает: {e2}")
+                    return False, f"Both upload methods failed: {str(upload_error)}, {str(e2)}"
             
         except Exception as e:
             logger.error(f"❌ [SUPABASE] Ошибка загрузки файла: {e}")
