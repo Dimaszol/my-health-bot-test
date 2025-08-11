@@ -45,14 +45,42 @@ class FileStorage:
         """
         try:
             if self.storage_manager:
-                # ✅ ЗАГРУЖАЕМ В SUPABASE STORAGE
+                # ✅ ИСПРАВЛЕННАЯ ЗАГРУЗКА В SUPABASE STORAGE
                 import asyncio
                 
-                # Запускаем асинхронную операцию в синхронном контексте
-                loop = asyncio.get_event_loop()
-                success, storage_path = loop.run_until_complete(
-                    self.storage_manager.upload_file(user_id, source_path, filename)
-                )
+                # Проверяем есть ли уже запущенный event loop
+                try:
+                    loop = asyncio.get_running_loop()
+                    # Если loop уже работает, создаем задачу
+                    import concurrent.futures
+                    import threading
+                    
+                    def sync_upload():
+                        # Создаем новый event loop в отдельном потоке
+                        new_loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(new_loop)
+                        try:
+                            return new_loop.run_until_complete(
+                                self.storage_manager.upload_file(user_id, source_path, filename)
+                            )
+                        finally:
+                            new_loop.close()
+                    
+                    # Запускаем в отдельном потоке
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(sync_upload)
+                        success, storage_path = future.result(timeout=30)
+                    
+                except RuntimeError:
+                    # Нет запущенного loop - можем использовать обычный способ
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    try:
+                        success, storage_path = loop.run_until_complete(
+                            self.storage_manager.upload_file(user_id, source_path, filename)
+                        )
+                    finally:
+                        loop.close()
                 
                 if success:
                     logger.info(f"✅ [SUPABASE] Файл сохранен: {storage_path}")
@@ -113,13 +141,29 @@ class FileStorage:
         """Удаляет файл"""
         try:
             if self.storage_type == "supabase" and self.storage_manager:
-                # ✅ УДАЛЕНИЕ ИЗ SUPABASE
+                # ✅ ИСПРАВЛЕННОЕ УДАЛЕНИЕ ИЗ SUPABASE
                 import asyncio
-                loop = asyncio.get_event_loop()
-                success = loop.run_until_complete(
-                    self.storage_manager.delete_file(file_path)
-                )
-                return success
+                import concurrent.futures
+                
+                def sync_delete():
+                    new_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(new_loop)
+                    try:
+                        return new_loop.run_until_complete(
+                            self.storage_manager.delete_file(file_path)
+                        )
+                    finally:
+                        new_loop.close()
+                
+                try:
+                    # Запускаем в отдельном потоке
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(sync_delete)
+                        success = future.result(timeout=10)
+                    return success
+                except Exception as e:
+                    logger.error(f"❌ Ошибка удаления из Supabase: {e}")
+                    return False
             else:
                 # ✅ ЛОКАЛЬНОЕ УДАЛЕНИЕ
                 if os.path.exists(file_path):
@@ -163,6 +207,48 @@ class FileStorage:
             safe_filename = name[:95] + ext
         
         return safe_filename or "document.txt"
+    
+    def get_storage_stats(self) -> dict:
+        """Получает статистику использования хранилища (совместимость)"""
+        try:
+            if self.storage_type == "supabase":
+                return {
+                    'total_size_mb': 0,  # Supabase не предоставляет статистику через API
+                    'file_count': 0,
+                    'storage_type': 'supabase',
+                    'storage_path': 'Supabase Storage'
+                }
+            else:
+                # Локальная статистика для fallback
+                total_size = 0
+                file_count = 0
+                
+                for root, dirs, files in os.walk(self.temp_dir):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        try:
+                            total_size += os.path.getsize(file_path)
+                            file_count += 1
+                        except OSError:
+                            continue
+                
+                total_size_mb = total_size / (1024 * 1024)
+                
+                return {
+                    'total_size_mb': round(total_size_mb, 2),
+                    'file_count': file_count,
+                    'storage_type': self.storage_type,
+                    'storage_path': self.temp_dir
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка получения статистики: {e}")
+            return {
+                'total_size_mb': 0,
+                'file_count': 0,
+                'storage_type': self.storage_type,
+                'storage_path': 'unknown'
+            }
 
 # ✅ ГЛОБАЛЬНЫЙ ЭКЗЕМПЛЯР (сохраняем совместимость)
 _file_storage_instance = None
