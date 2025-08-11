@@ -4,7 +4,11 @@ import os
 import uuid
 import logging
 from typing import Tuple, Optional
-from supabase import create_client, Client
+try:
+    from supabase import create_client, Client
+except ImportError:
+    print("❌ Библиотека supabase не найдена. Установите: pip install supabase==2.8.1")
+    raise
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -97,6 +101,11 @@ class SupabaseStorage:
         try:
             # Скачиваем файл
             response = self.supabase.storage.from_(self.bucket_name).download(storage_path)
+            
+            # ✅ ПРОВЕРЯЕМ ЧТО ПОЛУЧИЛИ BYTES
+            if not isinstance(response, bytes):
+                logger.error(f"❌ [SUPABASE] Неверный тип ответа: {type(response)}")
+                return False
             
             # Сохраняем локально
             os.makedirs(os.path.dirname(local_path), exist_ok=True)
