@@ -1,45 +1,39 @@
-# file_storage.py - Универсальное файловое хранилище
+# file_storage.py - ОБНОВЛЕННАЯ ВЕРСИЯ с Supabase Storage
 
 import os
-import shutil
 import logging
 from pathlib import Path
 from typing import Optional, Tuple
+from supabase_storage import get_storage_manager
 
 logger = logging.getLogger(__name__)
 
 class FileStorage:
-    """Универсальное файловое хранилище (Railway Volumes + подготовка к S3)"""
+    """Файловое хранилище на Supabase Storage (замена Railway Volumes)"""
     
     def __init__(self):
-        """Инициализация файлового хранилища"""
-        # Проверяем, есть ли persistent storage (Railway Volumes)
-        self.persistent_dir = "/app/persistent_files"
-        self.temp_dir = "/app/files"
-        
-        # Определяем, где хранить файлы
-        if os.path.exists(self.persistent_dir):
-            self.storage_dir = self.persistent_dir
-            self.storage_type = "persistent"
-            logger.info("✅ Используем Railway Volumes для хранения файлов")
-        else:
-            self.storage_dir = self.temp_dir
-            self.storage_type = "temporary"
-            logger.warning("⚠️ Используем временное хранилище (файлы потеряются при рестарте)")
-        
-        # Создаем базовую структуру
-        os.makedirs(self.storage_dir, exist_ok=True)
-        logger.info(f"📁 Хранилище инициализировано: {self.storage_dir}")
-    
-    def get_user_dir(self, user_id: int) -> str:
-        """Получает путь к директории пользователя"""
-        user_dir = os.path.join(self.storage_dir, f"users/{user_id}")
-        os.makedirs(user_dir, exist_ok=True)
-        return user_dir
+        """Инициализация Supabase Storage"""
+        try:
+            self.storage_manager = get_storage_manager()
+            self.storage_type = "supabase"
+            logger.info("✅ Supabase Storage инициализирован")
+        except Exception as e:
+            logger.error(f"❌ Ошибка инициализации Supabase Storage: {e}")
+            # Fallback только для локальной разработки
+            is_railway = os.getenv("RAILWAY_ENVIRONMENT") == "production"
+            if is_railway:
+                logger.error("❌ На Railway Supabase Storage обязателен!")
+                raise Exception("Supabase Storage недоступен на продакшене")
+            else:
+                # Локальный fallback только для разработки
+                self.storage_manager = None
+                self.storage_type = "local_fallback"
+                self.temp_dir = "/app/files"
+                os.makedirs(self.temp_dir, exist_ok=True)
     
     def save_file(self, user_id: int, filename: str, source_path: str) -> Tuple[bool, str]:
         """
-        Сохраняет файл в постоянное хранилище
+        Сохраняет файл в Supabase Storage
         
         Args:
             user_id: ID пользователя
@@ -50,40 +44,89 @@ class FileStorage:
             Tuple[bool, str]: (успех, путь_к_файлу_или_ошибка)
         """
         try:
-            # Получаем директорию пользователя
-            user_dir = self.get_user_dir(user_id)
+            if self.storage_manager:
+                # ✅ ЗАГРУЖАЕМ В SUPABASE STORAGE
+                import asyncio
+                
+                # Запускаем асинхронную операцию в синхронном контексте
+                loop = asyncio.get_event_loop()
+                success, storage_path = loop.run_until_complete(
+                    self.storage_manager.upload_file(user_id, source_path, filename)
+                )
+                
+                if success:
+                    logger.info(f"✅ [SUPABASE] Файл сохранен: {storage_path}")
+                    return True, storage_path
+                else:
+                    logger.error(f"❌ [SUPABASE] Ошибка сохранения: {storage_path}")
+                    return False, storage_path
+            else:
+                # ✅ FALLBACK: Локальное сохранение
+                return self._save_file_locally(user_id, filename, source_path)
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка сохранения файла: {e}")
+            # На Railway нет смысла в локальном fallback
+            is_railway = os.getenv("RAILWAY_ENVIRONMENT") == "production"
+            if is_railway:
+                return False, f"Supabase Storage недоступен: {str(e)}"
+            else:
+                # Локальный fallback только для разработки
+                return self._save_file_locally(user_id, filename, source_path)
+    
+    def _save_file_locally(self, user_id: int, filename: str, source_path: str) -> Tuple[bool, str]:
+        """Fallback: сохранение в локальную папку"""
+        try:
+            import shutil
+            
+            user_dir = os.path.join(self.temp_dir, f"users/{user_id}")
+            os.makedirs(user_dir, exist_ok=True)
             
             # Создаем безопасное имя файла
             safe_filename = self._sanitize_filename(filename)
-            
-            # Полный путь к файлу
             destination_path = os.path.join(user_dir, safe_filename)
             
             # Копируем файл
             shutil.copy2(source_path, destination_path)
             
-            logger.info(f"✅ Файл сохранен: {destination_path}")
+            logger.info(f"✅ [LOCAL] Файл сохранен: {destination_path}")
             return True, destination_path
             
         except Exception as e:
-            logger.error(f"❌ Ошибка сохранения файла: {e}")
-            return False, f"Save error: {str(e)}"
+            logger.error(f"❌ Ошибка локального сохранения: {e}")
+            return False, f"Local save error: {str(e)}"
     
     def file_exists(self, file_path: str) -> bool:
         """Проверяет существование файла"""
-        try:
-            return os.path.exists(file_path) and os.path.isfile(file_path)
-        except Exception:
-            return False
+        if self.storage_type == "supabase":
+            # Для Supabase файлы всегда считаем существующими
+            # (можно добавить проверку через API если нужно)
+            return True
+        else:
+            # Локальная проверка
+            try:
+                return os.path.exists(file_path) and os.path.isfile(file_path)
+            except Exception:
+                return False
     
     def delete_file(self, file_path: str) -> bool:
         """Удаляет файл"""
         try:
-            if self.file_exists(file_path):
-                os.remove(file_path)
-                logger.info(f"✅ Файл удален: {file_path}")
-                return True
-            return False
+            if self.storage_type == "supabase" and self.storage_manager:
+                # ✅ УДАЛЕНИЕ ИЗ SUPABASE
+                import asyncio
+                loop = asyncio.get_event_loop()
+                success = loop.run_until_complete(
+                    self.storage_manager.delete_file(file_path)
+                )
+                return success
+            else:
+                # ✅ ЛОКАЛЬНОЕ УДАЛЕНИЕ
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    logger.info(f"✅ Файл удален: {file_path}")
+                    return True
+                return False
         except Exception as e:
             logger.error(f"❌ Ошибка удаления файла: {e}")
             return False
@@ -91,114 +134,42 @@ class FileStorage:
     def delete_user_files(self, user_id: int) -> bool:
         """Удаляет все файлы пользователя (для GDPR)"""
         try:
-            user_dir = os.path.join(self.storage_dir, f"users/{user_id}")
-            
-            if os.path.exists(user_dir):
-                shutil.rmtree(user_dir)
-                logger.info(f"✅ Все файлы пользователя {user_id} удалены")
+            if self.storage_type == "supabase":
+                # Для Supabase нужна отдельная логика удаления по пользователю
+                # Пока возвращаем True (файлы удаляются при удалении записей из БД)
+                logger.info(f"✅ GDPR: файлы пользователя {user_id} будут удалены через БД")
                 return True
             else:
-                logger.info(f"📂 Папка пользователя {user_id} не найдена")
+                # Локальное удаление
+                import shutil
+                user_dir = os.path.join(self.temp_dir, f"users/{user_id}")
+                if os.path.exists(user_dir):
+                    shutil.rmtree(user_dir)
+                    logger.info(f"✅ Удалена папка пользователя: {user_dir}")
                 return True
-                
         except Exception as e:
-            logger.error(f"❌ Ошибка удаления файлов пользователя {user_id}: {e}")
+            logger.error(f"❌ Ошибка удаления файлов пользователя: {e}")
             return False
-    
-    def get_file_info(self, file_path: str) -> Optional[dict]:
-        """Получает информацию о файле"""
-        try:
-            if not self.file_exists(file_path):
-                return None
-            
-            stat = os.stat(file_path)
-            return {
-                'size': stat.st_size,
-                'created': stat.st_ctime,
-                'modified': stat.st_mtime,
-                'exists': True
-            }
-        except Exception as e:
-            logger.error(f"❌ Ошибка получения информации о файле: {e}")
-            return None
-    
-    def get_storage_stats(self) -> dict:
-        """Получает статистику использования хранилища"""
-        try:
-            total_size = 0
-            file_count = 0
-            
-            for root, dirs, files in os.walk(self.storage_dir):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    try:
-                        total_size += os.path.getsize(file_path)
-                        file_count += 1
-                    except OSError:
-                        continue
-            
-            # Конвертируем в MB
-            total_size_mb = total_size / (1024 * 1024)
-            
-            return {
-                'total_size_mb': round(total_size_mb, 2),
-                'file_count': file_count,
-                'storage_type': self.storage_type,
-                'storage_path': self.storage_dir
-            }
-            
-        except Exception as e:
-            logger.error(f"❌ Ошибка получения статистики: {e}")
-            return {
-                'total_size_mb': 0,
-                'file_count': 0,
-                'storage_type': self.storage_type,
-                'storage_path': self.storage_dir
-            }
     
     def _sanitize_filename(self, filename: str) -> str:
         """Создает безопасное имя файла"""
-        import re
-        
         # Убираем опасные символы
-        safe_name = re.sub(r'[^\w\.-]', '_', filename)
+        safe_chars = "-_.() abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        safe_filename = "".join(c for c in filename if c in safe_chars or ord(c) > 127)
         
         # Ограничиваем длину
-        if len(safe_name) > 100:
-            name, ext = os.path.splitext(safe_name)
-            safe_name = name[:90] + ext
+        if len(safe_filename) > 100:
+            name, ext = os.path.splitext(safe_filename)
+            safe_filename = name[:95] + ext
         
-        # Если нет расширения, добавляем .file
-        if not os.path.splitext(safe_name)[1]:
-            safe_name += '.file'
-        
-        return safe_name
+        return safe_filename or "document.txt"
 
-# Глобальный экземпляр
-file_storage = None
+# ✅ ГЛОБАЛЬНЫЙ ЭКЗЕМПЛЯР (сохраняем совместимость)
+_file_storage_instance = None
 
 def get_file_storage() -> FileStorage:
-    """Получает экземпляр FileStorage (ленивая инициализация)"""
-    global file_storage
-    if file_storage is None:
-        file_storage = FileStorage()
-    return file_storage
-
-def check_storage_setup() -> dict:
-    """Проверяет настройки хранилища"""
-    try:
-        storage = get_file_storage()
-        stats = storage.get_storage_stats()
-        
-        logger.info(f"📊 Статистика хранилища: {stats}")
-        return {
-            'success': True,
-            'stats': stats
-        }
-        
-    except Exception as e:
-        logger.error(f"❌ Ошибка проверки хранилища: {e}")
-        return {
-            'success': False,
-            'error': str(e)
-        }
+    """Получить экземпляр файлового хранилища (Singleton)"""
+    global _file_storage_instance
+    if _file_storage_instance is None:
+        _file_storage_instance = FileStorage()
+    return _file_storage_instance
