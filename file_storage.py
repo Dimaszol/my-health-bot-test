@@ -173,3 +173,34 @@ def get_file_storage() -> FileStorage:
     if _file_storage_instance is None:
         _file_storage_instance = FileStorage()
     return _file_storage_instance
+
+def check_storage_setup() -> dict:
+    """Проверяет настройки хранилища (совместимость со старым кодом)"""
+    try:
+        storage = get_file_storage()
+        
+        if storage.storage_type == "supabase":
+            stats = {
+                'storage_type': 'supabase',
+                'status': 'connected',
+                'bucket': 'medical-documents'
+            }
+        else:
+            stats = {
+                'storage_type': 'local_fallback',
+                'status': 'fallback_mode',
+                'storage_path': storage.temp_dir
+            }
+        
+        logger.info(f"📊 Статистика хранилища: {stats}")
+        return {
+            'success': True,
+            'stats': stats
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка проверки хранилища: {e}")
+        return {
+            'success': False,
+            'error': str(e)
+        }
