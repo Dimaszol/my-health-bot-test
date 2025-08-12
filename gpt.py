@@ -548,29 +548,61 @@ async def extract_keywords(text: str) -> list[str]:
 async def ask_doctor(context_text: str, user_question: str, 
                     lang: str, user_id: int = None, use_gemini: bool = False) -> str:
     """
-    ✅ УЛУЧШЕННАЯ версия — учитывает недавнее общение, не здоровается каждый раз
-    Добавлена поддержка Gemini 2.5 Flash
+    ✅ УПРОЩЕННАЯ версия — одна функция для всех моделей
     """
     
     # ✅ АНАЛИЗИРУЕМ НЕДАВНЮЮ ИСТОРИЮ
     recent_interaction = False
     if context_text and len(context_text.strip()) > 0:
-        # Если есть недавние сообщения, значит общение продолжается
         recent_interaction = True
     
     # ✅ ОПРЕДЕЛЯЕМ ТИП ОБЩЕНИЯ
     greeting_words = ['привет', 'здравствуй', 'добро пожаловать', 'hello', 'hi', 'вітаю', 'добрий день']
     is_greeting = any(word in user_question.lower() for word in greeting_words)
     
-    system_prompt = (
+    # 🔧 ЯЗЫКОВАЯ ФИКСАЦИЯ для продвинутых моделей
+    if lang == "ru":
+        lang_instruction = "КРИТИЧЕСКИ ВАЖНО: Отвечай ТОЛЬКО на русском языке. Никогда не переключайся на украинский или английский."
+    elif lang == "uk":
+        lang_instruction = "КРИТИЧНО ВАЖЛИВО: Відповідай ТІЛЬКИ українською мовою. Ніколи не переключайся на російську чи англійську."
+    elif lang == "en":
+        lang_instruction = "CRITICAL: Respond ONLY in English. Never switch to Russian or Ukrainian."
+    elif lang == "de":
+        lang_instruction = "KRITISCH WICHTIG: Antworten Sie NUR auf Deutsch. Wechseln Sie niemals zu Russisch, Ukrainisch oder Englisch."
+    else:
+        lang_instruction = "КРИТИЧЕСКИ ВАЖНО: Отвечай ТОЛЬКО на русском языке."
+    
+    # Базовый system prompt
+    base_system_prompt = (
         "You are a compassionate and knowledgeable virtual physician who guides the user through their medical journey. "
         "You speak in a friendly, human tone and provide explanations when needed. "
         f"Always respond in the '{lang}' language."
     )
 
-    # ✅ ОБНОВЛЕННЫЕ ИНСТРУКЦИИ с учетом контекста общения
+    # ✅ ПРОСТАЯ ЛОГИКА ВЫБОРА МОДЕЛИ
+    if use_gemini:
+        # Есть лимиты - используем GPT-5 с усиленным промптом
+        model = "gpt-5"
+        system_prompt = f"""
+{base_system_prompt}
+
+🚨 LANGUAGE ENFORCEMENT RULES:
+{lang_instruction}
+
+If you start responding in the wrong language, immediately stop and restart in the correct language.
+The user expects consistency in language throughout the entire response.
+Never mix languages within a single response.
+"""
+        model_info = "GPT-5"
+        
+    else:
+        # Нет лимитов - используем GPT-4o-mini
+        model = "gpt-4o-mini"
+        system_prompt = base_system_prompt
+        model_info = "GPT-4o-mini"
+
+    # ✅ ИНСТРУКЦИИ с учетом контекста общения
     if recent_interaction and not is_greeting:
-        # Продолжаем разговор — НЕ здороваемся
         instruction_prompt = (
             "Continue the ongoing medical conversation naturally. Do NOT greet the patient again if you've already been talking. "
             "You have access to the user's health profile, medical documents, imaging reports, conversation history, and memory notes. "
@@ -583,7 +615,6 @@ async def ask_doctor(context_text: str, user_question: str,
             "⚠️ IMPORTANT: Since you've been talking recently, go straight to answering the question without greeting."
         )
     else:
-        # Первое сообщение или явное приветствие — можно поздороваться
         instruction_prompt = (
             "You have access to the user's health profile, medical documents, imaging reports, conversation history, and memory notes. "
             "Answer only questions related to the user's health — symptoms, diagnostics, treatment, risks, interpretation of reports, etc. "
@@ -596,82 +627,60 @@ async def ask_doctor(context_text: str, user_question: str,
 
     full_prompt = f"{instruction_prompt}\n\n{context_text}"
 
+    # ✅ ЛОГИРОВАНИЕ
     try:
         import datetime
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        # Определяем какая модель будет использоваться
-        model_info = "GPT-4o" if use_gemini else "GPT-4o/GPT-4o-mini"
         
         with open("prompts_log.txt", "a", encoding="utf-8") as f:
             f.write(f"\n{'='*80}\n")
             f.write(f"🕐 {timestamp} | User {user_id} | {model_info}\n")
             f.write(f"🌐 Язык: {lang} | Взаимодействие: {'Продолжение' if recent_interaction and not is_greeting else 'Новое/Приветствие'}\n")
             f.write(f"❓ Вопрос: {user_question}\n")
-            f.write(f"📊 Длина system: {len(system_prompt)} симв. | user: {len(full_prompt)} симв. | ~{(len(system_prompt) + len(full_prompt)) // 4} токенов\n")
-            f.write(f"{'='*80}\n")
-            f.write("🔧 SYSTEM PROMPT:\n")
-            f.write(system_prompt)
-            f.write("\n\n👤 USER PROMPT:\n")
-            f.write(full_prompt)
-            f.write(f"\n{'='*80}\n\n")
+            f.write(f"📊 Модель: {model} | Длина system: {len(system_prompt)} симв. | user: {len(full_prompt)} симв.\n")
+            f.write(f"{'='*80}\n\n")
     except Exception as e:
         pass
 
-    # ✅ НОВАЯ ЛОГИКА: Gemini или GPT
-    if use_gemini:
-        # Проверяем лимиты перед вызовом
-        if user_id and await check_gpt4o_limit(user_id):
+    # ✅ ЕДИНЫЙ ВЫЗОВ API
+    try:
+        response = await client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": full_prompt}
+            ],
+            max_tokens=3000 if model == "gpt-5" else 2500,  # Больше токенов для GPT-5
+            temperature=0.4 if model == "gpt-5" else 0.5,   # Ниже температура для GPT-5
+        )
+        
+        answer = response.choices[0].message.content.strip()
+        return safe_telegram_text(answer)
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка модели {model}: {str(e)}")
+        
+        # Fallback на GPT-4o-mini при любой ошибке
+        if model != "gpt-4o-mini":
             try:
-                # Вызываем Gemini
-                response = await ask_doctor_gemini(system_prompt, full_prompt, lang)
-                # ✅ ВАЖНО: Тратим лимит после успешного ответа
-                return response
+                logger.warning(f"⚠️ Fallback на GPT-4o-mini")
+                response = await client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": base_system_prompt},
+                        {"role": "user", "content": full_prompt}
+                    ],
+                    max_tokens=2500,
+                    temperature=0.5
+                )
                 
-            except Exception as e:
-                logger.warning(f"⚠️ Gemini недоступен, fallback на GPT-4o-mini")
-                # При ошибке Gemini переходим на GPT-4o-mini (без трат лимитов)
-        else:
-            pass
-    
-    # ✅ ОРИГИНАЛЬНАЯ ЛОГИКА GPT (без изменений)
-    
-    if not use_gemini and user_id and await check_gpt4o_limit(user_id):
-        model = "gpt-4o"
-        try:
-            response = await client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": full_prompt}
-                ],
-                max_tokens=2500,
-                temperature=0.5
-            )
-            
-            
-            answer = response.choices[0].message.content.strip()
-            return safe_telegram_text(answer)
-            
-        except Exception as e:
-            logger.warning(f"⚠️ GPT-4o недоступен, fallback на mini")
-            model = "gpt-4o-mini"
-    else:
-        model = "gpt-4o-mini"
-
-    # ✅ Вызов API (GPT-4o-mini или fallback)
-    response = await client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": full_prompt}
-        ],
-        max_tokens=2500,
-        temperature=0.5
-    )
-    
-    answer = response.choices[0].message.content.strip()
-    return safe_telegram_text(answer)
+                answer = response.choices[0].message.content.strip()
+                return safe_telegram_text(answer)
+                
+            except Exception as fallback_error:
+                logger.error(f"❌ Fallback тоже не работает: {str(fallback_error)}")
+        
+        return safe_telegram_text("Извините, временная техническая ошибка. Попробуйте повторить запрос.")
 
 
 async def ask_doctor_gemini(system_prompt: str, full_prompt: str, lang: str = "ru") -> str:
