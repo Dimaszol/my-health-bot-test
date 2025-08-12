@@ -582,8 +582,8 @@ async def ask_doctor(context_text: str, user_question: str,
 
     # ✅ ПРОСТАЯ ЛОГИКА ВЫБОРА МОДЕЛИ
     if use_gemini:
-        # Есть лимиты - используем GPT-4o с усиленным промптом
-        model = "gpt-4o"
+        # Есть лимиты - используем GPT-5 с усиленным промптом
+        model = "gpt-5"
         system_prompt = f"""
 {base_system_prompt}
 
@@ -594,7 +594,7 @@ If you start responding in the wrong language, immediately stop and restart in t
 The user expects consistency in language throughout the entire response.
 Never mix languages within a single response.
 """
-        model_info = "GPT-4o Advanced"
+        model_info = "GPT-5"
         
     else:
         # Нет лимитов - используем GPT-4o-mini
@@ -645,16 +645,27 @@ Never mix languages within a single response.
 
     # ✅ ЕДИНЫЙ ВЫЗОВ API
     try:
-        # Все модели используют стандартные параметры
-        response = await client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": full_prompt}
-            ],
-            max_tokens=3000 if model == "gpt-4o" else 2500,
-            temperature=0.4 if model == "gpt-4o" else 0.5,
-        )
+        # GPT-5 использует особые параметры
+        if model == "gpt-5":
+            response = await client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": full_prompt}
+                ],
+                max_completion_tokens=3000,  # GPT-5 параметр
+                # temperature не указываем - GPT-5 использует по умолчанию
+            )
+        else:
+            response = await client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": full_prompt}
+                ],
+                max_tokens=2500,
+                temperature=0.5,
+            )
         
         answer = response.choices[0].message.content.strip()
         return safe_telegram_text(answer)

@@ -1,5 +1,6 @@
 translations = {
-    "ru": {       
+    "ru": {   
+        "gpt5_processing": "🧠 <i>Готовлю детальный ответ с помощью продвинутой модели...</i>",    
             "weekly_limit_exceeded_free_with_purchase_option": (
             "😴 <b>Недельный лимит исчерпан</b>\n\n"
             "Вы достигли лимита: {weekly_limit} {action_name} в неделю.\n\n"
@@ -444,6 +445,8 @@ translations = {
     },
 
     "uk": {   
+        "gpt5_processing": "🧠 <i>Готую детальну відповідь за допомогою продвинутої моделі...</i>",
+
         "weekly_limit_exceeded_free_with_purchase_option": (
         "😴 <b>Тижневий ліміт вичерпано</b>\n\n"
         "Ви досягли ліміту: {weekly_limit} {action_name} на тиждень.\n\n"
@@ -884,7 +887,8 @@ translations = {
     "photo_file_not_found": "⚠️ Фото не знайдено. Завантажте фото заново.",
     "cancel_analysis": "❌ Скасувати"
 },
-    "en": {       
+    "en": {   
+        "gpt5_processing": "🧠 <i>Preparing detailed response using advanced model...</i>",    
         "weekly_limit_exceeded_free_with_purchase_option": (
         "😴 <b>Weekly limit exhausted</b>\n\n"
         "You've reached the limit: {weekly_limit} {action_name} per week.\n\n"
@@ -1327,6 +1331,7 @@ translations = {
 },
 
 "de": {       
+    "gpt5_processing": "🧠 <i>Bereite detaillierte Antwort mit fortgeschrittenem Modell vor...</i>",
     "weekly_limit_exceeded_free_with_purchase_option": (
         "😴 <b>Wochenlimit erschöpft</b>\n\n"
         "Sie haben das Limit erreicht: {weekly_limit} {action_name} pro Woche.\n\n"

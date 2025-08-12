@@ -1108,13 +1108,44 @@ async def handle_user_message(message: types.Message):
                     model_name = "GPT-4o-mini"
 
                 # ✅ ПРАВИЛЬНЫЙ ВЫЗОВ ask_doctor (НОВАЯ СИГНАТУРА):
-                response = await ask_doctor(
-                    context_text=full_context,  # Полный готовый контекст
-                    user_question=user_input,
-                    lang=lang,
-                    user_id=user_id,
-                    use_gemini=use_gemini
-                )
+                processing_msg = None
+                if use_gemini:  # GPT-5
+                    processing_msg = await message.answer(
+                        t("gpt5_processing", lang), 
+                        parse_mode="HTML"
+                    )
+
+                try:
+                    # Основной запрос к модели
+                    response = await ask_doctor(
+                        context_text=full_context,
+                        user_question=user_input,
+                        lang=lang,
+                        user_id=user_id,
+                        use_gemini=use_gemini
+                    )
+                    
+                    # Удаляем уведомление перед отправкой ответа
+                    if processing_msg:
+                        try:
+                            await bot.delete_message(
+                                chat_id=message.chat.id, 
+                                message_id=processing_msg.message_id
+                            )
+                        except Exception:
+                            pass  # Игнорируем ошибки удаления
+                            
+                except Exception as e:
+                    # При ошибке тоже удаляем уведомление
+                    if processing_msg:
+                        try:
+                            await bot.delete_message(
+                                chat_id=message.chat.id, 
+                                message_id=processing_msg.message_id
+                            )
+                        except Exception:
+                            pass
+                    raise e  # Передаем ошибку дальше
 
                 # Отправляем ответ пользователю
                 if response:
