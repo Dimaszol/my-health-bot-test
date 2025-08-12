@@ -601,7 +601,7 @@ async def ask_doctor(context_text: str, user_question: str,
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         # Определяем какая модель будет использоваться
-        model_info = "GPT-5" if use_gemini else "GPT-4o/GPT-4o-mini"
+        model_info = "GPT-4o" if use_gemini else "GPT-4o/GPT-4o-mini"
         
         with open("prompts_log.txt", "a", encoding="utf-8") as f:
             f.write(f"\n{'='*80}\n")
