@@ -645,7 +645,7 @@ Never mix languages within a single response.
 
     # ✅ ЕДИНЫЙ ВЫЗОВ API
     try:
-        # GPT-5 использует max_completion_tokens вместо max_tokens
+        # GPT-5 использует max_completion_tokens и только temperature=1
         if model == "gpt-5":
             response = await client.chat.completions.create(
                 model=model,
@@ -654,7 +654,7 @@ Never mix languages within a single response.
                     {"role": "user", "content": full_prompt}
                 ],
                 max_completion_tokens=3000,  # Для GPT-5
-                temperature=0.4,
+                # temperature не указываем - используется значение по умолчанию (1)
             )
         else:
             response = await client.chat.completions.create(
