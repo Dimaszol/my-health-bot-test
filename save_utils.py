@@ -35,27 +35,82 @@ async def send_to_gpt_vision(image_path: str, lang: str = "ru", prompt: str = No
 
 
 def convert_pdf_to_images(pdf_path: str, output_dir: str, max_pages: int = 5):
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Удаляем старые страницы
-    for f in os.listdir(output_dir):
-        if f.endswith(".png"):
-            os.remove(os.path.join(output_dir, f))
+    """Исправленная функция конвертации PDF в изображения"""
+    try:
+        import os
+        from pdf2image import convert_from_path
+        
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Удаляем старые страницы
+        for f in os.listdir(output_dir):
+            if f.endswith(".png"):
+                os.remove(os.path.join(output_dir, f))
+        
+        # ✅ ИСПРАВЛЕНИЕ: Убираем hardcoded путь к poppler
+        # Railway и большинство Linux систем имеют poppler в системном PATH
+        try:
+            # Пробуем без указания пути (для Railway/Linux)
+            images = convert_from_path(
+                pdf_path,
+                first_page=1,
+                last_page=max_pages,
+                dpi=200,  # Добавляем DPI для лучшего качества
+                fmt='PNG'
+            )
+        except Exception as e:
+            # Fallback: пробуем с возможными путями poppler
+            poppler_paths = [
+                None,  # Системный PATH
+                "/usr/bin",  # Linux
+                "/usr/local/bin",  # macOS с Homebrew
+                os.path.join(os.getcwd(), "poppler", "Library", "bin"),  # Windows
+            ]
             
-    images = convert_from_path(
-        pdf_path,
-        first_page=1,
-        last_page=max_pages,
-        poppler_path=os.path.join(os.getcwd(), "poppler", "Library", "bin")
-    )
+            images = None
+            last_error = None
+            
+            for poppler_path in poppler_paths:
+                try:
+                    images = convert_from_path(
+                        pdf_path,
+                        first_page=1,
+                        last_page=max_pages,
+                        poppler_path=poppler_path,
+                        dpi=200,
+                        fmt='PNG'
+                    )
+                    break  # Успешно конвертировали
+                except Exception as err:
+                    last_error = err
+                    continue
+            
+            if images is None:
+                raise last_error or Exception("Не удалось найти poppler")
 
-    image_paths = []
-    for i, image in enumerate(images):
-        image_path = os.path.join(output_dir, f"page_{i+1}.png")
-        image.save(image_path, "PNG")
-        image_paths.append(image_path)
+        # Сохраняем изображения
+        image_paths = []
+        for i, image in enumerate(images):
+            image_path = os.path.join(output_dir, f"page_{i+1}.png")
+            image.save(image_path, "PNG", optimize=True)
+            image_paths.append(image_path)
 
-    return image_paths
+        return image_paths
+        
+    except Exception as e:
+        # Логируем детальную ошибку для диагностики
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"❌ Ошибка конвертации PDF: {str(e)}")
+        logger.error(f"❌ PDF путь: {pdf_path}")
+        logger.error(f"❌ Тип ошибки: {type(e).__name__}")
+        
+        # Проверяем, существует ли файл
+        if not os.path.exists(pdf_path):
+            logger.error(f"❌ PDF файл не найден: {pdf_path}")
+        
+        # Возвращаем пустой список при ошибке
+        return []
 
 def format_dialogue(messages, max_len=300):
     """

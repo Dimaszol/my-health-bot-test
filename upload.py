@@ -85,6 +85,8 @@ async def handle_document_upload(message: types.Message, bot):
         await message.answer(t("document_received", lang))
 
         # ОБРАБОТКА ФАЙЛА
+        # ===== ЗАМЕНИ БЛОК "ОБРАБОТКА ФАЙЛА" В upload.py =====
+
         if file_ext == '.pdf':
             try:
                 image_paths = convert_pdf_to_images(local_file, output_dir=f"files/{user_id}/pages")
@@ -97,17 +99,35 @@ async def handle_document_upload(message: types.Message, bot):
 
                 vision_text = ""
                 for img_path in image_paths:
-                    page_text, _ = await send_to_gpt_vision(img_path)
-                    vision_text += page_text + "\n\n"
+                    try:
+                        page_text, _ = await send_to_gpt_vision(img_path)
+                        if page_text:  # Проверяем что текст получен
+                            vision_text += page_text + "\n\n"
+                    except Exception as page_error:
+                        # Логируем ошибку страницы, но продолжаем
+                        logger.warning(f"Ошибка обработки страницы {img_path}: {page_error}")
+                        continue
 
                 vision_text = vision_text.strip()
+                
+                # Если не удалось извлечь текст ни с одной страницы
+                if not vision_text:
+                    await message.answer(t("pdf_read_failed", lang))
+                    return
+                    
             except Exception as e:
+                # Детальное логирование для диагностики
+                logger.error(f"Ошибка PDF для пользователя {user_id}: {str(e)}")
+                logger.error(f"PDF файл: {local_file}")
+                logger.error(f"Тип ошибки: {type(e).__name__}")
+                
                 await message.answer(t("pdf_processing_error", lang))
                 return  # ← НЕ записываем лимит при ошибке PDF
         else:
             try:
                 vision_text, _ = await send_to_gpt_vision(local_file)
             except Exception as e:
+                logger.error(f"Ошибка анализа изображения для пользователя {user_id}: {str(e)}")
                 await message.answer(t("image_analysis_error", lang))
                 return  # ← НЕ записываем лимит при ошибке изображения
 
