@@ -1602,67 +1602,47 @@ async def handle_button_action(callback: types.CallbackQuery):
                 storage = get_file_storage()
                 
                 if storage.storage_type == "supabase":
-                    logger.info(f"🔍 [DEBUG] Скачиваем файл из Supabase: {file_path}")
+                    # ✅ ДЛЯ ПРИВАТНОГО BUCKET СРАЗУ ИСПОЛЬЗУЕМ БЕЗОПАСНОЕ СКАЧИВАНИЕ
+                    logger.info(f"📥 [SUPABASE] Скачиваем файл для пользователя: {file_path}")
                     
-                    # ✅ СНАЧАЛА ПРОБУЕМ ПУБЛИЧНУЮ ССЫЛКУ
-                    public_url = storage.storage_manager.get_public_url(file_path)
-                    logger.info(f"🔍 [DEBUG] Public URL: {public_url}")
+                    # Определяем имя файла для пользователя
+                    original_filename = doc.get("title", "document")
+                    file_ext = os.path.splitext(file_path)[1] or ".pdf"
+                    safe_filename = f"{original_filename}{file_ext}"
                     
-                    if not public_url:
-                        # ✅ ЕСЛИ НЕ РАБОТАЕТ - ПОЛУЧАЕМ ПОДПИСАННУЮ ССЫЛКУ
-                        public_url = storage.storage_manager.get_signed_url(file_path, expires_in=3600)
-                        logger.info(f"🔍 [DEBUG] Signed URL: {public_url}")
+                    # Создаем временный файл
+                    import tempfile
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as temp_file:
+                        temp_path = temp_file.name
                     
-                    if public_url:
-                        # Определяем имя файла
-                        original_filename = doc.get("title", "document") + ".pdf"
+                    # Скачиваем файл из Supabase Storage
+                    import asyncio
+                    download_success = await storage.storage_manager.download_file(file_path, temp_path)
+                    
+                    if download_success and os.path.exists(temp_path):
+                        # Отправляем файл пользователю
+                        await callback.message.answer_document(
+                            types.FSInputFile(path=temp_path, filename=safe_filename)
+                        )
+                        logger.info(f"✅ [SUPABASE] Файл отправлен пользователю: {safe_filename}")
                         
+                        # Удаляем временный файл
                         try:
-                            # ✅ ПРОБУЕМ ОТПРАВИТЬ ПО ССЫЛКЕ
-                            await callback.message.answer_document(
-                                types.URLInputFile(url=public_url, filename=original_filename)
-                            )
-                            logger.info(f"✅ [SUPABASE] Файл отправлен по URL")
-                            
-                        except Exception as url_error:
-                            logger.error(f"❌ [SUPABASE] Ошибка отправки по URL: {url_error}")
-                            
-                            # ✅ FALLBACK: СКАЧИВАЕМ И ОТПРАВЛЯЕМ КАК ЛОКАЛЬНЫЙ ФАЙЛ
-                            logger.info(f"🔄 [FALLBACK] Пробуем скачать и отправить локально")
-                            
-                            import tempfile
-                            with tempfile.NamedTemporaryFile(delete=False, suffix=".tmp") as temp_file:
-                                temp_path = temp_file.name
-                            
-                            # Скачиваем файл из Supabase
-                            import asyncio
-                            download_success = await storage.storage_manager.download_file(file_path, temp_path)
-                            
-                            if download_success and os.path.exists(temp_path):
-                                # Отправляем как локальный файл
-                                await callback.message.answer_document(
-                                    types.FSInputFile(path=temp_path, filename=original_filename)
-                                )
-                                logger.info(f"✅ [FALLBACK] Файл отправлен локально")
-                                
-                                # Удаляем временный файл
-                                try:
-                                    os.remove(temp_path)
-                                except:
-                                    pass
-                            else:
-                                await callback.message.answer(t("file_not_found", lang))
+                            os.remove(temp_path)
+                        except:
+                            pass
                     else:
                         await callback.message.answer(t("file_not_found", lang))
+                        
                 else:
-                    # Локальные файлы
+                    # ✅ ЛОКАЛЬНЫЕ ФАЙЛЫ (для fallback режима разработки)
                     if not os.path.exists(file_path):
                         await callback.message.answer(t("file_not_found", lang))
                         return
                     await callback.message.answer_document(types.FSInputFile(path=file_path))
                     
             except Exception as e:
-                logger.error(f"❌ Ошибка получения файла: {e}")
+                logger.error(f"❌ Ошибка скачивания файла: {e}")
                 await callback.message.answer(t("file_not_found", lang))
           
             
