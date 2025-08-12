@@ -544,6 +544,7 @@ async def extract_keywords(text: str) -> list[str]:
         log_error_with_context(e, {"function": "extract_keywords", "text_length": len(text)})
         return []
 
+
 @async_safe_openai_call(max_retries=3, delay=2.0)
 async def ask_doctor(context_text: str, user_question: str, 
                     lang: str, user_id: int = None, use_gemini: bool = False) -> str:
@@ -644,15 +645,27 @@ Never mix languages within a single response.
 
     # ✅ ЕДИНЫЙ ВЫЗОВ API
     try:
-        response = await client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": full_prompt}
-            ],
-            max_tokens=3000 if model == "gpt-5" else 2500,  # Больше токенов для GPT-5
-            temperature=0.4 if model == "gpt-5" else 0.5,   # Ниже температура для GPT-5
-        )
+        # GPT-5 использует max_completion_tokens вместо max_tokens
+        if model == "gpt-5":
+            response = await client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": full_prompt}
+                ],
+                max_completion_tokens=3000,  # Для GPT-5
+                temperature=0.4,
+            )
+        else:
+            response = await client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": full_prompt}
+                ],
+                max_tokens=2500,  # Для остальных моделей
+                temperature=0.5,
+            )
         
         answer = response.choices[0].message.content.strip()
         return safe_telegram_text(answer)
