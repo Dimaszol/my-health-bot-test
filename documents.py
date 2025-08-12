@@ -68,7 +68,7 @@ async def handle_ignore_document(callback: types.CallbackQuery, doc_id: int):
         return
 
     await update_document_confirmed(doc_id, confirmed=False)
-    mark_chunks_unconfirmed(doc_id)
+    await mark_chunks_unconfirmed(doc_id)
     await callback.message.delete()
     await callback.answer(t("excluded", lang))
 

@@ -1,4 +1,4 @@
-# supabase_storage.py - Новая система хранения файлов на Supabase
+# supabase_storage.py - Обновленная система хранения файлов на Supabase
 
 import os
 import uuid
@@ -28,23 +28,57 @@ class SupabaseStorage:
         self.supabase: Client = create_client(supabase_url, supabase_key)
         self.bucket_name = "medical-documents"
         
+        # 📋 ДОПУСТИМЫЕ РАСШИРЕНИЯ для медицинского бота
+        self.allowed_extensions = {
+            '.pdf', '.jpg', '.jpeg', '.png', '.webp', 
+            '.docx', '.doc', '.txt', '.rtf'
+        }
+        
         logger.info(f"✅ Supabase Storage инициализирован: {self.bucket_name}")
+    
+    def _generate_safe_filename(self, original_filename: str, user_id: int) -> str:
+        """
+        🎯 ПРОСТАЯ ГЕНЕРАЦИЯ БЕЗОПАСНОГО ИМЕНИ ФАЙЛА
+        
+        Args:
+            original_filename: Оригинальное имя (любые символы)
+            user_id: ID пользователя для логирования
+            
+        Returns:
+            str: Безопасное имя файла medical_doc_abc123.pdf
+        """
+        # 🔍 Извлекаем расширение
+        name, extension = os.path.splitext(original_filename.lower())
+        
+        # ✅ Проверяем расширение
+        if extension not in self.allowed_extensions:
+            logger.warning(f"⚠️ [USER:{user_id}] Неподдерживаемое расширение: {extension}")
+            extension = '.pdf'  # Fallback на PDF
+        
+        # 🎯 Генерируем безопасное имя: medical_doc_UUID.расширение
+        file_uuid = uuid.uuid4().hex[:12]  # 12 символов достаточно
+        safe_filename = f"medical_doc_{file_uuid}{extension}"
+        
+        # 🔒 БЕЗОПАСНОЕ ЛОГИРОВАНИЕ (без оригинального имени файла)
+        logger.info(f"✅ [USER:{user_id}] Сгенерировано безопасное имя: {safe_filename}")
+        logger.debug(f"🔍 [USER:{user_id}] Оригинал: {len(original_filename)} символов, расширение: {extension}")
+        
+        return safe_filename
     
     def _generate_file_path(self, user_id: int, filename: str) -> str:
         """
-        Генерирует безопасный путь к файлу
-        Формат: users/{user_id}/{uuid}_{filename}
+        Генерирует безопасный путь к файлу - ОБНОВЛЕННАЯ ВЕРСИЯ
+        Формат: users/{user_id}/medical_doc_{uuid}.{ext}
         """
-        # Генерируем уникальный ID для файла
-        file_uuid = str(uuid.uuid4())[:8]
+        # 🎯 ИСПОЛЬЗУЕМ ПРОСТУЮ ГЕНЕРАЦИЮ БЕЗОПАСНОГО ИМЕНИ
+        safe_filename = self._generate_safe_filename(filename, user_id)
         
-        # Очищаем имя файла от опасных символов
-        safe_filename = "".join(c for c in filename if c.isalnum() or c in ".-_").strip()
-        if not safe_filename:
-            safe_filename = "document"
+        # 📁 Формируем путь: users/123456/medical_doc_abc123.pdf
+        storage_path = f"users/{user_id}/{safe_filename}"
         
-        # Формируем путь: users/123456/abc12345_document.pdf
-        return f"users/{user_id}/{file_uuid}_{safe_filename}"
+        logger.info(f"✅ [STORAGE] Путь сгенерирован: {storage_path}")
+        
+        return storage_path
     
     async def upload_file(self, user_id: int, file_path: str, filename: str) -> Tuple[bool, str]:
         """
@@ -66,7 +100,7 @@ class SupabaseStorage:
             # Генерируем путь в хранилище
             storage_path = self._generate_file_path(user_id, filename)
             
-            # ✅ ИСПРАВЛЯЕМ ЧТЕНИЕ ФАЙЛА
+            # ✅ ЧИТАЕМ ФАЙЛ
             with open(file_path, 'rb') as file:
                 file_data = file.read()
             
@@ -76,16 +110,14 @@ class SupabaseStorage:
             
             logger.info(f"🔍 [DEBUG] Читаем файл: {len(file_data)} bytes")
             
-            # ✅ ИСПРАВЛЯЕМ ЗАГРУЗКУ В SUPABASE - используем правильные параметры
+            # ✅ ЗАГРУЖАЕМ В SUPABASE
             try:
-                # Попробуем загрузить без file_options
                 response = self.supabase.storage.from_(self.bucket_name).upload(
                     path=storage_path,
                     file=file_data
                 )
                 
                 logger.info(f"🔍 [DEBUG] Supabase response type: {type(response)}")
-                logger.info(f"🔍 [DEBUG] Supabase response: {response}")
                 
                 # ✅ ПРОВЕРЯЕМ РЕЗУЛЬТАТ
                 if response is None:
@@ -99,29 +131,12 @@ class SupabaseStorage:
                     logger.info(f"✅ [SUPABASE] Файл загружен: {storage_path}")
                     return True, storage_path
                 else:
-                    logger.info(f"✅ [SUPABASE] Файл загружен (неожиданный формат ответа): {storage_path}")
+                    logger.info(f"✅ [SUPABASE] Файл загружен: {storage_path}")
                     return True, storage_path
                 
             except Exception as upload_error:
                 logger.error(f"❌ [SUPABASE] Ошибка API: {upload_error}")
-                
-                # Попробуем альтернативный способ
-                try:
-                    # Используем другой метод загрузки
-                    import io
-                    file_like = io.BytesIO(file_data)
-                    
-                    response2 = self.supabase.storage.from_(self.bucket_name).upload(
-                        path=storage_path,
-                        file=file_like
-                    )
-                    
-                    logger.info(f"✅ [SUPABASE] Файл загружен (способ 2): {storage_path}")
-                    return True, storage_path
-                    
-                except Exception as e2:
-                    logger.error(f"❌ [SUPABASE] Альтернативный способ тоже не работает: {e2}")
-                    return False, f"Both upload methods failed: {str(upload_error)}, {str(e2)}"
+                return False, f"Upload failed: {str(upload_error)}"
             
         except Exception as e:
             logger.error(f"❌ [SUPABASE] Ошибка загрузки файла: {e}")
