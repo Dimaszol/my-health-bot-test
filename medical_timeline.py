@@ -373,7 +373,7 @@ IMPORTANT RULES:
 RESPONSE FORMAT (JSON only):
 {{
     "event_date": "DD.MM.YYYY",
-    "category": "diagnosis|treatment|test|procedure|general",
+    "category": "ONE OF: diagnosis, treatment, test, procedure, general",
     "importance": "critical|important|normal",
     "description": "Combined summary with specific values in {response_lang} (max 20 words)"
 }}
@@ -470,7 +470,7 @@ IMPORTANT RULES:
 RESPONSE FORMAT (JSON only):
 {{
     "event_date": "DD.MM.YYYY",
-    "category": "diagnosis|treatment|test|procedure|general",
+    "category": "ONE OF: diagnosis, treatment, test, procedure, general",
     "importance": "critical|important|normal",
     "description": "Combined summary with specific values in {response_lang} (max 20 words)"
 }}
