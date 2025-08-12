@@ -1102,7 +1102,7 @@ async def handle_user_message(message: types.Message):
                 
                 if has_premium_limits:
                     use_gemini = True
-                    model_name = "GPT-5"
+                    model_name = "GPT-4o"
                 else:
                     use_gemini = False
                     model_name = "GPT-4o-mini"
