@@ -601,7 +601,7 @@ async def ask_doctor(context_text: str, user_question: str,
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         # Определяем какая модель будет использоваться
-        model_info = "Gemini 2.5 Flash" if use_gemini else "GPT-4o/GPT-4o-mini"
+        model_info = "GPT-5" if use_gemini else "GPT-4o/GPT-4o-mini"
         
         with open("prompts_log.txt", "a", encoding="utf-8") as f:
             f.write(f"\n{'='*80}\n")
@@ -676,20 +676,10 @@ async def ask_doctor(context_text: str, user_question: str,
 
 async def ask_doctor_gemini(system_prompt: str, full_prompt: str, lang: str = "ru") -> str:
     """
-    Отдельная функция для Gemini 2.5 Flash - С ЖЕСТКОЙ ФИКСАЦИЕЙ ЯЗЫКА
+    Отдельная функция для GPT-5 - С ЖЕСТКОЙ ФИКСАЦИЕЙ ЯЗЫКА
     """
     try:
-        import google.generativeai as genai
-        import os
-        
-        # Получаем API ключ из .env
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise Exception("GEMINI_API_KEY не найден в .env")
-        
-        # Настраиваем Gemini
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        # Убираем импорт Gemini, используем уже импортированный OpenAI client
         
         # 🔧 УСИЛЕННАЯ ЯЗЫКОВАЯ ФИКСАЦИЯ на основе переданного lang
         if lang == "ru":
@@ -698,6 +688,8 @@ async def ask_doctor_gemini(system_prompt: str, full_prompt: str, lang: str = "r
             lang_instruction = "КРИТИЧНО ВАЖЛИВО: Відповідай ТІЛЬКИ українською мовою. Ніколи не переключайся на російську чи англійську."
         elif lang == "en":
             lang_instruction = "CRITICAL: Respond ONLY in English. Never switch to Russian or Ukrainian."
+        elif lang == "de":
+            lang_instruction = "KRITISCH WICHTIG: Antworten Sie NUR auf Deutsch. Wechseln Sie niemals zu Russisch, Ukrainisch oder Englisch."
         else:
             lang_instruction = "КРИТИЧЕСКИ ВАЖНО: Отвечай ТОЛЬКО на русском языке."
         
@@ -716,43 +708,23 @@ Never mix languages within a single response.
         # Объединяем enhanced system и user промпты
         combined_prompt = f"{enhanced_system_prompt}\n\n{full_prompt}"
 
-        # Отправляем запрос
-        response = model.generate_content(
-            combined_prompt,
-            generation_config=genai.types.GenerationConfig(
-                max_output_tokens=2500,
-                temperature=0.5,  # 🔧 Немного снижаем для более стабильного языка
-                candidate_count=1
-            ),
-            safety_settings=[
-                {
-                    "category": "HARM_CATEGORY_HARASSMENT",
-                    "threshold": "BLOCK_NONE"
-                },
-                {
-                    "category": "HARM_CATEGORY_HATE_SPEECH", 
-                    "threshold": "BLOCK_NONE"
-                },
-                {
-                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                    "threshold": "BLOCK_NONE"
-                },
-                {
-                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-                    "threshold": "BLOCK_NONE"
-                }
-            ]
+        # Заменяем Gemini на GPT-5
+        response = await client.chat.completions.create(
+            model="gpt-5",
+            messages=[
+                {"role": "system", "content": enhanced_system_prompt},
+                {"role": "user", "content": full_prompt}
+            ],
+            max_tokens=2500,
+            temperature=0.5,
         )
         
-        # Обработка ответа
-        if response.candidates and len(response.candidates) > 0:
-            candidate = response.candidates[0]
-
-            if hasattr(candidate, 'content') and candidate.content.parts:
-                answer = candidate.content.parts[0].text.strip()
-                return safe_telegram_text(answer)
+        # Обработка ответа (адаптируем под OpenAI формат)
+        if response.choices and len(response.choices) > 0:
+            answer = response.choices[0].message.content.strip()
+            return safe_telegram_text(answer)
         
-        raise Exception("Gemini не вернул валидный ответ")
+        raise Exception("GPT-5 не вернул валидный ответ")
         
     except Exception as e:
         error_msg = "Извините, временная техническая ошибка. Попробуйте повторить запрос."
