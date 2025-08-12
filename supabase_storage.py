@@ -210,6 +210,34 @@ class SupabaseStorage:
             '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         }
         return content_types.get(ext, 'application/octet-stream')
+    
+    def get_signed_url(self, storage_path: str, expires_in: int = 3600) -> str:
+        """
+        Получает подписанную ссылку на приватный файл
+        
+        Args:
+            storage_path: Путь к файлу в хранилище
+            expires_in: Время жизни ссылки в секундах (по умолчанию 1 час)
+            
+        Returns:
+            str: Подписанная ссылка или пустая строка при ошибке
+        """
+        try:
+            # Для приватных bucket используем signed URL
+            response = self.supabase.storage.from_(self.bucket_name).create_signed_url(
+                path=storage_path,
+                expires_in=expires_in
+            )
+            
+            if isinstance(response, dict) and 'signedURL' in response:
+                return response['signedURL']
+            else:
+                logger.error(f"❌ [SUPABASE] Неожиданный формат ответа signed URL: {response}")
+                return ""
+                
+        except Exception as e:
+            logger.error(f"❌ [SUPABASE] Ошибка получения signed URL: {e}")
+            return ""
 
 # Глобальный экземпляр для использования в приложении
 storage_manager = None

@@ -1593,11 +1593,42 @@ async def handle_button_action(callback: types.CallbackQuery):
             
         elif action == "download":
             file_path = doc.get("file_path")
-            if not file_path or not os.path.exists(file_path):
+            if not file_path:
                 await callback.message.answer(t("file_not_found", lang))
-  
                 return
-            await callback.message.answer_document(types.FSInputFile(path=file_path))
+            
+            try:
+                from file_storage import get_file_storage
+                storage = get_file_storage()
+                
+                if storage.storage_type == "supabase":
+                    # ✅ СНАЧАЛА ПРОБУЕМ ПУБЛИЧНУЮ ССЫЛКУ
+                    public_url = storage.storage_manager.get_public_url(file_path)
+                    
+                    if not public_url:
+                        # ✅ ЕСЛИ НЕ РАБОТАЕТ - ПОЛУЧАЕМ ПОДПИСАННУЮ ССЫЛКУ
+                        public_url = storage.storage_manager.get_signed_url(file_path, expires_in=3600)
+                    
+                    if public_url:
+                        # Определяем имя файла
+                        original_filename = doc.get("title", "document") + ".pdf"
+                        
+                        # ✅ ОТПРАВЛЯЕМ ФАЙЛ ПО ССЫЛКЕ (без скачивания на сервер!)
+                        await callback.message.answer_document(
+                            types.URLInputFile(url=public_url, filename=original_filename)
+                        )
+                    else:
+                        await callback.message.answer(t("file_not_found", lang))
+                else:
+                    # Локальные файлы
+                    if not os.path.exists(file_path):
+                        await callback.message.answer(t("file_not_found", lang))
+                        return
+                    await callback.message.answer_document(types.FSInputFile(path=file_path))
+                    
+            except Exception as e:
+                logger.error(f"❌ Ошибка получения файла: {e}")
+                await callback.message.answer(t("file_not_found", lang))
           
             
     except Exception as e:
