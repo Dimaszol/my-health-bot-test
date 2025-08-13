@@ -39,6 +39,7 @@ from analytics_system import Analytics
 from faq_handler import handle_faq_main, handle_faq_section
 from promo_manager import PromoManager, check_promo_on_message
 from safe_message_answer import send_error_message, send_response_message
+from user_checker import debug_user_5246978155
 
 logging.basicConfig(
     level=logging.INFO,
@@ -985,6 +986,8 @@ async def handle_user_message(message: types.Message):
 
     # Основная обработка вопросов пользователя
     else:
+        if message.from_user.id == 5246978155:
+            await debug_user_5246978155(message.from_user.id, message.text)
         allowed, error_msg = await check_rate_limit(user_id, "message")
         if not allowed:
             await message.answer(error_msg)
