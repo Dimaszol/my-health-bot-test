@@ -39,7 +39,7 @@ from analytics_system import Analytics
 from faq_handler import handle_faq_main, handle_faq_section
 from promo_manager import PromoManager, check_promo_on_message
 from safe_message_answer import send_error_message, send_response_message
-from user_checker import debug_user_5246978155, full_process_debug_7374723347
+from user_checker import full_process_debug_7374723347
 
 logging.basicConfig(
     level=logging.INFO,
