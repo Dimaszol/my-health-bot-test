@@ -583,7 +583,7 @@ async def ask_doctor(context_text: str, user_question: str,
     # ✅ ПРОСТАЯ ЛОГИКА ВЫБОРА МОДЕЛИ
     if use_gemini:
         # Есть лимиты - используем GPT-5 с усиленным промптом
-        model = "gpt-5"
+        model = "gpt-4o"
         system_prompt = f"""
 {base_system_prompt}
 
@@ -594,7 +594,7 @@ If you start responding in the wrong language, immediately stop and restart in t
 The user expects consistency in language throughout the entire response.
 Never mix languages within a single response.
 """
-        model_info = "GPT-5"
+        model_info = "GPT-4o"
         
     else:
         # Нет лимитов - используем GPT-4o-mini
@@ -646,15 +646,15 @@ Never mix languages within a single response.
     # ✅ ЕДИНЫЙ ВЫЗОВ API
     try:
         # GPT-5 использует особые параметры
-        if model == "gpt-5":
+        if model == "gpt-4o":
             response = await client.chat.completions.create(
                 model=model,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": full_prompt}
                 ],
-                max_completion_tokens=3000,  # GPT-5 параметр
-                # temperature не указываем - GPT-5 использует по умолчанию
+                max_tokens=3000,  # ← Обычный параметр
+                temperature=0.5,
             )
         else:
             response = await client.chat.completions.create(
