@@ -28,11 +28,11 @@ async def debug_user_5246978155(user_id: int, message_text: str):
         except Exception as e:
             logger.error(f"❌ [DEBUG-USER] Ошибка базовых данных: {e}")
         
-        # 2. Проверяем документы пользователя
+        # 2. Проверяем документы пользователя (ИСПРАВЛЕНО!)
         try:
-            from db_postgresql import get_user_documents
+            from db_postgresql import get_documents_by_user  # ← ИСПРАВЛЕННЫЙ ИМПОРТ!
             
-            docs = await get_user_documents(user_id)
+            docs = await get_documents_by_user(user_id)  # ← ИСПРАВЛЕННЫЙ ВЫЗОВ!
             logger.info(f"📄 [DEBUG-USER] Документов: {len(docs) if docs else 0}")
             
             if docs:
