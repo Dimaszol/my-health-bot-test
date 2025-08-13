@@ -38,6 +38,7 @@ from photo_analyzer import handle_photo_analysis, handle_photo_question, cancel_
 from analytics_system import Analytics
 from faq_handler import handle_faq_main, handle_faq_section
 from promo_manager import PromoManager, check_promo_on_message
+from safe_message_answer import send_error_message, send_response_message
 
 logging.basicConfig(
     level=logging.INFO,
@@ -1149,7 +1150,7 @@ async def handle_user_message(message: types.Message):
 
                 # Отправляем ответ пользователю
                 if response:
-                    await message.answer(response)
+                    await send_response_message(message, response)
                     
                     # ✅ ИСПРАВЛЕНИЕ: Тратим лимит только если ДЕЙСТВИТЕЛЬНО использовали продвинутую модель
                     if use_gemini:  # Если использовали Gemini - точно тратим лимит
@@ -1177,15 +1178,15 @@ async def handle_user_message(message: types.Message):
                                     message, user_id, reason="summary_updated"
                                 )
                 else:
-                    await message.answer(get_user_friendly_message("Не удалось получить ответ", lang))
+                    await send_error_message(message, get_user_friendly_message("Не удалось получить ответ", lang))
                     
             except Exception as e:
                 log_error_with_context(e, {"user_id": user_id, "action": "gpt_request"})
-                await message.answer(get_user_friendly_message(e, lang))
+                await send_error_message(message, get_user_friendly_message(e, lang))
                     
         except Exception as e:
             log_error_with_context(e, {"user_id": user_id, "action": "message_processing"})
-            await message.answer(get_user_friendly_message(e, lang))
+            await send_error_message(message, get_user_friendly_message(e, lang))
     
     # 🎯 ГЛАВНОЕ ДОБАВЛЕНИЕ - ПРОВЕРКА ПРОМОКОДА:
     try:
