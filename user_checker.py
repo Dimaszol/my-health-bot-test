@@ -5,13 +5,13 @@ import traceback
 
 logger = logging.getLogger(__name__)
 
-async def full_process_debug_5246978155(user_id: int, message_text: str):
+async def full_process_debug_7374723347(user_id: int, message_text: str):
     """
     🔍 ПОЛНАЯ ДИАГНОСТИКА ВСЕГО ПРОЦЕССА ВЫБОРКИ ДАННЫХ
     Показывает каждый шаг как в process_user_question_detailed
     """
     
-    if user_id != 5246978155:
+    if user_id != 7374723347:
         return  # Отладка только для этого пользователя
     
     logger.info(f"🚀 [FULL-DEBUG] ========== НАЧИНАЕМ ПОЛНУЮ ДИАГНОСТИКУ ==========")
@@ -327,13 +327,13 @@ async def full_process_debug_5246978155(user_id: int, message_text: str):
         logger.error(f"📋 [FULL-DEBUG] Traceback:\n{traceback.format_exc()}")
         return None
 
-async def debug_user_5246978155(user_id: int, message_text: str):
+async def debug_user_7374723347(user_id: int, message_text: str):
     """Специальная отладка для проблемного пользователя"""
     
-    if user_id != 5246978155:
+    if user_id != 7374723347:
         return  # Отладка только для этого пользователя
     
-    await full_process_debug_5246978155(user_id, message_text)
+    await full_process_debug_7374723347(user_id, message_text)
 
     logger.info(f"🔍 [DEBUG-USER] Начинаем отладку пользователя {user_id}")
     logger.info(f"📝 [DEBUG-USER] Сообщение: {message_text[:100]}")
@@ -467,10 +467,10 @@ async def debug_user_5246978155(user_id: int, message_text: str):
 
 # 🧹 ДОПОЛНИТЕЛЬНАЯ ФУНКЦИЯ - ОЧИСТКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ
 
-async def reset_user_cache_5246978155():
+async def reset_user_cache_7374723347():
     """Безопасная очистка кэша проблемного пользователя"""
     
-    user_id = 5246978155
+    user_id = 7374723347
     
     logger.info(f"🔄 [RESET-USER] Начинаем очистку кэша пользователя {user_id}")
     
