@@ -1726,10 +1726,10 @@ async def main():
         await initialize_db_pool(max_connections=10)
         print("🗄️ PostgreSQL pool готов")
 
-        # ✅ ДОБАВЬТЕ СЮДА (после инициализации DB, до запуска бота):
-        await bot.set_my_short_description("50 пользователей")
-        print("🧪 Счетчик пользователей установлен: 50")
-        
+        from aiogram.types import MenuButtonCommands
+        await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+        print("✅ Кнопка меню добавлена")
+              
         # 🧠 4. ИНИЦИАЛИЗАЦИЯ VECTOR DB (ПОСЛЕ PostgreSQL!)
         print("🧠 Инициализация pgvector...")
         try:
