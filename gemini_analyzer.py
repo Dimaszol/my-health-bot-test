@@ -262,7 +262,7 @@ OUTPUT FORMAT (JSON array):
 [
   {{
     "event_date": "DD.MM.YYYY",
-    "category": "diagnosis|treatment|test|procedure|general",
+    "category": "ONE OF: diagnosis, treatment, test, procedure, general",
     "importance": "critical|important|normal", 
     "description": "Brief medical description"
   }}
