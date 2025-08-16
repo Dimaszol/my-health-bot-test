@@ -1726,9 +1726,21 @@ async def main():
         await initialize_db_pool(max_connections=10)
         print("🗄️ PostgreSQL pool готов")
 
-        from aiogram.types import MenuButtonCommands
-        await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
-        print("✅ Кнопка меню добавлена")
+        from aiogram.types import MenuButtonCommands, BotCommand
+    
+        # Сначала устанавливаем команды
+        commands = [
+            BotCommand(command="start", description="🚀 Запуск бота"),
+            BotCommand(command="menu", description="📋 Главное меню"),
+            BotCommand(command="help", description="❓ Помощь"),
+        ]
+        await bot.set_my_commands(commands)
+        
+        # Затем кнопку меню
+        menu_button = MenuButtonCommands()
+        await bot.set_chat_menu_button(menu_button=menu_button)
+        
+        print("✅ Кнопка меню и команды установлены")
               
         # 🧠 4. ИНИЦИАЛИЗАЦИЯ VECTOR DB (ПОСЛЕ PostgreSQL!)
         print("🧠 Инициализация pgvector...")
