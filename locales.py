@@ -1,5 +1,8 @@
 translations = {
     "ru": {   
+        "cmd_menu": "📋 Меню",
+        "cmd_help": "❓ Помощь",
+    "cmd_subscription": "💎 Подписки",
         "gpt5_processing": "🧠 <i>Готовлю детальный ответ с помощью продвинутой модели...</i>",    
             "weekly_limit_exceeded_free_with_purchase_option": (
             "😴 <b>Недельный лимит исчерпан</b>\n\n"
@@ -445,6 +448,9 @@ translations = {
     },
 
     "uk": {   
+        "cmd_menu": "📋 Меню",
+        "cmd_help": "❓ Допомога", 
+    "cmd_subscription": "💎 Підписки",
         "gpt5_processing": "🧠 <i>Готую детальну відповідь за допомогою продвинутої моделі...</i>",
 
         "weekly_limit_exceeded_free_with_purchase_option": (
@@ -888,6 +894,9 @@ translations = {
     "cancel_analysis": "❌ Скасувати"
 },
     "en": {   
+        "cmd_menu": "📋 Menu",
+       "cmd_help": "❓ Help",
+    "cmd_subscription": "💎 Subscriptions", 
         "gpt5_processing": "🧠 <i>Preparing detailed response using advanced model...</i>",    
         "weekly_limit_exceeded_free_with_purchase_option": (
         "😴 <b>Weekly limit exhausted</b>\n\n"
@@ -1331,6 +1340,9 @@ translations = {
 },
 
 "de": {       
+    "cmd_menu": "📋 Menü",
+    "cmd_help": "❓ Hilfe", 
+    "cmd_subscription": "💎 Abonnements",
     "gpt5_processing": "🧠 <i>Bereite detaillierte Antwort mit fortgeschrittenem Modell vor...</i>",
     "weekly_limit_exceeded_free_with_purchase_option": (
         "😴 <b>Wochenlimit erschöpft</b>\n\n"

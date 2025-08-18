@@ -1730,9 +1730,10 @@ async def main():
     
         # Сначала устанавливаем команды
         commands = [
-            BotCommand(command="start", description="🚀 Запуск бота"),
-            BotCommand(command="menu", description="📋 Главное меню"),
-            BotCommand(command="help", description="❓ Помощь"),
+            BotCommand(command="menu", description=t("main_menu", "ru")),
+            BotCommand(command="upload", description=t("main_upload_doc", "ru")),
+            BotCommand(command="help", description="❓ Помощь"),  # В locales.py нет ключа для help
+            BotCommand(command="subscription", description=t("settings_subscription", "ru")),
         ]
         await bot.set_my_commands(commands)
         
