@@ -1728,20 +1728,26 @@ async def main():
 
         from aiogram.types import MenuButtonCommands, BotCommand
     
-        # Сначала устанавливаем команды
-        commands = [
-            BotCommand(command="menu", description=t("main_menu", "ru")),
-            BotCommand(command="upload", description=t("main_upload_doc", "ru")),
-            BotCommand(command="help", description="❓ Помощь"),  # В locales.py нет ключа для help
-            BotCommand(command="subscription", description=t("settings_subscription", "ru")),
+        languages = ["ru", "uk", "en", "de"]
+        
+        for lang in languages:
+            commands = [
+                BotCommand(command="menu", description=t("cmd_menu", lang)),
+                BotCommand(command="help", description=t("cmd_help", lang)),
+                BotCommand(command="subscription", description=t("cmd_subscription", lang)),
+            ]
+            await bot.set_my_commands(commands, language_code=lang)
+        
+        # По умолчанию русский
+        commands_default = [
+            BotCommand(command="menu", description=t("cmd_menu", "ru")),
+            BotCommand(command="settings_faq", description=t("cmd_help", "ru")),
+            BotCommand(command="settings_subscription", description=t("cmd_subscription", "ru")),
         ]
-        await bot.set_my_commands(commands)
+        await bot.set_my_commands(commands_default)
+        await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
         
-        # Затем кнопку меню
-        menu_button = MenuButtonCommands()
-        await bot.set_chat_menu_button(menu_button=menu_button)
-        
-        print("✅ Кнопка меню и команды установлены")
+        print("✅ Команды установлены для: ru, uk, en, de")
               
         # 🧠 4. ИНИЦИАЛИЗАЦИЯ VECTOR DB (ПОСЛЕ PostgreSQL!)
         print("🧠 Инициализация pgvector...")
