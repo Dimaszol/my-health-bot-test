@@ -1732,15 +1732,15 @@ async def main():
         
         for lang in languages:
             commands = [
-                BotCommand(command="menu", description=t("cmd_menu", lang)),
-                BotCommand(command="help", description=t("cmd_help", lang)),
-                BotCommand(command="subscription", description=t("cmd_subscription", lang)),
+                BotCommand(command="start", description=t("cmd_menu", lang)),
+                BotCommand(command="settings_faq", description=t("cmd_help", lang)),
+                BotCommand(command="settings_subscription", description=t("cmd_subscription", lang)),
             ]
             await bot.set_my_commands(commands, language_code=lang)
         
         # По умолчанию русский
         commands_default = [
-            BotCommand(command="menu", description=t("cmd_menu", "ru")),
+            BotCommand(command="start", description=t("cmd_menu", "ru")),
             BotCommand(command="settings_faq", description=t("cmd_help", "ru")),
             BotCommand(command="settings_subscription", description=t("cmd_subscription", "ru")),
         ]
