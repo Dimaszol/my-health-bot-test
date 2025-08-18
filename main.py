@@ -295,6 +295,12 @@ async def prompt_memory_note(message: types.Message):
         reply_markup=cancel_keyboard(lang)
     )
 
+@dp.message(Command("subscription"))  # ← Добавить этот обработчик
+@handle_telegram_errors
+async def cmd_subscription(message: types.Message):
+    from subscription_handlers import SubscriptionHandlers
+    await SubscriptionHandlers.show_subscription_menu(message)
+
 @dp.message(Command("storage_full"))
 async def show_full_storage(message):
     if message.from_user.id != 7374723347: return
@@ -1733,16 +1739,14 @@ async def main():
         for lang in languages:
             commands = [
                 BotCommand(command="start", description=t("cmd_menu", lang)),
-                BotCommand(command="settings_faq", description=t("cmd_help", lang)),
-                BotCommand(command="settings_subscription", description=t("cmd_subscription", lang)),
+                BotCommand(command="subscription", description=t("cmd_subscription", lang)),
             ]
             await bot.set_my_commands(commands, language_code=lang)
         
         # По умолчанию русский
         commands_default = [
             BotCommand(command="start", description=t("cmd_menu", "ru")),
-            BotCommand(command="settings_faq", description=t("cmd_help", "ru")),
-            BotCommand(command="settings_subscription", description=t("cmd_subscription", "ru")),
+            BotCommand(command="subscription", description=t("cmd_subscription", "ru")),
         ]
         await bot.set_my_commands(commands_default)
         await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
