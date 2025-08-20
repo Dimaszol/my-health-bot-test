@@ -953,7 +953,7 @@ Be thorough but accessible. Make it comprehensive and actionable."""
 
     # Вызов GPT-5 с правильными параметрами
     response = await client.chat.completions.create(
-        model="gpt-5-latest",  # ✅ GPT-5 модель
+        model="gpt-5-chat-latest",  # ✅ Правильное название модели GPT-5
         messages=[
             {
                 "role": "system",
@@ -964,7 +964,7 @@ Be thorough but accessible. Make it comprehensive and actionable."""
                 "content": prompt
             }
         ],
-        max_output_tokens=1000,  # ✅ Правильный параметр для GPT-5
+        max_tokens=1000,  # ✅ Правильный параметр для Chat Completions
         temperature=0.7
     )
     
