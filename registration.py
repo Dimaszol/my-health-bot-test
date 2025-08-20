@@ -6,6 +6,7 @@ from keyboards import skip_keyboard, gender_keyboard, smoking_keyboard, alcohol_
 from datetime import datetime
 from user_state_manager import user_state_manager, user_states
 import re
+import asyncio
 
 async def show_gdpr_welcome(user_id: int, message: Message, lang: str):
     """
@@ -373,6 +374,7 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
         await message.answer(t("welcome", lang, name=await get_user_name(user_id)))
         await message.answer(t("how_to_use_1", lang))
         await show_main_menu(message, lang)
+        await asyncio.sleep(1)
         
         # 🔥 ПОТОМ ГЕНЕРИРУЕМ АНАЛИЗ ЗДОРОВЬЯ
         # Отправляем сообщение о подготовке и сохраняем его для удаления
