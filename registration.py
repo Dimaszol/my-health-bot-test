@@ -8,6 +8,29 @@ from user_state_manager import user_state_manager, user_states
 import re
 import asyncio
 
+async def send_long_message(message, text: str, max_length: int = 4000):
+    """Отправка длинного сообщения частями"""
+    if len(text) <= max_length:
+        await message.answer(text, parse_mode="HTML")
+        return
+    
+    # Разбиваем по разделам (заголовки с **)
+    parts = text.split('\n\n')
+    current_part = ""
+    
+    for part in parts:
+        if len(current_part + part + '\n\n') <= max_length:
+            current_part += part + '\n\n'
+        else:
+            if current_part:
+                await message.answer(current_part.strip(), parse_mode="HTML")
+                await asyncio.sleep(1)  # Пауза между частями
+            current_part = part + '\n\n'
+    
+    # Отправляем последнюю часть
+    if current_part:
+        await message.answer(current_part.strip(), parse_mode="HTML")
+
 async def show_gdpr_welcome(user_id: int, message: Message, lang: str):
     """
     НОВЫЙ ПЕРВЫЙ ШАГ: Показать GDPR дисклеймер с согласием
@@ -397,7 +420,7 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
                 pass  # Игнорируем если не удалось удалить
             
             # Отправляем только анализ без лишнего текста
-            await message.answer(analysis, parse_mode="HTML")
+            await send_long_message(message, analysis)
             
         except Exception as e:
             # Удаляем сообщение "готовлю анализ"
