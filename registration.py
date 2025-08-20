@@ -361,16 +361,57 @@ async def handle_registration_step(user_id: int, message: Message) -> bool:
     if step == "family_history":
         if message.text != t("skip", lang):
             text = message.text.strip() if message.text else ""
-            # ✅ ИСПРАВЛЕНО: сокращаем с 300 до 50 символов
-            if not validate_text_field(text, 50):  # БЫЛО: 300
-                await message.answer(t("text_too_long", lang, max_len=50))  # БЫЛО: 300
+            if not validate_text_field(text, 50):
+                await message.answer(t("text_too_long", lang, max_len=50))
                 return True
             await update_user_field(user_id, "family_history", text)
-        user_states[user_id] = None
+        
+        # ✅ ЗАВЕРШЕНИЕ АНКЕТЫ
         await message.answer(t("profile_thanks", lang))
+        
+        # ✅ СНАЧАЛА ПРИВЕТСТВИЕ И ИНСТРУКЦИИ
         await message.answer(t("welcome", lang, name=await get_user_name(user_id)))
         await message.answer(t("how_to_use_1", lang))
         await show_main_menu(message, lang)
+        
+        # 🔥 ПОТОМ ГЕНЕРИРУЕМ АНАЛИЗ ЗДОРОВЬЯ
+        # Отправляем сообщение о подготовке и сохраняем его для удаления
+        preparing_msg = await message.answer(t("preparing_health_analysis", lang), parse_mode="HTML")
+        
+        try:
+            # Получаем данные пользователя для анализа
+            user_data = await get_user(user_id)
+            
+            # Импортируем функцию из gpt.py
+            from gpt import generate_health_analysis
+            
+            # Генерируем анализ
+            analysis = await generate_health_analysis(user_data, lang)
+            
+            # Удаляем сообщение "готовлю анализ"
+            try:
+                await preparing_msg.delete()
+            except:
+                pass  # Игнорируем если не удалось удалить
+            
+            # Отправляем только анализ без лишнего текста
+            await message.answer(analysis, parse_mode="HTML")
+            
+        except Exception as e:
+            # Удаляем сообщение "готовлю анализ"
+            try:
+                await preparing_msg.delete()
+            except:
+                pass
+            
+            # Локализованная ошибка
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error generating health analysis: {str(e)[:100]}")
+            await message.answer(t("analysis_error", lang), parse_mode="HTML")
+        
+        # Очищаем состояние
+        user_states[user_id] = None
         return True
 
     return False

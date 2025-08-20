@@ -1,5 +1,8 @@
 translations = {
     "ru": {   
+        "preparing_health_analysis": "🧠 <b>Готовлю детальный анализ на основе вашей анкеты...</b>\n\n⏳ Создаю персональные рекомендации и план действий...",
+"analysis_error": "❌ <b>Извините, произошла ошибка при создании анализа.</b>\n\nНо ваша анкета сохранена и я буду учитывать все данные при ответах на вопросы.",
+
         "cmd_menu": "📋 Меню",
         "cmd_help": "❓ Помощь",
     "cmd_subscription": "💎 Подписки",
@@ -447,7 +450,9 @@ translations = {
         "cancel_analysis": "❌ Отменить"
     },
 
-    "uk": {   
+    "uk": {  
+        "preparing_health_analysis": "🧠 <b>Готую детальний аналіз на основі вашої анкети...</b>\n\n⏳ Створюю персональні рекомендації та план дій...",
+"analysis_error": "❌ <b>Вибачте, сталася помилка при створенні аналізу.</b>\n\nАле ваша анкета збережена і я враховуватиму всі дані при відповідях на питання.", 
         "cmd_menu": "📋 Меню",
         "cmd_help": "❓ Допомога", 
     "cmd_subscription": "💎 Підписки",
@@ -894,6 +899,8 @@ translations = {
     "cancel_analysis": "❌ Скасувати"
 },
     "en": {   
+        "preparing_health_analysis": "🧠 <b>Preparing detailed analysis based on your questionnaire...</b>\n\n⏳ Creating personal recommendations and action plan...",
+"analysis_error": "❌ <b>Sorry, an error occurred while creating the analysis.</b>\n\nBut your questionnaire is saved and I will consider all data when answering questions.",
         "cmd_menu": "📋 Menu",
        "cmd_help": "❓ Help",
     "cmd_subscription": "💎 Subscriptions", 
@@ -1339,7 +1346,9 @@ translations = {
     "cancel_analysis": "❌ Cancel"
 },
 
-"de": {       
+"de": {      
+    "preparing_health_analysis": "🧠 <b>Bereite detaillierte Analyse basierend auf Ihrem Fragebogen vor...</b>\n\n⏳ Erstelle persönliche Empfehlungen und Aktionsplan...",
+"analysis_error": "❌ <b>Entschuldigung, bei der Erstellung der Analyse ist ein Fehler aufgetreten.</b>\n\nAber Ihr Fragebogen ist gespeichert und ich werde alle Daten bei der Beantwortung von Fragen berücksichtigen.", 
     "cmd_menu": "📋 Menü",
     "cmd_help": "❓ Hilfe", 
     "cmd_subscription": "💎 Abonnements",

@@ -880,6 +880,101 @@ async def generate_title_from_text(text: str, lang: str) -> str:  # 🔄 async
     )
     return response.choices[0].message.content.strip()
 
+@async_safe_openai_call(max_retries=2, delay=2.0)
+async def generate_health_analysis(user_data: dict, lang: str = "ru") -> str:
+    """
+    Генерация персонального анализа здоровья через GPT-5
+    
+    Args:
+        user_data: Словарь с данными пользователя из БД
+        lang: Язык ответа ('ru', 'uk', 'en')
+    
+    Returns:
+        str: Персональный анализ здоровья
+    """
+    
+    # Вычисляем возраст и BMI
+    age = "not specified"
+    if user_data.get('birth_year'):
+        age = datetime.now().year - user_data['birth_year']
+    
+    bmi = "not calculated"
+    bmi_category = "not determined"
+    if user_data.get('height_cm') and user_data.get('weight_kg'):
+        height_m = user_data['height_cm'] / 100
+        bmi_value = user_data['weight_kg'] / (height_m ** 2)
+        bmi = round(bmi_value, 1)
+        
+        if bmi_value < 18.5:
+            bmi_category = "underweight"
+        elif bmi_value < 25:
+            bmi_category = "normal weight"
+        elif bmi_value < 30:
+            bmi_category = "overweight"
+        else:
+            bmi_category = "obesity"
+    
+    # Собираем данные для промта (всё на английском, убрали medications)
+    profile_summary = f"""
+Age: {age} years
+Gender: {user_data.get('gender', 'not specified')}
+Height: {user_data.get('height_cm', 'not specified')} cm
+Weight: {user_data.get('weight_kg', 'not specified')} kg
+BMI: {bmi} ({bmi_category})
+Chronic conditions: {user_data.get('chronic_conditions') or 'none reported'}
+Allergies: {user_data.get('allergies') or 'none reported'}
+Smoking: {user_data.get('smoking', 'not specified')}
+Alcohol: {user_data.get('alcohol', 'not specified')}
+Physical activity: {user_data.get('physical_activity', 'not specified')}
+Family history: {user_data.get('family_history') or 'none reported'}
+""".strip()
+    
+    # Промт на английском как вы просили
+    prompt = f"""You are a virtual physician conducting a comprehensive health consultation. Respond in {lang} language.
+
+PATIENT PROFILE:
+{profile_summary}
+
+🎯 Task: Create a personalized but structured first health analysis.
+
+Rules:
+1. Start with a short friendly introduction.
+2. Identify possible health priorities and risks based on available data (ignore empty fields).
+3. Highlight 2–4 key areas (e.g.: cardiovascular system, metabolism, musculoskeletal system, lifestyle).
+4. Specify what is useful to additionally monitor or check (tests, measurements, screenings) considering the questionnaire.
+5. Give 3–4 simple and achievable lifestyle and prevention recommendations related to user's data.
+6. If chronic diseases are specified — connect advice with them.
+7. If there is family history of diseases — mention this as an additional risk factor.
+8. Suggest a brief 90-day step-by-step plan (Weeks 1–2, 3–6, 7–12).
+9. Add "red flags" section - warning symptoms when to see a doctor personally.
+10. End with encouragement to continue using the bot (e.g.: upload documents for deeper analysis).
+
+Be thorough but accessible. Make it comprehensive and actionable."""
+
+    # Вызов GPT-5 с правильными параметрами
+    response = await client.chat.completions.create(
+        model="gpt-5-latest",  # ✅ GPT-5 модель
+        messages=[
+            {
+                "role": "system",
+                "content": f"You are an experienced virtual physician providing comprehensive health consultations. Always respond in {lang} language. Be thorough, professional, and encouraging."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        max_output_tokens=1000,  # ✅ Правильный параметр для GPT-5
+        temperature=0.7
+    )
+    
+    analysis = response.choices[0].message.content.strip()
+    
+    # Безопасное логирование
+    logger.info(f"Health analysis generated using GPT-5 for user profile")
+    
+    return safe_telegram_text(analysis)
+
 # FALLBACK ФУНКЦИИ остаются синхронными
 def fallback_summarize(text: str, lang: str = "ru") -> str:
     """Простое резюме без ИИ если OpenAI недоступен"""
