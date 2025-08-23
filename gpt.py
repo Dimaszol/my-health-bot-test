@@ -583,18 +583,25 @@ async def ask_doctor(context_text: str, user_question: str,
     # ✅ ПРОСТАЯ ЛОГИКА ВЫБОРА МОДЕЛИ
     if use_gemini:
         # Есть лимиты - используем GPT-5 с усиленным промптом
-        model = "gpt-4o"
+        model = "gpt-5-chat-latest"
         system_prompt = f"""
 {base_system_prompt}
 
 🚨 LANGUAGE ENFORCEMENT RULES:
 {lang_instruction}
 
+ADVANCED GPT-5 MEDICAL CAPABILITIES:
+• Deep analysis of complex medical conditions and their interconnections
+• Comprehensive understanding of lab results patterns and anomalies
+• Advanced interpretation of imaging reports and clinical findings
+• Personalized risk assessment based on complete medical history
+• Evidence-based recommendations with latest medical research insights
+
 If you start responding in the wrong language, immediately stop and restart in the correct language.
 The user expects consistency in language throughout the entire response.
 Never mix languages within a single response.
 """
-        model_info = "GPT-4o"
+        model_info = "gpt-5-chat-latest"
         
     else:
         # Нет лимитов - используем GPT-4o-mini
@@ -646,7 +653,7 @@ Never mix languages within a single response.
     # ✅ ЕДИНЫЙ ВЫЗОВ API
     try:
         # GPT-5 использует особые параметры
-        if model == "gpt-4o":
+        if model == "gpt-5-chat-latest":
             response = await client.chat.completions.create(
                 model=model,
                 messages=[
@@ -654,7 +661,9 @@ Never mix languages within a single response.
                     {"role": "user", "content": full_prompt}
                 ],
                 max_tokens=3000,  # ← Обычный параметр
-                temperature=0.5,
+                temperature=0.6,
+                frequency_penalty=0.2,  # ← Уменьшаем повторения
+                presence_penalty=0.2    # ← Поощряем разнообразие
             )
         else:
             response = await client.chat.completions.create(
@@ -965,10 +974,11 @@ REQUIRED OUTPUT STRUCTURE:
    - Week 7-12: Optimization (advanced strategies and progress evaluation)
    - Include measurable milestones for each phase
 
-7) **Bot Partnership Benefits**
-   - Specific ways the bot will support their health journey
-   - Encourage document uploads for deeper personalized insights
-   - Mention progress tracking and ongoing guidance capabilities
+7) **Your Health Companion Next Steps**
+   - Show how the bot helps maintain medical records and understand health data
+   - Encourage uploading medical documents for personalized analysis and explanations
+   - Mention the bot's ability to help interpret test results and medical reports
+   - Emphasize ongoing health guidance and answering specific health questions
 
 WRITING STYLE:
 - Use encouraging, confidence-building language
@@ -996,7 +1006,7 @@ TECHNICAL PARAMETERS:
                 "content": prompt
             }
         ],
-        max_tokens=1500,  # Увеличенный лимит для полного анализа
+        max_tokens=1300,  # Увеличенный лимит для полного анализа
         temperature=0.4   # Более детерминированный вывод для стабильной структуры
     )
     

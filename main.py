@@ -1112,10 +1112,10 @@ async def handle_user_message(message: types.Message):
                 
                 if has_premium_limits:
                     use_gemini = True
-                    model_name = "gpt-4o"
+                   
                 else:
                     use_gemini = False
-                    model_name = "gpt-4o-mini"
+                   
 
                 # ✅ ПРАВИЛЬНЫЙ ВЫЗОВ ask_doctor (НОВАЯ СИГНАТУРА):
                 processing_msg = None
