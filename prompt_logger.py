@@ -8,18 +8,20 @@ logger = logging.getLogger(__name__)
 
 async def get_recent_messages_formatted(user_id: int, limit: int = 6) -> str:
     """
-    Получает последние сообщения ИСКЛЮЧАЯ текущее (последнее) сообщение
+    Получает последние сообщения ИСКЛЮЧАЯ текущее (последнее) сообщение пользователя
+    ВАЖНО: Сохраняет вопросы бота в конце сообщений для контекста
     """
     try:
         from db_postgresql import get_last_messages
+        import re
         
-        # Берем на 1 больше чтобы исключить последнее (текущее) сообщение
+        # Берем на 1 больше чтобы исключить последнее (текущее) сообщение пользователя
         recent_messages = await get_last_messages(user_id, limit=limit + 1)
         
         if not recent_messages:
             return "No recent messages"
         
-        # ИСКЛЮЧАЕМ ПОСЛЕДНЕЕ СООБЩЕНИЕ (текущий вопрос)
+        # ИСКЛЮЧАЕМ ПОСЛЕДНЕЕ СООБЩЕНИЕ (текущий вопрос пользователя)
         if len(recent_messages) > 1:
             recent_messages = recent_messages[:-1]  # Убираем последнее
         
@@ -28,33 +30,79 @@ async def get_recent_messages_formatted(user_id: int, limit: int = 6) -> str:
             recent_messages = recent_messages[1:]  # Убираем первое если нечетное
         
         formatted_lines = []
-        for msg in recent_messages:
+        for i, msg in enumerate(recent_messages):
             if isinstance(msg, (tuple, list)) and len(msg) >= 2:
                 role = "USER" if msg[0] == 'user' else "BOT"
                 content = str(msg[1])
                 
-                # УМНАЯ ОЧИСТКА HTML ТЕГОВ
-                import re
-                content = re.sub(r'<[^>]+>', '', content)  # Убираем HTML теги
+                # Убираем HTML теги
+                content = re.sub(r'<[^>]+>', '', content)
                 
-                # ОБРЕЗКА ДО 100 СИМВОЛОВ БЕЗ РАЗРЫВА СЛОВ
-                if len(content) > 100:
-                    content = content[:97]
-                    # Найдем последний пробел чтобы не резать слово
-                    last_space = content.rfind(' ')
-                    if last_space > 80:  # Если пробел не слишком близко к началу
-                        content = content[:last_space]
-                    content += "..."
+                # НОВАЯ ЛОГИКА ОБРЕЗКИ ДЛЯ СООБЩЕНИЙ БОТА
+                if role == "BOT" and "?" in content:
+                    # Проверяем, является ли это последним сообщением бота в истории
+                    is_last_bot_message = True
+                    for future_msg in recent_messages[i+1:]:
+                        if future_msg[0] == 'bot':
+                            is_last_bot_message = False
+                            break
+                    
+                    if is_last_bot_message:
+                        # Это последнее сообщение бота - ВАЖНО сохранить вопрос!
+                        
+                        # Находим все вопросы в сообщении
+                        questions = re.findall(r'[^.!?]*\?', content)
+                        
+                        if questions and len(content) > 150:
+                            # Берем последний вопрос
+                            last_question = questions[-1].strip()
+                            
+                            # Если сообщение слишком длинное, берем начало + последний вопрос
+                            if len(content) > 200:
+                                # Берем первые 50 символов
+                                start = content[:50]
+                                # Находим конец предложения
+                                end_sentence = start.rfind('.')
+                                if end_sentence > 30:
+                                    start = start[:end_sentence+1]
+                                
+                                # Формируем сокращенное сообщение с сохранением вопроса
+                                content = f"{start}... {last_question}"
+                            # Иначе оставляем как есть (150-200 символов)
+                        elif len(content) > 150:
+                            # Нет вопросов, но длинное - обрезаем обычным способом
+                            content = content[:147] + "..."
+                    else:
+                        # Не последнее сообщение бота - обрезаем обычным способом
+                        if len(content) > 100:
+                            content = content[:97] + "..."
+                            
+                elif role == "USER":
+                    # Сообщения пользователя - стандартная обрезка
+                    if len(content) > 100:
+                        content = content[:97]
+                        # Найдем последний пробел чтобы не резать слово
+                        last_space = content.rfind(' ')
+                        if last_space > 80:
+                            content = content[:last_space]
+                        content += "..."
+                else:
+                    # Сообщения бота без вопросов - стандартная обрезка
+                    if len(content) > 100:
+                        content = content[:97] + "..."
                 
                 formatted_lines.append(f"{role}: {content}")
         
-        # ОГРАНИЧИВАЕМ ДО 3 ПАР (6 сообщений)
+        # ОГРАНИЧИВАЕМ ДО 3 ПАР (6 сообщений) 
         if len(formatted_lines) > 6:
             formatted_lines = formatted_lines[-6:]
         
         return "\n".join(formatted_lines) if formatted_lines else "No recent messages"
         
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Ошибка форматирования сообщений: {e}")
         return "Recent messages unavailable"
 
 async def get_medical_timeline_simple(user_id: int, limit: int = 6) -> str:
