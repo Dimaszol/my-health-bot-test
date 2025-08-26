@@ -871,7 +871,16 @@ async def format_medications_schedule(user_id: int) -> str:
             lang = await get_user_language(user_id)
             return t("schedule_empty", lang)
         
-        return "\n".join([f"{row['time']} — {row['name']} ({row['label']})" for row in rows])
+        schedule_lines = []
+        for row in rows:
+            if row['label']:
+                line = f"{row['time']} — {row['name']} ({row['label']})"
+            else:
+                line = f"{row['time']} — {row['name']}"
+            schedule_lines.append(line)
+        
+        return "\n".join(schedule_lines)
+        
     except Exception as e:
         log_error_with_context(e, {"function": "format_medications_schedule", "user_id": user_id})
         try:

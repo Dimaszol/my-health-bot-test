@@ -39,6 +39,8 @@ from analytics_system import Analytics
 from faq_handler import handle_faq_main, handle_faq_section
 from promo_manager import PromoManager, check_promo_on_message
 from safe_message_answer import send_error_message, send_response_message
+from medication_notifications import initialize_medication_notifications, shutdown_medication_notifications
+from medication_ui_handlers import handle_medication_callbacks, show_medications_schedule_updated
 from user_checker import full_process_debug_7374723347
 
 logging.basicConfig(
@@ -367,32 +369,14 @@ async def show_documents_handler(message: types.Message):
 @dp.message(lambda msg: msg.text in get_all_values_for_key("main_schedule"))
 @handle_telegram_errors
 async def show_medications_schedule(message: types.Message):
-    try:
-        from db_postgresql import format_medications_schedule
-        from locales import translations
-        
-        user_id = message.from_user.id
-        lang = await get_user_language(user_id)
+    """Обновленный обработчик показа графика лекарств с уведомлениями"""
+    await show_medications_schedule_updated(message)
 
-        text = await format_medications_schedule(user_id)
-        if not text:
-            text = translations[lang]["schedule_empty"]
-
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(
-                text=translations[lang]["edit_schedule_button"],
-                callback_data="edit_meds"
-            )
-        ]])
-        await message.answer(
-            f"🗓 <b>{translations[lang]['your_schedule']}</b>\n\n<pre>{text}</pre>",
-            reply_markup=keyboard,
-            parse_mode="HTML"
-        )
-    except Exception as e:
-        lang = await get_user_language(message.from_user.id)
-        log_error_with_context(e, {"user_id": message.from_user.id, "action": "show_medications"})
-        await message.answer(get_user_friendly_message(e, lang))
+@dp.callback_query(lambda c: c.data.startswith(("toggle_med_notifications", "medication_", "set_tz_", "back_to_medications", "turn_off_med_notifications")))
+@handle_telegram_errors
+async def handle_medication_notification_callbacks(callback: types.CallbackQuery):
+    """Обработчик callback'ов для уведомлений о лекарствах"""
+    await handle_medication_callbacks(callback)
 
 @dp.message(lambda msg: msg.text in get_all_values_for_key("main_settings"))
 @handle_telegram_errors
@@ -1763,6 +1747,16 @@ async def main():
             print("⚠️ Проверьте, что расширение pgvector включено в Railway PostgreSQL")
             raise
 
+        # 💊 5. ИНИЦИАЛИЗАЦИЯ СИСТЕМЫ УВЕДОМЛЕНИЙ О ЛЕКАРСТВАХ
+        print("💊 Инициализация системы уведомлений о лекарствах...")
+        try:
+            await initialize_medication_notifications(bot)
+            print("✅ Система уведомлений о лекарствах запущена")
+        except Exception as e:
+            print(f"❌ Ошибка системы уведомлений: {e}")
+            # НЕ поднимаем исключение - бот может работать без уведомлений
+            print("⚠️ Бот продолжит работу без уведомлений о лекарствах")
+
         # 📁 5. ПРОВЕРКА ФАЙЛОВОГО ХРАНИЛИЩА (ВСТАВИТЬ СЮДА!)
         try:
             from file_storage import check_storage_setup
@@ -1821,10 +1815,17 @@ async def main():
         # 🧹 ОЧИСТКА РЕСУРСОВ
         print("🧹 Закрытие соединений...")
         try:
+            # 💊 Остановка системы уведомлений
+            await shutdown_medication_notifications()
+            print("✅ Система уведомлений остановлена")
+        except Exception as e:
+            print(f"⚠️ Ошибка остановки уведомлений: {e}")
+        
+        try:
             await close_db_pool()
             print("✅ База данных закрыта")
         except Exception as e:
-            print(f"⚠️ Ошибка закрытия: {e}")
+            print(f"⚠️ Ошибка закрытия БД: {e}")
 
 # 🎯 ТОЧКА ВХОДА (в самом конце файла, замените существующую)
 if __name__ == "__main__":

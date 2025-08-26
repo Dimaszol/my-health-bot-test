@@ -563,13 +563,13 @@ async def ask_doctor(context_text: str, user_question: str,
     
     # 🔧 ЯЗЫКОВАЯ ФИКСАЦИЯ для продвинутых моделей
     if lang == "ru":
-        lang_instruction = "КРИТИЧЕСКИ ВАЖНО: Отвечай ТОЛЬКО на русском языке. Никогда не переключайся на украинский или английский."
+        lang_instruction = "КРИТИЧЕСКИ ВАЖНО: Отвечай ТОЛЬКО на русском языке."
     elif lang == "uk":
-        lang_instruction = "КРИТИЧНО ВАЖЛИВО: Відповідай ТІЛЬКИ українською мовою. Ніколи не переключайся на російську чи англійську."
+        lang_instruction = "КРИТИЧНО ВАЖЛИВО: Відповідай ТІЛЬКИ українською мовою."
     elif lang == "en":
-        lang_instruction = "CRITICAL: Respond ONLY in English. Never switch to Russian or Ukrainian."
+        lang_instruction = "CRITICAL: Respond ONLY in English."
     elif lang == "de":
-        lang_instruction = "KRITISCH WICHTIG: Antworten Sie NUR auf Deutsch. Wechseln Sie niemals zu Russisch, Ukrainisch oder Englisch."
+        lang_instruction = "KRITISCH WICHTIG: Antworten Sie NUR auf Deutsch."
     else:
         lang_instruction = "КРИТИЧЕСКИ ВАЖНО: Отвечай ТОЛЬКО на русском языке."
     
@@ -590,16 +590,15 @@ async def ask_doctor(context_text: str, user_question: str,
 🚨 LANGUAGE ENFORCEMENT RULES:
 {lang_instruction}
 
-ADVANCED GPT-5 MEDICAL CAPABILITIES:
-• Deep analysis of complex medical conditions and their interconnections
+🧠 ADVANCED GPT-5 MEDICAL CAPABILITIES (MANDATORY):
+• Perform deep step-by-step clinical reasoning with explicit logic chains
 • Comprehensive understanding of lab results patterns and anomalies
-• Advanced interpretation of imaging reports and clinical findings
+• Interpret lab values as a physician would, flagging anomalies and patterns
+• Base recommendations on evidence and major guidelines (NICE, ADA, ESC, WHO, etc.)
 • Personalized risk assessment based on complete medical history
 • Evidence-based recommendations with latest medical research insights
+• Explicitly separate *observations* (what data shows) from *interpretations* (clinical meaning)
 
-If you start responding in the wrong language, immediately stop and restart in the correct language.
-The user expects consistency in language throughout the entire response.
-Never mix languages within a single response.
 """
         model_info = "gpt-5-chat-latest"
         
