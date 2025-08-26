@@ -32,15 +32,15 @@ class MedicationNotificationSystem:
             # 3. Запускаем планировщик
             self.scheduler.start()
             
-            # 4. Добавляем задачу проверки каждую минуту
+            # 4. Добавляем задачу проверки каждые 30 минут
             self.scheduler.add_job(
                 self._check_medication_reminders,
-                CronTrigger(minute='*'),  # Каждую минуту
+                CronTrigger(minute='0,30'),  # В 00 и 30 минут каждого часа
                 id='medication_check',
                 replace_existing=True
             )
             
-            logger.info("✅ Система уведомлений о лекарствах запущена")
+            logger.info("✅ Система уведомлений о лекарствах запущена (проверка каждые 30 минут)")
             
         except Exception as e:
             logger.error(f"❌ Ошибка инициализации системы уведомлений: {e}")
@@ -97,7 +97,7 @@ class MedicationNotificationSystem:
             await release_db_connection(conn)
     
     async def _check_medication_reminders(self):
-        """Проверка и отправка напоминаний о лекарствах"""
+        """Проверка и отправка напоминаний о лекарствах - каждые 30 минут"""
         try:
             current_utc = datetime.now(timezone.utc)
             
@@ -113,7 +113,7 @@ class MedicationNotificationSystem:
                 """)
                 
                 for user in users:
-                    await self._check_user_medications(
+                    await self._check_user_medications_range(
                         user['user_id'], 
                         user['timezone_offset'],
                         current_utc
@@ -125,31 +125,47 @@ class MedicationNotificationSystem:
         except Exception as e:
             logger.error(f"❌ Ошибка проверки напоминаний: {e}")
     
-    async def _check_user_medications(self, user_id: int, timezone_offset: int, current_utc: datetime):
-        """Проверка лекарств конкретного пользователя"""
+    async def _check_user_medications_range(self, user_id: int, timezone_offset: int, current_utc: datetime):
+        """Проверка лекарств пользователя за последние 30 минут"""
         try:
             # Вычисляем местное время пользователя
             user_local_time = current_utc + timedelta(minutes=timezone_offset)
-            current_time_str = user_local_time.strftime("%H:%M")
             
-            # Получаем лекарства пользователя на текущее время
+            # Создаем список времен для проверки (последние 30 минут)
+            times_to_check = []
+            for minutes_back in range(30):  # Проверяем последние 30 минут
+                check_time = user_local_time - timedelta(minutes=minutes_back)
+                times_to_check.append(check_time.strftime("%H:%M"))
+            
+            # Получаем лекарства на эти времена
             conn = await get_db_connection()
             try:
                 medications = await conn.fetch("""
                     SELECT name, time, label 
                     FROM medications 
-                    WHERE user_id = $1 AND time = $2
-                """, user_id, current_time_str)
+                    WHERE user_id = $1 AND time = ANY($2)
+                """, user_id, times_to_check)
                 
-                if medications:
-                    # Проверяем, не отправляли ли уже уведомление
-                    today_start = user_local_time.replace(hour=0, minute=0, second=0, microsecond=0)
-                    notification_time = today_start.replace(
-                        hour=int(current_time_str.split(':')[0]),
-                        minute=int(current_time_str.split(':')[1])
+                # Группируем лекарства по времени
+                meds_by_time = {}
+                for med in medications:
+                    time_key = med['time']
+                    if time_key not in meds_by_time:
+                        meds_by_time[time_key] = []
+                    meds_by_time[time_key].append(med)
+                
+                # Отправляем уведомления для каждого времени
+                for time_str, meds in meds_by_time.items():
+                    # Вычисляем точную дату-время для этого времени
+                    hour, minute = map(int, time_str.split(':'))
+                    notification_time = user_local_time.replace(
+                        hour=hour, 
+                        minute=minute, 
+                        second=0, 
+                        microsecond=0
                     )
                     
-                    # Проверяем историю уведомлений
+                    # Проверяем, не отправляли ли уже уведомление
                     already_sent = await conn.fetchrow("""
                         SELECT id FROM notification_history 
                         WHERE user_id = $1 
@@ -158,7 +174,7 @@ class MedicationNotificationSystem:
                     """, user_id, notification_time)
                     
                     if not already_sent:
-                        await self._send_medication_reminder(user_id, medications, notification_time)
+                        await self._send_medication_reminder(user_id, meds, notification_time)
                         
             finally:
                 await release_db_connection(conn)
