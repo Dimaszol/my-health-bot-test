@@ -115,12 +115,18 @@ async def handle_timezone_set(callback: types.CallbackQuery, offset_minutes: int
     try:
         await set_user_medication_timezone(user_id, offset_minutes, timezone_name)
         
-        # Показываем подтверждение
+        # Показываем подтверждение с красивым форматированием
         hours = offset_minutes // 60
-        sign = "+" if hours >= 0 else ""
+        
+        if hours == 0:
+            offset_display = "±0"
+        elif hours > 0:
+            offset_display = f"+{hours}"
+        else:
+            offset_display = str(hours)
         
         await callback.message.edit_text(
-            t("timezone_set_success", lang, timezone=timezone_name, offset=f"{sign}{hours}"),
+            t("timezone_set_success", lang, timezone=timezone_name, offset=offset_display),
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(
                     text=t("back_to_medications", lang),
@@ -149,10 +155,18 @@ async def show_medications_with_notifications(message: types.Message, user_id: i
     # Формируем информацию об уведомлениях
     if settings['enabled']:
         hours = settings['timezone_offset'] // 60
-        sign = "+" if hours >= 0 else ""
+        
+        # Красиво показываем часовой пояс
+        if hours == 0:
+            offset_display = "±0"
+        elif hours > 0:
+            offset_display = f"+{hours}"
+        else:
+            offset_display = str(hours)
+            
         notification_info = t("notifications_status_enabled", lang, 
                              timezone=settings['timezone_name'], 
-                             offset=f"{sign}{hours}")
+                             offset=offset_display)
     else:
         notification_info = t("notifications_status_disabled", lang)
     

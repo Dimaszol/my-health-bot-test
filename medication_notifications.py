@@ -32,15 +32,15 @@ class MedicationNotificationSystem:
             # 3. Запускаем планировщик
             self.scheduler.start()
             
-            # 4. Добавляем задачу проверки каждые 30 минут
+            # 4. Добавляем задачу проверки каждые 5 минут (компромисс между точностью и экономией)
             self.scheduler.add_job(
                 self._check_medication_reminders,
-                CronTrigger(minute='0,30'),  # В 00 и 30 минут каждого часа
+                CronTrigger(minute='*/5'),  # Каждые 5 минут: 00, 05, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55
                 id='medication_check',
                 replace_existing=True
             )
             
-            logger.info("✅ Система уведомлений о лекарствах запущена (проверка каждые 30 минут)")
+            logger.info("✅ Система уведомлений о лекарствах запущена (проверка каждые 5 минут)")
             
         except Exception as e:
             logger.error(f"❌ Ошибка инициализации системы уведомлений: {e}")
