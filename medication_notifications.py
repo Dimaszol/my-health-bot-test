@@ -32,10 +32,10 @@ class MedicationNotificationSystem:
             # 3. Запускаем планировщик
             self.scheduler.start()
             
-            # 4. Добавляем задачу проверки каждые 5 минут (компромисс между точностью и экономией)
+            # 4. Добавляем задачу проверки каждые 5 минут
             self.scheduler.add_job(
                 self._check_medication_reminders,
-                CronTrigger(minute='*/5'),  # Каждые 5 минут: 00, 05, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55
+                CronTrigger(minute='*/5'),  # Каждые 5 минут
                 id='medication_check',
                 replace_existing=True
             )
@@ -97,9 +97,10 @@ class MedicationNotificationSystem:
             await release_db_connection(conn)
     
     async def _check_medication_reminders(self):
-        """Проверка и отправка напоминаний о лекарствах - каждые 30 минут"""
+        """Проверка и отправка напоминаний о лекарствах - каждые 5 минут"""
         try:
-            current_utc = datetime.now(timezone.utc)
+            # Получаем UTC время БЕЗ timezone info для совместимости с PostgreSQL
+            current_utc = datetime.now(timezone.utc).replace(tzinfo=None)
             
             # Получаем пользователей с включенными уведомлениями
             conn = await get_db_connection()
@@ -126,16 +127,19 @@ class MedicationNotificationSystem:
             logger.error(f"❌ Ошибка проверки напоминаний: {e}")
     
     async def _check_user_medications_range(self, user_id: int, timezone_offset: int, current_utc: datetime):
-        """Проверка лекарств пользователя за последние 30 минут"""
+        """Проверка лекарств пользователя за последние 5 минут"""
         try:
-            # Вычисляем местное время пользователя
+            # Вычисляем местное время пользователя (уже offset-naive)
             user_local_time = current_utc + timedelta(minutes=timezone_offset)
             
-            # Создаем список времен для проверки (последние 30 минут)
+            # Создаем список времен для проверки (последние 5 минут)
             times_to_check = []
-            for minutes_back in range(30):  # Проверяем последние 30 минут
+            for minutes_back in range(5):  # Проверяем последние 5 минут
                 check_time = user_local_time - timedelta(minutes=minutes_back)
                 times_to_check.append(check_time.strftime("%H:%M"))
+            
+            # Логируем для отладки
+            logger.info(f"🔍 Пользователь {user_id}: UTC={current_utc.strftime('%H:%M')}, местное={user_local_time.strftime('%H:%M')}, проверяем: {times_to_check}")
             
             # Получаем лекарства на эти времена
             conn = await get_db_connection()
@@ -145,6 +149,9 @@ class MedicationNotificationSystem:
                     FROM medications 
                     WHERE user_id = $1 AND time = ANY($2)
                 """, user_id, times_to_check)
+                
+                if medications:
+                    logger.info(f"🎯 Найдены лекарства для пользователя {user_id}: {[med['name'] + ' в ' + med['time'] for med in medications]}")
                 
                 # Группируем лекарства по времени
                 meds_by_time = {}
@@ -156,25 +163,32 @@ class MedicationNotificationSystem:
                 
                 # Отправляем уведомления для каждого времени
                 for time_str, meds in meds_by_time.items():
-                    # Вычисляем точную дату-время для этого времени
-                    hour, minute = map(int, time_str.split(':'))
-                    notification_time = user_local_time.replace(
-                        hour=hour, 
-                        minute=minute, 
-                        second=0, 
-                        microsecond=0
-                    )
-                    
-                    # Проверяем, не отправляли ли уже уведомление
-                    already_sent = await conn.fetchrow("""
-                        SELECT id FROM notification_history 
-                        WHERE user_id = $1 
-                        AND notification_time = $2
-                        AND DATE(sent_at) = CURRENT_DATE
-                    """, user_id, notification_time)
-                    
-                    if not already_sent:
-                        await self._send_medication_reminder(user_id, meds, notification_time)
+                    # Вычисляем точную дату-время для этого времени (без timezone)
+                    try:
+                        hour, minute = map(int, time_str.split(':'))
+                        notification_time = user_local_time.replace(
+                            hour=hour, 
+                            minute=minute, 
+                            second=0, 
+                            microsecond=0
+                        )
+                        
+                        # Проверяем, не отправляли ли уже уведомление
+                        already_sent = await conn.fetchrow("""
+                            SELECT id FROM notification_history 
+                            WHERE user_id = $1 
+                            AND notification_time = $2
+                            AND DATE(sent_at) = CURRENT_DATE
+                        """, user_id, notification_time)
+                        
+                        if not already_sent:
+                            await self._send_medication_reminder(user_id, meds, notification_time)
+                        else:
+                            logger.info(f"⏭️ Уведомление для {time_str} уже отправлено сегодня")
+                            
+                    except ValueError as ve:
+                        logger.error(f"❌ Неверный формат времени {time_str} для пользователя {user_id}: {ve}")
+                        continue
                         
             finally:
                 await release_db_connection(conn)
