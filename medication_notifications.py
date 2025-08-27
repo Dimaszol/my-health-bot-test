@@ -32,15 +32,15 @@ class MedicationNotificationSystem:
             # 3. Запускаем планировщик
             self.scheduler.start()
             
-            # 4. Добавляем задачу проверки каждые 5 минут
+            # 4. Добавляем задачу проверки каждые 30 минут
             self.scheduler.add_job(
                 self._check_medication_reminders,
-                CronTrigger(minute='*/5'),  # Каждые 5 минут
+                CronTrigger(minute='0,30'),  # В 00 и 30 минут каждого часа
                 id='medication_check',
                 replace_existing=True
             )
             
-            logger.info("✅ Система уведомлений о лекарствах запущена (проверка каждые 5 минут)")
+            logger.info("✅ Система уведомлений о лекарствах запущена (проверка каждые 30 минут)")
             
         except Exception as e:
             logger.error(f"❌ Ошибка инициализации системы уведомлений: {e}")
@@ -97,7 +97,7 @@ class MedicationNotificationSystem:
             await release_db_connection(conn)
     
     async def _check_medication_reminders(self):
-        """Проверка и отправка напоминаний о лекарствах - каждые 5 минут"""
+        """Проверка и отправка напоминаний о лекарствах - каждые 30 минут"""
         try:
             # Получаем UTC время БЕЗ timezone info для совместимости с PostgreSQL
             current_utc = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -127,14 +127,14 @@ class MedicationNotificationSystem:
             logger.error(f"❌ Ошибка проверки напоминаний: {e}")
     
     async def _check_user_medications_range(self, user_id: int, timezone_offset: int, current_utc: datetime):
-        """Проверка лекарств пользователя за последние 5 минут"""
+        """Проверка лекарств пользователя за последние 30 минут"""
         try:
             # Вычисляем местное время пользователя (уже offset-naive)
             user_local_time = current_utc + timedelta(minutes=timezone_offset)
             
-            # Создаем список времен для проверки (последние 5 минут)
+            # Создаем список времен для проверки (последние 30 минут)
             times_to_check = []
-            for minutes_back in range(5):  # Проверяем последние 5 минут
+            for minutes_back in range(30):  # Проверяем последние 30 минут
                 check_time = user_local_time - timedelta(minutes=minutes_back)
                 times_to_check.append(check_time.strftime("%H:%M"))
             
