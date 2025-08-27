@@ -194,7 +194,7 @@ async def handle_medication_callbacks(callback: types.CallbackQuery):
     if callback.data in ["toggle_med_notifications_on", "toggle_med_notifications_off"]:
         await handle_toggle_medication_notifications(callback)
     
-    elif callback.data == "medication_timezone_setup":
+    elif callback.data == "medication_timezone_settings":  # не "setup"
         await handle_timezone_setup(callback)
     
     elif callback.data.startswith("set_tz_"):

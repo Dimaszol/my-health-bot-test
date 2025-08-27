@@ -372,7 +372,15 @@ async def show_medications_schedule(message: types.Message):
     """Обновленный обработчик показа графика лекарств с уведомлениями"""
     await show_medications_schedule_updated(message)
 
-@dp.callback_query(lambda c: c.data.startswith(("toggle_med_notifications", "medication_timezone", "set_tz_", "back_to_medications", "turn_off_med_notifications", "manual_timezone")))
+@dp.callback_query(lambda c: c.data in [
+    "toggle_med_notifications_on", 
+    "toggle_med_notifications_off",
+    "medication_timezone_settings", 
+    "medication_timezone_setup",
+    "manual_timezone",
+    "turn_off_med_notifications",
+    "back_to_medications"
+] or c.data.startswith("set_tz_"))
 @handle_telegram_errors
 async def handle_medication_notification_callbacks(callback: types.CallbackQuery):
     """Обработчик callback'ов для уведомлений о лекарствах"""
