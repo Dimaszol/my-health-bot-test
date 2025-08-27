@@ -551,7 +551,7 @@ async def set_user_language(user_id: int, language: str, telegram_user=None) -> 
             name = telegram_user.first_name or "Пользователь"
             username = telegram_user.username
         
-        # ✅ СОЗДАЕМ пользователя с именем и языком
+        # СОЗДАЕМ пользователя с именем и языком
         if name:
             await conn.execute(
                 "INSERT INTO users (user_id, language, name, username) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO NOTHING",
@@ -564,17 +564,32 @@ async def set_user_language(user_id: int, language: str, telegram_user=None) -> 
                 user_id, language
             )
         
-        # ✅ ПОТОМ обновляем язык (на случай, если пользователь уже существовал)
+        # ПОТОМ обновляем язык (на случай, если пользователь уже существовал)
         await conn.execute(
             "UPDATE users SET language = $1 WHERE user_id = $2",
             language, user_id
         )
         
-        # ✅ СОЗДАЕМ лимиты для нового пользователя
+        # СОЗДАЕМ лимиты для нового пользователя
         await conn.execute(
             "INSERT INTO user_limits (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING",
             user_id
         )
+        
+        # НОВОЕ: Создаем настройки уведомлений с часовым поясом по языку
+        default_timezones = {
+            'ru': (180, 'Москва'),      # UTC+3
+            'uk': (120, 'Киев'),        # UTC+2
+            'en': (0, 'Лондон GMT'),    # UTC+0
+            'de': (60, 'Европа')        # UTC+1
+        }
+        offset, timezone_name = default_timezones.get(language, (0, 'UTC'))
+        
+        await conn.execute("""
+            INSERT INTO notification_settings (user_id, notifications_enabled, timezone_offset, timezone_name)
+            VALUES ($1, TRUE, $2, $3)
+            ON CONFLICT (user_id) DO NOTHING
+        """, user_id, offset, timezone_name)
         
         return True
     except Exception as e:
