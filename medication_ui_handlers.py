@@ -89,15 +89,31 @@ async def handle_timezone_setup(callback: types.CallbackQuery):
     user_id = callback.from_user.id
     lang = await get_user_language(user_id)
     
-    # Показываем популярные часовые пояса
+    # Показываем расширенный список часовых поясов
     timezone_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🇷🇺 Москва (UTC+3)", callback_data="set_tz_180")],
-        [InlineKeyboardButton(text="🇺🇦 Киев (UTC+2)", callback_data="set_tz_120")],
-        [InlineKeyboardButton(text="🇰🇿 Алматы (UTC+6)", callback_data="set_tz_360")],
-        [InlineKeyboardButton(text="🇺🇿 Ташкент (UTC+5)", callback_data="set_tz_300")],
-        [InlineKeyboardButton(text="🇩🇪 Берлин (UTC+1)", callback_data="set_tz_60")],
-        [InlineKeyboardButton(text="🇬🇧 Лондон (UTC+0)", callback_data="set_tz_0")],
-        [InlineKeyboardButton(text="🏠 " + t("manual_timezone", lang), callback_data="manual_timezone")],
+        # Ряд 1: Европа
+        [InlineKeyboardButton(text="🇬🇧 Лондон GMT (UTC+0)", callback_data="set_tz_0"),
+         InlineKeyboardButton(text="🇬🇧 Лондон BST (UTC+1)", callback_data="set_tz_60")],
+        [InlineKeyboardButton(text="🇩🇪 Берлин (UTC+1)", callback_data="set_tz_60"),
+         InlineKeyboardButton(text="🇺🇦 Киев (UTC+2)", callback_data="set_tz_120")],
+        [InlineKeyboardButton(text="🇷🇺 Москва (UTC+3)", callback_data="set_tz_180"),
+         InlineKeyboardButton(text="🇷🇺 Самара (UTC+4)", callback_data="set_tz_240")],
+        
+        # Ряд 2: Азия
+        [InlineKeyboardButton(text="🇺🇿 Ташкент (UTC+5)", callback_data="set_tz_300"),
+         InlineKeyboardButton(text="🇰🇿 Алматы (UTC+6)", callback_data="set_tz_360")],
+        [InlineKeyboardButton(text="🇹🇭 Бангкок (UTC+7)", callback_data="set_tz_420"),
+         InlineKeyboardButton(text="🇨🇳 Пекин (UTC+8)", callback_data="set_tz_480")],
+        [InlineKeyboardButton(text="🇯🇵 Токио (UTC+9)", callback_data="set_tz_540"),
+         InlineKeyboardButton(text="🇦🇺 Сидней (UTC+11)", callback_data="set_tz_660")],
+        
+        # Ряд 3: Америка
+        [InlineKeyboardButton(text="🇺🇸 Нью-Йорк (UTC-5)", callback_data="set_tz_-300"),
+         InlineKeyboardButton(text="🇺🇸 Чикаго (UTC-6)", callback_data="set_tz_-360")],
+        [InlineKeyboardButton(text="🇺🇸 Лос-Анджелес (UTC-8)", callback_data="set_tz_-480"),
+         InlineKeyboardButton(text="🇨🇦 Торонто (UTC-5)", callback_data="set_tz_-300")],
+        
+        # Назад
         [InlineKeyboardButton(text=t("back", lang), callback_data="back_to_medications")]
     ])
     
@@ -194,18 +210,29 @@ async def handle_medication_callbacks(callback: types.CallbackQuery):
     if callback.data in ["toggle_med_notifications_on", "toggle_med_notifications_off"]:
         await handle_toggle_medication_notifications(callback)
     
-    elif callback.data == "medication_timezone_settings":  # не "setup"
+    elif callback.data == "medication_timezone_settings":
         await handle_timezone_setup(callback)
     
     elif callback.data.startswith("set_tz_"):
-        offset_minutes = int(callback.data.split("_")[-1])
+        # Извлекаем offset из callback_data (может быть отрицательным)
+        offset_str = callback.data.replace("set_tz_", "")
+        offset_minutes = int(offset_str)
+        
         timezone_names = {
-            180: "Москва",
-            120: "Киев", 
-            360: "Алматы",
-            300: "Ташкент",
-            60: "Берлин",
-            0: "Лондон"
+            -480: "Лос-Анджелес",  # UTC-8
+            -360: "Чикаго",        # UTC-6
+            -300: "Нью-Йорк/Торонто",  # UTC-5
+            0: "Лондон GMT",       # UTC+0
+            60: "Лондон BST/Берлин",   # UTC+1
+            120: "Киев",           # UTC+2
+            180: "Москва",         # UTC+3
+            240: "Самара",         # UTC+4
+            300: "Ташкент",        # UTC+5
+            360: "Алматы",         # UTC+6
+            420: "Бангкок",        # UTC+7
+            480: "Пекин",          # UTC+8
+            540: "Токио",          # UTC+9
+            660: "Сидней"          # UTC+11
         }
         timezone_name = timezone_names.get(offset_minutes, "Manual")
         await handle_timezone_set(callback, offset_minutes, timezone_name)

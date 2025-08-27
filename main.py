@@ -377,7 +377,6 @@ async def show_medications_schedule(message: types.Message):
     "toggle_med_notifications_off",
     "medication_timezone_settings", 
     "medication_timezone_setup",
-    "manual_timezone",
     "turn_off_med_notifications",
     "back_to_medications"
 ] or c.data.startswith("set_tz_"))
