@@ -1,8 +1,7 @@
 translations = {
     "ru": {   
-"notifications_label": "Уведомления",
-"notifications_enabled": "🔔 Вкл",
-"notifications_disabled": "🔕 Выкл",
+"notifications_enabled": "🔕 Выключить",
+"notifications_disabled": "🔔 Включить",
 "timezone_settings": "⏰ Часовой пояс",
 
 "notifications_status_enabled": "✅ Уведомления включены (часовой пояс: {timezone} UTC{offset})",
@@ -488,9 +487,8 @@ translations = {
     },
 
     "uk": { 
-        "notifications_label": "Сповіщення",
-"notifications_enabled": "🔔 Увім",
-"notifications_disabled": "🔕 Вимк",
+"notifications_enabled": "🔕 Вимкнути",
+"notifications_disabled": "🔔 Увімкнути",
 "timezone_settings": "⏰ Часовий пояс",
 "notifications_status_enabled": "✅ Сповіщення увімкнено (часовий пояс: {timezone} UTC{offset})",
 "notifications_status_disabled": "❌ Сповіщення вимкнено",
@@ -971,9 +969,9 @@ translations = {
     "photo_file_not_found": "⚠️ Фото не знайдено. Завантажте фото заново.",
     "cancel_analysis": "❌ Скасувати"
 },
-    "en": {   "notifications_label": "Notifications",
-"notifications_enabled": "🔔 On",
-"notifications_disabled": "🔕 Off",
+    "en": {   
+"notifications_enabled": "🔕 Turn off", 
+"notifications_disabled": "🔔 Turn on",
 "timezone_settings": "⏰ Timezone",
 "notifications_status_enabled": "✅ Notifications enabled (timezone: {timezone} UTC{offset})",
 "notifications_status_disabled": "❌ Notifications disabled",
@@ -1900,9 +1898,9 @@ translations = {
     "photo_state_not_found": "⚠️ Fotoanalyse-Status nicht gefunden. Laden Sie das Foto erneut hoch.",
     "photo_file_not_found": "⚠️ Foto nicht gefunden. Laden Sie das Foto erneut hoch.",
     "cancel_analysis": "❌ Abbrechen",
-    "notifications_label": "Benachrichtigungen",
-"notifications_enabled": "🔔 An",
-"notifications_disabled": "🔕 Aus",
+    
+"notifications_enabled": "🔕 Aus",
+"notifications_disabled": "🔔 An",
 "timezone_settings": "⏰ Zeitzone",
 "notifications_status_enabled": "✅ Benachrichtigungen aktiviert (Zeitzone: {timezone} UTC{offset})",
 "notifications_status_disabled": "❌ Benachrichtigungen deaktiviert",

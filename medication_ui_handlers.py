@@ -17,10 +17,10 @@ async def medications_keyboard_with_notifications(lang: str, user_id: int) -> In
     
     # Определяем текст кнопки уведомлений
     if settings['enabled']:
-        notification_text = t("notifications_enabled", lang)  # "🔔 Вкл"
+        notification_text = t("notifications_enabled", lang)  
         notification_callback = "toggle_med_notifications_off"
     else:
-        notification_text = t("notifications_disabled", lang)  # "🔕 Выкл"
+        notification_text = t("notifications_disabled", lang) 
         notification_callback = "toggle_med_notifications_on"
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
