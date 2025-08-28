@@ -216,20 +216,20 @@ async def handle_medication_callbacks(callback: types.CallbackQuery):
         offset_minutes = int(offset_str)
         
         timezone_names = {
-            -480: "Запад США",         # UTC-8
-            -360: "Центр США",         # UTC-6
-            -300: "Восток США",        # UTC-5
-            0: "Лондон GMT",           # UTC+0
-            60: "Европа",              # UTC+1
-            120: "Киев",               # UTC+2
-            180: "Москва",             # UTC+3
-            240: "Самара",             # UTC+4
-            300: "Ташкент",            # UTC+5
-            360: "Алматы",             # UTC+6
-            420: "Бангкок",            # UTC+7
-            480: "Пекин",              # UTC+8
-            540: "Токио",              # UTC+9
-            660: "Сидней"              # UTC+11
+            -480: "West US",        # UTC-8
+            -360: "Central US",     # UTC-6
+            -300: "East US",        # UTC-5
+            0: "London GMT",        # UTC+0
+            60: "Europe",           # UTC+1
+            120: "Kyiv",            # UTC+2
+            180: "Moscow",          # UTC+3
+            240: "Samara",          # UTC+4
+            300: "Tashkent",        # UTC+5
+            360: "Almaty",          # UTC+6
+            420: "Bangkok",         # UTC+7
+            480: "Beijing",         # UTC+8
+            540: "Tokyo",           # UTC+9
+            660: "Sydney"           # UTC+11
         }
         timezone_name = timezone_names.get(offset_minutes, "Manual")
         await handle_timezone_set(callback, offset_minutes, timezone_name)
