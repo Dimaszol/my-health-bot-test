@@ -59,7 +59,7 @@ async def handle_toggle_medication_notifications(callback: types.CallbackQuery):
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(
                     text=t("setup_timezone", lang),
-                    callback_data="medication_timezone_setup"
+                    callback_data="medication_timezone_settings"
                 )],
                 [InlineKeyboardButton(
                     text=t("back_to_medications", lang),
