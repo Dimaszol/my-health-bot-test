@@ -29,10 +29,10 @@ async def medications_keyboard_with_notifications(lang: str, user_id: int) -> In
             callback_data="edit_meds"
         )],
         [InlineKeyboardButton(
-            text=f"{t('notifications_label', lang)}: {notification_text}",
+            text=f"{notification_text}",
             callback_data=notification_callback
-        )],
-        [InlineKeyboardButton(
+        ),
+        InlineKeyboardButton(
             text=t("timezone_settings", lang),
             callback_data="medication_timezone_settings"
         )]
