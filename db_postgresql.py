@@ -578,7 +578,7 @@ async def set_user_language(user_id: int, language: str, telegram_user=None) -> 
         
         # НОВОЕ: Создаем настройки уведомлений с часовым поясом по языку
         default_timezones = {
-            'ru': (180, 'Москва'),      # UTC+3
+            'ru': (120, 'Киев'),        # UTC+2
             'uk': (120, 'Киев'),        # UTC+2
             'en': (0, 'Лондон GMT'),    # UTC+0
             'de': (60, 'Европа')        # UTC+1
