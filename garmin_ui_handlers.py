@@ -472,46 +472,51 @@ async def handle_garmin_password_input(message: types.Message, state: FSMContext
     await state.clear()
 
 async def handle_garmin_time_input(message: types.Message, state: FSMContext):
-    """Обработка ввода времени анализа"""
+    """Обработка ввода времени анализа - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
     user_id = message.from_user.id
     lang = await get_user_language(user_id)
     time_str = message.text.strip()
     
     try:
-        # Парсим время
-        time_obj = time.fromisoformat(time_str)
+        # 🔧 ИСПРАВЛЕНИЕ: Правильная валидация и парсинг времени
+        try:
+            # Парсим время в объект time
+            time_obj = time.fromisoformat(time_str)
+        except ValueError:
+            # Если не получилось - показываем ошибку
+            text = "❌ <b>Некорректный формат времени</b>\n\nИспользуйте формат ЧЧ:ММ (например: 07:30)"
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="❌ Отмена", callback_data="back_to_garmin")]
+            ])
+            await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
+            return
         
-        # Обновляем время в БД
-        conn = garmin_connector.get_db_connection()
-        cursor = conn.cursor()
+        # 🔧 ИСПРАВЛЕНИЕ: Используем новую функцию для обновления времени
+        success = await garmin_connector.update_notification_time(user_id, time_str)
         
-        cursor.execute("""
-            UPDATE garmin_connections 
-            SET notification_time = %s, updated_at = NOW()
-            WHERE user_id = %s
-        """, (time_obj, user_id))
+        if success:
+            text = f"✅ <b>Время анализа установлено</b>\n\n⏰ Ежедневный анализ: <b>{time_str}</b>"
+            keyboard = await garmin_main_keyboard(lang, user_id)
+        else:
+            text = "❌ <b>Ошибка сохранения времени</b>\n\nПопробуйте позже или проверьте подключение Garmin."
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="🔄 Попробовать снова", callback_data="garmin_set_time")],
+                [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
+            ])
         
-        conn.commit()
-        conn.close()
-        
-        text = f"✅ <b>Время анализа установлено</b>\n\n⏰ Ежедневный анализ: <b>{time_str}</b>"
-        keyboard = await garmin_main_keyboard(lang, user_id)
-        
-    except ValueError:
-        text = "❌ <b>Некорректный формат времени</b>\n\nИспользуйте формат ЧЧ:ММ (например: 07:30)"
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="❌ Отмена", callback_data="back_to_garmin")]
-        ])
         await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
-        return
+        await state.clear()
         
     except Exception as e:
-        logger.error(f"Ошибка установки времени: {e}")
-        text = "❌ <b>Ошибка сохранения времени</b>\n\nПопробуйте позже."
-        keyboard = await garmin_main_keyboard(lang, user_id)
-    
-    await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
-    await state.clear()
+        # 🔒 БЕЗОПАСНОЕ ЛОГИРОВАНИЕ: не выводим пользовательские данные
+        logger.error(f"❌ Ошибка обработки времени для пользователя {user_id}: {e}")
+        
+        text = "❌ <b>Произошла ошибка</b>\n\nПопробуйте позже или обратитесь в поддержку."
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
+        ])
+        await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
+        await state.clear()
 
 async def handle_garmin_cancel_setup(callback: types.CallbackQuery, state: FSMContext):
     """Отмена настройки Garmin"""

@@ -4,7 +4,7 @@ import os
 import json
 import asyncio
 import logging
-from datetime import datetime, date, timedelta
+from datetime import time, datetime, date, timedelta
 from typing import Dict, Optional, List, Any
 from cryptography.fernet import Fernet
 from garminconnect import Garmin
@@ -63,12 +63,24 @@ class GarminConnector:
                                    timezone_name: str = "UTC") -> bool:
         """Сохранить данные подключения к Garmin"""
         try:
+            # 🔧 ИСПРАВЛЕНИЕ: Конвертируем строку времени в объект time
+            if isinstance(notification_time, str):
+                try:
+                    # Парсим строку в формате "ЧЧ:ММ" в объект time
+                    time_obj = time.fromisoformat(notification_time)
+                except ValueError as e:
+                    logger.warning(f"⚠️ Некорректный формат времени '{notification_time}', используем 07:00")
+                    time_obj = time(7, 0)  # По умолчанию 07:00
+            else:
+                time_obj = notification_time  # Уже объект time
+            
+            # Шифруем конфиденциальные данные
             encrypted_email = encrypt_data(email)
             encrypted_password = encrypt_data(password)
             
             conn = await get_db_connection()
             
-            # Используем asyncpg API напрямую
+            # 🔧 ИСПРАВЛЕНИЕ: Передаем объект time вместо строки
             await conn.execute("""
                 INSERT INTO garmin_connections 
                 (user_id, garmin_email, garmin_password, notification_time, 
@@ -84,15 +96,53 @@ class GarminConnector:
                     is_active = TRUE,
                     sync_errors = 0,
                     updated_at = NOW()
-            """, user_id, encrypted_email, encrypted_password, notification_time,
+            """, user_id, encrypted_email, encrypted_password, time_obj,  # ← Теперь передаем time_obj
                  timezone_offset, timezone_name)
             
             await release_db_connection(conn)
-            logger.info(f"✅ Garmin подключение сохранено для пользователя {user_id}")
+            
+            # 🔒 БЕЗОПАСНОЕ ЛОГИРОВАНИЕ для медицинского бота
+            # НЕ логируем email/пароль, только ID пользователя и время
+            logger.info(f"✅ Garmin подключение сохранено для пользователя {user_id} (время анализа: {time_obj})")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Ошибка сохранения Garmin подключения: {e}")
+            # 🔒 БЕЗОПАСНОЕ ЛОГИРОВАНИЕ: НЕ выводим чувствительные данные
+            logger.error(f"❌ Ошибка сохранения Garmin подключения для пользователя {user_id}: {e}")
+            if 'conn' in locals():
+                await release_db_connection(conn)
+            return False
+    
+    async def update_notification_time(self, user_id: int, new_time_str: str) -> bool:
+        """Безопасное обновление времени уведомлений"""
+        try:
+            # Парсим и валидируем время
+            try:
+                time_obj = time.fromisoformat(new_time_str)
+            except ValueError:
+                logger.warning(f"⚠️ Некорректный формат времени от пользователя {user_id}: '{new_time_str}'")
+                return False
+            
+            conn = await get_db_connection()
+            
+            result = await conn.execute("""
+                UPDATE garmin_connections 
+                SET notification_time = $1, updated_at = NOW()
+                WHERE user_id = $2 AND is_active = TRUE
+            """, time_obj, user_id)
+            
+            await release_db_connection(conn)
+            
+            # Проверяем, была ли обновлена запись
+            if result == "UPDATE 1":
+                logger.info(f"✅ Время анализа обновлено для пользователя {user_id}: {time_obj}")
+                return True
+            else:
+                logger.warning(f"⚠️ Пользователь {user_id} не найден или Garmin не активен")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка обновления времени для пользователя {user_id}: {e}")
             if 'conn' in locals():
                 await release_db_connection(conn)
             return False
