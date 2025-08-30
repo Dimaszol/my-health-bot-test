@@ -72,7 +72,7 @@ async def close_db_pool():
         await db_pool.close()
 
 async def create_tables():
-    """Создание всех таблиц медицинского бота для Railway"""
+    """Создание всех таблиц медицинского бота для Railway (включая Garmin)"""
     
     # 🔧 СНАЧАЛА подключаем pgvector расширение
     pgvector_setup = """
@@ -234,13 +234,154 @@ async def create_tables():
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- ================================
+    -- 🏃 ТАБЛИЦЫ GARMIN ИНТЕГРАЦИИ
+    -- ================================
+
+    -- 📱 ПОДКЛЮЧЕНИЯ К GARMIN
+    CREATE TABLE IF NOT EXISTS garmin_connections (
+        user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+        garmin_email TEXT NOT NULL, -- Зашифрованный email
+        garmin_password TEXT NOT NULL, -- Зашифрованный пароль
+        is_active BOOLEAN DEFAULT TRUE,
+        notification_time TIME DEFAULT '07:00:00', -- Время ежедневного анализа
+        timezone_offset INTEGER DEFAULT 0, -- Смещение в минутах (используем систему из лекарств)
+        timezone_name TEXT DEFAULT 'UTC',
+        last_sync_date DATE, -- Последняя дата синхронизации
+        sync_errors INTEGER DEFAULT 0, -- Счетчик ошибок подключения
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- 📊 ЕЖЕДНЕВНЫЕ ДАННЫЕ ЗДОРОВЬЯ ИЗ GARMIN
+    CREATE TABLE IF NOT EXISTS garmin_daily_data (
+        id SERIAL PRIMARY KEY,
+        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+        data_date DATE NOT NULL, -- Дата данных
+        
+        -- Базовая активность
+        steps INTEGER,
+        calories INTEGER,
+        floors_climbed INTEGER,
+        distance_meters INTEGER,
+        
+        -- Данные сна
+        sleep_duration_minutes INTEGER,
+        sleep_deep_minutes INTEGER,
+        sleep_light_minutes INTEGER,
+        sleep_rem_minutes INTEGER,
+        sleep_awake_minutes INTEGER,
+        sleep_score INTEGER, -- 0-100
+        
+        -- Пульс
+        resting_heart_rate INTEGER,
+        avg_heart_rate INTEGER,
+        max_heart_rate INTEGER,
+        hrv_rmssd FLOAT, -- Вариабельность пульса
+        
+        -- Стресс и энергия
+        stress_avg INTEGER, -- 0-100
+        stress_max INTEGER,
+        body_battery_max INTEGER, -- 0-100
+        body_battery_min INTEGER,
+        body_battery_charged INTEGER, -- Восстановление энергии
+        body_battery_drained INTEGER, -- Трата энергии
+        
+        -- Кислород и дыхание
+        spo2_avg FLOAT, -- Кислород в крови %
+        respiration_avg FLOAT, -- Частота дыхания
+        
+        -- Готовность и фитнес
+        training_readiness INTEGER, -- 0-100
+        vo2_max FLOAT,
+        fitness_age INTEGER,
+        
+        -- Тренировки (краткая сводка)
+        activities_count INTEGER DEFAULT 0,
+        activities_duration_minutes INTEGER DEFAULT 0,
+        activities_calories INTEGER DEFAULT 0,
+        activities_data JSONB, -- Детали тренировок
+        
+        -- Служебные поля
+        sync_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        data_quality JSONB, -- Какие данные доступны
+        
+        UNIQUE(user_id, data_date) -- Одна запись на день
+    );
+
+    -- 🧠 ИСТОРИЯ AI АНАЛИЗОВ GARMIN
+    CREATE TABLE IF NOT EXISTS garmin_analysis_history (
+        id SERIAL PRIMARY KEY,
+        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+        analysis_date DATE NOT NULL,
+        data_period TEXT DEFAULT '1_day', -- 1_day, 7_days, 30_days
+        
+        -- Анализ от AI
+        analysis_text TEXT NOT NULL,
+        recommendations TEXT,
+        health_score FLOAT, -- Общая оценка здоровья 0-100
+        
+        -- Тренды
+        sleep_trend TEXT, -- improving, stable, declining
+        activity_trend TEXT,
+        stress_trend TEXT,
+        recovery_trend TEXT,
+        
+        -- Использованные лимиты
+        used_consultation_limit BOOLEAN DEFAULT TRUE,
+        gpt_model_used TEXT DEFAULT 'gpt-5-chat-latest',
+        
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        
+        UNIQUE(user_id, analysis_date) -- Один анализ в день
+    );
+
+    -- ⚙️ НАСТРОЙКИ АНАЛИЗА GARMIN (дополнительные)
+    CREATE TABLE IF NOT EXISTS garmin_analysis_settings (
+        user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+        
+        -- Персонализация анализа
+        focus_areas TEXT[], -- ['sleep', 'activity', 'stress', 'recovery']
+        goals JSONB, -- Цели пользователя
+        medical_conditions TEXT[], -- Учитывать медицинские состояния
+        
+        -- Уведомления
+        enable_daily_analysis BOOLEAN DEFAULT TRUE,
+        enable_weekly_summary BOOLEAN DEFAULT TRUE,
+        enable_alerts BOOLEAN DEFAULT TRUE, -- Предупреждения о проблемах
+        
+        -- Пороги для алертов
+        min_sleep_hours FLOAT DEFAULT 6.0,
+        max_stress_threshold INTEGER DEFAULT 80,
+        min_body_battery INTEGER DEFAULT 20,
+        target_steps INTEGER DEFAULT 10000,
+        
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- ================================
     -- 📊 ИНДЕКСЫ ДЛЯ ВЕКТОРНОГО ПОИСКА (ВАЖНО!)
+    -- ================================
     CREATE INDEX IF NOT EXISTS idx_document_vectors_user_id ON document_vectors(user_id);
     CREATE INDEX IF NOT EXISTS idx_document_vectors_document_id ON document_vectors(document_id);
     CREATE INDEX IF NOT EXISTS idx_document_vectors_embedding ON document_vectors USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
     CREATE INDEX IF NOT EXISTS idx_document_vectors_keywords ON document_vectors USING gin(to_tsvector('russian', keywords));
 
+    -- ================================
+    -- 📊 ИНДЕКСЫ ДЛЯ GARMIN ТАБЛИЦ
+    -- ================================
+    
+    -- Индексы для быстрого поиска данных Garmin
+    CREATE INDEX IF NOT EXISTS idx_garmin_daily_data_user_date ON garmin_daily_data(user_id, data_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_garmin_daily_data_date ON garmin_daily_data(data_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_garmin_analysis_user_date ON garmin_analysis_history(user_id, analysis_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_garmin_connections_active ON garmin_connections(user_id) WHERE is_active = TRUE;
+    CREATE INDEX IF NOT EXISTS idx_garmin_connections_sync_errors ON garmin_connections(sync_errors) WHERE sync_errors >= 5;
+
+    -- ================================
     -- 📊 ОСТАЛЬНЫЕ ИНДЕКСЫ
+    -- ================================
     CREATE INDEX IF NOT EXISTS idx_analytics_user_id ON analytics_events(user_id);
     CREATE INDEX IF NOT EXISTS idx_analytics_event ON analytics_events(event);
     CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON analytics_events(timestamp);
@@ -255,7 +396,11 @@ async def create_tables():
     CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id);
     CREATE INDEX IF NOT EXISTS idx_users_gdpr_consent ON users(gdpr_consent);
 
-    -- 🔄 ФУНКЦИЯ ДЛЯ ТРИГГЕРА
+    -- ================================
+    -- 🔄 ФУНКЦИИ И ТРИГГЕРЫ
+    -- ================================
+
+    -- Функция для обновления timestamps
     CREATE OR REPLACE FUNCTION update_medical_timeline_timestamp()
     RETURNS TRIGGER AS $$
     BEGIN
@@ -264,7 +409,35 @@ async def create_tables():
     END;
     $$ LANGUAGE plpgsql;
 
-    -- 🔄 ТРИГГЕР
+    -- Функция очистки старых данных Garmin (старше 1 года)
+    CREATE OR REPLACE FUNCTION cleanup_old_garmin_data()
+    RETURNS INTEGER AS $$
+    DECLARE
+        deleted_count INTEGER;
+    BEGIN
+        -- Удаляем данные старше 1 года
+        DELETE FROM garmin_daily_data 
+        WHERE data_date < CURRENT_DATE - INTERVAL '1 year';
+        
+        GET DIAGNOSTICS deleted_count = ROW_COUNT;
+        
+        -- Удаляем анализы старше 6 месяцев
+        DELETE FROM garmin_analysis_history 
+        WHERE analysis_date < CURRENT_DATE - INTERVAL '6 months';
+        
+        -- Логируем результат (если есть таблица логов)
+        BEGIN
+            INSERT INTO analytics_events (user_id, event, properties) 
+            VALUES (0, 'garmin_cleanup', json_build_object('deleted_records', deleted_count)::jsonb);
+        EXCEPTION WHEN OTHERS THEN
+            -- Игнорируем ошибки логирования
+        END;
+        
+        RETURN deleted_count;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    -- Триггер для medical_timeline
     DO $$ 
     BEGIN
         IF NOT EXISTS (
@@ -278,10 +451,22 @@ async def create_tables():
         END IF;
     END $$;
 
-    -- 📝 КОММЕНТАРИИ
+    -- ================================
+    -- 📝 КОММЕНТАРИИ К ТАБЛИЦАМ
+    -- ================================
     COMMENT ON COLUMN users.gdpr_consent IS 'Пользователь дал согласие на обработку данных (GDPR)';
     COMMENT ON COLUMN users.gdpr_consent_time IS 'Время когда пользователь дал согласие GDPR';
     COMMENT ON TABLE document_vectors IS 'Векторные эмбеддинги документов для семантического поиска';
+    
+    -- Комментарии для Garmin таблиц
+    COMMENT ON TABLE garmin_connections IS 'Подключения пользователей к Garmin Connect';
+    COMMENT ON TABLE garmin_daily_data IS 'Ежедневные данные здоровья из часов Garmin';  
+    COMMENT ON TABLE garmin_analysis_history IS 'История AI анализов данных Garmin';
+    COMMENT ON TABLE garmin_analysis_settings IS 'Настройки персонализации анализа Garmin';
+    COMMENT ON COLUMN garmin_connections.garmin_email IS 'Зашифрованный email от Garmin Connect';
+    COMMENT ON COLUMN garmin_connections.garmin_password IS 'Зашифрованный пароль от Garmin Connect';
+    COMMENT ON COLUMN garmin_connections.sync_errors IS 'Счетчик ошибок синхронизации (при >= 5 пользователь деактивируется)';
+    COMMENT ON COLUMN garmin_daily_data.data_quality IS 'JSON с информацией о качестве и доступности данных';
     """
     
     conn = await get_db_connection()
@@ -291,18 +476,45 @@ async def create_tables():
         await conn.execute(pgvector_setup)
         
         # 2. Затем создаем таблицы
-        print("🏗️ Создание таблиц...")
+        print("🏗️ Создание основных таблиц...")
         await conn.execute(tables_sql)
         
+        # 3. Проверяем успешность создания Garmin таблиц
+        print("🏃 Проверка таблиц Garmin...")
+        garmin_tables_check = await conn.fetch("""
+            SELECT table_name FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name LIKE 'garmin_%'
+            ORDER BY table_name;
+        """)
+        
+        garmin_table_names = [row['table_name'] for row in garmin_tables_check]
+        expected_garmin_tables = ['garmin_analysis_history', 'garmin_analysis_settings', 'garmin_connections', 'garmin_daily_data']
+        
+        print(f"✅ Созданы Garmin таблицы: {', '.join(garmin_table_names)}")
+        
+        # Проверяем, что все нужные таблицы созданы
+        missing_tables = set(expected_garmin_tables) - set(garmin_table_names)
+        if missing_tables:
+            print(f"⚠️ Не созданы таблицы: {', '.join(missing_tables)}")
+        else:
+            print("🎉 Все таблицы Garmin созданы успешно!")
+        
         print("✅ Все таблицы созданы успешно")
+        print("📊 Структура БД готова для:")
+        print("   • Основной функциональности медицинского бота")
+        print("   • Интеграции с Garmin Connect")
+        print("   • AI анализа данных здоровья")
+        print("   • Векторного поиска по документам")
+        print("   • Системы подписок и лимитов")
         
     except Exception as e:
-        log_error_with_context(e, {"action": "create_tables"})
+        log_error_with_context(e, {"action": "create_tables_with_garmin"})
         print(f"❌ Ошибка создания таблиц: {e}")
         raise
     finally:
         await release_db_connection(conn)
-
+        
 # 👤 ФУНКЦИИ ДЛЯ РАБОТЫ С ПОЛЬЗОВАТЕЛЯМИ
 async def get_user(user_id: int) -> Optional[Dict]:
     """Получить данные пользователя"""

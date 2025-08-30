@@ -28,7 +28,8 @@ def settings_keyboard(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=t("settings_profile", lang), callback_data="settings_profile")],
         [InlineKeyboardButton(text=t("settings_faq", lang), callback_data="settings_faq")],
-        [InlineKeyboardButton(text=t("settings_subscription", lang), callback_data="settings_subscription")]
+        [InlineKeyboardButton(text=t("settings_subscription", lang), callback_data="settings_subscription")],
+        [InlineKeyboardButton(text=t("garmin_connect", lang), callback_data="garmin_menu")]
     ])
 
 def skip_keyboard(lang):

@@ -53,3 +53,9 @@ python-magic==0.4.27
 
 # Планировщик для уведомлений
 APScheduler==3.10.4
+
+# Дополнительные зависимости для интеграции Garmin
+garminconnect>=0.1.55
+cryptography>=41.0.0
+apscheduler>=3.10.0
+pytz>=2023.3

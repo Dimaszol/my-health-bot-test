@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
+from aiogram.fsm.context import FSMContext
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
@@ -41,6 +42,13 @@ from promo_manager import PromoManager, check_promo_on_message
 from safe_message_answer import send_error_message, send_response_message
 from medication_notifications import initialize_medication_notifications, shutdown_medication_notifications
 from medication_ui_handlers import handle_medication_callbacks, show_medications_schedule_updated
+from garmin_scheduler import initialize_garmin_scheduler, shutdown_garmin_scheduler
+from garmin_ui_handlers import GARMIN_CALLBACK_HANDLERS, GarminStates
+from garmin_ui_handlers import (
+    handle_garmin_email_input, 
+    handle_garmin_password_input, 
+    handle_garmin_time_input
+)
 from user_checker import full_process_debug_7374723347
 
 logging.basicConfig(
@@ -358,6 +366,24 @@ async def show_full_storage(message):
         
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)}")
+
+@dp.message(GarminStates.waiting_for_email)
+@handle_telegram_errors
+async def handle_garmin_email(message: types.Message, state: FSMContext):
+    """Обработка ввода email для Garmin"""
+    await handle_garmin_email_input(message, state)
+
+@dp.message(GarminStates.waiting_for_password)
+@handle_telegram_errors
+async def handle_garmin_password(message: types.Message, state: FSMContext):
+    """Обработка ввода пароля для Garmin"""
+    await handle_garmin_password_input(message, state)
+
+@dp.message(GarminStates.waiting_for_time)
+@handle_telegram_errors
+async def handle_garmin_time(message: types.Message, state: FSMContext):
+    """Обработка ввода времени анализа для Garmin"""
+    await handle_garmin_time_input(message, state)
 
 @dp.message(lambda msg: msg.text in get_all_values_for_key("main_documents"))
 @handle_telegram_errors
@@ -1508,6 +1534,21 @@ async def handle_simple_upgrade(callback: types.CallbackQuery):
         })
         await callback.answer("❌ Ошибка", show_alert=True)
 
+@dp.callback_query(lambda c: c.data in GARMIN_CALLBACK_HANDLERS.keys())
+@handle_telegram_errors
+async def handle_garmin_callbacks(callback: types.CallbackQuery, state: FSMContext):
+    """Обработчик всех Garmin callback'ов"""
+    handler = GARMIN_CALLBACK_HANDLERS[callback.data]
+    
+    if asyncio.iscoroutinefunction(handler):
+        # Проверяем, нужно ли передавать state
+        if 'state' in handler.__code__.co_varnames:
+            await handler(callback, state)
+        else:
+            await handler(callback)
+    else:
+        handler(callback)
+
 # 3. НОВЫЕ обработчики управления подписками
 @dp.callback_query(lambda c: c.data == "subscription_menu")
 @handle_telegram_errors
@@ -1764,6 +1805,16 @@ async def main():
             # НЕ поднимаем исключение - бот может работать без уведомлений
             print("⚠️ Бот продолжит работу без уведомлений о лекарствах")
 
+        # 🏃 6. ИНИЦИАЛИЗАЦИЯ GARMIN ПЛАНИРОВЩИКА
+        print("🏃 Инициализация Garmin планировщика...")
+        try:
+            await initialize_garmin_scheduler(bot)
+            print("✅ Garmin планировщик запущен")
+        except Exception as e:
+            print(f"❌ Ошибка Garmin планировщика: {e}")
+            # НЕ поднимаем исключение - бот может работать без Garmin
+            print("⚠️ Бот продолжит работу без анализа Garmin")
+        
         # 📁 5. ПРОВЕРКА ФАЙЛОВОГО ХРАНИЛИЩА (ВСТАВИТЬ СЮДА!)
         try:
             from file_storage import check_storage_setup
@@ -1833,6 +1884,12 @@ async def main():
             print("✅ База данных закрыта")
         except Exception as e:
             print(f"⚠️ Ошибка закрытия БД: {e}")
+
+        try:
+            await shutdown_garmin_scheduler()
+            print("✅ Garmin планировщик остановлен")
+        except Exception as e:
+            print(f"⚠️ Ошибка остановки Garmin планировщика: {e}")
 
 # 🎯 ТОЧКА ВХОДА (в самом конце файла, замените существующую)
 if __name__ == "__main__":
