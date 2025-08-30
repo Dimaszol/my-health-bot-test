@@ -10,7 +10,7 @@ import pytz
 
 from garmin_connector import garmin_connector
 from garmin_analyzer import garmin_analyzer
-from db_postgresql import get_db_connection_async
+from db_postgresql import get_db_connection, release_db_connection
 from aiogram import Bot
 
 logger = logging.getLogger(__name__)
@@ -108,7 +108,7 @@ class GarminScheduler:
     async def _get_users_ready_for_analysis(self, current_utc: datetime) -> List[Dict]:
         """Получить пользователей готовых к анализу"""
         try:
-            conn = await get_db_connection_async()
+            conn = await get_db_connection()
             cursor = await conn.cursor()
             
             # Находим пользователей, которым пора делать анализ
@@ -299,8 +299,8 @@ class GarminScheduler:
     async def _increment_user_errors(self, user_id: int):
         """Увеличить счетчик ошибок пользователя"""
         try:
-            conn = garmin_connector.get_db_connection()
-            cursor = conn.cursor()
+            conn = await get_db_connection()
+            cursor = conn
             
             cursor.execute("""
                 UPDATE garmin_connections 
@@ -310,6 +310,7 @@ class GarminScheduler:
             
             conn.commit()
             conn.close()
+            await release_db_connection(conn)
             
         except Exception as e:
             logger.error(f"❌ Ошибка увеличения счетчика ошибок: {e}")
@@ -319,8 +320,8 @@ class GarminScheduler:
         try:
             logger.info("🧹 Начинаю очистку старых данных Garmin...")
             
-            conn = garmin_connector.get_db_connection()
-            cursor = conn.cursor()
+            conn = await get_db_connection()
+            cursor = conn
             
             # Удаляем данные старше 1 года
             cutoff_date = date.today() - timedelta(days=365)
@@ -345,6 +346,8 @@ class GarminScheduler:
             conn.commit()
             conn.close()
             
+            await release_db_connection(conn)
+
             logger.info(f"✅ Очистка завершена: удалено {deleted_daily} дневных записей, {deleted_analysis} анализов")
             
         except Exception as e:
@@ -356,8 +359,8 @@ class GarminScheduler:
             logger.info(f"🔧 Принудительный запуск анализа для {user_id}")
             
             # Получаем данные пользователя
-            conn = garmin_connector.get_db_connection()
-            cursor = conn.cursor()
+            conn = await get_db_connection()
+            cursor = conn
             
             cursor.execute("""
                 SELECT user_id, notification_time, timezone_offset, timezone_name, last_sync_date
@@ -380,7 +383,7 @@ class GarminScheduler:
                 'last_sync_date': row[4],
                 'user_local_time': datetime.now()
             }
-            
+            await release_db_connection(conn)
             # Запускаем анализ
             return await self._process_user_analysis(user_data)
             
@@ -391,8 +394,8 @@ class GarminScheduler:
     async def get_scheduler_status(self) -> Dict:
         """Получить статус планировщика"""
         try:
-            conn = garmin_connector.get_db_connection()
-            cursor = conn.cursor()
+            conn = await get_db_connection()
+            cursor = conn
             
             # Статистика пользователей
             cursor.execute("""
@@ -423,7 +426,8 @@ class GarminScheduler:
             analysis_today = cursor.fetchone()[0]
             
             conn.close()
-            
+            await release_db_connection(conn)
+
             return {
                 'is_running': self.is_running,
                 'total_users': user_stats[0] if user_stats else 0,

@@ -6,7 +6,7 @@ from datetime import datetime, date, timedelta
 from typing import Dict, Optional, List, Any
 
 from garmin_connector import garmin_connector
-from db_postgresql import get_db_connection_async, get_user_language
+from db_postgresql import get_db_connection, release_db_connection, get_user_language
 from gpt import ask_doctor_gemini
 from save_utils import format_user_profile
 
@@ -68,8 +68,8 @@ class GarminAnalyzer:
     async def _get_historical_data(self, user_id: int, days: int = 7) -> List[Dict]:
         """Получить исторические данные за указанное количество дней"""
         try:
-            conn = garmin_connector.get_db_connection()
-            cursor = conn.cursor()
+            conn = await get_db_connection()
+            cursor = conn
             
             start_date = date.today() - timedelta(days=days)
             
@@ -90,8 +90,9 @@ class GarminAnalyzer:
                 # Преобразуем дату в строку для JSON
                 row_dict['data_date'] = row_dict['data_date'].strftime('%Y-%m-%d')
                 historical_data.append(row_dict)
-            
+            await release_db_connection(conn)
             return historical_data
+            
             
         except Exception as e:
             logger.error(f"❌ Ошибка получения исторических данных: {e}")
@@ -103,8 +104,8 @@ class GarminAnalyzer:
             profile_text = await format_user_profile(user_id)
             
             # Также получаем информацию о лекарствах
-            conn = garmin_connector.get_db_connection()
-            cursor = conn.cursor()
+            conn = await get_db_connection()
+            cursor = conn
             
             cursor.execute("""
                 SELECT medications FROM users WHERE telegram_id = %s
@@ -114,7 +115,7 @@ class GarminAnalyzer:
             medications = result[0] if result and result[0] else "Не принимает лекарства"
             
             conn.close()
-            
+            await release_db_connection(conn)
             return {
                 'profile_text': profile_text,
                 'medications': medications
@@ -658,8 +659,8 @@ Respond in English, friendly but professionally."""
     async def _save_analysis_to_db(self, user_id: int, analysis_result: Dict) -> bool:
         """Сохранить результат анализа в БД"""
         try:
-            conn = garmin_connector.get_db_connection()
-            cursor = conn.cursor()
+            conn = await get_db_connection()
+            cursor = conn
             
             cursor.execute("""
                 INSERT INTO garmin_analysis_history 
@@ -692,7 +693,8 @@ Respond in English, friendly but professionally."""
             
             conn.commit()
             conn.close()
-            
+            await release_db_connection(conn)
+
             logger.info(f"✅ Анализ сохранен в БД для пользователя {user_id}")
             return True
             
@@ -703,8 +705,8 @@ Respond in English, friendly but professionally."""
     async def get_analysis_history(self, user_id: int, days: int = 7) -> List[Dict]:
         """Получить историю анализов пользователя"""
         try:
-            conn = garmin_connector.get_db_connection()
-            cursor = conn.cursor()
+            conn = await get_db_connection()
+            cursor = conn
             
             cursor.execute("""
                 SELECT * FROM garmin_analysis_history
@@ -715,6 +717,7 @@ Respond in English, friendly but professionally."""
             
             rows = cursor.fetchall()
             conn.close()
+            await release_db_connection(conn)
             
             return [dict(row) for row in rows]
             
