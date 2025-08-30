@@ -109,10 +109,9 @@ class GarminScheduler:
         """Получить пользователей готовых к анализу"""
         try:
             conn = await get_db_connection()
-            cursor = await conn.cursor()
             
-            # Находим пользователей, которым пора делать анализ
-            await cursor.execute("""
+            # Используем asyncpg API БЕЗ cursor
+            rows = await conn.fetch("""
                 SELECT 
                     gc.user_id,
                     gc.notification_time,
@@ -130,13 +129,17 @@ class GarminScheduler:
                 AND gah.analysis_date IS NULL  -- Анализ еще не был сегодня
             """)
             
-            rows = await cursor.fetchall()
-            await conn.close()
+            await release_db_connection(conn)
             
             users_ready = []
             
             for row in rows:
-                user_id, notification_time, timezone_offset, timezone_name, last_sync_date, last_analysis_date = row
+                user_id = row['user_id']
+                notification_time = row['notification_time']
+                timezone_offset = row['timezone_offset']
+                timezone_name = row['timezone_name']
+                last_sync_date = row['last_sync_date']
+                last_analysis_date = row['last_analysis_date']
                 
                 # Вычисляем локальное время пользователя
                 user_local_time = current_utc + timedelta(minutes=timezone_offset)
@@ -156,6 +159,8 @@ class GarminScheduler:
             
         except Exception as e:
             logger.error(f"❌ Ошибка получения пользователей для анализа: {e}")
+            if 'conn' in locals():
+                await release_db_connection(conn)
             return []
 
     def _is_time_for_analysis(self, current_time: datetime_time, notification_time: datetime_time) -> bool:

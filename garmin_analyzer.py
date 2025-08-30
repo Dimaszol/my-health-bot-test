@@ -69,19 +69,17 @@ class GarminAnalyzer:
         """Получить исторические данные за указанное количество дней"""
         try:
             conn = await get_db_connection()
-            cursor = conn
             
             start_date = date.today() - timedelta(days=days)
             
-            cursor.execute("""
+            rows = await conn.fetch("""
                 SELECT * FROM garmin_daily_data 
-                WHERE user_id = %s 
-                AND data_date >= %s
+                WHERE user_id = $1 
+                AND data_date >= $2
                 ORDER BY data_date DESC
-            """, (user_id, start_date))
+            """, user_id, start_date)
             
-            rows = cursor.fetchall()
-            conn.close()
+            await release_db_connection(conn)
             
             # Преобразуем в список словарей
             historical_data = []
@@ -90,12 +88,13 @@ class GarminAnalyzer:
                 # Преобразуем дату в строку для JSON
                 row_dict['data_date'] = row_dict['data_date'].strftime('%Y-%m-%d')
                 historical_data.append(row_dict)
-            await release_db_connection(conn)
-            return historical_data
             
+            return historical_data
             
         except Exception as e:
             logger.error(f"❌ Ошибка получения исторических данных: {e}")
+            if 'conn' in locals():
+                await release_db_connection(conn)
             return []
 
     async def _get_user_medical_profile(self, user_id: int) -> Dict:

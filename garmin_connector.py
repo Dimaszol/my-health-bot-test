@@ -7,10 +7,11 @@ import logging
 from datetime import datetime, date, timedelta
 from typing import Dict, Optional, List, Any
 from cryptography.fernet import Fernet
-import psycopg2
-from psycopg2.extras import RealDictCursor
 from garminconnect import Garmin
 from dotenv import load_dotenv
+
+# Импортируем функции для работы с БД
+from db_postgresql import get_db_connection, release_db_connection
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -55,12 +56,7 @@ class GarminConnector:
     """Класс для работы с Garmin Connect API"""
     
     def __init__(self):
-        self.db_url = os.getenv("DATABASE_URL")
         self._api_cache = {}  # Кеш подключений API
-        
-    def get_db_connection(self):
-        """Получить подключение к БД"""
-        return psycopg2.connect(self.db_url, cursor_factory=RealDictCursor)
 
     async def save_garmin_connection(self, user_id: int, email: str, password: str, 
                                    notification_time: str = "07:00", timezone_offset: int = 0,
@@ -70,15 +66,14 @@ class GarminConnector:
             encrypted_email = encrypt_data(email)
             encrypted_password = encrypt_data(password)
             
-            conn = self.get_db_connection()
-            cursor = conn.cursor()
+            conn = await get_db_connection()
             
-            # Используем ON CONFLICT для обновления существующих записей
-            cursor.execute("""
+            # Используем asyncpg API напрямую
+            await conn.execute("""
                 INSERT INTO garmin_connections 
                 (user_id, garmin_email, garmin_password, notification_time, 
                  timezone_offset, timezone_name, is_active, sync_errors)
-                VALUES (%s, %s, %s, %s, %s, %s, TRUE, 0)
+                VALUES ($1, $2, $3, $4, $5, $6, TRUE, 0)
                 ON CONFLICT (user_id) 
                 DO UPDATE SET 
                     garmin_email = EXCLUDED.garmin_email,
@@ -89,31 +84,30 @@ class GarminConnector:
                     is_active = TRUE,
                     sync_errors = 0,
                     updated_at = NOW()
-            """, (user_id, encrypted_email, encrypted_password, notification_time,
-                  timezone_offset, timezone_name))
+            """, user_id, encrypted_email, encrypted_password, notification_time,
+                 timezone_offset, timezone_name)
             
-            conn.commit()
-            conn.close()
+            await release_db_connection(conn)
             logger.info(f"✅ Garmin подключение сохранено для пользователя {user_id}")
             return True
             
         except Exception as e:
             logger.error(f"❌ Ошибка сохранения Garmin подключения: {e}")
+            if 'conn' in locals():
+                await release_db_connection(conn)
             return False
 
     async def get_garmin_connection(self, user_id: int) -> Optional[Dict]:
         """Получить данные подключения к Garmin"""
         try:
-            conn = self.get_db_connection()
-            cursor = conn.cursor()
+            conn = await get_db_connection()
             
-            cursor.execute("""
+            result = await conn.fetchrow("""
                 SELECT * FROM garmin_connections 
-                WHERE user_id = %s AND is_active = TRUE
-            """, (user_id,))
+                WHERE user_id = $1 AND is_active = TRUE
+            """, user_id)
             
-            result = cursor.fetchone()
-            conn.close()
+            await release_db_connection(conn)
             
             if result:
                 # Расшифровываем данные
@@ -126,6 +120,8 @@ class GarminConnector:
             
         except Exception as e:
             logger.error(f"❌ Ошибка получения Garmin подключения: {e}")
+            if 'conn' in locals():
+                await release_db_connection(conn)
             return None
 
     async def test_garmin_connection(self, email: str, password: str) -> tuple[bool, str]:
@@ -152,17 +148,15 @@ class GarminConnector:
     async def disconnect_garmin(self, user_id: int) -> bool:
         """Отключить Garmin для пользователя"""
         try:
-            conn = self.get_db_connection()
-            cursor = conn.cursor()
+            conn = await get_db_connection()
             
-            cursor.execute("""
+            await conn.execute("""
                 UPDATE garmin_connections 
                 SET is_active = FALSE, updated_at = NOW()
-                WHERE user_id = %s
-            """, (user_id,))
+                WHERE user_id = $1
+            """, user_id)
             
-            conn.commit()
-            conn.close()
+            await release_db_connection(conn)
             
             # Очищаем кеш
             if user_id in self._api_cache:
@@ -173,6 +167,8 @@ class GarminConnector:
             
         except Exception as e:
             logger.error(f"❌ Ошибка отключения Garmin: {e}")
+            if 'conn' in locals():
+                await release_db_connection(conn)
             return False
 
     async def get_garmin_api(self, user_id: int) -> Optional[Garmin]:
@@ -203,15 +199,13 @@ class GarminConnector:
             
             # Увеличиваем счетчик ошибок
             try:
-                conn = self.get_db_connection()
-                cursor = conn.cursor()
-                cursor.execute("""
+                conn = await get_db_connection()
+                await conn.execute("""
                     UPDATE garmin_connections 
                     SET sync_errors = sync_errors + 1, updated_at = NOW()
-                    WHERE user_id = %s
-                """, (user_id,))
-                conn.commit()
-                conn.close()
+                    WHERE user_id = $1
+                """, user_id)
+                await release_db_connection(conn)
             except:
                 pass
                 
@@ -313,8 +307,7 @@ class GarminConnector:
     async def save_daily_data(self, daily_data: Dict) -> bool:
         """Сохранить ежедневные данные в БД"""
         try:
-            conn = self.get_db_connection()
-            cursor = conn.cursor()
+            conn = await get_db_connection()
             
             # Подготавливаем данные для вставки
             fields = []
@@ -325,7 +318,7 @@ class GarminConnector:
                 if value is not None:
                     fields.append(key)
                     values.append(value)
-                    placeholders.append('%s')
+                    placeholders.append(f'${len(placeholders) + 1}')
             
             # Формируем ON CONFLICT для обновления
             update_fields = ', '.join([f"{field} = EXCLUDED.{field}" for field in fields if field not in ['user_id', 'data_date']])
@@ -337,15 +330,16 @@ class GarminConnector:
                 DO UPDATE SET {update_fields}
             """
             
-            cursor.execute(query, values)
-            conn.commit()
-            conn.close()
+            await conn.execute(query, *values)
+            await release_db_connection(conn)
             
             logger.info(f"✅ Данные Garmin сохранены в БД для пользователя {daily_data['user_id']}")
             return True
             
         except Exception as e:
             logger.error(f"❌ Ошибка сохранения данных Garmin: {e}")
+            if 'conn' in locals():
+                await release_db_connection(conn)
             return False
 
 # ================================
