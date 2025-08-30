@@ -109,20 +109,59 @@ async def handle_garmin_menu(callback: types.CallbackQuery):
         text = """📱 <b>Интеграция с Garmin</b>
 
 🩺 <b>Что это дает:</b>
-• Ежедневный AI анализ здоровья
-• Персональные рекомендации
-• Отслеживание прогресса
-• Связь сна, активности и самочувствия
+- Ежедневный AI анализ здоровья
+- Персональные рекомендации
+- Отслеживание прогресса
+- Связь сна, активности и самочувствия
 
 ⚠️ <b>Важно:</b> Анализ доступен только при наличии детальных консультаций (подписка или покупка пакета)"""
 
         await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
         
     except Exception as e:
-        logger.error(f"Ошибка показа Garmin меню: {e}")
-        await callback.message.edit_text("❌ Ошибка загрузки настроек Garmin")
+        # 🔧 ИСПРАВЛЕНИЕ: Обрабатываем ошибку "message is not modified"
+        if "message is not modified" in str(e):
+            # Просто отвечаем на callback без изменения сообщения
+            await callback.answer("✅ Garmin подключен и настроен")
+        else:
+            logger.error(f"Ошибка показа Garmin меню: {e}")
+            await callback.answer("❌ Ошибка загрузки настроек")
+
+async def handle_garmin_status(callback: types.CallbackQuery):
+    """Показать статус подключения Garmin"""
+    user_id = callback.from_user.id
     
-    await callback.answer()
+    try:
+        # Получаем детальную информацию о подключении
+        connection = await garmin_connector.get_garmin_connection(user_id)
+        
+        if connection:
+            # Форматируем время
+            time_str = connection['notification_time'].strftime('%H:%M')
+            timezone_name = connection.get('timezone_name', 'UTC')
+            
+            text = f"""✅ <b>Garmin подключен</b>
+
+📊 <b>Настройки анализа:</b>
+⏰ Время: {time_str}
+🌍 Часовой пояс: {timezone_name}
+
+📈 <b>Статус синхронизации:</b>
+- Последняя синхронизация: {connection.get('last_sync_date', 'еще не было')}
+- Ошибок подключения: {connection.get('sync_errors', 0)}
+
+🔋 <b>Функции:</b>
+- Ежедневный анализ здоровья
+- Персональные рекомендации  
+- Отслеживание трендов"""
+        else:
+            text = "❌ <b>Garmin не подключен</b>\n\nДля получения анализов здоровья подключите ваш аккаунт Garmin Connect."
+        
+        await callback.answer(text, show_alert=True)
+        
+    except Exception as e:
+        logger.error(f"Ошибка показа статуса Garmin: {e}")
+        await callback.answer("❌ Ошибка получения статуса", show_alert=True)
 
 async def handle_garmin_info(callback: types.CallbackQuery):
     """Показать информацию о возможностях Garmin"""
@@ -545,6 +584,7 @@ GARMIN_CALLBACK_HANDLERS = {
     'garmin_menu': handle_garmin_menu,
     'garmin_info': handle_garmin_info,
     'garmin_connect': handle_garmin_connect,
+    'garmin_status': handle_garmin_status,
     'garmin_status': handle_garmin_menu,
     'garmin_disconnect': handle_garmin_disconnect,
     'garmin_disconnect_confirm': handle_garmin_disconnect_confirm,
