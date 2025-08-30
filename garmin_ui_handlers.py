@@ -329,19 +329,20 @@ async def handle_garmin_show_data(callback: types.CallbackQuery):
     lang = await get_user_language(user_id)
     
     try:
-        conn = garmin_connector.get_db_connection()
-        cursor = conn.cursor()
+        # 🔧 ИСПРАВЛЕНИЕ: Используем async подход
+        from db_postgresql import get_db_connection, release_db_connection
+        
+        conn = await get_db_connection()
         
         # Получаем последние данные
-        cursor.execute("""
+        results = await conn.fetch("""
             SELECT * FROM garmin_daily_data 
-            WHERE user_id = %s 
+            WHERE user_id = $1 
             ORDER BY data_date DESC 
             LIMIT 3
-        """, (user_id,))
+        """, user_id)
         
-        results = cursor.fetchall()
-        conn.close()
+        await release_db_connection(conn)
         
         if not results:
             text = "📊 <b>Данные Garmin</b>\n\nДанных пока нет. Подождите до завтрашнего утра для первого анализа."
@@ -349,20 +350,21 @@ async def handle_garmin_show_data(callback: types.CallbackQuery):
             text = "📊 <b>Последние данные Garmin</b>\n\n"
             
             for row in results:
+                row = dict(row)  # Конвертируем asyncpg.Record в dict
                 date_str = row['data_date'].strftime('%d.%m.%Y')
                 text += f"<b>📅 {date_str}:</b>\n"
                 
-                if row['steps']:
+                if row.get('steps'):
                     text += f"🚶 Шаги: {row['steps']:,}\n"
-                if row['sleep_duration_minutes']:
+                if row.get('sleep_duration_minutes'):
                     hours = row['sleep_duration_minutes'] // 60
                     minutes = row['sleep_duration_minutes'] % 60
                     text += f"😴 Сон: {hours}ч {minutes}мин\n"
-                if row['resting_heart_rate']:
+                if row.get('resting_heart_rate'):
                     text += f"❤️ Пульс покоя: {row['resting_heart_rate']} уд/мин\n"
-                if row['body_battery_max']:
+                if row.get('body_battery_max'):
                     text += f"🔋 Body Battery: {row['body_battery_max']}%\n"
-                if row['stress_avg']:
+                if row.get('stress_avg'):
                     text += f"😰 Стресс: {row['stress_avg']}/100\n"
                 
                 text += "\n"
@@ -376,7 +378,11 @@ async def handle_garmin_show_data(callback: types.CallbackQuery):
         
     except Exception as e:
         logger.error(f"Ошибка показа данных Garmin: {e}")
-        await callback.message.edit_text("❌ Ошибка загрузки данных")
+        text = "❌ <b>Ошибка загрузки данных</b>\n\nПопробуйте позже."
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
+        ])
+        await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
     
     await callback.answer()
 
@@ -539,6 +545,7 @@ GARMIN_CALLBACK_HANDLERS = {
     'garmin_menu': handle_garmin_menu,
     'garmin_info': handle_garmin_info,
     'garmin_connect': handle_garmin_connect,
+    'garmin_status': handle_garmin_menu,
     'garmin_disconnect': handle_garmin_disconnect,
     'garmin_disconnect_confirm': handle_garmin_disconnect_confirm,
     'garmin_set_time': handle_garmin_set_time,
