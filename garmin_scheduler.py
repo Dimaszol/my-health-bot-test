@@ -321,79 +321,77 @@ class GarminScheduler:
             logger.error(f"❌ Ошибка увеличения счетчика ошибок: {e}")
 
     async def _cleanup_old_data(self):
-        """Очистка старых данных (еженедельно)"""
+        """Очистка старых данных (старше 90 дней)"""
         try:
-            logger.info("🧹 Начинаю очистку старых данных Garmin...")
+            logger.info("🧹 Начинаю очистку старых данных Garmin")
             
+            cutoff_daily = date.today() - timedelta(days=90)
+            cutoff_analysis = date.today() - timedelta(days=30)
+            
+            # 🔧 ИСПРАВЛЕНИЕ: Используем asyncpg
             conn = await get_db_connection()
-            cursor = conn
             
-            # Удаляем данные старше 1 года
-            cutoff_date = date.today() - timedelta(days=365)
-            
-            cursor.execute("""
+            # Удаляем старые ежедневные данные
+            result1 = await conn.execute("""
                 DELETE FROM garmin_daily_data 
-                WHERE data_date < %s
-            """, (cutoff_date,))
+                WHERE data_date < $1
+            """, cutoff_daily)
             
-            deleted_daily = cursor.rowcount
-            
-            # Удаляем анализы старше 6 месяцев
-            cutoff_analysis = date.today() - timedelta(days=180)
-            
-            cursor.execute("""
+            # Удаляем старые анализы
+            result2 = await conn.execute("""
                 DELETE FROM garmin_analysis_history 
-                WHERE analysis_date < %s
-            """, (cutoff_analysis,))
-            
-            deleted_analysis = cursor.rowcount
-            
-            conn.commit()
-            conn.close()
+                WHERE analysis_date < $1
+            """, cutoff_analysis)
             
             await release_db_connection(conn)
 
-            logger.info(f"✅ Очистка завершена: удалено {deleted_daily} дневных записей, {deleted_analysis} анализов")
+            logger.info(f"✅ Очистка завершена: удалено ежедневных данных, анализов")
             
         except Exception as e:
             logger.error(f"❌ Ошибка очистки старых данных: {e}")
+            if 'conn' in locals():
+                await release_db_connection(conn)
 
     async def force_user_analysis(self, user_id: int) -> bool:
         """Принудительно запустить анализ для пользователя (для тестирования)"""
         try:
             logger.info(f"🔧 Принудительный запуск анализа для {user_id}")
             
-            # Получаем данные пользователя
+            # 🔧 ИСПРАВЛЕНИЕ: Используем asyncpg подход
             conn = await get_db_connection()
-            cursor = conn
             
-            cursor.execute("""
+            # 🔧 ИСПРАВЛЕНИЕ: fetchrow вместо execute + fetchone
+            row = await conn.fetchrow("""
                 SELECT user_id, notification_time, timezone_offset, timezone_name, last_sync_date
                 FROM garmin_connections 
-                WHERE user_id = %s AND is_active = TRUE
-            """, (user_id,))
+                WHERE user_id = $1 AND is_active = TRUE
+            """, user_id)
             
-            row = cursor.fetchone()
-            conn.close()
+            await release_db_connection(conn)
             
             if not row:
                 logger.warning(f"Пользователь {user_id} не найден или Garmin не подключен")
                 return False
             
+            # 🔧 ИСПРАВЛЕНИЕ: Конвертируем asyncpg.Record в dict
+            row = dict(row)
+            
             user_data = {
-                'user_id': row[0],
-                'notification_time': row[1], 
-                'timezone_offset': row[2],
-                'timezone_name': row[3],
-                'last_sync_date': row[4],
+                'user_id': row['user_id'],
+                'notification_time': row['notification_time'], 
+                'timezone_offset': row['timezone_offset'],
+                'timezone_name': row['timezone_name'],
+                'last_sync_date': row['last_sync_date'],
                 'user_local_time': datetime.now()
             }
-            await release_db_connection(conn)
+            
             # Запускаем анализ
             return await self._process_user_analysis(user_data)
             
         except Exception as e:
             logger.error(f"❌ Ошибка принудительного анализа: {e}")
+            if 'conn' in locals():
+                await release_db_connection(conn)
             return False
 
     async def get_scheduler_status(self) -> Dict:
