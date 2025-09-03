@@ -217,8 +217,7 @@ class GarminScheduler:
             await self._send_analysis_to_user(user_id, analysis_result)
             
             # Шаг 6: Тратим лимит консультации
-            subscription_manager = SubscriptionManager()
-            await subscription_manager.spend_gpt4o_query(user_id)
+            await SubscriptionManager.spend_limits(user_id, queries=1)
             
             logger.info(f"✅ Анализ для пользователя {user_id} завершен успешно")
             return True

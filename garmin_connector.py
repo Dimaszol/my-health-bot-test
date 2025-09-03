@@ -265,6 +265,12 @@ class GarminConnector:
             tasks.append(loop.run_in_executor(None, lambda: safe_api_call(api.get_training_readiness, target_date.isoformat())))
             
             results = await asyncio.gather(*tasks, return_exceptions=True)
+            logger.info(f"🔍 RAW данные от Garmin для {user_id}:")
+            logger.info(f"Steps: {results[0]}")
+            logger.info(f"Heart: {results[1]}")  
+            logger.info(f"Sleep: {results[2]}")
+            logger.info(f"Battery: {results[3]}")
+            logger.info(f"Stress: {results[4]}")
             steps_data, heart_data, sleep_data, battery_data, stress_data, spo2_data, respiration_data, readiness_data = results
             
             # Формируем структурированные данные
