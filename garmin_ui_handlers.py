@@ -24,6 +24,34 @@ class GarminStates(StatesGroup):
     waiting_for_password = State()
     waiting_for_time = State()
 
+async def handle_garmin_test_collection(callback: types.CallbackQuery):
+    """Тестовый сбор данных Garmin"""
+    user_id = callback.from_user.id
+    
+    try:
+        # Принудительно запускаем анализ
+        from garmin_scheduler import force_user_analysis
+        
+        await callback.answer("🔄 Запускаю тестовый сбор данных...")
+        
+        success = await force_user_analysis(user_id)
+        
+        if success:
+            text = "✅ <b>Тестовый сбор данных завершен!</b>\n\nПроверьте раздел 'Последние данные'"
+        else:
+            text = "❌ <b>Ошибка сбора данных</b>\n\nПроверьте подключение к Garmin Connect"
+        
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📊 Показать данные", callback_data="garmin_show_data")],
+            [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
+        ])
+        
+        await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
+        
+    except Exception as e:
+        logger.error(f"Ошибка тестового сбора: {e}")
+        await callback.answer("❌ Ошибка запуска тестового сбора", show_alert=True)
+
 # ================================
 # КЛАВИАТУРЫ
 # ================================
@@ -43,6 +71,10 @@ async def garmin_main_keyboard(lang: str, user_id: int) -> InlineKeyboardMarkup:
             [InlineKeyboardButton(
                 text="✅ Garmin подключен",
                 callback_data="garmin_status"
+            )],
+            [InlineKeyboardButton(
+                text="🧪 Тестовый сбор данных",  # НОВАЯ КНОПКА
+                callback_data="garmin_test_collection"
             )],
             [InlineKeyboardButton(
                 text="⏰ Время анализа", 
@@ -581,6 +613,7 @@ async def handle_garmin_cancel_setup(callback: types.CallbackQuery, state: FSMCo
 # ================================
 
 GARMIN_CALLBACK_HANDLERS = {
+    'garmin_test_collection': handle_garmin_test_collection,  # ДОБАВИТЬ
     'garmin_menu': handle_garmin_menu,
     'garmin_info': handle_garmin_info,
     'garmin_connect': handle_garmin_connect,
