@@ -106,7 +106,7 @@ class GarminAnalyzer:
             conn = await get_db_connection()
             
             result = await conn.fetchrow("""
-                SELECT medications FROM users WHERE telegram_id = $1
+                SELECT medications FROM users WHERE user_id = $1
             """, user_id)
             
             await release_db_connection(conn)
@@ -676,8 +676,7 @@ Respond in English, friendly but professionally."""
                     activity_trend = EXCLUDED.activity_trend,
                     stress_trend = EXCLUDED.stress_trend,
                     recovery_trend = EXCLUDED.recovery_trend,
-                    gpt_model_used = EXCLUDED.gpt_model_used,
-                    updated_at = NOW()
+                    gpt_model_used = EXCLUDED.gpt_model_used
             """, 
             user_id,
             analysis_result['analysis_date'],
