@@ -102,19 +102,17 @@ class GarminAnalyzer:
         try:
             profile_text = await format_user_profile(user_id)
             
-            # Также получаем информацию о лекарствах
+            # 🔧 ИСПРАВЛЕНИЕ: Используем asyncpg подход
             conn = await get_db_connection()
-            cursor = conn
             
-            cursor.execute("""
-                SELECT medications FROM users WHERE telegram_id = %s
-            """, (user_id,))
+            result = await conn.fetchrow("""
+                SELECT medications FROM users WHERE telegram_id = $1
+            """, user_id)
             
-            result = cursor.fetchone()
-            medications = result[0] if result and result[0] else "Не принимает лекарства"
-            
-            conn.close()
             await release_db_connection(conn)
+            
+            medications = result['medications'] if result and result['medications'] else "Не принимает лекарства"
+            
             return {
                 'profile_text': profile_text,
                 'medications': medications
@@ -122,6 +120,8 @@ class GarminAnalyzer:
             
         except Exception as e:
             logger.error(f"❌ Ошибка получения медицинского профиля: {e}")
+            if 'conn' in locals():
+                await release_db_connection(conn)
             return {'profile_text': 'Профиль не заполнен', 'medications': 'Не указаны'}
 
     async def _prepare_analysis_context(self, daily_data: Dict, historical_data: List[Dict], 
@@ -656,49 +656,49 @@ Respond in English, friendly but professionally."""
             return "Продолжайте следить за здоровьем!"
 
     async def _save_analysis_to_db(self, user_id: int, analysis_result: Dict) -> bool:
-        """Сохранить результат анализа в БД"""
+        """Сохранить анализ в базу данных"""
         try:
+            # 🔧 ИСПРАВЛЕНИЕ: Используем asyncpg подход
             conn = await get_db_connection()
-            cursor = conn
             
-            cursor.execute("""
+            await conn.execute("""
                 INSERT INTO garmin_analysis_history 
-                (user_id, analysis_date, analysis_text, recommendations, health_score,
-                 sleep_trend, activity_trend, stress_trend, recovery_trend, 
-                 gpt_model_used, used_consultation_limit)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
+                (user_id, analysis_date, analysis_text, health_score, 
+                recommendations, sleep_trend, activity_trend, stress_trend, 
+                recovery_trend, gpt_model_used)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 ON CONFLICT (user_id, analysis_date)
                 DO UPDATE SET 
                     analysis_text = EXCLUDED.analysis_text,
-                    recommendations = EXCLUDED.recommendations,
                     health_score = EXCLUDED.health_score,
+                    recommendations = EXCLUDED.recommendations,
                     sleep_trend = EXCLUDED.sleep_trend,
                     activity_trend = EXCLUDED.activity_trend,
                     stress_trend = EXCLUDED.stress_trend,
                     recovery_trend = EXCLUDED.recovery_trend,
-                    gpt_model_used = EXCLUDED.gpt_model_used
-            """, (
-                user_id,
-                analysis_result['analysis_date'],
-                analysis_result['analysis_text'],
-                analysis_result['recommendations'],
-                analysis_result['health_score'],
-                analysis_result.get('sleep_trend', 'stable'),
-                analysis_result.get('activity_trend', 'stable'),
-                analysis_result.get('stress_trend', 'stable'),
-                analysis_result.get('recovery_trend', 'stable'),
-                analysis_result.get('gpt_model_used', 'gpt-5-chat-latest')
-            ))
+                    gpt_model_used = EXCLUDED.gpt_model_used,
+                    updated_at = NOW()
+            """, 
+            user_id,
+            analysis_result['analysis_date'],
+            analysis_result['analysis_text'],
+            analysis_result['health_score'],
+            analysis_result.get('recommendations', ''),
+            analysis_result.get('sleep_trend', 'stable'),
+            analysis_result.get('activity_trend', 'stable'),
+            analysis_result.get('stress_trend', 'stable'),
+            analysis_result.get('recovery_trend', 'stable'),
+            analysis_result.get('gpt_model_used', 'gpt-4o'))
             
-            conn.commit()
-            conn.close()
             await release_db_connection(conn)
-
+            
             logger.info(f"✅ Анализ сохранен в БД для пользователя {user_id}")
             return True
             
         except Exception as e:
             logger.error(f"❌ Ошибка сохранения анализа в БД: {e}")
+            if 'conn' in locals():
+                await release_db_connection(conn)
             return False
 
     async def get_analysis_history(self, user_id: int, days: int = 7) -> List[Dict]:
