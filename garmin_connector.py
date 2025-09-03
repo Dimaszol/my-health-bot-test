@@ -407,11 +407,35 @@ def safe_api_call(func, *args, **kwargs):
 def calculate_avg_heart_rate(heart_data):
     """Вычислить средний пульс из данных"""
     try:
-        if isinstance(heart_data, list):
-            rates = [item.get('heartRate') for item in heart_data if item.get('heartRate')]
+        if isinstance(heart_data, dict):
+            # Если это словарь, ищем прямые значения
+            if 'averageHeartRate' in heart_data:
+                return heart_data.get('averageHeartRate')
+            if 'restingHeartRate' in heart_data:
+                return heart_data.get('restingHeartRate')
+                
+            # Или ищем массив значений
+            hr_values = heart_data.get('heartRateValues', []) or heart_data.get('values', [])
+            if hr_values:
+                valid_rates = [val for val in hr_values if val is not None and val > 0]
+                return sum(valid_rates) // len(valid_rates) if valid_rates else None
+        
+        elif isinstance(heart_data, list):
+            # Если это список
+            rates = []
+            for item in heart_data:
+                if isinstance(item, dict):
+                    hr = item.get('heartRate') or item.get('value') or item.get('rate')
+                    if hr and hr > 0:
+                        rates.append(hr)
+                elif isinstance(item, (int, float)) and item > 0:
+                    rates.append(item)
+            
             return sum(rates) // len(rates) if rates else None
-        return heart_data.get('averageHeartRate')
-    except:
+        
+        return None
+    except Exception as e:
+        logger.debug(f"Ошибка расчета пульса: {e}")
         return None
 
 def parse_sleep_data(sleep_data):
@@ -420,45 +444,94 @@ def parse_sleep_data(sleep_data):
         result = {}
         
         if isinstance(sleep_data, dict):
+            # 🔧 ИСПРАВЛЕНИЕ: Проверяем разные возможные поля
             # Общая длительность сна
-            result['sleep_duration_minutes'] = sleep_data.get('sleepTimeSeconds', 0) // 60
+            sleep_duration = (sleep_data.get('sleepTimeSeconds') or 
+                            sleep_data.get('totalSleepTimeSeconds') or 
+                            sleep_data.get('sleepTime'))
+            
+            if sleep_duration:
+                result['sleep_duration_minutes'] = int(sleep_duration) // 60
             
             # Фазы сна
-            sleep_levels = sleep_data.get('sleepLevels', [])
-            deep_seconds = sum(level.get('seconds', 0) for level in sleep_levels if level.get('activityLevel') == 'deep')
-            light_seconds = sum(level.get('seconds', 0) for level in sleep_levels if level.get('activityLevel') == 'light')
-            rem_seconds = sum(level.get('seconds', 0) for level in sleep_levels if level.get('activityLevel') == 'rem')
-            awake_seconds = sum(level.get('seconds', 0) for level in sleep_levels if level.get('activityLevel') == 'awake')
+            sleep_levels = sleep_data.get('sleepLevels', []) or sleep_data.get('levels', [])
             
-            result.update({
-                'sleep_deep_minutes': deep_seconds // 60,
-                'sleep_light_minutes': light_seconds // 60,
-                'sleep_rem_minutes': rem_seconds // 60,
-                'sleep_awake_minutes': awake_seconds // 60,
-            })
+            if sleep_levels:
+                deep_seconds = sum(level.get('seconds', 0) for level in sleep_levels 
+                                 if level.get('activityLevel') == 'deep')
+                light_seconds = sum(level.get('seconds', 0) for level in sleep_levels 
+                                  if level.get('activityLevel') == 'light')
+                rem_seconds = sum(level.get('seconds', 0) for level in sleep_levels 
+                                if level.get('activityLevel') == 'rem')
+                awake_seconds = sum(level.get('seconds', 0) for level in sleep_levels 
+                                  if level.get('activityLevel') == 'awake')
+                
+                result.update({
+                    'sleep_deep_minutes': deep_seconds // 60,
+                    'sleep_light_minutes': light_seconds // 60,
+                    'sleep_rem_minutes': rem_seconds // 60,
+                    'sleep_awake_minutes': awake_seconds // 60,
+                })
             
             # Оценка сна
-            result['sleep_score'] = sleep_data.get('overallSleepScore')
+            sleep_score = (sleep_data.get('overallSleepScore') or 
+                          sleep_data.get('sleepScore') or 
+                          sleep_data.get('score'))
+            if sleep_score:
+                result['sleep_score'] = sleep_score
+        
+        elif isinstance(sleep_data, list) and len(sleep_data) > 0:
+            # Если данные сна в виде списка, берем первый элемент
+            return parse_sleep_data(sleep_data[0])
         
         return result
     except Exception as e:
         logger.debug(f"Ошибка парсинга сна: {e}")
         return {}
-
+    
 def parse_stress_data(stress_data):
     """Парсинг данных стресса"""
     try:
         result = {}
         
-        if isinstance(stress_data, list) and len(stress_data) > 0:
-            stress_values = [item.get('stressLevel') for item in stress_data if item.get('stressLevel') is not None]
+        # 🔧 ИСПРАВЛЕНИЕ: Проверяем разные форматы данных
+        if isinstance(stress_data, dict):
+            # Если это словарь, проверяем наличие прямых значений
+            if 'averageStressLevel' in stress_data:
+                result['stress_avg'] = stress_data.get('averageStressLevel')
+            if 'maxStressLevel' in stress_data:
+                result['stress_max'] = stress_data.get('maxStressLevel')
+                
+            # Или проверяем массив stressValuesArray
+            stress_values_array = stress_data.get('stressValuesArray', [])
+            if stress_values_array:
+                valid_values = [val for val in stress_values_array if val is not None and val > 0]
+                if valid_values:
+                    result['stress_avg'] = sum(valid_values) // len(valid_values)
+                    result['stress_max'] = max(valid_values)
+        
+        elif isinstance(stress_data, list) and len(stress_data) > 0:
+            # Если это список объектов
+            stress_values = []
+            for item in stress_data:
+                if isinstance(item, dict):
+                    # Проверяем разные возможные поля
+                    stress_val = item.get('stressLevel') or item.get('stress') or item.get('value')
+                    if stress_val is not None and stress_val > 0:
+                        stress_values.append(stress_val)
+                elif isinstance(item, (int, float)) and item > 0:
+                    # Если элемент - просто число
+                    stress_values.append(item)
+            
             if stress_values:
                 result['stress_avg'] = sum(stress_values) // len(stress_values)
                 result['stress_max'] = max(stress_values)
         
         return result
-    except:
+    except Exception as e:
+        logger.debug(f"Ошибка парсинга стресса: {e}")
         return {}
+
 
 # ================================
 # ГЛОБАЛЬНЫЙ ЭКЗЕМПЛЯР
