@@ -388,13 +388,37 @@ def parse_steps_data(steps_data):
     """Парсинг данных активности"""
     result = {}
     try:
-        if isinstance(steps_data, dict):
+        if isinstance(steps_data, list):
+            # Суммируем шаги из всех интервалов
+            total_steps = sum(item.get('steps', 0) for item in steps_data if isinstance(item, dict))
+            
+            # Ищем калории и дистанцию в первых элементах (если есть)
+            total_calories = 0
+            total_distance = 0
+            floors_climbed = 0
+            
+            for item in steps_data:
+                if isinstance(item, dict):
+                    if 'calories' in item:
+                        total_calories += item.get('calories', 0)
+                    if 'distance' in item:
+                        total_distance += item.get('distance', 0)
+                    if 'floors' in item:
+                        floors_climbed += item.get('floors', 0)
+            
+            result = {
+                'steps': total_steps,
+                'calories': total_calories if total_calories > 0 else None,
+                'distance_meters': int(total_distance) if total_distance > 0 else None,
+                'floors_climbed': floors_climbed if floors_climbed > 0 else None
+            }
+            
+        elif isinstance(steps_data, dict):
             result['steps'] = safe_get_value(steps_data, 'totalSteps', default=0)
             result['calories'] = safe_get_value(steps_data, 'totalKilocalories', default=0)
             result['distance_meters'] = int(safe_get_value(steps_data, 'totalDistanceMeters', default=0))
             result['floors_climbed'] = safe_get_value(steps_data, 'floorsAscended', default=0)
-        elif isinstance(steps_data, list) and len(steps_data) > 0:
-            return parse_steps_data(steps_data[0])
+            
     except Exception as e:
         logger.debug(f"Ошибка парсинга активности: {e}")
     return result
