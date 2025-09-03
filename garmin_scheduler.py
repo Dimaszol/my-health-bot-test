@@ -217,7 +217,8 @@ class GarminScheduler:
             await self._send_analysis_to_user(user_id, analysis_result)
             
             # Шаг 6: Тратим лимит консультации
-            await SubscriptionManager.spend_gpt4o_query(user_id)
+            subscription_manager = SubscriptionManager()
+            await subscription_manager.spend_gpt4o_query(user_id)
             
             logger.info(f"✅ Анализ для пользователя {user_id} завершен успешно")
             return True
@@ -305,20 +306,19 @@ class GarminScheduler:
         """Увеличить счетчик ошибок пользователя"""
         try:
             conn = await get_db_connection()
-            cursor = conn
             
-            cursor.execute("""
+            await conn.execute("""
                 UPDATE garmin_connections 
                 SET sync_errors = sync_errors + 1, updated_at = NOW()
-                WHERE user_id = %s
-            """, (user_id,))
+                WHERE user_id = $1
+            """, user_id)
             
-            conn.commit()
-            conn.close()
             await release_db_connection(conn)
             
         except Exception as e:
             logger.error(f"❌ Ошибка увеличения счетчика ошибок: {e}")
+            if 'conn' in locals():
+                await release_db_connection(conn)
 
     async def _cleanup_old_data(self):
         """Очистка старых данных (старше 90 дней)"""
