@@ -8,6 +8,9 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 import json
 from error_handler import log_error_with_context
+import logging
+
+logger = logging.getLogger(__name__)
 
 # 🔗 ПУЛ ПОДКЛЮЧЕНИЙ
 db_pool: Optional[asyncpg.Pool] = None
@@ -72,7 +75,7 @@ async def close_db_pool():
         await db_pool.close()
 
 async def create_tables():
-    """Создание всех таблиц медицинского бота для Railway (включая Garmin)"""
+    """Создание всех таблиц медицинского бота для Railway (включая Garmin) - ОБНОВЛЕНО"""
     
     # 🔧 СНАЧАЛА подключаем pgvector расширение
     pgvector_setup = """
@@ -253,7 +256,7 @@ async def create_tables():
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- 📊 ЕЖЕДНЕВНЫЕ ДАННЫЕ ЗДОРОВЬЯ ИЗ GARMIN
+    -- 📊 ЕЖЕДНЕВНЫЕ ДАННЫЕ ЗДОРОВЬЯ ИЗ GARMIN (РАСШИРЕННАЯ ВЕРСИЯ)
     CREATE TABLE IF NOT EXISTS garmin_daily_data (
         id SERIAL PRIMARY KEY,
         user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
@@ -265,7 +268,7 @@ async def create_tables():
         floors_climbed INTEGER,
         distance_meters INTEGER,
         
-        -- Данные сна
+        -- Данные сна (основные)
         sleep_duration_minutes INTEGER,
         sleep_deep_minutes INTEGER,
         sleep_light_minutes INTEGER,
@@ -273,13 +276,25 @@ async def create_tables():
         sleep_awake_minutes INTEGER,
         sleep_score INTEGER, -- 0-100
         
-        -- Пульс
+        -- НОВЫЕ: Дополнительные данные сна
+        nap_duration_minutes INTEGER,
+        sleep_need_minutes INTEGER,
+        sleep_baseline_minutes INTEGER,
+        
+        -- Пульс (основные)
         resting_heart_rate INTEGER,
         avg_heart_rate INTEGER,
         max_heart_rate INTEGER,
-        hrv_rmssd FLOAT, -- Вариабельность пульса
+        hrv_rmssd REAL, -- Вариабельность пульса
         
-        -- Стресс и энергия
+        -- НОВЫЕ: Дополнительные данные пульса
+        min_heart_rate INTEGER,
+        heart_rate_measurements INTEGER,
+        hr_zone_rest_percent REAL,
+        hr_zone_aerobic_percent REAL,
+        resting_heart_rate_7day_avg INTEGER,
+        
+        -- Стресс и энергия (основные)
         stress_avg INTEGER, -- 0-100
         stress_max INTEGER,
         body_battery_max INTEGER, -- 0-100
@@ -287,20 +302,66 @@ async def create_tables():
         body_battery_charged INTEGER, -- Восстановление энергии
         body_battery_drained INTEGER, -- Трата энергии
         
-        -- Кислород и дыхание
-        spo2_avg FLOAT, -- Кислород в крови %
-        respiration_avg FLOAT, -- Частота дыхания
+        -- НОВЫЕ: Дополнительные данные стресса
+        stress_min INTEGER,
+        stress_high_periods_count INTEGER,
+        stress_low_periods_count INTEGER,
         
-        -- Готовность и фитнес
+        -- НОВЫЕ: Дополнительные данные Body Battery
+        body_battery_avg REAL,
+        body_battery_stress_events INTEGER,
+        body_battery_recovery_events INTEGER,
+        body_battery_activity_events INTEGER,
+        
+        -- Кислород и дыхание
+        spo2_avg REAL, -- Кислород в крови %
+        respiration_avg REAL, -- Частота дыхания
+        
+        -- Готовность и фитнес (основные)
         training_readiness INTEGER, -- 0-100
-        vo2_max FLOAT,
+        vo2_max REAL,
         fitness_age INTEGER,
         
-        -- Тренировки (краткая сводка)
+        -- НОВЫЕ: Расширенные данные готовности
+        training_readiness_status TEXT,
+        readiness_sleep_factor INTEGER,
+        readiness_hrv_factor INTEGER,
+        readiness_stress_factor INTEGER,
+        
+        -- НОВЫЕ: Данные активности
+        active_periods_15min INTEGER,
+        sedentary_periods_15min INTEGER,
+        sleep_periods_15min INTEGER,
+        total_calories INTEGER,
+        vigorous_intensity_minutes INTEGER,
+        moderate_intensity_minutes INTEGER,
+        
+        -- Тренировки (основные)
         activities_count INTEGER DEFAULT 0,
         activities_duration_minutes INTEGER DEFAULT 0,
         activities_calories INTEGER DEFAULT 0,
         activities_data JSONB, -- Детали тренировок
+        
+        -- НОВЫЕ: Дополнительные данные тренировок
+        activities_types TEXT,
+        activities_max_intensity INTEGER,
+        
+        -- НОВЫЕ: HRV данные
+        hrv_status TEXT,
+        hrv_baseline REAL,
+        
+        -- НОВЫЕ: Тренировочный статус
+        training_status TEXT,
+        training_load_7day INTEGER,
+        
+        -- НОВЫЕ: Дополнительные биометрические данные
+        body_temperature REAL,
+        hydration_ml INTEGER,
+        menstrual_cycle_phase TEXT,
+        
+        -- НОВЫЕ: Метаданные качества данных
+        data_completeness_score REAL,
+        last_sync_quality TEXT,
         
         -- Служебные поля
         sync_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -319,7 +380,7 @@ async def create_tables():
         -- Анализ от AI
         analysis_text TEXT NOT NULL,
         recommendations TEXT,
-        health_score FLOAT, -- Общая оценка здоровья 0-100
+        health_score REAL, -- Общая оценка здоровья 0-100
         
         -- Тренды
         sleep_trend TEXT, -- improving, stable, declining
@@ -329,7 +390,7 @@ async def create_tables():
         
         -- Использованные лимиты
         used_consultation_limit BOOLEAN DEFAULT TRUE,
-        gpt_model_used TEXT DEFAULT 'gpt-5-chat-latest',
+        gpt_model_used TEXT DEFAULT 'gpt-4o', -- ИСПРАВЛЕНО: используем реальную модель
         
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         
@@ -351,7 +412,7 @@ async def create_tables():
         enable_alerts BOOLEAN DEFAULT TRUE, -- Предупреждения о проблемах
         
         -- Пороги для алертов
-        min_sleep_hours FLOAT DEFAULT 6.0,
+        min_sleep_hours REAL DEFAULT 6.0,
         max_stress_threshold INTEGER DEFAULT 80,
         min_body_battery INTEGER DEFAULT 20,
         target_steps INTEGER DEFAULT 10000,
@@ -359,7 +420,77 @@ async def create_tables():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+    """
+    
+    # НОВАЯ СЕКЦИЯ: Миграция для добавления полей в существующие таблицы
+    migration_sql = """
+    -- ================================
+    -- 🔄 МИГРАЦИЯ: Добавление новых полей в существующие таблицы
+    -- ================================
+    
+    -- Добавляем новые поля в garmin_daily_data (если их еще нет)
+    DO $$ 
+    BEGIN
+        -- Проверяем и добавляем новые поля
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name = 'garmin_daily_data' AND column_name = 'nap_duration_minutes') THEN
+            ALTER TABLE garmin_daily_data ADD COLUMN nap_duration_minutes INTEGER;
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name = 'garmin_daily_data' AND column_name = 'data_completeness_score') THEN
+            ALTER TABLE garmin_daily_data ADD COLUMN data_completeness_score REAL;
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name = 'garmin_daily_data' AND column_name = 'last_sync_quality') THEN
+            ALTER TABLE garmin_daily_data ADD COLUMN last_sync_quality TEXT;
+        END IF;
+        
+        -- Добавляем все остальные поля одним блоком (PostgreSQL игнорирует IF NOT EXISTS если поле уже есть)
+        BEGIN
+            ALTER TABLE garmin_daily_data 
+                ADD COLUMN IF NOT EXISTS sleep_need_minutes INTEGER,
+                ADD COLUMN IF NOT EXISTS sleep_baseline_minutes INTEGER,
+                ADD COLUMN IF NOT EXISTS body_battery_avg REAL,
+                ADD COLUMN IF NOT EXISTS body_battery_stress_events INTEGER,
+                ADD COLUMN IF NOT EXISTS body_battery_recovery_events INTEGER,
+                ADD COLUMN IF NOT EXISTS body_battery_activity_events INTEGER,
+                ADD COLUMN IF NOT EXISTS stress_min INTEGER,
+                ADD COLUMN IF NOT EXISTS stress_high_periods_count INTEGER,
+                ADD COLUMN IF NOT EXISTS stress_low_periods_count INTEGER,
+                ADD COLUMN IF NOT EXISTS min_heart_rate INTEGER,
+                ADD COLUMN IF NOT EXISTS heart_rate_measurements INTEGER,
+                ADD COLUMN IF NOT EXISTS hr_zone_rest_percent REAL,
+                ADD COLUMN IF NOT EXISTS hr_zone_aerobic_percent REAL,
+                ADD COLUMN IF NOT EXISTS resting_heart_rate_7day_avg INTEGER,
+                ADD COLUMN IF NOT EXISTS active_periods_15min INTEGER,
+                ADD COLUMN IF NOT EXISTS sedentary_periods_15min INTEGER,
+                ADD COLUMN IF NOT EXISTS sleep_periods_15min INTEGER,
+                ADD COLUMN IF NOT EXISTS total_calories INTEGER,
+                ADD COLUMN IF NOT EXISTS vigorous_intensity_minutes INTEGER,
+                ADD COLUMN IF NOT EXISTS moderate_intensity_minutes INTEGER,
+                ADD COLUMN IF NOT EXISTS activities_types TEXT,
+                ADD COLUMN IF NOT EXISTS activities_max_intensity INTEGER,
+                ADD COLUMN IF NOT EXISTS hrv_status TEXT,
+                ADD COLUMN IF NOT EXISTS hrv_baseline REAL,
+                ADD COLUMN IF NOT EXISTS training_readiness_status TEXT,
+                ADD COLUMN IF NOT EXISTS readiness_sleep_factor INTEGER,
+                ADD COLUMN IF NOT EXISTS readiness_hrv_factor INTEGER,
+                ADD COLUMN IF NOT EXISTS readiness_stress_factor INTEGER,
+                ADD COLUMN IF NOT EXISTS training_status TEXT,
+                ADD COLUMN IF NOT EXISTS training_load_7day INTEGER,
+                ADD COLUMN IF NOT EXISTS body_temperature REAL,
+                ADD COLUMN IF NOT EXISTS hydration_ml INTEGER,
+                ADD COLUMN IF NOT EXISTS menstrual_cycle_phase TEXT;
+        EXCEPTION WHEN OTHERS THEN
+            -- Игнорируем ошибки если поля уже существуют
+            NULL;
+        END;
+    END $$;
+    """
 
+    indices_sql = """
     -- ================================
     -- 📊 ИНДЕКСЫ ДЛЯ ВЕКТОРНОГО ПОИСКА (ВАЖНО!)
     -- ================================
@@ -369,7 +500,7 @@ async def create_tables():
     CREATE INDEX IF NOT EXISTS idx_document_vectors_keywords ON document_vectors USING gin(to_tsvector('russian', keywords));
 
     -- ================================
-    -- 📊 ИНДЕКСЫ ДЛЯ GARMIN ТАБЛИЦ
+    -- 📊 ИНДЕКСЫ ДЛЯ GARMIN ТАБЛИЦ (ВКЛЮЧАЯ НОВЫЕ ПОЛЯ)
     -- ================================
     
     -- Индексы для быстрого поиска данных Garmin
@@ -378,6 +509,11 @@ async def create_tables():
     CREATE INDEX IF NOT EXISTS idx_garmin_analysis_user_date ON garmin_analysis_history(user_id, analysis_date DESC);
     CREATE INDEX IF NOT EXISTS idx_garmin_connections_active ON garmin_connections(user_id) WHERE is_active = TRUE;
     CREATE INDEX IF NOT EXISTS idx_garmin_connections_sync_errors ON garmin_connections(sync_errors) WHERE sync_errors >= 5;
+    
+    -- НОВЫЕ индексы для новых полей
+    CREATE INDEX IF NOT EXISTS idx_garmin_daily_completeness ON garmin_daily_data(data_completeness_score) WHERE data_completeness_score IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_garmin_daily_sync_quality ON garmin_daily_data(last_sync_quality) WHERE last_sync_quality IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_garmin_daily_training_status ON garmin_daily_data(user_id, training_status) WHERE training_status IS NOT NULL;
 
     -- ================================
     -- 📊 ОСТАЛЬНЫЕ ИНДЕКСЫ
@@ -395,7 +531,9 @@ async def create_tables():
     CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
     CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id);
     CREATE INDEX IF NOT EXISTS idx_users_gdpr_consent ON users(gdpr_consent);
+    """
 
+    functions_sql = """
     -- ================================
     -- 🔄 ФУНКЦИИ И ТРИГГЕРЫ
     -- ================================
@@ -450,9 +588,11 @@ async def create_tables():
                 EXECUTE FUNCTION update_medical_timeline_timestamp();
         END IF;
     END $$;
+    """
 
+    comments_sql = """
     -- ================================
-    -- 📝 КОММЕНТАРИИ К ТАБЛИЦАМ
+    -- 📝 КОММЕНТАРИИ К ТАБЛИЦАМ И НОВЫМ ПОЛЯМ
     -- ================================
     COMMENT ON COLUMN users.gdpr_consent IS 'Пользователь дал согласие на обработку данных (GDPR)';
     COMMENT ON COLUMN users.gdpr_consent_time IS 'Время когда пользователь дал согласие GDPR';
@@ -460,60 +600,42 @@ async def create_tables():
     
     -- Комментарии для Garmin таблиц
     COMMENT ON TABLE garmin_connections IS 'Подключения пользователей к Garmin Connect';
-    COMMENT ON TABLE garmin_daily_data IS 'Ежедневные данные здоровья из часов Garmin';  
+    COMMENT ON TABLE garmin_daily_data IS 'Ежедневные данные здоровья из часов Garmin (расширенная версия)';  
     COMMENT ON TABLE garmin_analysis_history IS 'История AI анализов данных Garmin';
     COMMENT ON TABLE garmin_analysis_settings IS 'Настройки персонализации анализа Garmin';
     COMMENT ON COLUMN garmin_connections.garmin_email IS 'Зашифрованный email от Garmin Connect';
     COMMENT ON COLUMN garmin_connections.garmin_password IS 'Зашифрованный пароль от Garmin Connect';
     COMMENT ON COLUMN garmin_connections.sync_errors IS 'Счетчик ошибок синхронизации (при >= 5 пользователь деактивируется)';
     COMMENT ON COLUMN garmin_daily_data.data_quality IS 'JSON с информацией о качестве и доступности данных';
-    """
     
-    conn = await get_db_connection()
+    -- Комментарии к новым полям
+    COMMENT ON COLUMN garmin_daily_data.nap_duration_minutes IS 'Длительность дневного сна в минутах';
+    COMMENT ON COLUMN garmin_daily_data.data_completeness_score IS 'Оценка полноты собранных данных от 0 до 100';
+    COMMENT ON COLUMN garmin_daily_data.last_sync_quality IS 'Качество последней синхронизации: good, partial, poor';
+    COMMENT ON COLUMN garmin_daily_data.body_battery_stress_events IS 'Количество стрессовых событий влияющих на Body Battery';
+    COMMENT ON COLUMN garmin_daily_data.heart_rate_measurements IS 'Количество измерений пульса за день';
+    COMMENT ON COLUMN garmin_daily_data.training_readiness_status IS 'Статус готовности к тренировкам: optimal, good, fair, poor';
+    """
+
     try:
-        # 1. Сначала подключаем pgvector
-        print("🔧 Подключение pgvector расширения...")
+        conn = await get_db_connection()
+        
+        # Выполняем создание таблиц по частям
         await conn.execute(pgvector_setup)
-        
-        # 2. Затем создаем таблицы
-        print("🏗️ Создание основных таблиц...")
         await conn.execute(tables_sql)
+        await conn.execute(migration_sql)  # НОВОЕ: выполняем миграцию
+        await conn.execute(indices_sql)
+        await conn.execute(functions_sql)
+        await conn.execute(comments_sql)
         
-        # 3. Проверяем успешность создания Garmin таблиц
-        print("🏃 Проверка таблиц Garmin...")
-        garmin_tables_check = await conn.fetch("""
-            SELECT table_name FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            AND table_name LIKE 'garmin_%'
-            ORDER BY table_name;
-        """)
-        
-        garmin_table_names = [row['table_name'] for row in garmin_tables_check]
-        expected_garmin_tables = ['garmin_analysis_history', 'garmin_analysis_settings', 'garmin_connections', 'garmin_daily_data']
-        
-        print(f"✅ Созданы Garmin таблицы: {', '.join(garmin_table_names)}")
-        
-        # Проверяем, что все нужные таблицы созданы
-        missing_tables = set(expected_garmin_tables) - set(garmin_table_names)
-        if missing_tables:
-            print(f"⚠️ Не созданы таблицы: {', '.join(missing_tables)}")
-        else:
-            print("🎉 Все таблицы Garmin созданы успешно!")
-        
-        print("✅ Все таблицы созданы успешно")
-        print("📊 Структура БД готова для:")
-        print("   • Основной функциональности медицинского бота")
-        print("   • Интеграции с Garmin Connect")
-        print("   • AI анализа данных здоровья")
-        print("   • Векторного поиска по документам")
-        print("   • Системы подписок и лимитов")
+        await release_db_connection(conn)
+        logger.info("✅ Все таблицы и миграции созданы успешно")
         
     except Exception as e:
-        log_error_with_context(e, {"action": "create_tables_with_garmin"})
-        print(f"❌ Ошибка создания таблиц: {e}")
+        logger.error(f"❌ Ошибка создания таблиц: {e}")
+        if 'conn' in locals():
+            await release_db_connection(conn)
         raise
-    finally:
-        await release_db_connection(conn)
         
 # 👤 ФУНКЦИИ ДЛЯ РАБОТЫ С ПОЛЬЗОВАТЕЛЯМИ
 async def get_user(user_id: int) -> Optional[Dict]:
