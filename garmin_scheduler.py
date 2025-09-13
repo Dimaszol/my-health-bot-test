@@ -1,4 +1,4 @@
-# garmin_scheduler.py - Планировщик для сбора и анализа данных Garmin
+# garmin_scheduler.py - ИСПРАВЛЕННАЯ ВЕРСИЯ с подробными логами
 
 import asyncio
 import logging
@@ -14,10 +14,6 @@ from db_postgresql import get_db_connection, release_db_connection
 from aiogram import Bot
 
 logger = logging.getLogger(__name__)
-
-# ================================
-# ОСНОВНОЙ КЛАСС ПЛАНИРОВЩИКА
-# ================================
 
 class GarminScheduler:
     """Планировщик для ежедневного сбора и анализа данных Garmin"""
@@ -173,178 +169,210 @@ class GarminScheduler:
         return notification_minutes <= current_minutes < notification_minutes + 10
 
     async def _process_user_analysis(self, user: Dict) -> bool:
-        """Выполнить полный цикл анализа для пользователя"""
+        """🔧 ИСПРАВЛЕННАЯ ФУНКЦИЯ: Выполнить полный цикл анализа для пользователя"""
         user_id = user['user_id']
         
         try:
             logger.info(f"🔄 Начинаю анализ для пользователя {user_id}")
             
-            # Шаг 1: Собираем данные за вчерашний день
-            target_date = date.today() - timedelta(days=1)
+            # 🔧 ГЛАВНОЕ ИСПРАВЛЕНИЕ: Собираем данные за СЕГОДНЯШНИЙ день
+            # Потому что Garmin записывает сон в день пробуждения, а не засыпания
+            old_target_date = date.today() - timedelta(days=1)  # Старая логика
+            new_target_date = date.today()  # НОВАЯ ЛОГИКА
+            
+            logger.info(f"📅 ИЗМЕНЕНИЕ ЛОГИКИ для пользователя {user_id}:")
+            logger.info(f"   • Старая дата: {old_target_date} (запрашивали вчера)")
+            logger.info(f"   • Новая дата: {new_target_date} (запрашиваем сегодня)")
+            logger.info(f"   • Причина: Garmin записывает сон в день пробуждения")
+            
+            # Используем НОВУЮ логику
+            target_date = new_target_date
+            
+            logger.info(f"🔍 Собираю данные Garmin за {target_date} для пользователя {user_id}")
+            
             daily_data = await garmin_connector.collect_daily_data(user_id, target_date)
             
             if not daily_data:
-                logger.warning(f"⚠️ Не удалось собрать данные Garmin для {user_id}")
+                logger.warning(f"⚠️ Не удалось собрать данные Garmin для {user_id} за {target_date}")
                 return False
             
+            # 📊 ПОДРОБНЫЙ ЛОГ СОБРАННЫХ ДАННЫХ (временно для отладки)
+            logger.info(f"📊 СОБРАННЫЕ ДАННЫЕ для пользователя {user_id}:")
+            
+            # Основные показатели
+            if daily_data.get('steps'):
+                logger.info(f"   🚶 Шаги: {daily_data['steps']}")
+            else:
+                logger.info(f"   🚶 Шаги: ❌ НЕТ ДАННЫХ")
+            
+            # Анализ сна - ключевой показатель
+            if daily_data.get('sleep_duration_minutes'):
+                sleep_hours = daily_data['sleep_duration_minutes'] // 60
+                sleep_mins = daily_data['sleep_duration_minutes'] % 60
+                logger.info(f"   😴 ОСНОВНОЙ СОН: ✅ {sleep_hours}ч {sleep_mins}м")
+            else:
+                logger.info(f"   😴 ОСНОВНОЙ СОН: ❌ НЕТ ДАННЫХ")
+            
+            if daily_data.get('nap_duration_minutes'):
+                logger.info(f"   🛌 Дневной сон: ✅ {daily_data['nap_duration_minutes']}м")
+            else:
+                logger.info(f"   🛌 Дневной сон: ❌ нет")
+            
+            # Остальные показатели
+            if daily_data.get('resting_heart_rate'):
+                logger.info(f"   ❤️ Пульс покоя: ✅ {daily_data['resting_heart_rate']} уд/мин")
+            else:
+                logger.info(f"   ❤️ Пульс покоя: ❌ НЕТ ДАННЫХ")
+            
+            if daily_data.get('stress_avg'):
+                logger.info(f"   😰 Средний стресс: ✅ {daily_data['stress_avg']}")
+            else:
+                logger.info(f"   😰 Средний стресс: ❌ НЕТ ДАННЫХ")
+            
+            if daily_data.get('body_battery_max'):
+                logger.info(f"   🔋 Body Battery макс: ✅ {daily_data['body_battery_max']}%")
+            else:
+                logger.info(f"   🔋 Body Battery: ❌ НЕТ ДАННЫХ")
+            
+            # Качество данных
+            completeness = daily_data.get('data_completeness_score', 0)
+            logger.info(f"   📈 Полнота данных: {completeness:.1f}%")
+            
+            # Подсчет собранных показателей
+            collected_metrics = []
+            if daily_data.get('steps'): collected_metrics.append('шаги')
+            if daily_data.get('sleep_duration_minutes'): collected_metrics.append('основной_сон')
+            if daily_data.get('nap_duration_minutes'): collected_metrics.append('дневной_сон')
+            if daily_data.get('resting_heart_rate'): collected_metrics.append('пульс')
+            if daily_data.get('stress_avg'): collected_metrics.append('стресс')
+            if daily_data.get('body_battery_max'): collected_metrics.append('энергия')
+            
+            logger.info(f"   ✅ Собрано показателей: {len(collected_metrics)}")
+            logger.info(f"   📋 Показатели: {', '.join(collected_metrics)}")
+            
+            # Диагноз качества сбора данных
+            if not daily_data.get('sleep_duration_minutes') and daily_data.get('nap_duration_minutes'):
+                logger.info(f"   🔍 ДИАГНОЗ: Есть дневной сон, НЕТ основного сна")
+                logger.info(f"   💡 ВЕРОЯТНАЯ ПРИЧИНА: Основной сон записан в другой день")
+                logger.info(f"   ✅ РЕШЕНИЕ ПРИМЕНЕНО: Используем date.today() вместо вчерашнего дня")
+            
             # Шаг 2: Сохраняем данные в БД
+            logger.info(f"💾 Сохраняю данные в БД для пользователя {user_id}")
             saved = await garmin_connector.save_daily_data(daily_data)
             if not saved:
                 logger.error(f"❌ Не удалось сохранить данные для {user_id}")
                 return False
             
+            logger.info(f"✅ Данные сохранены в БД для пользователя {user_id}")
+            
             # Шаг 3: Проверяем лимиты пользователя
+            logger.info(f"🔍 Проверяю лимиты консультаций для пользователя {user_id}")
             from subscription_manager import SubscriptionManager
+            sub_manager = SubscriptionManager()
             
-            limits = await SubscriptionManager.get_user_limits(user_id)
-            has_consultations = limits.get('gpt4o_queries_left', 0) > 0
+            # Проверяем детальные консультации (для AI анализа)
+            gpt4o_left = await sub_manager.get_remaining_queries(user_id, 'gpt-4o')
+            logger.info(f"💎 У пользователя {user_id} осталось консультаций: {gpt4o_left}")
             
-            if not has_consultations:
-                logger.info(f"⏸️ У пользователя {user_id} нет лимитов для анализа")
+            if gpt4o_left <= 0:
+                logger.info(f"⚠️ У пользователя {user_id} закончились детальные консультации")
+                logger.info(f"📊 Данные собраны успешно, но AI анализ недоступен")
                 
-                # Отправляем уведомление о необходимости подписки
-                await self._send_subscription_reminder(user_id)
-                return True  # Данные собрали, но анализ не делаем
+                # Отправляем уведомление о том, что данные собраны, но анализ недоступен
+                await self._send_data_collected_notification(user_id)
+                return True  # Данные собрали успешно, просто без анализа
             
-            # Шаг 4: Выполняем AI анализ
-            analysis_result = await garmin_analyzer.create_health_analysis(user_id, daily_data)
+            # Шаг 4: Запускаем AI анализ
+            logger.info(f"🧠 Запускаю AI анализ для пользователя {user_id}")
+            logger.info(f"📅 Дата для анализа: {target_date}")
             
-            if not analysis_result:
-                logger.error(f"❌ Не удалось создать анализ для {user_id}")
+            analysis_result = await garmin_analyzer.analyze_user_health(
+                user_id=user_id,
+                analysis_date=target_date,
+                language='ru'
+            )
+            
+            if analysis_result:
+                logger.info(f"✅ AI анализ для пользователя {user_id} завершен успешно")
+                logger.info(f"📄 Длина анализа: {len(analysis_result.get('analysis_text', ''))} символов")
+                
+                # Отправляем анализ пользователю
+                await self._send_analysis_notification(user_id, analysis_result)
+                return True
+            else:
+                logger.error(f"❌ Не удалось создать AI анализ для {user_id}")
                 return False
-            
-            # Шаг 5: Отправляем анализ пользователю
-            await self._send_analysis_to_user(user_id, analysis_result)
-            
-            # Шаг 6: Тратим лимит консультации
-            await SubscriptionManager.spend_limits(user_id, queries=1)
-            
-            logger.info(f"✅ Анализ для пользователя {user_id} завершен успешно")
-            return True
-            
+                
         except Exception as e:
             logger.error(f"❌ Ошибка анализа для пользователя {user_id}: {e}")
-            
-            # Увеличиваем счетчик ошибок
-            await self._increment_user_errors(user_id)
+            logger.exception("Полная трассировка ошибки:")  # Показывает stack trace
             return False
 
-    async def _send_analysis_to_user(self, user_id: int, analysis_result: Dict):
-        """Отправить результат анализа пользователю"""
+    async def _send_data_collected_notification(self, user_id: int):
+        """Отправить уведомление что данные собраны, но нужна подписка для анализа"""
         try:
-            from db_postgresql import get_user_language, t
+            from locales import get_text
             
-            lang = await get_user_language(user_id)
-            
-            # Формируем красивое сообщение
-            message_text = f"""🌅 <b>Ваш ежедневный анализ здоровья</b>
-
-{analysis_result['analysis_text']}
-
-📊 <b>Оценка здоровья:</b> {analysis_result.get('health_score', 'N/A')}/100
-
-💡 <b>Рекомендации:</b>
-{analysis_result.get('recommendations', 'Продолжайте следить за здоровьем!')}
-
-📈 <b>Тренды:</b>
-• 😴 Сон: {analysis_result.get('sleep_trend', 'стабильно')}
-• 🏃 Активность: {analysis_result.get('activity_trend', 'стабильно')}
-• 😰 Стресс: {analysis_result.get('stress_trend', 'стабильно')}
-
-<i>Данные за {analysis_result.get('analysis_date', 'вчера')}</i>"""
-
-            await self.bot.send_message(user_id, message_text, parse_mode="HTML")
-            
-            # Добавляем кнопки для дополнительных действий
-            from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-            
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="📊 Показать данные", callback_data="garmin_show_data")],
-                [InlineKeyboardButton(text="⚙️ Настройки Garmin", callback_data="garmin_menu")]
-            ])
+            message = get_text(user_id, "garmin_data_collected_reminder")
             
             await self.bot.send_message(
-                user_id, 
-                "Нужно что-то настроить?", 
-                reply_markup=keyboard
+                chat_id=user_id,
+                text=message,
+                parse_mode='HTML'
             )
+            
+            logger.info(f"📤 Отправлено напоминание о лимитах пользователю {user_id}")
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка отправки напоминания пользователю {user_id}: {e}")
+
+    async def _send_analysis_notification(self, user_id: int, analysis_result: Dict):
+        """Отправить результат анализа пользователю"""
+        try:
+            analysis_text = analysis_result.get('analysis_text', 'Анализ не удалось получить')
+            
+            # Ограничиваем длину сообщения (Telegram лимит ~4000 символов)
+            if len(analysis_text) > 3500:
+                analysis_text = analysis_text[:3500] + "...\n\n📊 Полный анализ сохранен в истории."
+            
+            await self.bot.send_message(
+                chat_id=user_id,
+                text=f"🩺 <b>Ваш ежедневный анализ здоровья</b>\n\n{analysis_text}",
+                parse_mode='HTML'
+            )
+            
+            logger.info(f"📤 Отправлен анализ пользователю {user_id}")
             
         except Exception as e:
             logger.error(f"❌ Ошибка отправки анализа пользователю {user_id}: {e}")
 
-    async def _send_subscription_reminder(self, user_id: int):
-        """Напомнить пользователю о необходимости подписки"""
-        try:
-            from db_postgresql import get_user_language, t
-            from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-            
-            lang = await get_user_language(user_id)
-            
-            text = """📊 <b>Данные Garmin собраны!</b>
-
-⚠️ Для получения AI анализа нужны детальные консультации.
-
-📈 <b>Собранные данные:</b>
-• Сон, активность, пульс
-• Body Battery и стресс  
-• Готовы к анализу
-
-💎 <b>Оформите подписку</b> для получения персональных рекомендаций каждое утро!"""
-
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="💎 Оформить подписку", callback_data="subscription")],
-                [InlineKeyboardButton(text="📊 Посмотреть данные", callback_data="garmin_show_data")]
-            ])
-
-            await self.bot.send_message(user_id, text, reply_markup=keyboard, parse_mode="HTML")
-            
-        except Exception as e:
-            logger.error(f"❌ Ошибка отправки напоминания о подписке {user_id}: {e}")
-
-    async def _increment_user_errors(self, user_id: int):
-        """Увеличить счетчик ошибок пользователя"""
-        try:
-            conn = await get_db_connection()
-            
-            await conn.execute("""
-                UPDATE garmin_connections 
-                SET sync_errors = sync_errors + 1, updated_at = NOW()
-                WHERE user_id = $1
-            """, user_id)
-            
-            await release_db_connection(conn)
-            
-        except Exception as e:
-            logger.error(f"❌ Ошибка увеличения счетчика ошибок: {e}")
-            if 'conn' in locals():
-                await release_db_connection(conn)
-
     async def _cleanup_old_data(self):
-        """Очистка старых данных (старше 90 дней)"""
+        """Очистка старых данных (запускается раз в неделю)"""
         try:
             logger.info("🧹 Начинаю очистку старых данных Garmin")
             
-            cutoff_daily = date.today() - timedelta(days=90)
-            cutoff_analysis = date.today() - timedelta(days=30)
-            
-            # 🔧 ИСПРАВЛЕНИЕ: Используем asyncpg
             conn = await get_db_connection()
             
-            # Удаляем старые ежедневные данные
-            result1 = await conn.execute("""
+            # Удаляем ежедневные данные старше 3 месяцев
+            cutoff_daily = date.today() - timedelta(days=90)
+            
+            # Удаляем анализы старше 1 года
+            cutoff_analysis = date.today() - timedelta(days=365)
+            
+            # Выполняем очистку
+            await conn.execute("""
                 DELETE FROM garmin_daily_data 
                 WHERE data_date < $1
             """, cutoff_daily)
             
-            # Удаляем старые анализы
-            result2 = await conn.execute("""
+            await conn.execute("""
                 DELETE FROM garmin_analysis_history 
                 WHERE analysis_date < $1
             """, cutoff_analysis)
             
             await release_db_connection(conn)
 
-            logger.info(f"✅ Очистка завершена: удалено ежедневных данных, анализов")
+            logger.info(f"✅ Очистка завершена: удалены данные старше {cutoff_daily} и анализы старше {cutoff_analysis}")
             
         except Exception as e:
             logger.error(f"❌ Ошибка очистки старых данных: {e}")
@@ -356,10 +384,8 @@ class GarminScheduler:
         try:
             logger.info(f"🔧 Принудительный запуск анализа для {user_id}")
             
-            # 🔧 ИСПРАВЛЕНИЕ: Используем asyncpg подход
             conn = await get_db_connection()
             
-            # 🔧 ИСПРАВЛЕНИЕ: fetchrow вместо execute + fetchone
             row = await conn.fetchrow("""
                 SELECT user_id, notification_time, timezone_offset, timezone_name, last_sync_date
                 FROM garmin_connections 
@@ -372,7 +398,7 @@ class GarminScheduler:
                 logger.warning(f"Пользователь {user_id} не найден или Garmin не подключен")
                 return False
             
-            # 🔧 ИСПРАВЛЕНИЕ: Конвертируем asyncpg.Record в dict
+            # Конвертируем asyncpg.Record в dict
             row = dict(row)
             
             user_data = {
@@ -397,10 +423,9 @@ class GarminScheduler:
         """Получить статус планировщика"""
         try:
             conn = await get_db_connection()
-            cursor = conn
             
             # Статистика пользователей
-            cursor.execute("""
+            user_stats = await conn.fetchrow("""
                 SELECT 
                     COUNT(*) as total_users,
                     COUNT(*) FILTER (WHERE is_active = TRUE) as active_users,
@@ -409,35 +434,28 @@ class GarminScheduler:
                 FROM garmin_connections
             """)
             
-            user_stats = cursor.fetchone()
-            
             # Статистика данных за сегодня
-            cursor.execute("""
+            data_today = await conn.fetchval("""
                 SELECT COUNT(*) FROM garmin_daily_data 
                 WHERE sync_timestamp::date = CURRENT_DATE
             """)
             
-            data_today = cursor.fetchone()[0]
-            
             # Статистика анализов за сегодня
-            cursor.execute("""
+            analysis_today = await conn.fetchval("""
                 SELECT COUNT(*) FROM garmin_analysis_history 
                 WHERE analysis_date = CURRENT_DATE
             """)
             
-            analysis_today = cursor.fetchone()[0]
-            
-            conn.close()
             await release_db_connection(conn)
 
             return {
                 'is_running': self.is_running,
-                'total_users': user_stats[0] if user_stats else 0,
-                'active_users': user_stats[1] if user_stats else 0,
-                'error_users': user_stats[2] if user_stats else 0,
-                'synced_today': user_stats[3] if user_stats else 0,
-                'data_collected_today': data_today,
-                'analysis_completed_today': analysis_today,
+                'total_users': user_stats['total_users'] if user_stats else 0,
+                'active_users': user_stats['active_users'] if user_stats else 0,
+                'error_users': user_stats['error_users'] if user_stats else 0,
+                'synced_today': user_stats['synced_today'] if user_stats else 0,
+                'data_collected_today': data_today or 0,
+                'analysis_completed_today': analysis_today or 0,
                 'next_check': self._get_next_job_time('garmin_check_users'),
                 'next_cleanup': self._get_next_job_time('garmin_cleanup')
             }
