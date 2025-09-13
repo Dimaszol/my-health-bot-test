@@ -319,7 +319,7 @@ class GarminScheduler:
             result = {
                 'user_id': today_data.get('user_id') if today_data else None,
                 'data_date': base_date,
-                'sync_timestamp': datetime.now()
+                'sync_timestamp': datetime.now().isoformat()
             }
         
         # Перезаписываем ТОЛЬКО данные сна из сегодняшних данных
