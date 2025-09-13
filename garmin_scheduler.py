@@ -269,11 +269,13 @@ class GarminScheduler:
             logger.info(f"🔍 Проверяю лимиты консультаций для пользователя {user_id}")
             from subscription_manager import SubscriptionManager
             sub_manager = SubscriptionManager()
-            
-            # Проверяем детальные консультации (для AI анализа)
-            gpt4o_left = await sub_manager.get_remaining_queries(user_id, 'gpt-4o')
+
+            # ИСПРАВЛЕНО: используем правильный метод
+            user_limits = await sub_manager.get_user_limits(user_id)
+            gpt4o_left = user_limits.get('gpt4o_queries_left', 0)
+
             logger.info(f"💎 У пользователя {user_id} осталось консультаций: {gpt4o_left}")
-            
+
             if gpt4o_left <= 0:
                 logger.info(f"⚠️ У пользователя {user_id} закончились детальные консультации")
                 logger.info(f"📊 Данные собраны успешно, но AI анализ недоступен")
@@ -281,23 +283,27 @@ class GarminScheduler:
                 # Отправляем уведомление о том, что данные собраны, но анализ недоступен
                 await self._send_data_collected_notification(user_id)
                 return True  # Данные собрали успешно, просто без анализа
-            
+
             # Шаг 4: Запускаем AI анализ
             logger.info(f"🧠 Запускаю AI анализ для пользователя {user_id}")
             logger.info(f"📅 Дата для анализа: {target_date}")
-            
+
             analysis_result = await garmin_analyzer.analyze_user_health(
                 user_id=user_id,
                 analysis_date=target_date,
                 language='ru'
             )
-            
+
             if analysis_result:
                 logger.info(f"✅ AI анализ для пользователя {user_id} завершен успешно")
                 logger.info(f"📄 Длина анализа: {len(analysis_result.get('analysis_text', ''))} символов")
                 
                 # Отправляем анализ пользователю
                 await self._send_analysis_notification(user_id, analysis_result)
+                
+                # ИСПРАВЛЕНО: Списываем лимит правильным методом
+                await sub_manager.spend_limits(user_id, queries=1)
+                
                 return True
             else:
                 logger.error(f"❌ Не удалось создать AI анализ для {user_id}")
