@@ -1,4 +1,4 @@
-# garmin_scheduler.py - ИСПРАВЛЕННАЯ ГИБРИДНАЯ ЛОГИКА БЕЗ ДУБЛИРОВАНИЯ
+# garmin_scheduler.py - ПРОСТАЯ ГИБРИДНАЯ ЛОГИКА
 
 import asyncio
 import logging
@@ -16,7 +16,7 @@ from aiogram import Bot
 logger = logging.getLogger(__name__)
 
 class GarminScheduler:
-    """Планировщик для ежедневного сбора и анализа данных Garmin с исправленной гибридной логикой"""
+    """Планировщик для ежедневного сбора и анализа данных Garmin с простой гибридной логикой"""
     
     def __init__(self, bot: Bot):
         self.bot = bot
@@ -45,7 +45,7 @@ class GarminScheduler:
             self.scheduler.start()
             self.is_running = True
             
-            logger.info("✅ Исправленный гибридный планировщик Garmin запущен")
+            logger.info("✅ Простой гибридный планировщик Garmin запущен")
             
         except Exception as e:
             logger.error(f"❌ Ошибка инициализации планировщика Garmin: {e}")
@@ -85,7 +85,7 @@ class GarminScheduler:
             logger.error(f"❌ Критическая ошибка в проверке пользователей: {e}")
 
     async def _process_user_with_semaphore(self, semaphore: asyncio.Semaphore, user: Dict) -> bool:
-        """Обработать пользователя с семафором для ограничения параллелизма"""
+        """Обработать пользователя с семафором"""
         async with semaphore:
             return await self._process_user_analysis(user)
 
@@ -144,182 +144,76 @@ class GarminScheduler:
             return []
 
     def _is_time_for_analysis(self, current_time: datetime_time, notification_time: datetime_time) -> bool:
-        """Проверить, пора ли делать анализ (с окном в 10 минут)"""
+        """Проверить, пора ли делать анализ"""
         current_minutes = current_time.hour * 60 + current_time.minute
         notification_minutes = notification_time.hour * 60 + notification_time.minute
         
         return notification_minutes <= current_minutes < notification_minutes + 10
 
     async def _process_user_analysis(self, user: Dict) -> bool:
-        """🔧 ИСПРАВЛЕННАЯ ГИБРИДНАЯ ЛОГИКА: Обновляем существующую запись"""
+        """🔧 ПРОСТАЯ ГИБРИДНАЯ ЛОГИКА: Создаем одну запись за вчера с гибридными данными"""
         user_id = user['user_id']
         
         try:
-            logger.info(f"🔄 Начинаю исправленный гибридный сбор для пользователя {user_id}")
+            logger.info(f"🔄 Начинаю простой гибридный сбор для пользователя {user_id}")
             
             today = date.today()
             yesterday = today - timedelta(days=1)
             
-            logger.info(f"📅 ИСПРАВЛЕННАЯ ГИБРИДНАЯ ЛОГИКА:")
-            logger.info(f"   🌅 Сегодня: {today} (получаем ТОЛЬКО сон)")
-            logger.info(f"   🌙 Вчера: {yesterday} (обновляем существующую запись)")
+            logger.info(f"📅 ПРОСТАЯ ГИБРИДНАЯ ЛОГИКА:")
+            logger.info(f"   🌙 Базовая дата: {yesterday} (все данные записываем сюда)")
+            logger.info(f"   🏃 Активность: из данных за {yesterday}")
+            logger.info(f"   😴 Сон: из данных за {today}")
             
-            # Шаг 1: Получаем данные сна за сегодня
-            today_data = await garmin_connector.collect_daily_data(user_id, today)
-            if not today_data:
-                logger.warning(f"⚠️ Не удалось получить сегодняшние данные для {user_id}")
-                return False
-                
-            logger.info(f"😴 Получил данные сна за {today}")
-            
-            # Шаг 2: Проверяем есть ли запись за вчера в БД
-            yesterday_record = await self._get_existing_record(user_id, yesterday)
-            
-            if yesterday_record:
-                logger.info(f"📝 Найдена существующая запись за {yesterday}, обновляю...")
-                # Обновляем существующую запись
-                success = await self._update_yesterday_with_sleep(user_id, yesterday, today_data)
-            else:
-                logger.info(f"📝 Записи за {yesterday} нет, создаю гибридную...")
-                # Создаем новую гибридную запись 
-                success = await self._create_hybrid_record(user_id, today, yesterday)
-            
-            if not success:
-                logger.error(f"❌ Не удалось обновить/создать гибридную запись для {user_id}")
-                return False
-            
-            # Шаг 3: УДАЛЯЕМ запись за сегодня если она существует (избегаем дублирования)
-            await self._cleanup_today_record(user_id, today)
-            
-            logger.info(f"✅ Гибридное обновление завершено для пользователя {user_id}")
-            
-            # Остальная логика анализа...
-            return await self._continue_with_analysis(user_id, yesterday)
-                
-        except Exception as e:
-            logger.error(f"❌ Ошибка исправленного гибридного анализа для пользователя {user_id}: {e}")
-            return False
-
-    async def _get_existing_record(self, user_id: int, target_date: date) -> Optional[Dict]:
-        """Получить существующую запись за определенную дату"""
-        try:
-            conn = await get_db_connection()
-            
-            row = await conn.fetchrow("""
-                SELECT * FROM garmin_daily_data 
-                WHERE user_id = $1 AND data_date = $2
-            """, user_id, target_date)
-            
-            await release_db_connection(conn)
-            
-            return dict(row) if row else None
-            
-        except Exception as e:
-            logger.error(f"❌ Ошибка получения существующей записи: {e}")
-            if 'conn' in locals():
-                await release_db_connection(conn)
-            return None
-
-    async def _update_yesterday_with_sleep(self, user_id: int, yesterday: date, today_data: Dict) -> bool:
-        """Обновить существующую запись за вчера данными сна из сегодня"""
-        try:
-            conn = await get_db_connection()
-            
-            # Извлекаем ТОЛЬКО поля сна из сегодняшних данных
-            sleep_fields = {
-                'sleep_duration_minutes': today_data.get('sleep_duration_minutes'),
-                'sleep_deep_minutes': today_data.get('sleep_deep_minutes'),
-                'sleep_light_minutes': today_data.get('sleep_light_minutes'),
-                'sleep_rem_minutes': today_data.get('sleep_rem_minutes'),
-                'sleep_awake_minutes': today_data.get('sleep_awake_minutes'),
-                'sleep_score': today_data.get('sleep_score'),
-                'nap_duration_minutes': today_data.get('nap_duration_minutes'),
-                'sleep_need_minutes': today_data.get('sleep_need_minutes'),
-                'sleep_baseline_minutes': today_data.get('sleep_baseline_minutes')
-            }
-            
-            # Формируем SET часть запроса только для не-NULL значений
-            set_parts = []
-            params = []
-            param_index = 1
-            
-            for field, value in sleep_fields.items():
-                if value is not None:
-                    set_parts.append(f"{field} = ${param_index}")
-                    params.append(value)
-                    param_index += 1
-            
-            if not set_parts:
-                logger.warning(f"Нет данных сна для обновления записи за {yesterday}")
-                return False
-            
-            # Добавляем обновление timestamp
-            set_parts.append(f"sync_timestamp = ${param_index}")
-            params.append(datetime.now())
-            param_index += 1
-            
-            # Добавляем условия WHERE
-            params.extend([user_id, yesterday])
-            
-            update_query = f"""
-                UPDATE garmin_daily_data 
-                SET {', '.join(set_parts)}
-                WHERE user_id = ${param_index-1} AND data_date = ${param_index}
-            """
-            
-            result = await conn.execute(update_query, *params)
-            await release_db_connection(conn)
-            
-            logger.info(f"✅ Обновлена запись за {yesterday} данными сна из сегодня")
-            logger.info(f"📊 Обновлены поля: {', '.join([f for f, v in sleep_fields.items() if v is not None])}")
-            
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Ошибка обновления записи за вчера: {e}")
-            if 'conn' in locals():
-                await release_db_connection(conn)
-            return False
-
-    async def _create_hybrid_record(self, user_id: int, today: date, yesterday: date) -> bool:
-        """Создать новую гибридную запись если записи за вчера нет"""
-        try:
-            # Получаем данные за оба дня
-            today_data = await garmin_connector.collect_daily_data(user_id, today)
+            # Шаг 1: Получаем данные за вчера (активность)
+            logger.info(f"📊 Получаю данные активности за {yesterday}...")
             yesterday_data = await garmin_connector.collect_daily_data(user_id, yesterday)
             
-            if not today_data and not yesterday_data:
-                logger.error(f"Нет данных ни за один день для {user_id}")
+            # Шаг 2: Получаем данные за сегодня (только для сна)
+            logger.info(f"😴 Получаю данные сна за {today}...")
+            today_data = await garmin_connector.collect_daily_data(user_id, today)
+            
+            if not yesterday_data and not today_data:
+                logger.error(f"❌ Не удалось получить данные ни за один день для {user_id}")
                 return False
             
-            # Объединяем данные (приоритет активности - вчера, приоритет сна - сегодня)
-            combined_data = self._merge_data_intelligently(yesterday_data, today_data, yesterday)
+            # Шаг 3: Создаем гибридную запись
+            hybrid_data = self._create_hybrid_record(yesterday_data, today_data, yesterday)
             
-            # Сохраняем объединенную запись
-            success = await garmin_connector.save_daily_data(combined_data)
+            # Шаг 4: Логируем результат
+            self._log_hybrid_result(user_id, hybrid_data, yesterday, today)
             
-            if success:
-                logger.info(f"✅ Создана новая гибридная запись за {yesterday}")
-                return True
-            else:
-                logger.error(f"❌ Не удалось сохранить гибридную запись")
+            # Шаг 5: Сохраняем ТОЛЬКО гибридную запись
+            logger.info(f"💾 Сохраняю гибридную запись за {yesterday}")
+            saved = await garmin_connector.save_daily_data(hybrid_data)
+            
+            if not saved:
+                logger.error(f"❌ Не удалось сохранить гибридную запись для {user_id}")
                 return False
+            
+            logger.info(f"✅ Гибридная запись за {yesterday} сохранена успешно")
+            
+            # Продолжаем с анализом
+            return await self._continue_with_analysis(user_id, yesterday, hybrid_data)
                 
         except Exception as e:
-            logger.error(f"❌ Ошибка создания гибридной записи: {e}")
+            logger.error(f"❌ Ошибка простого гибридного анализа для пользователя {user_id}: {e}")
             return False
 
-    def _merge_data_intelligently(self, yesterday_data: Optional[Dict], today_data: Optional[Dict], base_date: date) -> Dict:
-        """Умно объединить данные приоритизируя активность из вчера и сон из сегодня"""
+    def _create_hybrid_record(self, yesterday_data: Optional[Dict], today_data: Optional[Dict], base_date: date) -> Dict:
+        """Создать гибридную запись: активность из вчера + сон из сегодня"""
         
-        # Базируемся на данных активности (вчера)
+        # Базируемся на данных за вчера (активность)
         if yesterday_data:
             result = yesterday_data.copy()
         else:
+            # Если нет данных за вчера, создаем пустую структуру
             result = {
                 'user_id': today_data.get('user_id') if today_data else None,
                 'data_date': base_date,
-                'sync_timestamp': datetime.now().isoformat()
+                'steps': None,
+                'calories': None,
+                'distance_meters': None
             }
         
         # Перезаписываем ТОЛЬКО данные сна из сегодняшних данных
@@ -334,43 +228,53 @@ class GarminScheduler:
                 if today_data.get(field) is not None:
                     result[field] = today_data[field]
         
-        # Устанавливаем правильную дату
+        # Устанавливаем правильную дату и время синхронизации
         result['data_date'] = base_date
-        result['sync_timestamp'] = datetime.now()
+        result['sync_timestamp'] = datetime.now().isoformat()
         
         return result
 
-    async def _cleanup_today_record(self, user_id: int, today: date):
-        """Удалить запись за сегодня чтобы избежать дублирования"""
-        try:
-            conn = await get_db_connection()
-            
-            # Проверяем есть ли запись за сегодня
-            existing = await conn.fetchrow("""
-                SELECT id FROM garmin_daily_data 
-                WHERE user_id = $1 AND data_date = $2
-            """, user_id, today)
-            
-            if existing:
-                # Удаляем запись за сегодня
-                await conn.execute("""
-                    DELETE FROM garmin_daily_data 
-                    WHERE user_id = $1 AND data_date = $2
-                """, user_id, today)
-                
-                logger.info(f"🗑️ Удалена дублирующая запись за {today} (избежали дублирования)")
-            else:
-                logger.debug(f"Записи за {today} нет, удаление не требуется")
-            
-            await release_db_connection(conn)
-            
-        except Exception as e:
-            logger.error(f"❌ Ошибка удаления записи за сегодня: {e}")
-            if 'conn' in locals():
-                await release_db_connection(conn)
+    def _log_hybrid_result(self, user_id: int, hybrid_data: Dict, yesterday: date, today: date):
+        """Логировать результат гибридного сбора"""
+        
+        logger.info(f"📋 РЕЗУЛЬТАТ ПРОСТОЙ ГИБРИДНОЙ ЛОГИКИ для пользователя {user_id}:")
+        logger.info(f"   📅 Запись создана за: {hybrid_data.get('data_date')}")
+        
+        # Показываем откуда взяты данные
+        if hybrid_data.get('steps'):
+            logger.info(f"   🚶 ШАГИ: ✅ {hybrid_data['steps']} (из {yesterday})")
+        else:
+            logger.info(f"   🚶 ШАГИ: ❌ НЕТ ДАННЫХ (проверяли {yesterday})")
+        
+        if hybrid_data.get('sleep_duration_minutes'):
+            sleep_hours = hybrid_data['sleep_duration_minutes'] // 60
+            sleep_mins = hybrid_data['sleep_duration_minutes'] % 60
+            logger.info(f"   😴 СОН: ✅ {sleep_hours}ч {sleep_mins}м (из {today})")
+        else:
+            logger.info(f"   😴 СОН: ❌ НЕТ ДАННЫХ (проверяли {today})")
+        
+        if hybrid_data.get('resting_heart_rate'):
+            logger.info(f"   ❤️ ПУЛЬС: ✅ {hybrid_data['resting_heart_rate']} уд/мин")
+        
+        if hybrid_data.get('stress_avg'):
+            logger.info(f"   😰 СТРЕСС: ✅ {hybrid_data['stress_avg']}")
+        
+        if hybrid_data.get('body_battery_max'):
+            logger.info(f"   🔋 ЭНЕРГИЯ: ✅ {hybrid_data['body_battery_max']}%")
+        
+        # Подсчет успешности
+        key_metrics = ['steps', 'sleep_duration_minutes', 'resting_heart_rate']
+        available_metrics = sum(1 for metric in key_metrics if hybrid_data.get(metric))
+        
+        logger.info(f"   📊 КЛЮЧЕВЫХ МЕТРИК: {available_metrics}/{len(key_metrics)}")
+        
+        if available_metrics >= 2:
+            logger.info(f"   🎉 ОТЛИЧНО: Гибридная логика работает успешно!")
+        else:
+            logger.info(f"   ⚠️ ПРОБЛЕМА: Недостаточно данных")
 
-    async def _continue_with_analysis(self, user_id: int, analysis_date: date) -> bool:
-        """Продолжить с AI анализом после гибридного сбора"""
+    async def _continue_with_analysis(self, user_id: int, analysis_date: date, data: Dict) -> bool:
+        """Продолжить с AI анализом"""
         try:
             # Проверяем лимиты пользователя
             from subscription_manager import SubscriptionManager
@@ -384,16 +288,10 @@ class GarminScheduler:
                 await self._send_data_collected_notification(user_id)
                 return True
             
-            # Получаем финальные данные для анализа
-            final_data = await self._get_existing_record(user_id, analysis_date)
-            if not final_data:
-                logger.error(f"❌ Не найдена финальная запись для анализа за {analysis_date}")
-                return False
-            
             # Запускаем AI анализ
             logger.info(f"🧠 Запускаю AI анализ для пользователя {user_id} за {analysis_date}")
             
-            analysis_result = await garmin_analyzer.create_health_analysis(user_id, final_data)
+            analysis_result = await garmin_analyzer.create_health_analysis(user_id, data)
             
             if analysis_result:
                 logger.info(f"✅ AI анализ завершен успешно для пользователя {user_id}")
@@ -409,7 +307,7 @@ class GarminScheduler:
             return False
 
     async def _send_data_collected_notification(self, user_id: int):
-        """Отправить уведомление что данные собраны, но нужна подписка для анализа"""
+        """Отправить уведомление что данные собраны, но нужна подписка"""
         try:
             from locales import get_text
             message = get_text(user_id, "garmin_data_collected_reminder")
@@ -435,7 +333,7 @@ class GarminScheduler:
             logger.error(f"❌ Ошибка отправки анализа пользователю {user_id}: {e}")
 
     async def _cleanup_old_data(self):
-        """Очистка старых данных (запускается раз в неделю)"""
+        """Очистка старых данных"""
         try:
             logger.info("🧹 Начинаю очистку старых данных Garmin")
             conn = await get_db_connection()
@@ -456,7 +354,7 @@ class GarminScheduler:
     async def force_user_analysis(self, user_id: int) -> bool:
         """Принудительно запустить анализ для пользователя"""
         try:
-            logger.info(f"🔧 Принудительный запуск исправленного гибридного анализа для {user_id}")
+            logger.info(f"🔧 Принудительный запуск простого гибридного анализа для {user_id}")
             
             conn = await get_db_connection()
             row = await conn.fetchrow("""
@@ -534,32 +432,28 @@ class GarminScheduler:
 garmin_scheduler: Optional[GarminScheduler] = None
 
 async def initialize_garmin_scheduler(bot: Bot):
-    """Инициализировать планировщик Garmin"""
     global garmin_scheduler
     try:
         garmin_scheduler = GarminScheduler(bot)
         await garmin_scheduler.initialize()
-        logger.info("✅ Система исправленного гибридного планировщика Garmin запущена")
+        logger.info("✅ Простая гибридная система Garmin запущена")
     except Exception as e:
         logger.error(f"❌ Ошибка инициализации планировщика Garmin: {e}")
         raise
 
 async def shutdown_garmin_scheduler():
-    """Остановить планировщик Garmin"""
     global garmin_scheduler
     if garmin_scheduler:
         await garmin_scheduler.shutdown()
         logger.info("✅ Планировщик Garmin остановлен")
 
 async def force_user_analysis(user_id: int) -> bool:
-    """Принудительно запустить анализ для пользователя"""
     global garmin_scheduler
     if garmin_scheduler:
         return await garmin_scheduler.force_user_analysis(user_id)
     return False
 
 async def get_scheduler_status() -> Dict:
-    """Получить статус планировщика"""
     global garmin_scheduler
     if garmin_scheduler:
         return await garmin_scheduler.get_scheduler_status()
