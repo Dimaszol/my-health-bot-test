@@ -288,10 +288,8 @@ class GarminScheduler:
             logger.info(f"🧠 Запускаю AI анализ для пользователя {user_id}")
             logger.info(f"📅 Дата для анализа: {target_date}")
 
-            analysis_result = await garmin_analyzer.analyze_user_health(
-                user_id=user_id,
-                analysis_date=target_date,
-                language='ru'
+            analysis_result = await garmin_analyzer.create_health_analysis(
+                analysis_result = await garmin_analyzer.create_health_analysis(user_id, daily_data)
             )
 
             if analysis_result:
