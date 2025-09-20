@@ -230,7 +230,7 @@ class GarminScheduler:
         
         # Устанавливаем правильную дату и время синхронизации
         result['data_date'] = base_date
-        result['sync_timestamp'] = datetime.now().isoformat()
+        result['sync_timestamp'] = datetime.now()
         
         return result
 
