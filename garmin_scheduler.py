@@ -330,12 +330,17 @@ class GarminScheduler:
             # Используем ваш существующий анализатор
             analysis_result = await garmin_analyzer.create_health_analysis(user_id, daily_data)
             
-            if not analysis_result or not analysis_result.get('success'):
+            # ИСПРАВЛЕНИЕ: проверяем что анализ создался (ваш анализатор возвращает другой формат)
+            if not analysis_result:
                 logger.warning(f"Не удалось создать анализ для пользователя {user_id}")
                 return False
             
-            # Отправляем пользователю (как в вашем старом коде)
-            analysis_text = analysis_result.get('analysis_text', 'Анализ недоступен')
+            # Получаем текст анализа из результата
+            analysis_text = analysis_result.get('analysis_text') or analysis_result.get('text') or str(analysis_result)
+            
+            if not analysis_text or analysis_text == 'Анализ недоступен':
+                logger.warning(f"Пустой анализ для пользователя {user_id}")
+                return False
             
             # Безопасная обработка HTML (как в вашем старом коде)
             from gpt import safe_telegram_text
@@ -404,15 +409,27 @@ class GarminScheduler:
                 logger.warning(f"Пользователь {user_id} не найден или не активен")
                 return False
             
-            # Используем нашу логику
+            # ИСПРАВЛЕНИЕ: используем нашу логику без повторных вызовов
             result = await self._collect_and_check_sleep(user_id)
             
             if result:
                 logger.info(f"✅ Принудительный анализ выполнен для пользователя {user_id}")
+                return True
             else:
-                logger.info(f"💤 Нет изменений сна у пользователя {user_id}")
-            
-            return result
+                # Проверим причину почему анализ не прошел
+                conn = await get_db_connection()
+                sleep_tracking = await conn.fetchrow("""
+                    SELECT last_analyzed_sleep_duration, last_analysis_time 
+                    FROM garmin_users_sleep_tracking 
+                    WHERE user_id = $1
+                """, user_id)
+                await release_db_connection(conn)
+                
+                if sleep_tracking:
+                    logger.info(f"💤 Сон не изменился у пользователя {user_id} (последний: {sleep_tracking['last_analyzed_sleep_duration']} мин)")
+                else:
+                    logger.info(f"❌ Нет данных сна для пользователя {user_id}")
+                return False
             
         except Exception as e:
             logger.error(f"❌ Ошибка принудительного анализа для {user_id}: {e}")
