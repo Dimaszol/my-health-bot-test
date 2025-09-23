@@ -115,38 +115,37 @@ class GarminScheduler:
     async def _collect_and_check_sleep(self, user_id: int) -> bool:
         """
         Собрать данные пользователя и проверить изменение сна
+        ГИБРИДНАЯ ЛОГИКА: активность из вчера + сон из сегодня
         
         Returns:
             True если провели анализ, False если нет
         """
         try:
-            # 1. СОБИРАЕМ ДАННЫЕ КАК ОБЫЧНО
+            # 1. СОБИРАЕМ ДАННЫЕ ГИБРИДНО (как в старом коде)
             today = date.today()
             yesterday = today - timedelta(days=1)
             
-            logger.debug(f"Сбор данных для пользователя {user_id}")
+            logger.debug(f"Гибридный сбор данных для пользователя {user_id}")
+            logger.debug(f"   📊 Активность: из {yesterday}")
+            logger.debug(f"   😴 Сон: из {today}")
             
-            # Собираем данные за вчера и сегодня
+            # Собираем данные за вчера (активность) и сегодня (сон)
             yesterday_data = await garmin_connector.collect_daily_data(user_id, yesterday)
             today_data = await garmin_connector.collect_daily_data(user_id, today)
             
-            # Выбираем данные с полным сном (приоритет вчера)
-            current_sleep_minutes = None
-            analysis_date = None
-            daily_data = None
+            # Создаем гибридную запись: активность из вчера + сон из сегодня
+            hybrid_data = self._create_hybrid_record(yesterday_data, today_data, yesterday)
             
-            if yesterday_data and yesterday_data.get('sleep_duration_minutes'):
-                current_sleep_minutes = yesterday_data['sleep_duration_minutes']
-                analysis_date = yesterday
-                daily_data = yesterday_data
-            elif today_data and today_data.get('sleep_duration_minutes'):
-                current_sleep_minutes = today_data['sleep_duration_minutes']
-                analysis_date = today
-                daily_data = today_data
+            # Получаем время сна из гибридных данных
+            current_sleep_minutes = hybrid_data.get('sleep_duration_minutes')
             
             if not current_sleep_minutes or current_sleep_minutes < 60:
                 logger.debug(f"Нет данных сна для пользователя {user_id}")
                 return False
+            
+            # Анализ всегда за вчерашний день (базовая дата гибридной записи)
+            analysis_date = yesterday
+            daily_data = hybrid_data
             
             # 2. ПРОВЕРЯЕМ ИЗМЕНЕНИЕ ВРЕМЕНИ СНА
             sleep_changed = await self._check_sleep_duration_changed(user_id, current_sleep_minutes)
@@ -154,6 +153,9 @@ class GarminScheduler:
             if not sleep_changed:
                 logger.debug(f"Сон не изменился для пользователя {user_id} ({current_sleep_minutes} мин)")
                 return False
+            
+            # Логируем что получилось в гибридной записи
+            self._log_hybrid_result(user_id, hybrid_data, yesterday, today)
             
             # 3. ПРОВОДИМ АНАЛИЗ
             logger.info(f"🧠 Новый сон у пользователя {user_id}: {current_sleep_minutes} мин")
@@ -216,6 +218,79 @@ class GarminScheduler:
         except Exception as e:
             logger.error(f"❌ Ошибка проверки изменения сна: {e}")
             return False
+
+    def _create_hybrid_record(self, yesterday_data: Optional[Dict], today_data: Optional[Dict], base_date: date) -> Dict:
+        """Создать гибридную запись: активность из вчера + сон из сегодня (из старого кода)"""
+        
+        # Базируемся на данных за вчера (активность)
+        if yesterday_data:
+            result = yesterday_data.copy()
+        else:
+            # Если нет данных за вчера, создаем пустую структуру
+            result = {
+                'user_id': today_data.get('user_id') if today_data else None,
+                'data_date': base_date,
+                'steps': None,
+                'calories': None,
+                'distance_meters': None
+            }
+        
+        # Перезаписываем ТОЛЬКО данные сна из сегодняшних данных
+        if today_data:
+            sleep_fields = [
+                'sleep_duration_minutes', 'sleep_deep_minutes', 'sleep_light_minutes',
+                'sleep_rem_minutes', 'sleep_awake_minutes', 'sleep_score',
+                'nap_duration_minutes', 'sleep_need_minutes', 'sleep_baseline_minutes'
+            ]
+            
+            for field in sleep_fields:
+                if today_data.get(field) is not None:
+                    result[field] = today_data[field]
+        
+        # Устанавливаем правильную дату и время синхронизации
+        result['data_date'] = base_date
+        result['sync_timestamp'] = datetime.now()
+        
+        return result
+
+    def _log_hybrid_result(self, user_id: int, hybrid_data: Dict, yesterday: date, today: date):
+        """Логировать результат гибридного сбора (из старого кода)"""
+        
+        logger.info(f"📋 ГИБРИДНАЯ ЛОГИКА для пользователя {user_id}:")
+        logger.info(f"   📅 Запись создана за: {hybrid_data.get('data_date')}")
+        
+        # Показываем откуда взяты данные
+        if hybrid_data.get('steps'):
+            logger.info(f"   🚶 ШАГИ: ✅ {hybrid_data['steps']} (из {yesterday})")
+        else:
+            logger.info(f"   🚶 ШАГИ: ❌ НЕТ ДАННЫХ (проверяли {yesterday})")
+        
+        if hybrid_data.get('sleep_duration_minutes'):
+            sleep_hours = hybrid_data['sleep_duration_minutes'] // 60
+            sleep_mins = hybrid_data['sleep_duration_minutes'] % 60
+            logger.info(f"   😴 СОН: ✅ {sleep_hours}ч {sleep_mins}м (из {today})")
+        else:
+            logger.info(f"   😴 СОН: ❌ НЕТ ДАННЫХ (проверяли {today})")
+        
+        if hybrid_data.get('resting_heart_rate'):
+            logger.info(f"   ❤️ ПУЛЬС: ✅ {hybrid_data['resting_heart_rate']} уд/мин")
+        
+        if hybrid_data.get('stress_avg'):
+            logger.info(f"   😰 СТРЕСС: ✅ {hybrid_data['stress_avg']}")
+        
+        if hybrid_data.get('body_battery_max'):
+            logger.info(f"   🔋 ЭНЕРГИЯ: ✅ {hybrid_data['body_battery_max']}%")
+        
+        # Подсчет успешности
+        key_metrics = ['steps', 'sleep_duration_minutes', 'resting_heart_rate']
+        available_metrics = sum(1 for metric in key_metrics if hybrid_data.get(metric))
+        
+        logger.info(f"   📊 КЛЮЧЕВЫХ МЕТРИК: {available_metrics}/{len(key_metrics)}")
+        
+        if available_metrics >= 2:
+            logger.info(f"   🎉 ОТЛИЧНО: Гибридная логика работает успешно!")
+        else:
+            logger.info(f"   ⚠️ ПРОБЛЕМА: Недостаточно данных")
 
     async def _save_analyzed_sleep_duration(self, user_id: int, sleep_minutes: int):
         """Сохранить время проанализированного сна"""
