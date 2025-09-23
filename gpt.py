@@ -740,7 +740,7 @@ Never mix languages within a single response.
 
         # Заменяем Gemini на GPT-5
         response = await client.chat.completions.create(
-            model="gpt-5",
+            model="gpt-5-chat-latest",
             messages=[
                 {"role": "system", "content": enhanced_system_prompt},
                 {"role": "user", "content": full_prompt}

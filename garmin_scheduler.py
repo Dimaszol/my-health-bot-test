@@ -28,7 +28,7 @@ class GarminScheduler:
         try:
             self.scheduler.add_job(
                 func=self._check_users_for_analysis,
-                trigger=CronTrigger(minute='*/10'),
+                trigger=CronTrigger(minute='*/30'),
                 id='garmin_check_users',
                 name='Проверка пользователей Garmin',
                 replace_existing=True
