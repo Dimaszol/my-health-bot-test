@@ -323,9 +323,13 @@ class GarminScheduler:
             if len(analysis_text) > 3500:
                 analysis_text = analysis_text[:3500] + "...\n\n📊 Полный анализ сохранен в истории."
             
+            # 🔧 ИСПРАВЛЕНИЕ: Безопасная обработка HTML
+            from gpt import safe_telegram_text
+            safe_analysis = safe_telegram_text(analysis_text)
+            
             await self.bot.send_message(
                 chat_id=user_id,
-                text=f"🩺 <b>Ваш ежедневный анализ здоровья</b>\n\n{analysis_text}",
+                text=f"🩺 <b>Ваш ежедневный анализ здоровья</b>\n\n{safe_analysis}",
                 parse_mode='HTML'
             )
             logger.info(f"📤 Отправлен анализ пользователю {user_id}")
