@@ -420,6 +420,14 @@ async def create_tables():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- Таблица времени последнего сна
+    CREATE TABLE IF NOT EXISTS garmin_users_sleep_tracking (
+        user_id BIGINT PRIMARY KEY,
+        last_analyzed_sleep_duration INTEGER, -- Время сна в минутах для сравнения
+        last_analysis_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
     """
     
     # НОВАЯ СЕКЦИЯ: Миграция для добавления полей в существующие таблицы
@@ -531,6 +539,7 @@ async def create_tables():
     CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
     CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id);
     CREATE INDEX IF NOT EXISTS idx_users_gdpr_consent ON users(gdpr_consent);
+    CREATE INDEX IF NOT EXISTS idx_sleep_tracking_user ON garmin_users_sleep_tracking(user_id);
     """
 
     functions_sql = """
@@ -603,6 +612,7 @@ async def create_tables():
     COMMENT ON TABLE garmin_daily_data IS 'Ежедневные данные здоровья из часов Garmin (расширенная версия)';  
     COMMENT ON TABLE garmin_analysis_history IS 'История AI анализов данных Garmin';
     COMMENT ON TABLE garmin_analysis_settings IS 'Настройки персонализации анализа Garmin';
+    COMMENT ON TABLE garmin_users_sleep_tracking IS 'Простое отслеживание сна по продолжительности';
     COMMENT ON COLUMN garmin_connections.garmin_email IS 'Зашифрованный email от Garmin Connect';
     COMMENT ON COLUMN garmin_connections.garmin_password IS 'Зашифрованный пароль от Garmin Connect';
     COMMENT ON COLUMN garmin_connections.sync_errors IS 'Счетчик ошибок синхронизации (при >= 5 пользователь деактивируется)';
