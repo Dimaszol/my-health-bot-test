@@ -18,7 +18,7 @@ class GeminiMedicalAnalyzer:
             raise ValueError("❌ GEMINI_API_KEY не найден в .env файле!")
         
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-pro-latest')
+        self.model = genai.GenerativeModel('gemini-2.5-pro')
         print("✅ Gemini 1.5 Pro Latest инициализирован")
     
     async def analyze_medical_image(self, image_path: str, lang: str = "ru", custom_prompt: str = None) -> Tuple[str, str]:
@@ -224,7 +224,7 @@ async def extract_medical_timeline_gemini(document_text: str, existing_timeline:
             return []
         
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-pro')
         
         # Форматируем существующую медкарту
         timeline_text = ""
