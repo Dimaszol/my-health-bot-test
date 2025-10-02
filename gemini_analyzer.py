@@ -19,7 +19,7 @@ class GeminiMedicalAnalyzer:
         
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-2.5-pro')
-        print("✅ Gemini 1.5 Pro Latest инициализирован")
+        print("✅ Gemini 2.5 Pro Latest инициализирован")
     
     async def analyze_medical_image(self, image_path: str, lang: str = "ru", custom_prompt: str = None) -> Tuple[str, str]:
         """

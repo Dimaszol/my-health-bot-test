@@ -115,25 +115,23 @@ class GarminScheduler:
     async def _collect_and_check_sleep(self, user_id: int) -> bool:
         """
         Собрать данные пользователя и проверить изменение сна
-        ГИБРИДНАЯ ЛОГИКА: активность из вчера + сон из сегодня
+        ИСПРАВЛЕНИЕ: Сохраняем время сна ВСЕГДА, даже если нет лимитов
         
         Returns:
             True если провели анализ, False если нет
         """
         try:
-            # 1. СОБИРАЕМ ДАННЫЕ ГИБРИДНО (как в старом коде)
+            # 1. СОБИРАЕМ ДАННЫЕ ГИБРИДНО
             today = date.today()
             yesterday = today - timedelta(days=1)
             
             logger.debug(f"Гибридный сбор данных для пользователя {user_id}")
-            logger.debug(f"   📊 Активность: из {yesterday}")
-            logger.debug(f"   😴 Сон: из {today}")
             
             # Собираем данные за вчера (активность) и сегодня (сон)
             yesterday_data = await garmin_connector.collect_daily_data(user_id, yesterday)
             today_data = await garmin_connector.collect_daily_data(user_id, today)
             
-            # Создаем гибридную запись: активность из вчера + сон из сегодня
+            # Создаем гибридную запись
             hybrid_data = self._create_hybrid_record(yesterday_data, today_data, yesterday)
             
             # Получаем время сна из гибридных данных
@@ -142,10 +140,6 @@ class GarminScheduler:
             if not current_sleep_minutes or current_sleep_minutes < 60:
                 logger.debug(f"Нет данных сна для пользователя {user_id}")
                 return False
-            
-            # Анализ всегда за вчерашний день (базовая дата гибридной записи)
-            analysis_date = yesterday
-            daily_data = hybrid_data
             
             # 2. ПРОВЕРЯЕМ ИЗМЕНЕНИЕ ВРЕМЕНИ СНА
             sleep_changed = await self._check_sleep_duration_changed(user_id, current_sleep_minutes)
@@ -157,32 +151,40 @@ class GarminScheduler:
             # Логируем что получилось в гибридной записи
             self._log_hybrid_result(user_id, hybrid_data, yesterday, today)
             
-            # 3. ПРОВОДИМ АНАЛИЗ
+            # 3. ПРОВЕРЯЕМ ЛИМИТЫ
             logger.info(f"🧠 Новый сон у пользователя {user_id}: {current_sleep_minutes} мин")
             
-            # Проверяем лимиты (как в вашем старом коде)
             from subscription_manager import SubscriptionManager
             sub_manager = SubscriptionManager()
             
             user_limits = await sub_manager.get_user_limits(user_id)
             gpt4o_left = user_limits.get('gpt4o_queries_left', 0)
             
+            # 🔥 ИСПРАВЛЕНИЕ: Сохраняем время сна СРАЗУ, ДО проверки лимитов
+            # Это предотвратит повторные уведомления
+            await self._save_analyzed_sleep_duration(user_id, current_sleep_minutes)
+            logger.debug(f"💾 Сохранили новое время сна: {current_sleep_minutes} мин")
+            
+            # 4. ПРОВЕРЯЕМ ЕСТЬ ЛИ ЛИМИТЫ
             if gpt4o_left <= 0:
                 logger.info(f"⚠️ У пользователя {user_id} закончились консультации")
                 await self._send_data_collected_notification(user_id)
                 return False
             
-            # Создать анализ
+            # 5. СОЗДАЁМ АНАЛИЗ (только если есть лимиты)
+            analysis_date = yesterday
+            daily_data = hybrid_data
+            
             analysis_success = await self._create_and_send_analysis(user_id, analysis_date, daily_data)
             
             if analysis_success:
-                # Списываем лимит (как в старом коде)
+                # Списываем лимит
                 await sub_manager.spend_limits(user_id, queries=1)
-                # 4. СОХРАНЯЕМ НОВОЕ ВРЕМЯ СНА
-                await self._save_analyzed_sleep_duration(user_id, current_sleep_minutes)
+                logger.info(f"✅ Анализ создан и отправлен пользователю {user_id}")
                 return True
-            
-            return False
+            else:
+                logger.warning(f"⚠️ Не удалось создать анализ для пользователя {user_id}")
+                return False
             
         except Exception as e:
             logger.error(f"❌ Ошибка обработки пользователя {user_id}: {e}")
