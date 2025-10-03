@@ -5,7 +5,7 @@ from aiogram import types, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
-from locales import t
+from db_postgresql import t  # ✅ ИСПРАВЛЕНО: импортируем из db_postgresql
 import logging
 
 logger = logging.getLogger(__name__)
