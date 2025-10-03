@@ -18,6 +18,12 @@ translations = {
             "❌ <b>Ошибка отправки сообщения</b>\n\n"
             "Пожалуйста, попробуйте позже."
         ),
+        "support_reply_message": (
+            "🤖 <b>ОТВЕТ ОТ СЛУЖБЫ ПОДДЕРЖКИ PULSEBOOK</b>\n\n"
+            "{reply_text}\n\n"
+            "---\n"
+            "💡 Если у вас остались вопросы, напишите команду /support снова."
+        ),
 
 "garmin_connect": "📱 Подключить Garmin",
         "garmin_menu_title": "📱 <b>Интеграция с Garmin</b>",
@@ -625,6 +631,30 @@ translations = {
     },
 
     "uk": { 
+        # === ЗВОРОТНИЙ ЗВ'ЯЗОК ===
+    "feedback_prompt": (
+        "📝 <b>Напишіть ваше повідомлення службі підтримки</b>\n\n"
+        "Опишіть вашу проблему, питання або пропозицію.\n"
+        "⏰ Ми відповімо протягом 72 годин.\n\n"
+        "⚠️ <b>У невідкладних випадках звертайтеся до лікаря!</b>"
+    ),
+    "cancel_feedback": "❌ Скасувати",
+    "feedback_cancelled": "❌ Відправку повідомлення скасовано",
+    "feedback_sent": (
+        "✅ <b>Дякуємо! Ваше повідомлення відправлено.</b>\n\n"
+        "Ми відповімо протягом 72 годин.\n"
+        "📧 Відповідь прийде в цей же чат."
+    ),
+    "feedback_error": (
+        "❌ <b>Помилка відправки повідомлення</b>\n\n"
+        "Будь ласка, спробуйте пізніше."
+    ),
+    "support_reply_message": (
+        "🤖 <b>ВІДПОВІДЬ ВІД СЛУЖБИ ПІДТРИМКИ PULSEBOOK</b>\n\n"
+        "{reply_text}\n\n"
+        "---\n"
+        "💡 Якщо у вас залишилися питання, напишіть команду /support знову."
+    ),
 "notifications_enabled": "🔕 Вимкнути",
 "notifications_disabled": "🔔 Увімкнути",
 "timezone_settings": "⏰ Часовий пояс",
@@ -1108,6 +1138,30 @@ translations = {
     "cancel_analysis": "❌ Скасувати"
 },
     "en": {   
+        # === FEEDBACK ===
+    "feedback_prompt": (
+        "📝 <b>Write your message to support</b>\n\n"
+        "Describe your problem, question or suggestion.\n"
+        "⏰ We will respond within 72 hours.\n\n"
+        "⚠️ <b>In emergencies, contact a doctor!</b>"
+    ),
+    "cancel_feedback": "❌ Cancel",
+    "feedback_cancelled": "❌ Message sending cancelled",
+    "feedback_sent": (
+        "✅ <b>Thank you! Your message has been sent.</b>\n\n"
+        "We will reply within 72 hours.\n"
+        "📧 The response will come to this chat."
+    ),
+    "feedback_error": (
+        "❌ <b>Message sending error</b>\n\n"
+        "Please try again later."
+    ),
+    "support_reply_message": (
+        "🤖 <b>RESPONSE FROM PULSEBOOK SUPPORT</b>\n\n"
+        "{reply_text}\n\n"
+        "---\n"
+        "💡 If you have more questions, write /support again."
+    ),
 "notifications_enabled": "🔕 Turn off", 
 "notifications_disabled": "🔔 Turn on",
 "timezone_settings": "⏰ Timezone",
@@ -1591,6 +1645,30 @@ translations = {
 },
 
 "de": {      
+    # === FEEDBACK ===
+    "feedback_prompt": (
+        "📝 <b>Schreiben Sie Ihre Nachricht an den Support</b>\n\n"
+        "Beschreiben Sie Ihr Problem, Ihre Frage oder Ihren Vorschlag.\n"
+        "⏰ Wir antworten innerhalb von 72 Stunden.\n\n"
+        "⚠️ <b>In Notfällen wenden Sie sich an einen Arzt!</b>"
+    ),
+    "cancel_feedback": "❌ Abbrechen",
+    "feedback_cancelled": "❌ Nachrichtenversand abgebrochen",
+    "feedback_sent": (
+        "✅ <b>Danke! Ihre Nachricht wurde gesendet.</b>\n\n"
+        "Wir antworten innerhalb von 72 Stunden.\n"
+        "📧 Die Antwort kommt in diesen Chat."
+    ),
+    "feedback_error": (
+        "❌ <b>Fehler beim Senden der Nachricht</b>\n\n"
+        "Bitte versuchen Sie es später erneut."
+    ),
+    "support_reply_message": (
+        "🤖 <b>ANTWORT VOM PULSEBOOK SUPPORT</b>\n\n"
+        "{reply_text}\n\n"
+        "---\n"
+        "💡 Wenn Sie weitere Fragen haben, schreiben Sie /support erneut."
+    ),
     "preparing_health_analysis": "🧠 <b>Bereite detaillierte Analyse basierend auf Ihrem Fragebogen vor...</b>\n\n⏳ Erstelle persönliche Empfehlungen und Aktionsplan...",
 "analysis_error": "❌ <b>Entschuldigung, bei der Erstellung der Analyse ist ein Fehler aufgetreten.</b>\n\nAber Ihr Fragebogen ist gespeichert und ich werde alle Daten bei der Beantwortung von Fragen berücksichtigen.", 
     "cmd_menu": "📋 Menü",

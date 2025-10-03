@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # ID администратора (ВАШЕ! Замените на ваш Telegram ID)
-ADMIN_USER_ID = 993877409
+ADMIN_USER_ID = 7374723347
 
 
 class FeedbackStates(StatesGroup):
@@ -207,16 +207,19 @@ async def send_admin_reply_to_user(message: types.Message, state: FSMContext, bo
         await state.clear()
         return
     
-    # ===== ШАГ 4.2: Формируем ответ для пользователя =====
-    response_message = f"""🤖 <b>ОТВЕТ ОТ СЛУЖБЫ ПОДДЕРЖКИ PULSEBOOK</b>
-
-{message.text}
-
----
-💡 Если у вас остались вопросы, напишите команду /support снова."""
+    # ===== ШАГ 4.2: Получаем язык пользователя для локализации =====
+    try:
+        from db_postgresql import get_user_language
+        user_lang = await get_user_language(target_user_id)
+    except Exception as e:
+        logger.error(f"Ошибка получения языка пользователя {target_user_id}: {e}")
+        user_lang = "ru"  # Fallback на русский
+    
+    # ===== ШАГ 4.3: Формируем ЛОКАЛИЗОВАННЫЙ ответ для пользователя =====
+    response_message = t("support_reply_message", user_lang, reply_text=message.text)
     
     try:
-        # ===== ШАГ 4.3: Отправляем ответ пользователю =====
+        # ===== ШАГ 4.4: Отправляем ответ пользователю =====
         await bot.send_message(
             chat_id=target_user_id,
             text=response_message,
@@ -225,13 +228,13 @@ async def send_admin_reply_to_user(message: types.Message, state: FSMContext, bo
         
         logger.info(f"Ответ отправлен пользователю {target_user_id}")
         
-        # ===== ШАГ 4.4: Подтверждаем админу =====
+        # ===== ШАГ 4.5: Подтверждаем админу =====
         await message.answer(
             f"✅ <b>Ответ успешно отправлен пользователю {target_user_id}</b>",
             parse_mode="HTML"
         )
         
-        # ===== ШАГ 4.5: Сбрасываем состояние =====
+        # ===== ШАГ 4.6: Сбрасываем состояние =====
         await state.clear()
         
     except Exception as e:
