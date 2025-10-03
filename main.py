@@ -46,8 +46,7 @@ from garmin_scheduler import initialize_garmin_scheduler, shutdown_garmin_schedu
 from garmin_ui_handlers import GARMIN_CALLBACK_HANDLERS, GarminStates
 from garmin_ui_handlers import (
     handle_garmin_email_input, 
-    handle_garmin_password_input, 
-    handle_garmin_time_input
+    handle_garmin_password_input
 )
 from user_checker import full_process_debug_7374723347
 
@@ -378,12 +377,6 @@ async def handle_garmin_email(message: types.Message, state: FSMContext):
 async def handle_garmin_password(message: types.Message, state: FSMContext):
     """Обработка ввода пароля для Garmin"""
     await handle_garmin_password_input(message, state)
-
-@dp.message(GarminStates.waiting_for_time)
-@handle_telegram_errors
-async def handle_garmin_time(message: types.Message, state: FSMContext):
-    """Обработка ввода времени анализа для Garmin"""
-    await handle_garmin_time_input(message, state)
 
 @dp.message(lambda msg: msg.text in get_all_values_for_key("main_documents"))
 @handle_telegram_errors
