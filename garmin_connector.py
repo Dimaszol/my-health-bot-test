@@ -58,21 +58,12 @@ class GarminConnector:
     def __init__(self):
         self._api_cache = {}  # Кеш подключений API
 
-    async def save_garmin_connection(self, user_id: int, email: str, password: str, 
-                                   notification_time: str = "07:00", timezone_offset: int = 0,
-                                   timezone_name: str = "UTC") -> bool:
-        """Сохранить данные подключения к Garmin"""
+    async def save_garmin_connection(self, user_id: int, email: str, password: str) -> bool:
+        """
+        Сохранить данные подключения к Garmin
+        УПРОЩЕННАЯ ВЕРСИЯ: без времени анализа и часового пояса
+        """
         try:
-            # Конвертируем строку времени в объект time
-            if isinstance(notification_time, str):
-                try:
-                    time_obj = time.fromisoformat(notification_time)
-                except ValueError as e:
-                    logger.warning(f"Некорректный формат времени '{notification_time}', используем 07:00")
-                    time_obj = time(7, 0)
-            else:
-                time_obj = notification_time
-            
             encrypted_email = encrypt_data(email)
             encrypted_password = encrypt_data(password)
             
@@ -80,64 +71,27 @@ class GarminConnector:
             
             await conn.execute("""
                 INSERT INTO garmin_connections 
-                (user_id, garmin_email, garmin_password, notification_time, 
-                 timezone_offset, timezone_name, is_active, sync_errors)
-                VALUES ($1, $2, $3, $4, $5, $6, TRUE, 0)
+                (user_id, garmin_email, garmin_password, is_active, sync_errors)
+                VALUES ($1, $2, $3, TRUE, 0)
                 ON CONFLICT (user_id) 
                 DO UPDATE SET 
                     garmin_email = EXCLUDED.garmin_email,
                     garmin_password = EXCLUDED.garmin_password,
-                    notification_time = EXCLUDED.notification_time,
-                    timezone_offset = EXCLUDED.timezone_offset,
-                    timezone_name = EXCLUDED.timezone_name,
                     is_active = TRUE,
                     sync_errors = 0,
                     updated_at = NOW()
-            """, user_id, encrypted_email, encrypted_password, time_obj,
-                 timezone_offset, timezone_name)
+            """, user_id, encrypted_email, encrypted_password)
             
             await release_db_connection(conn)
-            logger.info(f"Garmin подключение сохранено для пользователя {user_id}")
+            logger.info(f"✅ Garmin подключение сохранено для пользователя {user_id}")
             return True
             
         except Exception as e:
-            logger.error(f"Ошибка сохранения Garmin подключения для пользователя {user_id}: {e}")
+            logger.error(f"❌ Ошибка сохранения Garmin подключения для пользователя {user_id}: {e}")
             if 'conn' in locals():
                 await release_db_connection(conn)
             return False
-    
-    async def update_notification_time(self, user_id: int, new_time_str: str) -> bool:
-        """Безопасное обновление времени уведомлений"""
-        try:
-            try:
-                time_obj = time.fromisoformat(new_time_str)
-            except ValueError:
-                logger.warning(f"Некорректный формат времени от пользователя {user_id}: '{new_time_str}'")
-                return False
-            
-            conn = await get_db_connection()
-            
-            result = await conn.execute("""
-                UPDATE garmin_connections 
-                SET notification_time = $1, updated_at = NOW()
-                WHERE user_id = $2 AND is_active = TRUE
-            """, time_obj, user_id)
-            
-            await release_db_connection(conn)
-            
-            if result == "UPDATE 1":
-                logger.info(f"Время анализа обновлено для пользователя {user_id}: {time_obj}")
-                return True
-            else:
-                logger.warning(f"Пользователь {user_id} не найден или Garmin не активен")
-                return False
-                
-        except Exception as e:
-            logger.error(f"Ошибка обновления времени для пользователя {user_id}: {e}")
-            if 'conn' in locals():
-                await release_db_connection(conn)
-            return False
-
+        
     async def get_garmin_connection(self, user_id: int) -> Optional[Dict]:
         """Получить данные подключения к Garmin"""
         try:

@@ -241,15 +241,12 @@ async def create_tables():
     -- 🏃 ТАБЛИЦЫ GARMIN ИНТЕГРАЦИИ
     -- ================================
 
-    -- 📱 ПОДКЛЮЧЕНИЯ К GARMIN
+    -- 📱 ПОДКЛЮЧЕНИЯ К GARMIN (УПРОЩЕННАЯ ВЕРСИЯ)
     CREATE TABLE IF NOT EXISTS garmin_connections (
         user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
         garmin_email TEXT NOT NULL, -- Зашифрованный email
         garmin_password TEXT NOT NULL, -- Зашифрованный пароль
         is_active BOOLEAN DEFAULT TRUE,
-        notification_time TIME DEFAULT '07:00:00', -- Время ежедневного анализа
-        timezone_offset INTEGER DEFAULT 0, -- Смещение в минутах (используем систему из лекарств)
-        timezone_name TEXT DEFAULT 'UTC',
         last_sync_date DATE, -- Последняя дата синхронизации
         sync_errors INTEGER DEFAULT 0, -- Счетчик ошибок подключения
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

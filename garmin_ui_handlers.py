@@ -1,166 +1,32 @@
-# garmin_ui_handlers.py - Обработчики интерфейса для Garmin интеграции
+# garmin_ui_handlers.py - ОЧИЩЕННАЯ ВЕРСИЯ (удалены: время анализа, часовой пояс, последние данные)
 
 import logging
 import asyncio
-from datetime import time
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from db_postgresql import get_user_language, t
+from db_postgresql import get_user_language
 from garmin_connector import garmin_connector
 from subscription_manager import SubscriptionManager
-from medication_notifications import get_user_notification_settings, set_user_medication_timezone
 
 logger = logging.getLogger(__name__)
 
 # ================================
-# СОСТОЯНИЯ ДЛЯ FSM
+# СОСТОЯНИЯ ДЛЯ FSM (только подключение)
 # ================================
 
 class GarminStates(StatesGroup):
     waiting_for_email = State()
     waiting_for_password = State()
-    waiting_for_time = State()
-
-async def handle_garmin_test_collection(callback: types.CallbackQuery):
-    """Тестовый сбор данных Garmin по новой логике"""
-    user_id = callback.from_user.id
-    
-    try:
-        await callback.answer("🔄 Запускаю тестовый сбор по новой логике...")
-        
-        # Используем новую логику из планировщика
-        from garmin_scheduler import force_user_analysis
-        
-        # Показываем процесс пользователю
-        await callback.message.edit_text(
-            "🔄 <b>Тестовый сбор данных запущен</b>\n\n"
-            "⏳ Собираю данные Garmin...\n"
-            "⏳ Проверяю изменение времени сна...\n"
-            "⏳ Анализирую необходимость создания отчета...",
-            parse_mode="HTML"
-        )
-        
-        # Запускаем новую логику
-        success = await force_user_analysis(user_id)
-        
-        if success:
-            text = """✅ <b>Тестовый сбор завершен успешно!</b>
-
-🎯 <b>Что произошло:</b>
-• Собраны данные Garmin за последние дни
-• Обнаружено изменение времени сна
-• Создан и отправлен анализ здоровья
-• Новое время сна сохранено для сравнения
-
-💡 <b>Результат:</b> Анализ отправлен вам отдельным сообщением"""
-            
-        else:
-            # Получаем детали для пользователя
-            from garmin_scheduler import garmin_scheduler
-            
-            # Проверяем статистику сна для диагностики
-            try:
-                from db_postgresql import get_db_connection, release_db_connection
-                conn = await get_db_connection()
-                
-                # Проверяем есть ли данные
-                garmin_connected = await conn.fetchval("""
-                    SELECT EXISTS(SELECT 1 FROM garmin_connections WHERE user_id = $1 AND is_active = TRUE)
-                """, user_id)
-                
-                # Проверяем последнее время сна
-                sleep_tracking = await conn.fetchrow("""
-                    SELECT last_analyzed_sleep_duration, last_analysis_time 
-                    FROM garmin_users_sleep_tracking 
-                    WHERE user_id = $1
-                """, user_id)
-                
-                await release_db_connection(conn)
-                
-                if not garmin_connected:
-                    text = """❌ <b>Garmin не подключен</b>
-
-🔧 <b>Что нужно сделать:</b>
-1. Подключите ваш аккаунт Garmin Connect
-2. Убедитесь что часы синхронизированы
-3. Повторите тест"""
-                
-                elif sleep_tracking:
-                    last_duration = sleep_tracking['last_analyzed_sleep_duration']
-                    last_time = sleep_tracking['last_analysis_time']
-                    
-                    text = f"""💤 <b>Сон не изменился</b>
-
-📊 <b>Текущий статус:</b>
-• Последний анализированный сон: {last_duration} мин ({last_duration//60}ч {last_duration%60}м)
-• Последний анализ: {last_time.strftime('%d.%m.%Y %H:%M')}
-
-🔄 <b>Логика работы:</b>
-• Бот собирает данные каждые 30 минут
-• Если время сна изменилось → делает анализ
-• Если время сна такое же → ждет изменений
-
-💡 <b>Попробуйте позже:</b> После следующего сна время изменится и придет новый анализ"""
-                
-                else:
-                    text = """⚠️ <b>Нет данных сна</b>
-
-🔍 <b>Возможные причины:</b>
-• Часы еще не синхронизированы с Garmin Connect
-• Данные сна еще не готовы (нужно подождать)
-• Проблемы с подключением к серверам Garmin
-
-🔄 <b>Что попробовать:</b>
-1. Откройте приложение Garmin Connect на телефоне
-2. Дождитесь синхронизации часов
-3. Повторите тест через несколько минут"""
-                
-            except Exception as e:
-                text = f"""❌ <b>Ошибка тестового сбора</b>
-
-🔧 <b>Техническая информация:</b>
-• Проверьте подключение к Garmin Connect
-• Убедитесь что часы синхронизированы
-• При повторении ошибки обратитесь в поддержку
-
-📝 Код ошибки: {str(e)[:100]}"""
-        
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="📊 Показать данные", callback_data="garmin_show_data")],
-            [InlineKeyboardButton(text="🔄 Повторить тест", callback_data="garmin_test_collection")],
-            [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
-        ])
-        
-        await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
-        
-    except Exception as e:
-        logger.error(f"Ошибка тестового сбора: {e}")
-        
-        error_text = """❌ <b>Критическая ошибка теста</b>
-
-🔧 Не удалось запустить тестовый сбор данных.
-
-💡 <b>Попробуйте:</b>
-• Проверить подключение Garmin
-• Повторить попытку позже
-• Обратиться в поддержку при повторении ошибки"""
-        
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🔄 Повторить", callback_data="garmin_test_collection")],
-            [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
-        ])
-        
-        await callback.message.edit_text(error_text, reply_markup=keyboard, parse_mode="HTML")
 
 # ================================
 # КЛАВИАТУРЫ
 # ================================
 
 async def garmin_main_keyboard(lang: str, user_id: int) -> InlineKeyboardMarkup:
-    """Главная клавиатура настроек Garmin"""
+    """Главная клавиатура настроек Garmin - УПРОЩЕННАЯ"""
     
     # Проверяем, подключен ли Garmin
     connection = await garmin_connector.get_garmin_connection(user_id)
@@ -169,27 +35,15 @@ async def garmin_main_keyboard(lang: str, user_id: int) -> InlineKeyboardMarkup:
     buttons = []
     
     if is_connected:
-        # Если подключен - показываем статус и настройки
+        # Если подключен - показываем только нужные кнопки
         buttons.extend([
             [InlineKeyboardButton(
                 text="✅ Garmin подключен",
                 callback_data="garmin_status"
             )],
             [InlineKeyboardButton(
-                text="🧪 Тестовый сбор данных",  # НОВАЯ КНОПКА
+                text="🧪 Тестовый сбор данных",
                 callback_data="garmin_test_collection"
-            )],
-            [InlineKeyboardButton(
-                text="⏰ Время анализа", 
-                callback_data="garmin_set_time"
-            )],
-            [InlineKeyboardButton(
-                text="🌍 Часовой пояс",
-                callback_data="garmin_timezone"
-            )],
-            [InlineKeyboardButton(
-                text="📊 Последние данные",
-                callback_data="garmin_show_data"
             )],
             [InlineKeyboardButton(
                 text="❌ Отключить Garmin",
@@ -217,18 +71,6 @@ async def garmin_main_keyboard(lang: str, user_id: int) -> InlineKeyboardMarkup:
     
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-async def garmin_timezone_keyboard(lang: str) -> InlineKeyboardMarkup:
-    """Клавиатура выбора часового пояса (используем из лекарств)"""
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🇷🇺 Москва (UTC+3)", callback_data="garmin_tz_180")],
-        [InlineKeyboardButton(text="🇺🇦 Киев (UTC+2)", callback_data="garmin_tz_120")],
-        [InlineKeyboardButton(text="🇰🇿 Алматы (UTC+6)", callback_data="garmin_tz_360")],
-        [InlineKeyboardButton(text="🇺🇿 Ташкент (UTC+5)", callback_data="garmin_tz_300")],
-        [InlineKeyboardButton(text="🇩🇪 Берлин (UTC+1)", callback_data="garmin_tz_60")],
-        [InlineKeyboardButton(text="🇬🇧 Лондон (UTC+0)", callback_data="garmin_tz_0")],
-        [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
-    ])
-
 # ================================
 # ОБРАБОТЧИКИ CALLBACK'ОВ
 # ================================
@@ -249,14 +91,14 @@ async def handle_garmin_menu(callback: types.CallbackQuery):
 - Отслеживание прогресса
 - Связь сна, активности и самочувствия
 
-⚠️ <b>Важно:</b> Анализ доступен только при наличии детальных консультаций (подписка или покупка пакета)"""
+⚠️ <b>Важно:</b> Анализ доступен только при наличии детальных консультаций (подписка или покупка пакета)
+
+🔄 Анализ создается автоматически при появлении новых данных сна"""
 
         await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
         
     except Exception as e:
-        # 🔧 ИСПРАВЛЕНИЕ: Обрабатываем ошибку "message is not modified"
         if "message is not modified" in str(e):
-            # Просто отвечаем на callback без изменения сообщения
             await callback.answer("✅ Garmin подключен и настроен")
         else:
             logger.error(f"Ошибка показа Garmin меню: {e}")
@@ -267,26 +109,17 @@ async def handle_garmin_status(callback: types.CallbackQuery):
     user_id = callback.from_user.id
     
     try:
-        # Получаем детальную информацию о подключении
         connection = await garmin_connector.get_garmin_connection(user_id)
         
         if connection:
-            # Форматируем время
-            time_str = connection['notification_time'].strftime('%H:%M')
-            timezone_name = connection.get('timezone_name', 'UTC')
-            
             text = f"""✅ <b>Garmin подключен</b>
-
-📊 <b>Настройки анализа:</b>
-⏰ Время: {time_str}
-🌍 Часовой пояс: {timezone_name}
 
 📈 <b>Статус синхронизации:</b>
 - Последняя синхронизация: {connection.get('last_sync_date', 'еще не было')}
 - Ошибок подключения: {connection.get('sync_errors', 0)}
 
 🔋 <b>Функции:</b>
-- Ежедневный анализ здоровья
+- Автоматический анализ при новых данных сна
 - Персональные рекомендации  
 - Отслеживание трендов"""
         else:
@@ -312,12 +145,10 @@ async def handle_garmin_info(callback: types.CallbackQuery):
 • 😰 <b>Стресс:</b> уровень в течение дня
 • 🫁 <b>Дыхание и SpO2:</b> кислород в крови
 
-<b>🤖 Что получаете каждое утро:</b>
-• Анализ качества сна и восстановления
-• Оценка готовности к нагрузкам
-• Персональные рекомендации по активности
-• Предупреждения о высоком стрессе
-• Тренды за неделю/месяц
+<b>🤖 Как работает:</b>
+• Каждые 30 минут бот проверяет новые данные сна
+• При изменении времени сна создается анализ
+• Рекомендации учитывают вашу анкету
 
 <b>💡 Пример анализа:</b>
 "Сон 7ч 20мин - отлично! Пульс покоя снизился на 3 удара - признак улучшения формы. Body Battery 85% утром показывает хорошее восстановление. Рекомендация: можете увеличить интенсивность тренировки сегодня."
@@ -348,7 +179,7 @@ async def handle_garmin_connect(callback: types.CallbackQuery, state: FSMContext
         if not has_consultations:
             text = """⚠️ <b>Нужны детальные консультации</b>
 
-Для работы анализа Garmin требуются детальные консультации (GPT-5).
+Для работы анализа Garmin требуются детальные консультации.
 
 📊 <b>Ваши лимиты:</b>
 • Детальные консультации: {gpt4o_queries_left}
@@ -396,7 +227,7 @@ async def handle_garmin_disconnect(callback: types.CallbackQuery):
 
 Вы уверены, что хотите отключить интеграцию с Garmin?
 
-• Ежедневные анализы здоровья прекратятся
+• Автоматические анализы здоровья прекратятся
 • Сохраненные данные останутся в истории
 • Можно подключить заново в любое время"""
 
@@ -430,134 +261,85 @@ async def handle_garmin_disconnect_confirm(callback: types.CallbackQuery):
     await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
     await callback.answer()
 
-async def handle_garmin_set_time(callback: types.CallbackQuery, state: FSMContext):
-    """Настройка времени анализа"""
-    lang = await get_user_language(callback.from_user.id)
+async def handle_garmin_test_collection(callback: types.CallbackQuery):
+    """Тестовый сбор данных Garmin"""
+    user_id = callback.from_user.id
     
-    text = """⏰ <b>Время ежедневного анализа</b>
+    try:
+        await callback.answer("🔄 Запускаю тестовый сбор...")
+        
+        from garmin_scheduler import force_user_analysis
+        
+        await callback.message.edit_text(
+            "🔄 <b>Тестовый сбор данных запущен</b>\n\n"
+            "⏳ Собираю данные Garmin...\n"
+            "⏳ Проверяю изменение времени сна...\n"
+            "⏳ Анализирую необходимость создания отчета...",
+            parse_mode="HTML"
+        )
+        
+        success = await force_user_analysis(user_id)
+        
+        if success:
+            text = """✅ <b>Тестовый сбор завершен успешно!</b>
 
-Во сколько присылать анализ данных здоровья?
+🎯 <b>Что произошло:</b>
+• Собраны данные Garmin за последние дни
+• Обнаружено изменение времени сна
+• Создан и отправлен анализ здоровья
+• Новое время сна сохранено для сравнения
 
-Введите время в формате <b>ЧЧ:ММ</b> (например: 07:30)
+💡 <b>Результат:</b> Анализ отправлен вам отдельным сообщением"""
+        else:
+            text = """ℹ️ <b>Тестовый сбор завершен</b>
 
-💡 <b>Рекомендация:</b> утренние часы (6:00-9:00) - лучше всего для анализа предыдущего дня"""
+📊 <b>Возможные причины отсутствия анализа:</b>
+• Время сна не изменилось с последнего анализа
+• Недостаточно данных от Garmin
+• Закончились детальные консультации
 
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="❌ Отмена", callback_data="back_to_garmin")]
-    ])
-    
-    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
-    await state.set_state(GarminStates.waiting_for_time)
-    await callback.answer()
+💡 <b>Попробуйте:</b>
+• Проверить подключение Garmin
+• Дождаться новых данных сна
+• Пополнить лимиты консультаций"""
+        
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="🔄 Повторить", callback_data="garmin_test_collection")],
+            [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
+        ])
+        
+        await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
+        
+    except Exception as e:
+        logger.error(f"Ошибка тестового сбора: {e}")
+        
+        error_text = """❌ <b>Ошибка тестового сбора</b>
 
-async def handle_garmin_timezone(callback: types.CallbackQuery):
-    """Настройка часового пояса"""
-    lang = await get_user_language(callback.from_user.id)
-    
-    text = """🌍 <b>Часовой пояс</b>
+Произошла ошибка при сборе данных Garmin.
 
-Выберите ваш часовой пояс для точного времени анализа:"""
+💡 <b>Попробуйте:</b>
+• Проверить подключение Garmin
+• Повторить попытку позже
+• Обратиться в поддержку при повторении ошибки"""
+        
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="🔄 Повторить", callback_data="garmin_test_collection")],
+            [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
+        ])
+        
+        await callback.message.edit_text(error_text, reply_markup=keyboard, parse_mode="HTML")
 
-    keyboard = await garmin_timezone_keyboard(lang)
-    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
-    await callback.answer()
-
-async def handle_garmin_timezone_set(callback: types.CallbackQuery, offset_minutes: int, timezone_name: str):
-    """Установить часовой пояс для Garmin"""
+async def handle_garmin_cancel_setup(callback: types.CallbackQuery, state: FSMContext):
+    """Отмена настройки Garmin"""
     user_id = callback.from_user.id
     lang = await get_user_language(user_id)
     
-    try:
-        # Используем систему часовых поясов от уведомлений о лекарствах
-        await set_user_medication_timezone(user_id, offset_minutes, timezone_name)
-        
-        # Также обновляем в таблице Garmin
-        conn = garmin_connector.get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            UPDATE garmin_connections 
-            SET timezone_offset = %s, timezone_name = %s, updated_at = NOW()
-            WHERE user_id = %s
-        """, (offset_minutes, timezone_name, user_id))
-        
-        conn.commit()
-        conn.close()
-        
-        hours = offset_minutes // 60
-        sign = "+" if hours >= 0 else ""
-        
-        text = f"✅ <b>Часовой пояс установлен</b>\n\n🌍 {timezone_name} (UTC{sign}{hours})"
-        
-    except Exception as e:
-        logger.error(f"Ошибка установки часового пояса: {e}")
-        text = "❌ <b>Ошибка установки часового пояса</b>\n\nПопробуйте позже."
+    await state.clear()
     
     keyboard = await garmin_main_keyboard(lang, user_id)
-    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
-    await callback.answer()
-
-async def handle_garmin_show_data(callback: types.CallbackQuery):
-    """Показать последние данные Garmin"""
-    user_id = callback.from_user.id
-    lang = await get_user_language(user_id)
+    text = "❌ Настройка отменена"
     
-    try:
-        # 🔧 ИСПРАВЛЕНИЕ: Используем async подход
-        from db_postgresql import get_db_connection, release_db_connection
-        
-        conn = await get_db_connection()
-        
-        # Получаем последние данные
-        results = await conn.fetch("""
-            SELECT * FROM garmin_daily_data 
-            WHERE user_id = $1 
-            ORDER BY data_date DESC 
-            LIMIT 3
-        """, user_id)
-        
-        await release_db_connection(conn)
-        
-        if not results:
-            text = "📊 <b>Данные Garmin</b>\n\nДанных пока нет. Подождите до завтрашнего утра для первого анализа."
-        else:
-            text = "📊 <b>Последние данные Garmin</b>\n\n"
-            
-            for row in results:
-                row = dict(row)  # Конвертируем asyncpg.Record в dict
-                date_str = row['data_date'].strftime('%d.%m.%Y')
-                text += f"<b>📅 {date_str}:</b>\n"
-                
-                if row.get('steps'):
-                    text += f"🚶 Шаги: {row['steps']:,}\n"
-                if row.get('sleep_duration_minutes'):
-                    hours = row['sleep_duration_minutes'] // 60
-                    minutes = row['sleep_duration_minutes'] % 60
-                    text += f"😴 Сон: {hours}ч {minutes}мин\n"
-                if row.get('resting_heart_rate'):
-                    text += f"❤️ Пульс покоя: {row['resting_heart_rate']} уд/мин\n"
-                if row.get('body_battery_max'):
-                    text += f"🔋 Body Battery: {row['body_battery_max']}%\n"
-                if row.get('stress_avg'):
-                    text += f"😰 Стресс: {row['stress_avg']}/100\n"
-                
-                text += "\n"
-        
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🔄 Обновить", callback_data="garmin_show_data")],
-            [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
-        ])
-        
-        await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
-        
-    except Exception as e:
-        logger.error(f"Ошибка показа данных Garmin: {e}")
-        text = "❌ <b>Ошибка загрузки данных</b>\n\nПопробуйте позже."
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
-        ])
-        await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
-    
+    await callback.message.edit_text(text, reply_markup=keyboard)
     await callback.answer()
 
 # ================================
@@ -618,7 +400,7 @@ async def handle_garmin_password_input(message: types.Message, state: FSMContext
     success, result_message = await garmin_connector.test_garmin_connection(email, password)
     
     if success:
-        # Сохраняем подключение
+        # Сохраняем подключение (БЕЗ времени и часового пояса!)
         saved = await garmin_connector.save_garmin_connection(
             user_id=user_id,
             email=email, 
@@ -630,10 +412,7 @@ async def handle_garmin_password_input(message: types.Message, state: FSMContext
 
 {result_message}
 
-⏰ <b>Время анализа:</b> 07:00 (по умолчанию)
-🌍 <b>Часовой пояс:</b> UTC+0
-
-📊 Первый анализ будет завтра утром"""
+🔄 Анализ будет создаваться автоматически при появлении новых данных сна"""
             
             keyboard = await garmin_main_keyboard(lang, user_id)
         else:
@@ -651,90 +430,18 @@ async def handle_garmin_password_input(message: types.Message, state: FSMContext
     await test_message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
     await state.clear()
 
-async def handle_garmin_time_input(message: types.Message, state: FSMContext):
-    """Обработка ввода времени анализа - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
-    user_id = message.from_user.id
-    lang = await get_user_language(user_id)
-    time_str = message.text.strip()
-    
-    try:
-        # 🔧 ИСПРАВЛЕНИЕ: Правильная валидация и парсинг времени
-        try:
-            # Парсим время в объект time
-            time_obj = time.fromisoformat(time_str)
-        except ValueError:
-            # Если не получилось - показываем ошибку
-            text = "❌ <b>Некорректный формат времени</b>\n\nИспользуйте формат ЧЧ:ММ (например: 07:30)"
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="❌ Отмена", callback_data="back_to_garmin")]
-            ])
-            await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
-            return
-        
-        # 🔧 ИСПРАВЛЕНИЕ: Используем новую функцию для обновления времени
-        success = await garmin_connector.update_notification_time(user_id, time_str)
-        
-        if success:
-            text = f"✅ <b>Время анализа установлено</b>\n\n⏰ Ежедневный анализ: <b>{time_str}</b>"
-            keyboard = await garmin_main_keyboard(lang, user_id)
-        else:
-            text = "❌ <b>Ошибка сохранения времени</b>\n\nПопробуйте позже или проверьте подключение Garmin."
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🔄 Попробовать снова", callback_data="garmin_set_time")],
-                [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
-            ])
-        
-        await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
-        await state.clear()
-        
-    except Exception as e:
-        # 🔒 БЕЗОПАСНОЕ ЛОГИРОВАНИЕ: не выводим пользовательские данные
-        logger.error(f"❌ Ошибка обработки времени для пользователя {user_id}: {e}")
-        
-        text = "❌ <b>Произошла ошибка</b>\n\nПопробуйте позже или обратитесь в поддержку."
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
-        ])
-        await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
-        await state.clear()
-
-async def handle_garmin_cancel_setup(callback: types.CallbackQuery, state: FSMContext):
-    """Отмена настройки Garmin"""
-    user_id = callback.from_user.id
-    lang = await get_user_language(user_id)
-    
-    await state.clear()
-    
-    keyboard = await garmin_main_keyboard(lang, user_id)
-    text = "❌ Настройка отменена"
-    
-    await callback.message.edit_text(text, reply_markup=keyboard)
-    await callback.answer()
-
 # ================================
 # CALLBACK DATA HANDLERS MAP
 # ================================
 
 GARMIN_CALLBACK_HANDLERS = {
-    'garmin_test_collection': handle_garmin_test_collection,  # ДОБАВИТЬ
     'garmin_menu': handle_garmin_menu,
     'garmin_info': handle_garmin_info,
     'garmin_connect': handle_garmin_connect,
     'garmin_status': handle_garmin_status,
-    'garmin_status': handle_garmin_menu,
     'garmin_disconnect': handle_garmin_disconnect,
     'garmin_disconnect_confirm': handle_garmin_disconnect_confirm,
-    'garmin_set_time': handle_garmin_set_time,
-    'garmin_timezone': handle_garmin_timezone,
-    'garmin_show_data': handle_garmin_show_data,
+    'garmin_test_collection': handle_garmin_test_collection,
     'garmin_cancel_setup': handle_garmin_cancel_setup,
     'back_to_garmin': handle_garmin_menu,
-    
-    # Часовые пояса
-    'garmin_tz_0': lambda cb: handle_garmin_timezone_set(cb, 0, "London"),
-    'garmin_tz_60': lambda cb: handle_garmin_timezone_set(cb, 60, "Berlin"),
-    'garmin_tz_120': lambda cb: handle_garmin_timezone_set(cb, 120, "Kyiv"),
-    'garmin_tz_180': lambda cb: handle_garmin_timezone_set(cb, 180, "Moscow"),
-    'garmin_tz_300': lambda cb: handle_garmin_timezone_set(cb, 300, "Tashkent"),
-    'garmin_tz_360': lambda cb: handle_garmin_timezone_set(cb, 360, "Almaty"),
 }
