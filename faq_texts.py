@@ -202,7 +202,7 @@ FAQ_TEXTS = {
     - Предложения по улучшению
 
 📧 <b>Контакты:</b>
-    - Напишите @PulseBook_support_bot
+    - Напишите /support
     ⏰ Ответ в течении 72 часов 
 
 🚨 <b>В экстренных случаях:</b>
@@ -414,7 +414,7 @@ FAQ_TEXTS = {
     - Пропозиції з покращення
 
 📧 <b>Контакти:</b>
-    - Напишіть @PulseBook_support_bot
+    - Напишіть /support
     ⏰ Відповідь протягом 72 годин 
 
 🚨 <b>В екстрених випадках:</b>
@@ -626,7 +626,7 @@ Click ⚙️ Settings in main menu""",
     - Improvement suggestions
 
 📧 <b>Contacts:</b>
-    - Write to @PulseBook_support_bot
+    - Write to /support
     ⏰ Response within 72 hours 
 
 🚨 <b>In emergency cases:</b>
@@ -838,7 +838,7 @@ Klicken Sie ⚙️ Einstellungen im Hauptmenü""",
     - Verbesserungsvorschläge
 
 📧 <b>Kontakte:</b>
-    - Schreiben Sie an @PulseBook_support_bot
+    - Schreiben Sie an /support
     ⏰ Antwort innerhalb von 72 Stunden 
 
 🚨 <b>In Notfällen:</b>

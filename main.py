@@ -48,6 +48,15 @@ from garmin_ui_handlers import (
     handle_garmin_email_input, 
     handle_garmin_password_input
 )
+from feedback_handler import (
+    start_feedback_from_command,
+    cancel_feedback,
+    receive_feedback_message,
+    start_admin_reply,
+    cancel_admin_reply,
+    send_admin_reply_to_user,
+    FeedbackStates
+)
 from user_checker import full_process_debug_7374723347
 
 logging.basicConfig(
@@ -498,6 +507,18 @@ async def handle_delete_step2(callback: types.CallbackQuery):
     )
     
     await callback.answer()
+    
+@dp.message(lambda msg: msg.text == "/support")
+@handle_telegram_errors
+async def handle_support_command(message: types.Message, state: FSMContext):
+    """
+    Обработчик команды /support
+    Запускает процесс обратной связи когда пользователь нажимает /support в тексте
+    """
+    user_id = message.from_user.id
+    lang = await get_user_language(user_id)
+    
+    await start_feedback_from_command(message, state, lang)
 
 # ✅ ОБРАБОТЧИК ВВОДА КОДА (тот же что был)
 @dp.message(lambda msg: msg.from_user.id in delete_confirmation_states)
@@ -635,7 +656,27 @@ async def show_analytics_help(message: types.Message):
 
     await message.answer(help_text, parse_mode="HTML")
 
+@dp.message(FeedbackStates.waiting_for_message)
+@handle_telegram_errors
+async def handle_feedback_message(message: types.Message, state: FSMContext):
+    """
+    Обработчик сообщения от пользователя
+    Получает текст обращения в поддержку и пересылает админу
+    """
+    user_id = message.from_user.id
+    lang = await get_user_language(user_id)
+    
+    await receive_feedback_message(message, state, bot, lang)
 
+
+@dp.message(FeedbackStates.waiting_for_admin_reply)
+@handle_telegram_errors
+async def handle_admin_reply_message(message: types.Message, state: FSMContext):
+    """
+    Обработчик ответа от админа
+    Получает текст ответа и отправляет его пользователю автоматически
+    """
+    await send_admin_reply_to_user(message, state, bot)
 
 
 @dp.message()
@@ -1226,6 +1267,36 @@ async def handle_user_message(message: types.Message):
         # Ошибка промокода не должна ломать основную функциональность
         logger.error(f"❌ Ошибка проверки промокода для user {user_id}: {e}")
     
+@dp.callback_query(lambda c: c.data == "cancel_feedback")
+@handle_telegram_errors
+async def handle_cancel_feedback(callback: types.CallbackQuery, state: FSMContext):
+    """
+    Обработчик кнопки "❌ Отмена" 
+    Когда пользователь передумал отправлять сообщение в поддержку
+    """
+    user_id = callback.from_user.id
+    lang = await get_user_language(user_id)
+    
+    await cancel_feedback(callback, state, lang)
+
+@dp.callback_query(lambda c: c.data.startswith("reply_to_user:"))
+@handle_telegram_errors
+async def handle_reply_to_user(callback: types.CallbackQuery, state: FSMContext):
+    """
+    Обработчик кнопки "💬 Ответить"
+    Когда админ нажимает "Ответить" под сообщением пользователя
+    """
+    await start_admin_reply(callback, state)
+
+
+@dp.callback_query(lambda c: c.data == "cancel_admin_reply")
+@handle_telegram_errors
+async def handle_cancel_admin_reply(callback: types.CallbackQuery, state: FSMContext):
+    """
+    Обработчик кнопки "❌ Отмена"
+    Когда админ передумал отвечать пользователю
+    """
+    await cancel_admin_reply(callback, state)
 
 @dp.callback_query(lambda c: c.data == "settings_profile")
 @handle_telegram_errors  
