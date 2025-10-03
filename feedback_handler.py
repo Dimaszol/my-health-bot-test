@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # ID администратора (ВАШЕ! Замените на ваш Telegram ID)
-ADMIN_USER_ID = 7374723347
+ADMIN_USER_ID = 993877409
 
 
 class FeedbackStates(StatesGroup):
