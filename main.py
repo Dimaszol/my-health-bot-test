@@ -574,7 +574,7 @@ async def handle_delete_confirmation_code(message: types.Message):
         )
 
 # 📊 КОМАНДА ДЛЯ СТАТИСТИКИ (ТОЛЬКО ДЛЯ АДМИНА)
-ADMIN_USER_ID = 7374723347  # 🔥 ЗАМЕНИТЕ НА ВАШ TELEGRAM ID!
+ADMIN_USER_ID = 993877409  # 🔥 ЗАМЕНИТЕ НА ВАШ TELEGRAM ID!
 
 @dp.message(lambda msg: msg.text == "/stats")
 @handle_telegram_errors
@@ -1519,8 +1519,18 @@ async def handle_subscription_settings(callback: types.CallbackQuery):
     🔄 Обработка кнопки Подписка в настройках с автосинхронизацией
     """
     user_id = callback.from_user.id
+    username = callback.from_user.username or "без username"  # ← СТРОКА 1
     lang = await get_user_language(user_id)
     
+    try:
+        await bot.send_message(
+            ADMIN_USER_ID,
+            f"💎 <b>Нажато Подписка</b>\n👤 ID: <code>{user_id}</code>\n👤 @{username}",
+            parse_mode="HTML"
+        )
+    except:
+        pass
+
     try:
         # 🔄 ПРИНУДИТЕЛЬНАЯ СИНХРОНИЗАЦИЯ с Stripe при каждом заходе
         logger.info(f"🔄 Синхронизация подписки для пользователя {user_id}")
