@@ -295,12 +295,21 @@ class GarminAnalyzer:
         if daily_data.get('resting_heart_rate'):
             data_parts.append(f"Пульс покоя: {daily_data['resting_heart_rate']} уд/мин")
         
-        # Стресс и восстановление
+        # Стресс
         if daily_data.get('stress_avg'):
             data_parts.append(f"Средний стресс: {daily_data['stress_avg']}/100")
         
-        if daily_data.get('body_battery_max') and daily_data.get('body_battery_min'):
-            data_parts.append(f"Body Battery: {daily_data['body_battery_max']}% → {daily_data['body_battery_min']}%")
+        # 🔋 Body Battery (ОБНОВЛЕНО) - показываем полную картину восстановления
+        battery_parts = []
+        if daily_data.get('body_battery_max'):
+            battery_parts.append(f"{daily_data['body_battery_max']}%")
+        if daily_data.get('body_battery_min'):
+            battery_parts.append(f"{daily_data['body_battery_min']}%")
+        if daily_data.get('body_battery_after_sleep'):
+            battery_parts.append(f"после сна {daily_data['body_battery_after_sleep']}%")
+        
+        if battery_parts:
+            data_parts.append(f"Body Battery: {' → '.join(battery_parts)}")
         
         # SpO2 и дыхание
         if daily_data.get('spo2_avg'):

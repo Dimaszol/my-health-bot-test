@@ -298,6 +298,7 @@ async def create_tables():
         body_battery_min INTEGER,
         body_battery_charged INTEGER, -- Восстановление энергии
         body_battery_drained INTEGER, -- Трата энергии
+        body_battery_after_sleep INTEGER,
         
         -- НОВЫЕ: Дополнительные данные стресса
         stress_min INTEGER,

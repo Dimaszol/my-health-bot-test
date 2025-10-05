@@ -6,8 +6,8 @@ import asyncio
 import logging
 from datetime import time, datetime, date, timedelta
 from typing import Dict, Optional, List, Any
-from cryptography.fernet import Fernet
-from garminconnect import Garmin
+from cryptography.fernet import Fernet # type: ignore
+from garminconnect import Garmin # type: ignore
 from dotenv import load_dotenv
 
 # Импортируем функции для работы с БД
@@ -378,7 +378,7 @@ class GarminConnector:
                 'vigorous_intensity_minutes', 'moderate_intensity_minutes',
                 'activities_types', 'hrv_status', 'hrv_baseline', 
                 'training_readiness_status', 'training_status', 'training_load_7day',
-                'data_completeness_score', 'last_sync_quality'
+                'data_completeness_score', 'last_sync_quality', 'body_battery_after_sleep'
             }
             
             # Отфильтровываем только те поля, которые есть в таблице
