@@ -189,7 +189,7 @@ class GarminScheduler:
         except Exception as e:
             logger.error(f"❌ Ошибка обработки пользователя {user_id}: {e}")
             return False
-
+    
     async def _check_sleep_duration_changed(self, user_id: int, current_sleep_minutes: int) -> bool:
         """Проверить, изменилось ли время сна"""
         try:
@@ -351,29 +351,37 @@ class GarminScheduler:
             # Используем ваш существующий анализатор
             analysis_result = await garmin_analyzer.create_health_analysis(user_id, daily_data)
             
-            # ИСПРАВЛЕНИЕ: проверяем что анализ создался (ваш анализатор возвращает другой формат)
             if not analysis_result:
                 logger.warning(f"Не удалось создать анализ для пользователя {user_id}")
                 return False
             
-            # Получаем текст анализа из результата
+            # Получаем текст анализа
             analysis_text = analysis_result.get('analysis_text') or analysis_result.get('text') or str(analysis_result)
             
             if not analysis_text or analysis_text == 'Анализ недоступен':
                 logger.warning(f"Пустой анализ для пользователя {user_id}")
                 return False
             
-            # Безопасная обработка HTML (как в вашем старом коде)
+            # ✅ НОВОЕ: Двухэтапная очистка HTML
             from gpt import safe_telegram_text
+            from html_utils import safe_html_for_telegram
+            
+            # Шаг 1: Базовая очистка
             safe_analysis = safe_telegram_text(analysis_text)
             
+            # Шаг 2: Исправление незакрытых тегов
+            safe_analysis = safe_html_for_telegram(safe_analysis)
+            
+            # Обрезаем если слишком длинный
             if len(safe_analysis) > 3500:
                 safe_analysis = safe_analysis[:3500] + "...\n\n📊 Полный анализ сохранен в истории."
             
+            # Форматируем заголовок
             sleep_minutes = daily_data.get('sleep_duration_minutes', 0)
             hours = sleep_minutes // 60
             minutes = sleep_minutes % 60
             
+            # Отправляем
             await self.bot.send_message(
                 chat_id=user_id,
                 text=f"🩺 <b>Ваш ежедневный анализ здоровья</b>\n\n📅 Дата: {analysis_date.strftime('%d.%m.%Y')}\n⏰ Продолжительность сна: {hours}ч {minutes}мин\n\n{safe_analysis}",
