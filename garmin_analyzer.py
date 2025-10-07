@@ -66,13 +66,20 @@ class GarminAnalyzer:
             return None
 
     async def _get_historical_data(self, user_id: int, days: int = 7) -> List[Dict]:
-        """Получить исторические данные за указанное количество дней"""
+        """
+        Получить исторические данные ИСКЛЮЧАЯ последние 2 дня
+        
+        Последние 2 дня исключаются потому что:
+        - Последний день (сегодня, 07.10) = свежие данные с новым сном
+        - Предпоследний день (вчера, 06.10) = текущие данные для анализа
+        - Остальное (до 05.10) = история для сравнения
+        """
         try:
             conn = await get_db_connection()
             
-            # ИСПРАВЛЕНИЕ: Берем данные ТОЛЬКО ДО ВЧЕРА (исключаем сегодня)
-            end_date = date.today() - timedelta(days=1)  # ← ИЗМЕНЕНО
-            start_date = end_date - timedelta(days=days)
+            # ИСПРАВЛЕНИЕ: Исторические данные исключают последние 2 дня
+            end_date = date.today() - timedelta(days=2)      # 05.10
+            start_date = date.today() - timedelta(days=days + 1)  # 29.09
             
             rows = await conn.fetch("""
                 SELECT * FROM garmin_daily_data 
@@ -80,7 +87,7 @@ class GarminAnalyzer:
                 AND data_date >= $2
                 AND data_date <= $3
                 ORDER BY data_date DESC
-            """, user_id, start_date, end_date)  # ← ДОБАВЛЕНО условие end_date
+            """, user_id, start_date, end_date)
             
             await release_db_connection(conn)
             
@@ -88,11 +95,12 @@ class GarminAnalyzer:
             historical_data = []
             for row in rows:
                 row_dict = dict(row)
-                # Преобразуем дату обратно в date object для сортировки
-                if isinstance(row_dict['data_date'], str):
-                    row_dict['data_date'] = datetime.strptime(row_dict['data_date'], '%Y-%m-%d').date()
+                # Преобразуем дату в СТРОКУ (другие методы ожидают строку)
+                if isinstance(row_dict['data_date'], date):
+                    row_dict['data_date'] = row_dict['data_date'].strftime('%Y-%m-%d')
                 historical_data.append(row_dict)
             
+            logger.info(f"📊 Получено {len(historical_data)} дней исторических данных")
             return historical_data
             
         except Exception as e:
@@ -319,112 +327,87 @@ class GarminAnalyzer:
         return {'recovery_trend': 'insufficient_data'}
 
     def _format_current_day_data(self, daily_data: Dict) -> str:
-        """Форматировать данные текущего дня для AI"""
-        data_parts = []
+        """
+        Форматировать данные текущего дня для AI в JSON формате
         
-        # Сон
-        if daily_data.get('sleep_duration_minutes'):
-            hours = daily_data['sleep_duration_minutes'] // 60
-            minutes = daily_data['sleep_duration_minutes'] % 60
-            data_parts.append(f"Сон: {hours}ч {minutes}мин")
+        НОВАЯ ЛОГИКА:
+        - Передаём ВСЕ непустые поля (не null)
+        - Исключаем только технические поля (id, user_id, sync_timestamp, idx)
+        - Формат: чистый JSON для удобства AI
+        """
+        try:
+            # Технические поля которые не нужны для анализа
+            exclude_fields = {
+                'id', 'idx', 'user_id', 'sync_timestamp', 
+                'data_quality', 'activities_data'  # JSON поля исключаем
+            }
             
-            if daily_data.get('sleep_deep_minutes'):
-                deep_hours = daily_data['sleep_deep_minutes'] // 60
-                deep_mins = daily_data['sleep_deep_minutes'] % 60
-                data_parts.append(f"Глубокий сон: {deep_hours}ч {deep_mins}мин")
-        
-        # Активность
-        if daily_data.get('steps'):
-            data_parts.append(f"Шаги: {daily_data['steps']:,}")
-        
-        if daily_data.get('calories'):
-            data_parts.append(f"Калории: {daily_data['calories']}")
-        
-        # Пульс
-        if daily_data.get('resting_heart_rate'):
-            data_parts.append(f"Пульс покоя: {daily_data['resting_heart_rate']} уд/мин")
-        
-        # Стресс
-        if daily_data.get('stress_avg'):
-            data_parts.append(f"Средний стресс: {daily_data['stress_avg']}/100")
-        
-        # 🔋 Body Battery (ОБНОВЛЕНО) - показываем полную картину восстановления
-        battery_parts = []
-        if daily_data.get('body_battery_max'):
-            battery_parts.append(f"{daily_data['body_battery_max']}%")
-        if daily_data.get('body_battery_min'):
-            battery_parts.append(f"{daily_data['body_battery_min']}%")
-        if daily_data.get('body_battery_after_sleep'):
-            battery_parts.append(f"после сна {daily_data['body_battery_after_sleep']}%")
-        
-        if battery_parts:
-            data_parts.append(f"Body Battery: {' → '.join(battery_parts)}")
-        
-        # SpO2 и дыхание
-        if daily_data.get('spo2_avg'):
-            data_parts.append(f"SpO2: {daily_data['spo2_avg']:.1f}%")
-        
-        if daily_data.get('respiration_avg'):
-            data_parts.append(f"Дыхание: {daily_data['respiration_avg']:.1f} вдохов/мин")
-        
-        # Готовность к тренировкам
-        if daily_data.get('training_readiness'):
-            data_parts.append(f"Готовность к тренировкам: {daily_data['training_readiness']}/100")
-        
-        return "; ".join(data_parts) if data_parts else "Недостаточно данных"
+            # Фильтруем: убираем технические поля и null значения
+            filtered_data = {}
+            for key, value in daily_data.items():
+                if key not in exclude_fields and value is not None:
+                    filtered_data[key] = value
+            
+            if not filtered_data:
+                return "Недостаточно данных"
+            
+            # Форматируем в красивый JSON
+            json_str = json.dumps(filtered_data, ensure_ascii=False, indent=2)
+            
+            return f"```json\n{json_str}\n```"
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка форматирования текущего дня: {e}")
+            return "Ошибка обработки данных"
 
     def _format_historical_data(self, historical: List[Dict]) -> str:
-        """Форматировать исторические данные ПОДРОБНО (день за днем)"""
-        if not historical:
-            return "Исторических данных нет"
+        """
+        Форматировать исторические данные для AI в JSON формате
         
-        lines = []
-        
-        # Сортируем от старых к новым (чтобы AI видел хронологию)
-        sorted_history = sorted(historical, key=lambda x: x.get('data_date', date.today()))
-        
-        for day_data in sorted_history:
-            data_date = day_data.get('data_date')
-            if isinstance(data_date, date):
-                date_str = data_date.strftime('%Y-%m-%d')
-            elif isinstance(data_date, str):
-                date_str = data_date
-            else:
-                date_str = str(data_date)
+        НОВАЯ ЛОГИКА:
+        - Передаём историю ДЕНЬ ЗА ДНЁМ в виде массива JSON объектов
+        - Каждый день содержит ВСЕ непустые поля
+        - Исключаем только технические поля
+        - Сортируем от старых дат к новым (хронологический порядок)
+        """
+        try:
+            if not historical:
+                return "Исторических данных нет"
             
-            # Собираем ключевые показатели за день
-            day_summary = []
+            # Технические поля которые не нужны для анализа
+            exclude_fields = {
+                'id', 'idx', 'user_id', 'sync_timestamp',
+                'data_quality', 'activities_data'
+            }
             
-            # Сон
-            if day_data.get('sleep_duration_minutes'):
-                hours = int(day_data['sleep_duration_minutes']) // 60
-                minutes = int(day_data['sleep_duration_minutes']) % 60
-                day_summary.append(f"Сон: {hours}ч {minutes}мин")
+            # Сортируем от старых к новым (для хронологии)
+            sorted_history = sorted(
+                historical, 
+                key=lambda x: x.get('data_date', '1970-01-01')
+            )
             
-            # Шаги
-            if day_data.get('steps'):
-                day_summary.append(f"Шаги: {day_data['steps']:,}")
+            # Фильтруем каждый день
+            filtered_days = []
+            for day in sorted_history:
+                filtered_day = {}
+                for key, value in day.items():
+                    if key not in exclude_fields and value is not None:
+                        filtered_day[key] = value
+                
+                if filtered_day:  # Добавляем только если есть данные
+                    filtered_days.append(filtered_day)
             
-            # Пульс покоя
-            if day_data.get('resting_heart_rate'):
-                day_summary.append(f"Пульс: {day_data['resting_heart_rate']} уд/мин")
+            if not filtered_days:
+                return "Недостаточно исторических данных"
             
-            # Body Battery
-            if day_data.get('body_battery_max'):
-                day_summary.append(f"BB: {day_data['body_battery_max']}%")
+            # Форматируем в красивый JSON массив
+            json_str = json.dumps(filtered_days, ensure_ascii=False, indent=2)
             
-            # Стресс
-            if day_data.get('stress_avg'):
-                day_summary.append(f"Стресс: {day_data['stress_avg']}")
+            return f"```json\n{json_str}\n```"
             
-            # Готовность
-            if day_data.get('training_readiness'):
-                day_summary.append(f"Готовность: {day_data['training_readiness']}")
-            
-            if day_summary:
-                lines.append(f"{date_str}: {' | '.join(day_summary)}")
-        
-        return "\n".join(lines) if lines else "Недостаточно данных"
+        except Exception as e:
+            logger.error(f"❌ Ошибка форматирования исторических данных: {e}")
+            return "Ошибка обработки данных"
 
     def _assess_data_quality(self, daily_data: Dict, historical: List[Dict]) -> str:
         """Оценить качество данных"""
