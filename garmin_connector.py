@@ -17,6 +17,23 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 # ================================
+# КОНСТАНТЫ ДЛЯ РАБОТЫ СО СНОМ
+# ================================
+
+# Список полей ТОЛЬКО ночного сна (БЕЗ дневного сна nap_duration_minutes)
+NIGHT_SLEEP_FIELDS = [
+    'sleep_duration_minutes',      # Общая длительность сна
+    'sleep_deep_minutes',          # Глубокий сон
+    'sleep_light_minutes',         # Легкий сон
+    'sleep_rem_minutes',           # REM-фаза (быстрый сон)
+    'sleep_awake_minutes',         # Время бодрствования во сне
+    'sleep_score',                 # Оценка качества сна
+    'sleep_need_minutes',          # Потребность во сне
+    'sleep_baseline_minutes',      # Базовая норма сна
+    'sleep_periods_15min'          # Периоды сна по 15 минут
+]
+
+# ================================
 # ШИФРОВАНИЕ ДАННЫХ GARMIN
 # ================================
 
@@ -408,6 +425,12 @@ class GarminConnector:
             
             if result:
                 logger.info(f"Данные сохранены в БД (ID: {result['id']})")
+                
+                # ============================================
+                # НОВАЯ ЛОГИКА: Переносим данные сна в предыдущий день
+                # ============================================
+                await self._update_previous_day_sleep(daily_data)
+                
                 return True
             else:
                 logger.warning("Данные не были сохранены в БД")
@@ -417,6 +440,91 @@ class GarminConnector:
             logger.error(f"Ошибка сохранения в БД: {type(e).__name__}")
             if 'conn' in locals():
                 await release_db_connection(conn)
+            return False
+    
+    async def _update_previous_day_sleep(self, daily_data: Dict) -> bool:
+        """
+        Обновляет данные НОЧНОГО сна в записи предыдущего дня
+        
+        Логика:
+        - Берем данные сна из текущего дня (например, 7 октября)
+        - Переносим их в предыдущий день (6 октября)
+        - Обновляем ТОЛЬКО если запись за предыдущий день УЖЕ СУЩЕСТВУЕТ
+        - НЕ создаем новые записи
+        
+        ВАЖНО: Дневной сон (nap_duration_minutes) НЕ переносится!
+        """
+        try:
+            # Проверяем наличие обязательных полей
+            if 'user_id' not in daily_data or 'data_date' not in daily_data:
+                logger.warning("Отсутствуют user_id или data_date, пропускаем обновление сна")
+                return False
+            
+            user_id = daily_data['user_id']
+            current_date = daily_data['data_date']
+            
+            # Вычисляем дату предыдущего дня
+            if isinstance(current_date, str):
+                current_date = datetime.strptime(current_date, '%Y-%m-%d').date()
+            
+            previous_date = current_date - timedelta(days=1)
+            
+            # Извлекаем ТОЛЬКО данные ночного сна из текущих данных
+            sleep_data = {}
+            for field in NIGHT_SLEEP_FIELDS:
+                if field in daily_data and daily_data[field] is not None:
+                    sleep_data[field] = daily_data[field]
+            
+            # Если данных сна нет - нечего обновлять
+            if not sleep_data:
+                logger.info("Данных ночного сна нет, пропускаем обновление предыдущего дня")
+                return False
+            
+            # Проверяем, существует ли запись за предыдущий день
+            conn = await get_db_connection()
+            
+            existing_record = await conn.fetchrow("""
+                SELECT id FROM garmin_daily_data 
+                WHERE user_id = $1 AND data_date = $2
+            """, user_id, previous_date)
+            
+            # Если записи нет - не создаем новую, просто выходим
+            if not existing_record:
+                logger.info(f"Запись за {previous_date} не найдена, пропускаем обновление сна")
+                await release_db_connection(conn)
+                return False
+            
+            # Формируем SQL запрос для обновления ТОЛЬКО полей сна
+            update_fields = []
+            values = []
+            param_index = 1
+            
+            for field, value in sleep_data.items():
+                update_fields.append(f"{field} = ${param_index}")
+                values.append(value)
+                param_index += 1
+            
+            # Добавляем user_id и data_date в конец списка параметров
+            values.append(user_id)
+            values.append(previous_date)
+            
+            # SQL запрос: обновляем ТОЛЬКО поля сна
+            update_query = f"""
+                UPDATE garmin_daily_data
+                SET {', '.join(update_fields)}
+                WHERE user_id = ${param_index} AND data_date = ${param_index + 1}
+            """
+            
+            # Выполняем обновление
+            await conn.execute(update_query, *values)
+            await release_db_connection(conn)
+            
+            # Безопасное логирование (без конкретных значений)
+            logger.info(f"✅ Данные ночного сна ({len(sleep_data)} полей) обновлены в записи предыдущего дня")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка обновления сна в предыдущем дне: {type(e).__name__}")
             return False
 
 # ================================
