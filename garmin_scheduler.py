@@ -362,15 +362,9 @@ class GarminScheduler:
                 logger.warning(f"Пустой анализ для пользователя {user_id}")
                 return False
             
-            # ✅ НОВОЕ: Двухэтапная очистка HTML
+            # Безопасная обработка HTML
             from gpt import safe_telegram_text
-            from html_utils import safe_html_for_telegram
-            
-            # Шаг 1: Базовая очистка
             safe_analysis = safe_telegram_text(analysis_text)
-            
-            # Шаг 2: Исправление незакрытых тегов
-            safe_analysis = safe_html_for_telegram(safe_analysis)
             
             # Обрезаем если слишком длинный
             if len(safe_analysis) > 3500:
@@ -381,15 +375,38 @@ class GarminScheduler:
             hours = sleep_minutes // 60
             minutes = sleep_minutes % 60
             
-            # Отправляем
-            await self.bot.send_message(
-                chat_id=user_id,
-                text=f"🩺 <b>Ваш ежедневный анализ здоровья</b>\n\n📅 Дата: {analysis_date.strftime('%d.%m.%Y')}\n⏰ Продолжительность сна: {hours}ч {minutes}мин\n\n{safe_analysis}",
-                parse_mode='HTML'
-            )
+            message_text = f"🩺 <b>Ваш ежедневный анализ здоровья</b>\n\n📅 Дата: {analysis_date.strftime('%d.%m.%Y')}\n⏰ Продолжительность сна: {hours}ч {minutes}мин\n\n{safe_analysis}"
             
-            logger.info(f"📤 Анализ отправлен пользователю {user_id}")
-            return True
+            # ✅ ПОПЫТКА 1: С HTML
+            try:
+                await self.bot.send_message(
+                    chat_id=user_id,
+                    text=message_text,
+                    parse_mode='HTML'
+                )
+                logger.info(f"📤 Анализ отправлен пользователю {user_id} (с HTML)")
+                return True
+                
+            except Exception as html_error:
+                # ⚠️ Если ошибка HTML - пробуем без разметки
+                if "Bad Request" in str(html_error) or "parse entities" in str(html_error):
+                    logger.warning(f"⚠️ Ошибка HTML разметки, отправляю без форматирования...")
+                    
+                    # Удаляем ВСЕ HTML теги
+                    import re
+                    clean_text = re.sub(r'<[^>]+>', '', message_text)
+                    
+                    await self.bot.send_message(
+                        chat_id=user_id,
+                        text=clean_text
+                        # БЕЗ parse_mode
+                    )
+                    
+                    logger.info(f"📤 Анализ отправлен пользователю {user_id} (без HTML)")
+                    return True
+                else:
+                    # Если другая ошибка - пробрасываем дальше
+                    raise
             
         except Exception as e:
             logger.error(f"❌ Ошибка создания/отправки анализа для {user_id}: {e}")
