@@ -70,14 +70,17 @@ class GarminAnalyzer:
         try:
             conn = await get_db_connection()
             
-            start_date = date.today() - timedelta(days=days)
+            # ИСПРАВЛЕНИЕ: Берем данные ТОЛЬКО ДО ВЧЕРА (исключаем сегодня)
+            end_date = date.today() - timedelta(days=1)  # ← ИЗМЕНЕНО
+            start_date = end_date - timedelta(days=days)
             
             rows = await conn.fetch("""
                 SELECT * FROM garmin_daily_data 
                 WHERE user_id = $1 
                 AND data_date >= $2
+                AND data_date <= $3
                 ORDER BY data_date DESC
-            """, user_id, start_date)
+            """, user_id, start_date, end_date)  # ← ДОБАВЛЕНО условие end_date
             
             await release_db_connection(conn)
             
@@ -85,8 +88,9 @@ class GarminAnalyzer:
             historical_data = []
             for row in rows:
                 row_dict = dict(row)
-                # Преобразуем дату в строку для JSON
-                row_dict['data_date'] = row_dict['data_date'].strftime('%Y-%m-%d')
+                # Преобразуем дату обратно в date object для сортировки
+                if isinstance(row_dict['data_date'], str):
+                    row_dict['data_date'] = datetime.strptime(row_dict['data_date'], '%Y-%m-%d').date()
                 historical_data.append(row_dict)
             
             return historical_data
