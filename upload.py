@@ -100,7 +100,7 @@ async def handle_document_upload(message: types.Message, bot):
                 vision_text = ""
                 for img_path in image_paths:
                     try:
-                        page_text, _ = await send_to_gpt_vision(img_path)
+                        page_text, _ = await send_to_gpt_vision(img_path, lang)
                         if page_text:  # Проверяем что текст получен
                             vision_text += page_text + "\n\n"
                     except Exception as page_error:
@@ -125,7 +125,7 @@ async def handle_document_upload(message: types.Message, bot):
                 return  # ← НЕ записываем лимит при ошибке PDF
         else:
             try:
-                vision_text, _ = await send_to_gpt_vision(local_file)
+                vision_text, _ = await send_to_gpt_vision(local_file, lang)
             except Exception as e:
                 logger.error(f"Ошибка анализа изображения для пользователя {user_id}: {str(e)}")
                 await message.answer(t("image_analysis_error", lang))

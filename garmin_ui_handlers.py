@@ -54,7 +54,7 @@ async def garmin_main_keyboard(lang: str, user_id: int) -> InlineKeyboardMarkup:
         # Если не подключен - показываем кнопку подключения
         buttons.extend([
             [InlineKeyboardButton(
-                text=t("garmin_connect", lang),
+                text=t("garmin_button_connect_now", lang),
                 callback_data="garmin_connect"
             )],
             [InlineKeyboardButton(
