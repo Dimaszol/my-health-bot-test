@@ -25,13 +25,10 @@ translations = {
             "💡 Если у вас остались вопросы, напишите команду /support снова."
         ),
 
-"garmin_connect": "📱 Подключить Garmin",
+"garmin_connect": "📱 Garmin",
         "garmin_menu_title": "📱 <b>Интеграция с Garmin</b>",
         "garmin_connected": "✅ Garmin подключен",
         "garmin_disconnected": "❌ Garmin отключен",
-        "garmin_analysis_time": "⏰ Время анализа",
-        "garmin_timezone": "🌍 Часовой пояс",
-        "garmin_show_data": "📊 Последние данные",
         "garmin_disconnect": "❌ Отключить Garmin",
         "garmin_info": "❓ Что это дает?",
         
@@ -56,9 +53,6 @@ translations = {
 
 {result_message}
 
-⏰ <b>Время анализа:</b> 07:00 (по умолчанию)
-🌍 <b>Часовой пояс:</b> UTC+0
-
 📊 Первый анализ будет завтра утром""",
         
         # Ошибки
@@ -67,7 +61,7 @@ translations = {
         "garmin_rate_limit": "⚠️ Превышен лимит запросов. Попробуйте позже",
         "garmin_save_error": "❌ Ошибка сохранения настроек",
         "garmin_invalid_email": "❌ Некорректный формат email. Попробуйте еще раз:",
-        "garmin_invalid_time": "❌ <b>Некорректный формат времени</b>\n\nИспользуйте формат ЧЧ:ММ (например: 07:30)",
+        
         
         # Отключение
         "garmin_disconnect_confirm": """❌ <b>Отключение Garmin</b>
@@ -80,21 +74,11 @@ translations = {
         
         "garmin_disconnected_success": "✅ <b>Garmin отключен</b>\n\nИнтеграция отключена. Вы можете подключить её заново в любое время.",
         
-        # Время анализа
-        "garmin_time_prompt": """⏰ <b>Время ежедневного анализа</b>
-
-Во сколько присылать анализ данных здоровья?
-
-Введите время в формате <b>ЧЧ:ММ</b> (например: 07:30)
-
-💡 <b>Рекомендация:</b> утренние часы (6:00-9:00) - лучше всего для анализа предыдущего дня""",
-        
-        "garmin_time_set_success": "✅ <b>Время анализа установлено</b>\n\n⏰ Ежедневный анализ: <b>{time}</b>",
-        
+       
         # Лимиты
         "garmin_limits_required": """⚠️ <b>Нужны детальные консультации</b>
 
-Для работы анализа Garmin требуются детальные консультации (GPT-5).
+Для работы анализа Garmin требуются детальные консультации.
 
 📊 <b>Ваши лимиты:</b>
 • Детальные консультации: {gpt4o_queries_left}
@@ -129,10 +113,7 @@ translations = {
 • Оценка готовности к нагрузкам
 • Персональные рекомендации по активности
 • Предупреждения о высоком стрессе
-• Тренды за неделю/месяц
-
-<b>💡 Пример анализа:</b>
-"Сон 7ч 20мин - отлично! Пульс покоя снизился на 3 удара - признак улучшения формы. Body Battery 85% утром показывает хорошее восстановление. Рекомендация: можете увеличить интенсивность тренировки сегодня."
+• Тренды за неделю
 
 ⚠️ <b>Требования:</b>
 • Часы Garmin с функциями здоровья
@@ -631,6 +612,103 @@ translations = {
     },
 
     "uk": { 
+
+        "garmin_connect": "📱 Garmin",
+"garmin_menu_title": "📱 <b>Інтеграція з Garmin</b>",
+"garmin_connected": "✅ Garmin підключено",
+"garmin_disconnected": "❌ Garmin відключено",
+"garmin_disconnect": "❌ Відключити Garmin",
+"garmin_info": "❓ Що це дає?",
+
+# Процес підключення
+"garmin_connection_process": """🔗 <b>Підключення Garmin Connect</b>
+
+Введіть email від вашого акаунту Garmin Connect:
+
+🔐 <b>Безпека:</b>
+- Дані шифруються перед збереженням
+- Використовуються тільки для збору даних здоров'я
+- Можна відключити в будь-який момент""",
+
+"garmin_password_prompt": """📧 Email: <b>{email}</b>
+
+Тепер введіть пароль від Garmin Connect:
+
+🔐 <b>Безпека:</b> пароль буде зашифровано перед збереженням""",
+
+"garmin_testing_connection": "🔄 Перевіряю підключення до Garmin...",
+"garmin_connected_success": """✅ <b>Garmin підключено успішно!</b>
+
+{result_message}
+
+📊 Перший аналіз буде завтра вранці""",
+
+# Помилки
+"garmin_connection_failed": "❌ <b>Помилка підключення</b>\n\n{error_message}",
+"garmin_invalid_credentials": "❌ Невірний email або пароль",
+"garmin_rate_limit": "⚠️ Перевищено ліміт запитів. Спробуйте пізніше",
+"garmin_save_error": "❌ Помилка збереження налаштувань",
+"garmin_invalid_email": "❌ Некоректний формат email. Спробуйте ще раз:",
+
+# Відключення
+"garmin_disconnect_confirm": """❌ <b>Відключення Garmin</b>
+
+Ви впевнені, що хочете відключити інтеграцію з Garmin?
+
+- Щоденні аналізи здоров'я припиняться
+- Збережені дані залишаться в історії
+- Можна підключити знову в будь-який час""",
+
+"garmin_disconnected_success": "✅ <b>Garmin відключено</b>\n\nІнтеграцію відключено. Ви можете підключити її знову в будь-який час.",
+
+# Ліміти
+"garmin_limits_required": """⚠️ <b>Потрібні детальні консультації</b>
+
+Для роботи аналізу Garmin потрібні детальні консультації.
+
+📊 <b>Ваші ліміти:</b>
+- Детальні консультації: {gpt4o_queries_left}
+
+💎 Оформіть підписку або купіть пакет для використання аналізу Garmin.""",
+
+# Нагадування
+"garmin_data_collected_reminder": """📊 <b>Дані Garmin зібрано!</b>
+
+⚠️ Для отримання AI аналізу потрібні детальні консультації.
+
+📈 <b>Зібрані дані:</b>
+- Сон, активність, пульс
+- Body Battery та стрес  
+- Готові до аналізу
+
+💎 <b>Оформіть підписку</b> для отримання персональних рекомендацій щоранку!""",
+
+# Інформація
+"garmin_info_text": """🩺 <b>Щоденний аналіз здоров'я з Garmin</b>
+
+<b>📊 Які дані аналізуються:</b>
+- 😴 <b>Сон:</b> якість, фази, відновлення
+- ❤️ <b>Пульс:</b> спокою, варіабельність, навантаження  
+- 🏃 <b>Активність:</b> кроки, калорії, тренування
+- 🔋 <b>Body Battery:</b> енергія та відновлення
+- 😰 <b>Стрес:</b> рівень протягом дня
+- 🫁 <b>Дихання та SpO2:</b> кисень у крові
+
+<b>🤖 Що отримуєте щоранку:</b>
+- Аналіз якості сну та відновлення
+- Оцінка готовності до навантажень
+- Персональні рекомендації щодо активності
+- Попередження про високий стрес
+- Тренди за тиждень
+
+⚠️ <b>Вимоги:</b>
+- Годинник Garmin з функціями здоров'я
+- Акаунт Garmin Connect  
+- Активна підписка або пакет консультацій""",
+
+# Дані
+"garmin_no_data": "📊 <b>Дані Garmin</b>\n\nДаних поки немає. Зачекайте до завтрашнього ранку для першого аналізу.",
+"garmin_data_title": "📊 <b>Останні дані Garmin</b>\n\n",
         # === ЗВОРОТНИЙ ЗВ'ЯЗОК ===
     "feedback_prompt": (
         "📝 <b>Напишіть ваше повідомлення службі підтримки</b>\n\n"
@@ -1137,7 +1215,104 @@ translations = {
     "photo_file_not_found": "⚠️ Фото не знайдено. Завантажте фото заново.",
     "cancel_analysis": "❌ Скасувати"
 },
-    "en": {   
+    "en": {  
+
+        "garmin_connect": "📱 Garmin",
+"garmin_menu_title": "📱 <b>Garmin Integration</b>",
+"garmin_connected": "✅ Garmin connected",
+"garmin_disconnected": "❌ Garmin disconnected",
+"garmin_disconnect": "❌ Disconnect Garmin",
+"garmin_info": "❓ What does it give?",
+
+# Connection process
+"garmin_connection_process": """🔗 <b>Connecting Garmin Connect</b>
+
+Enter the email from your Garmin Connect account:
+
+🔐 <b>Security:</b>
+- Data is encrypted before saving
+- Used only for health data collection
+- Can be disconnected at any time""",
+
+"garmin_password_prompt": """📧 Email: <b>{email}</b>
+
+Now enter your Garmin Connect password:
+
+🔐 <b>Security:</b> password will be encrypted before saving""",
+
+"garmin_testing_connection": "🔄 Testing Garmin connection...",
+"garmin_connected_success": """✅ <b>Garmin connected successfully!</b>
+
+{result_message}
+
+📊 First analysis will be tomorrow morning""",
+
+# Errors
+"garmin_connection_failed": "❌ <b>Connection error</b>\n\n{error_message}",
+"garmin_invalid_credentials": "❌ Invalid email or password",
+"garmin_rate_limit": "⚠️ Request limit exceeded. Try again later",
+"garmin_save_error": "❌ Settings save error",
+"garmin_invalid_email": "❌ Invalid email format. Try again:",
+
+# Disconnection
+"garmin_disconnect_confirm": """❌ <b>Disconnecting Garmin</b>
+
+Are you sure you want to disconnect Garmin integration?
+
+- Daily health analyses will stop
+- Saved data will remain in history
+- Can be reconnected at any time""",
+
+"garmin_disconnected_success": "✅ <b>Garmin disconnected</b>\n\nIntegration disabled. You can reconnect it at any time.",
+
+# Limits
+"garmin_limits_required": """⚠️ <b>Detailed consultations needed</b>
+
+Garmin analysis requires detailed consultations.
+
+📊 <b>Your limits:</b>
+- Detailed consultations: {gpt4o_queries_left}
+
+💎 Subscribe or purchase a package to use Garmin analysis.""",
+
+# Reminders
+"garmin_data_collected_reminder": """📊 <b>Garmin data collected!</b>
+
+⚠️ Detailed consultations needed for AI analysis.
+
+📈 <b>Collected data:</b>
+- Sleep, activity, heart rate
+- Body Battery and stress  
+- Ready for analysis
+
+💎 <b>Subscribe</b> to get personalized recommendations every morning!""",
+
+# Information
+"garmin_info_text": """🩺 <b>Daily health analysis with Garmin</b>
+
+<b>📊 What data is analyzed:</b>
+- 😴 <b>Sleep:</b> quality, phases, recovery
+- ❤️ <b>Heart rate:</b> resting, variability, load  
+- 🏃 <b>Activity:</b> steps, calories, workouts
+- 🔋 <b>Body Battery:</b> energy and recovery
+- 😰 <b>Stress:</b> daily level
+- 🫁 <b>Respiration and SpO2:</b> blood oxygen
+
+<b>🤖 What you get every morning:</b>
+- Sleep quality and recovery analysis
+- Readiness assessment
+- Personalized activity recommendations
+- High stress warnings
+- Weekly trends
+
+⚠️ <b>Requirements:</b>
+- Garmin watch with health features
+- Garmin Connect account  
+- Active subscription or consultation package""",
+
+# Data
+"garmin_no_data": "📊 <b>Garmin Data</b>\n\nNo data yet. Wait until tomorrow morning for the first analysis.",
+"garmin_data_title": "📊 <b>Latest Garmin Data</b>\n\n", 
         # === FEEDBACK ===
     "feedback_prompt": (
         "📝 <b>Write your message to support</b>\n\n"
@@ -1645,6 +1820,103 @@ translations = {
 },
 
 "de": {      
+
+    "garmin_connect": "📱 Garmin",
+"garmin_menu_title": "📱 <b>Garmin-Integration</b>",
+"garmin_connected": "✅ Garmin verbunden",
+"garmin_disconnected": "❌ Garmin getrennt",
+"garmin_disconnect": "❌ Garmin trennen",
+"garmin_info": "❓ Was bringt das?",
+
+# Verbindungsprozess
+"garmin_connection_process": """🔗 <b>Garmin Connect verbinden</b>
+
+Geben Sie die E-Mail Ihres Garmin Connect-Kontos ein:
+
+🔐 <b>Sicherheit:</b>
+- Daten werden vor dem Speichern verschlüsselt
+- Nur für Gesundheitsdatenerfassung verwendet
+- Kann jederzeit getrennt werden""",
+
+"garmin_password_prompt": """📧 E-Mail: <b>{email}</b>
+
+Geben Sie jetzt Ihr Garmin Connect-Passwort ein:
+
+🔐 <b>Sicherheit:</b> Das Passwort wird vor dem Speichern verschlüsselt""",
+
+"garmin_testing_connection": "🔄 Garmin-Verbindung wird getestet...",
+"garmin_connected_success": """✅ <b>Garmin erfolgreich verbunden!</b>
+
+{result_message}
+
+📊 Die erste Analyse erfolgt morgen früh""",
+
+# Fehler
+"garmin_connection_failed": "❌ <b>Verbindungsfehler</b>\n\n{error_message}",
+"garmin_invalid_credentials": "❌ Ungültige E-Mail oder Passwort",
+"garmin_rate_limit": "⚠️ Anfragelimit überschritten. Versuchen Sie es später",
+"garmin_save_error": "❌ Fehler beim Speichern der Einstellungen",
+"garmin_invalid_email": "❌ Ungültiges E-Mail-Format. Versuchen Sie es erneut:",
+
+# Trennung
+"garmin_disconnect_confirm": """❌ <b>Garmin trennen</b>
+
+Sind Sie sicher, dass Sie die Garmin-Integration trennen möchten?
+
+- Tägliche Gesundheitsanalysen werden gestoppt
+- Gespeicherte Daten bleiben im Verlauf
+- Kann jederzeit wieder verbunden werden""",
+
+"garmin_disconnected_success": "✅ <b>Garmin getrennt</b>\n\nIntegration deaktiviert. Sie können sie jederzeit wieder verbinden.",
+
+# Limits
+"garmin_limits_required": """⚠️ <b>Detaillierte Beratungen erforderlich</b>
+
+Für die Garmin-Analyse sind detaillierte Beratungen erforderlich.
+
+📊 <b>Ihre Limits:</b>
+- Detaillierte Beratungen: {gpt4o_queries_left}
+
+💎 Abonnieren Sie oder kaufen Sie ein Paket, um die Garmin-Analyse zu nutzen.""",
+
+# Erinnerungen
+"garmin_data_collected_reminder": """📊 <b>Garmin-Daten gesammelt!</b>
+
+⚠️ Für die KI-Analyse sind detaillierte Beratungen erforderlich.
+
+📈 <b>Gesammelte Daten:</b>
+- Schlaf, Aktivität, Herzfrequenz
+- Body Battery und Stress  
+- Bereit zur Analyse
+
+💎 <b>Abonnieren Sie</b>, um jeden Morgen personalisierte Empfehlungen zu erhalten!""",
+
+# Information
+"garmin_info_text": """🩺 <b>Tägliche Gesundheitsanalyse mit Garmin</b>
+
+<b>📊 Welche Daten werden analysiert:</b>
+- 😴 <b>Schlaf:</b> Qualität, Phasen, Erholung
+- ❤️ <b>Herzfrequenz:</b> Ruhe, Variabilität, Belastung  
+- 🏃 <b>Aktivität:</b> Schritte, Kalorien, Training
+- 🔋 <b>Body Battery:</b> Energie und Erholung
+- 😰 <b>Stress:</b> Tagesniveau
+- 🫁 <b>Atmung und SpO2:</b> Blutsauerstoff
+
+<b>🤖 Was Sie jeden Morgen erhalten:</b>
+- Analyse der Schlafqualität und Erholung
+- Bereitschaftsbewertung
+- Personalisierte Aktivitätsempfehlungen
+- Warnungen bei hohem Stress
+- Wöchentliche Trends
+
+⚠️ <b>Anforderungen:</b>
+- Garmin-Uhr mit Gesundheitsfunktionen
+- Garmin Connect-Konto  
+- Aktives Abonnement oder Beratungspaket""",
+
+# Daten
+"garmin_no_data": "📊 <b>Garmin-Daten</b>\n\nNoch keine Daten. Warten Sie bis morgen früh auf die erste Analyse.",
+"garmin_data_title": "📊 <b>Neueste Garmin-Daten</b>\n\n",
     # === FEEDBACK ===
     "feedback_prompt": (
         "📝 <b>Schreiben Sie Ihre Nachricht an den Support</b>\n\n"
