@@ -67,19 +67,16 @@ class GarminAnalyzer:
 
     async def _get_historical_data(self, user_id: int, days: int = 7) -> List[Dict]:
         """
-        Получить исторические данные ИСКЛЮЧАЯ последние 2 дня
-        
-        Последние 2 дня исключаются потому что:
-        - Последний день (сегодня, 07.10) = свежие данные с новым сном
-        - Предпоследний день (вчера, 06.10) = текущие данные для анализа
-        - Остальное (до 05.10) = история для сравнения
+        Получить исторические данные ИСКЛЮЧАЯ последние 1 день
+       
+       
         """
         try:
             conn = await get_db_connection()
             
-            # ИСПРАВЛЕНИЕ: Исторические данные исключают последние 2 дня
-            end_date = date.today() - timedelta(days=2)      # 05.10
-            start_date = date.today() - timedelta(days=days + 1)  # 29.09
+           
+            end_date = date.today() - timedelta(days=1)      
+            start_date = date.today() - timedelta(days=days)  
             
             rows = await conn.fetch("""
                 SELECT * FROM garmin_daily_data 
