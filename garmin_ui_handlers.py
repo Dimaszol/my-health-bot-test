@@ -7,7 +7,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from db_postgresql import get_user_language
+from db_postgresql import get_user_language, t
 from garmin_connector import garmin_connector
 from subscription_manager import SubscriptionManager
 
@@ -38,15 +38,15 @@ async def garmin_main_keyboard(lang: str, user_id: int) -> InlineKeyboardMarkup:
         # Если подключен - показываем только нужные кнопки
         buttons.extend([
             [InlineKeyboardButton(
-                text="✅ Garmin подключен",
+                text=t("garmin_connected", lang),
                 callback_data="garmin_status"
             )],
+            # [InlineKeyboardButton(
+            #     text="🧪 Тестовый сбор данных",
+            #     callback_data="garmin_test_collection"
+            # )],
             [InlineKeyboardButton(
-                text="🧪 Тестовый сбор данных",
-                callback_data="garmin_test_collection"
-            )],
-            [InlineKeyboardButton(
-                text="❌ Отключить Garmin",
+                text=t("garmin_disconnect", lang),
                 callback_data="garmin_disconnect"
             )]
         ])
@@ -54,18 +54,18 @@ async def garmin_main_keyboard(lang: str, user_id: int) -> InlineKeyboardMarkup:
         # Если не подключен - показываем кнопку подключения
         buttons.extend([
             [InlineKeyboardButton(
-                text="🔗 Подключить Garmin",
+                text=t("garmin_connect", lang),
                 callback_data="garmin_connect"
             )],
             [InlineKeyboardButton(
-                text="❓ Что это дает?",
+                text=t("garmin_info", lang),
                 callback_data="garmin_info"
             )]
         ])
     
     # Кнопка назад
     buttons.append([InlineKeyboardButton(
-        text="← Назад к настройкам",
+        text=t("back_to_settings", lang),
         callback_data="back_to_settings"
     )])
     
@@ -82,18 +82,7 @@ async def handle_garmin_menu(callback: types.CallbackQuery):
     
     try:
         keyboard = await garmin_main_keyboard(lang, user_id)
-        
-        text = """📱 <b>Интеграция с Garmin</b>
-
-🩺 <b>Что это дает:</b>
-- Ежедневный AI анализ здоровья
-- Персональные рекомендации
-- Отслеживание прогресса
-- Связь сна, активности и самочувствия
-
-⚠️ <b>Важно:</b> Анализ доступен только при наличии детальных консультаций (подписка или покупка пакета)
-
-🔄 Анализ создается автоматически при появлении новых данных сна"""
+        text = t("garmin_menu_description", lang)
 
         await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
         
@@ -107,60 +96,40 @@ async def handle_garmin_menu(callback: types.CallbackQuery):
 async def handle_garmin_status(callback: types.CallbackQuery):
     """Показать статус подключения Garmin"""
     user_id = callback.from_user.id
+    lang = await get_user_language(user_id)
     
     try:
         connection = await garmin_connector.get_garmin_connection(user_id)
         
         if connection:
-            text = f"""✅ <b>Garmin подключен</b>
-
-📈 <b>Статус синхронизации:</b>
-- Последняя синхронизация: {connection.get('last_sync_date', 'еще не было')}
-- Ошибок подключения: {connection.get('sync_errors', 0)}
-
-🔋 <b>Функции:</b>
-- Автоматический анализ при новых данных сна
-- Персональные рекомендации  
-- Отслеживание трендов"""
+            text = t("garmin_status_connected", lang,
+                last_sync=connection.get('last_sync_date', t("garmin_no_sync_yet", lang)),
+                sync_errors=connection.get('sync_errors', 0)
+            )
         else:
-            text = "❌ <b>Garmin не подключен</b>\n\nДля получения анализов здоровья подключите ваш аккаунт Garmin Connect."
+            text = t("garmin_status_not_connected", lang)
         
         await callback.answer(text, show_alert=True)
         
     except Exception as e:
         logger.error(f"Ошибка показа статуса Garmin: {e}")
-        await callback.answer("❌ Ошибка получения статуса", show_alert=True)
+        await callback.answer(t("garmin_status_error", lang), show_alert=True)
 
 async def handle_garmin_info(callback: types.CallbackQuery):
     """Показать информацию о возможностях Garmin"""
     lang = await get_user_language(callback.from_user.id)
     
-    text = """🩺 <b>Ежедневный анализ здоровья с Garmin</b>
-
-<b>📊 Какие данные анализируются:</b>
-• 😴 <b>Сон:</b> качество, фазы, восстановление
-• ❤️ <b>Пульс:</b> покоя, вариабельность, нагрузки  
-• 🏃 <b>Активность:</b> шаги, калории, тренировки
-• 🔋 <b>Body Battery:</b> энергия и восстановление
-• 😰 <b>Стресс:</b> уровень в течение дня
-• 🫁 <b>Дыхание и SpO2:</b> кислород в крови
-
-<b>🤖 Как работает:</b>
-• Каждые 30 минут бот проверяет новые данные сна
-• При изменении времени сна создается анализ
-• Рекомендации учитывают вашу анкету
-
-<b>💡 Пример анализа:</b>
-"Сон 7ч 20мин - отлично! Пульс покоя снизился на 3 удара - признак улучшения формы. Body Battery 85% утром показывает хорошее восстановление. Рекомендация: можете увеличить интенсивность тренировки сегодня."
-
-⚠️ <b>Требования:</b>
-• Часы Garmin с функциями здоровья
-• Аккаунт Garmin Connect  
-• Активная подписка или пакет консультаций"""
+    text = t("garmin_info_text", lang)
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🔗 Подключить сейчас", callback_data="garmin_connect")],
-        [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
+        [InlineKeyboardButton(
+            text=t("garmin_button_connect_now", lang), 
+            callback_data="garmin_connect"
+        )],
+        [InlineKeyboardButton(
+            text=t("garmin_button_back", lang), 
+            callback_data="back_to_garmin"
+        )]
     ])
     
     await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
@@ -177,18 +146,17 @@ async def handle_garmin_connect(callback: types.CallbackQuery, state: FSMContext
         has_consultations = limits.get('gpt4o_queries_left', 0) > 0
         
         if not has_consultations:
-            text = """⚠️ <b>Нужны детальные консультации</b>
-
-Для работы анализа Garmin требуются детальные консультации.
-
-📊 <b>Ваши лимиты:</b>
-• Детальные консультации: {gpt4o_queries_left}
-
-💎 Оформите подписку или купите пакет для использования анализа Garmin.""".format(**limits)
+            text = t("garmin_limits_required", lang, **limits)
             
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="💎 Оформить подписку", callback_data="subscription")],
-                [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
+                [InlineKeyboardButton(
+                    text=t("limits_exhausted_subscription_button", lang), 
+                    callback_data="subscription"
+                )],
+                [InlineKeyboardButton(
+                    text=t("garmin_button_back", lang), 
+                    callback_data="back_to_garmin"
+                )]
             ])
             
             await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
@@ -199,19 +167,13 @@ async def handle_garmin_connect(callback: types.CallbackQuery, state: FSMContext
         logger.error(f"Ошибка проверки лимитов: {e}")
     
     # Если лимиты есть - продолжаем подключение
-    text = """🔗 <b>Подключение Garmin Connect</b>
-
-Введите email от вашего аккаунта Garmin Connect:
-
-🔐 <b>Безопасность:</b>
-• Данные шифруются перед сохранением
-• Используются только для сбора данных здоровья
-• Можно отключить в любой момент
-
-⚠️ <b>Убедитесь, что данные верны - иначе подключение не сработает</b>"""
+    text = t("garmin_connection_process", lang)
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="❌ Отмена", callback_data="back_to_garmin")]
+        [InlineKeyboardButton(
+            text=t("cancel_button", lang), 
+            callback_data="back_to_garmin"
+        )]
     ])
     
     await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
@@ -223,17 +185,17 @@ async def handle_garmin_disconnect(callback: types.CallbackQuery):
     user_id = callback.from_user.id
     lang = await get_user_language(user_id)
     
-    text = """❌ <b>Отключение Garmin</b>
-
-Вы уверены, что хотите отключить интеграцию с Garmin?
-
-• Автоматические анализы здоровья прекратятся
-• Сохраненные данные останутся в истории
-• Можно подключить заново в любое время"""
+    text = t("garmin_disconnect_confirm", lang)
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✅ Да, отключить", callback_data="garmin_disconnect_confirm")],
-        [InlineKeyboardButton(text="❌ Отмена", callback_data="back_to_garmin")]
+        [InlineKeyboardButton(
+            text=t("garmin_button_yes_disconnect", lang), 
+            callback_data="garmin_disconnect_confirm"
+        )],
+        [InlineKeyboardButton(
+            text=t("cancel_button", lang), 
+            callback_data="back_to_garmin"
+        )]
     ])
     
     await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
@@ -248,13 +210,13 @@ async def handle_garmin_disconnect_confirm(callback: types.CallbackQuery):
         success = await garmin_connector.disconnect_garmin(user_id)
         
         if success:
-            text = "✅ <b>Garmin отключен</b>\n\nИнтеграция отключена. Вы можете подключить её заново в любое время."
+            text = t("garmin_disconnected_success", lang)
         else:
-            text = "❌ <b>Ошибка отключения</b>\n\nПопробуйте позже или обратитесь в поддержку."
+            text = t("garmin_disconnect_error", lang)
             
     except Exception as e:
         logger.error(f"Ошибка отключения Garmin: {e}")
-        text = "❌ <b>Ошибка отключения</b>\n\nПопробуйте позже или обратитесь в поддержку."
+        text = t("garmin_disconnect_error", lang)
     
     # Возвращаемся к главному меню Garmin
     keyboard = await garmin_main_keyboard(lang, user_id)
@@ -354,20 +316,19 @@ async def handle_garmin_email_input(message: types.Message, state: FSMContext):
     
     # Простая валидация email
     if '@' not in email or '.' not in email:
-        await message.answer("❌ Некорректный формат email. Попробуйте еще раз:")
+        await message.answer(t("garmin_invalid_email", lang))
         return
     
     # Сохраняем email в состоянии
     await state.update_data(email=email)
     
-    text = f"""📧 Email: <b>{email}</b>
-
-Теперь введите пароль от Garmin Connect:
-
-🔐 <b>Безопасность:</b> пароль будет зашифрован перед сохранением"""
+    text = t("garmin_password_prompt", lang, email=email)
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="❌ Отмена", callback_data="garmin_cancel_setup")]
+        [InlineKeyboardButton(
+            text=t("cancel_button", lang), 
+            callback_data="garmin_cancel_setup"
+        )]
     ])
     
     await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
@@ -384,7 +345,7 @@ async def handle_garmin_password_input(message: types.Message, state: FSMContext
     email = data.get('email')
     
     if not email:
-        await message.answer("❌ Ошибка: email не найден. Начните настройку заново.")
+        await message.answer(t("garmin_email_not_found_error", lang))
         await state.clear()
         return
     
@@ -394,13 +355,13 @@ async def handle_garmin_password_input(message: types.Message, state: FSMContext
     except:
         pass
     
-    test_message = await message.answer("🔄 Проверяю подключение к Garmin...")
+    test_message = await message.answer(t("garmin_testing_connection", lang))
     
     # Тестируем подключение
     success, result_message = await garmin_connector.test_garmin_connection(email, password)
     
     if success:
-        # Сохраняем подключение (БЕЗ времени и часового пояса!)
+        # Сохраняем подключение
         saved = await garmin_connector.save_garmin_connection(
             user_id=user_id,
             email=email, 
@@ -408,23 +369,27 @@ async def handle_garmin_password_input(message: types.Message, state: FSMContext
         )
         
         if saved:
-            text = f"""✅ <b>Garmin подключен успешно!</b>
-
-{result_message}
-
-🔄 Анализ будет создаваться автоматически при появлении новых данных сна"""
-            
+            text = t("garmin_connection_success_auto", lang, result_message=result_message)
             keyboard = await garmin_main_keyboard(lang, user_id)
         else:
-            text = "❌ <b>Ошибка сохранения</b>\n\nПодключение работает, но не удалось сохранить настройки."
+            text = t("garmin_save_connection_error", lang)
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
+                [InlineKeyboardButton(
+                    text=t("garmin_button_back", lang), 
+                    callback_data="back_to_garmin"
+                )]
             ])
     else:
-        text = f"❌ <b>Ошибка подключения</b>\n\n{result_message}"
+        text = t("garmin_connection_failed_retry", lang, result_message=result_message)
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🔄 Попробовать снова", callback_data="garmin_connect")],
-            [InlineKeyboardButton(text="← Назад", callback_data="back_to_garmin")]
+            [InlineKeyboardButton(
+                text=t("garmin_button_try_again", lang), 
+                callback_data="garmin_connect"
+            )],
+            [InlineKeyboardButton(
+                text=t("garmin_button_back", lang), 
+                callback_data="back_to_garmin"
+            )]
         ])
     
     await test_message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")

@@ -1,5 +1,47 @@
 translations = {
     "ru": {   
+        "garmin_email_not_found_error": "❌ Ошибка: email не найден. Начните настройку заново.",
+"garmin_connection_success_auto": """✅ <b>Garmin подключен успешно!</b>
+
+{result_message}
+
+🔄 Анализ будет создаваться автоматически при появлении новых данных сна""",
+"garmin_save_connection_error": "❌ <b>Ошибка сохранения</b>\n\nПодключение работает, но не удалось сохранить настройки.",
+"garmin_connection_failed_retry": "❌ <b>Ошибка подключения</b>\n\n{result_message}",
+"garmin_button_try_again": "🔄 Попробовать снова",
+        "garmin_disconnect_error": "❌ <b>Ошибка отключения</b>\n\nПопробуйте позже или обратитесь в поддержку.",
+
+        "garmin_button_yes_disconnect": "✅ Да, отключить",
+        "garmin_button_connect_now": "🔗 Подключить сейчас",
+"garmin_button_back": "← Назад",
+
+"garmin_status_connected": """✅ <b>Garmin подключен</b>
+
+📈 <b>Статус синхронизации:</b>
+- Последняя синхронизация: {last_sync}
+- Ошибок подключения: {sync_errors}
+
+🔋 <b>Функции:</b>
+- Автоматический анализ при новых данных сна
+- Персональные рекомендации  
+- Отслеживание трендов""",
+
+"garmin_status_not_connected": "❌ <b>Garmin не подключен</b>\n\nДля получения анализов здоровья подключите ваш аккаунт Garmin Connect.",
+
+"garmin_status_error": "❌ Ошибка получения статуса",
+"garmin_no_sync_yet": "еще не было",
+        "garmin_menu_description": """📱 <b>Интеграция с Garmin</b>
+
+🩺 <b>Что это дает:</b>
+- Ежедневный AI анализ здоровья
+- Персональные рекомендации
+- Отслеживание прогресса
+- Связь сна, активности и самочувствия
+
+⚠️ <b>Важно:</b> Анализ доступен только при наличии детальных консультаций (подписка или покупка пакета)
+
+🔄 Анализ создается автоматически при появлении новых данных сна""",
+
         # === ОБРАТНАЯ СВЯЗЬ ===
         "feedback_prompt": (
             "📝 <b>Напишите ваше сообщение службе поддержки</b>\n\n"
@@ -612,7 +654,47 @@ translations = {
     },
 
     "uk": { 
+        "garmin_email_not_found_error": "❌ Помилка: email не знайдено. Почніть налаштування заново.",
+"garmin_connection_success_auto": """✅ <b>Garmin підключено успішно!</b>
 
+{result_message}
+
+🔄 Аналіз буде створюватися автоматично при появі нових даних сну""",
+"garmin_save_connection_error": "❌ <b>Помилка збереження</b>\n\nПідключення працює, але не вдалося зберегти налаштування.",
+"garmin_connection_failed_retry": "❌ <b>Помилка підключення</b>\n\n{result_message}",
+"garmin_button_try_again": "🔄 Спробувати знову",
+        "garmin_disconnect_error": "❌ <b>Помилка відключення</b>\n\nСпробуйте пізніше або зверніться до підтримки.",
+
+        "garmin_button_yes_disconnect": "✅ Так, відключити",
+        "garmin_button_connect_now": "🔗 Підключити зараз",
+"garmin_button_back": "← Назад",
+
+"garmin_status_connected": """✅ <b>Garmin підключено</b>
+
+📈 <b>Статус синхронізації:</b>
+- Остання синхронізація: {last_sync}
+- Помилок підключення: {sync_errors}
+
+🔋 <b>Функції:</b>
+- Автоматичний аналіз при нових даних сну
+- Персональні рекомендації  
+- Відстеження трендів""",
+
+"garmin_status_not_connected": "❌ <b>Garmin не підключено</b>\n\nДля отримання аналізів здоров'я підключіть ваш акаунт Garmin Connect.",
+
+"garmin_status_error": "❌ Помилка отримання статусу",
+"garmin_no_sync_yet": "ще не було",
+        "garmin_menu_description": """📱 <b>Інтеграція з Garmin</b>
+
+🩺 <b>Що це дає:</b>
+- Щоденний AI аналіз здоров'я
+- Персональні рекомендації
+- Відстеження прогресу
+- Зв'язок сну, активності та самопочуття
+
+⚠️ <b>Важливо:</b> Аналіз доступний тільки за наявності детальних консультацій (підписка або купівля пакету)
+
+🔄 Аналіз створюється автоматично при появі нових даних сну""",
         "garmin_connect": "📱 Garmin",
 "garmin_menu_title": "📱 <b>Інтеграція з Garmin</b>",
 "garmin_connected": "✅ Garmin підключено",
@@ -1215,8 +1297,46 @@ translations = {
     "photo_file_not_found": "⚠️ Фото не знайдено. Завантажте фото заново.",
     "cancel_analysis": "❌ Скасувати"
 },
-    "en": {  
+    "en": { 
+        "garmin_email_not_found_error": "❌ Error: email not found. Start setup again.",
+"garmin_connection_success_auto": """✅ <b>Garmin connected successfully!</b>
 
+{result_message}
+
+🔄 Analysis will be created automatically when new sleep data appears""",
+"garmin_save_connection_error": "❌ <b>Save error</b>\n\nConnection works, but failed to save settings.",
+"garmin_connection_failed_retry": "❌ <b>Connection error</b>\n\n{result_message}",
+"garmin_button_try_again": "🔄 Try again",
+        "garmin_disconnect_error": "❌ <b>Disconnect error</b>\n\nTry again later or contact support.",
+        "garmin_button_yes_disconnect": "✅ Yes, disconnect",
+        "garmin_button_connect_now": "🔗 Connect now",
+"garmin_button_back": "← Back",
+        "garmin_status_connected": """✅ <b>Garmin connected</b>
+
+📈 <b>Sync status:</b>
+- Last sync: {last_sync}
+- Connection errors: {sync_errors}
+
+🔋 <b>Features:</b>
+- Automatic analysis with new sleep data
+- Personalized recommendations  
+- Trend tracking""",
+
+"garmin_status_not_connected": "❌ <b>Garmin not connected</b>\n\nConnect your Garmin Connect account to get health analyses.",
+
+"garmin_status_error": "❌ Error getting status",
+"garmin_no_sync_yet": "not yet", 
+"garmin_menu_description": """📱 <b>Garmin Integration</b>
+
+🩺 <b>What you get:</b>
+- Daily AI health analysis
+- Personalized recommendations
+- Progress tracking
+- Connection between sleep, activity and well-being
+
+⚠️ <b>Important:</b> Analysis is only available with detailed consultations (subscription or package purchase)
+
+🔄 Analysis is created automatically when new sleep data appears""",
         "garmin_connect": "📱 Garmin",
 "garmin_menu_title": "📱 <b>Garmin Integration</b>",
 "garmin_connected": "✅ Garmin connected",
@@ -1819,8 +1939,46 @@ Garmin analysis requires detailed consultations.
     "cancel_analysis": "❌ Cancel"
 },
 
-"de": {      
+"de": {   
+    "garmin_email_not_found_error": "❌ Fehler: E-Mail nicht gefunden. Starten Sie die Einrichtung erneut.",
+"garmin_connection_success_auto": """✅ <b>Garmin erfolgreich verbunden!</b>
 
+{result_message}
+
+🔄 Die Analyse wird automatisch erstellt, wenn neue Schlafdaten erscheinen""",
+"garmin_save_connection_error": "❌ <b>Speicherfehler</b>\n\nVerbindung funktioniert, aber Einstellungen konnten nicht gespeichert werden.",
+"garmin_connection_failed_retry": "❌ <b>Verbindungsfehler</b>\n\n{result_message}",
+"garmin_button_try_again": "🔄 Erneut versuchen",
+    "garmin_disconnect_error": "❌ <b>Trennungsfehler</b>\n\nVersuchen Sie es später noch einmal oder wenden Sie sich an den Support.",
+    "garmin_button_yes_disconnect": "✅ Ja, trennen",
+    "garmin_button_connect_now": "🔗 Jetzt verbinden",
+"garmin_button_back": "← Zurück",  
+    "garmin_status_connected": """✅ <b>Garmin verbunden</b>
+
+📈 <b>Sync-Status:</b>
+- Letzte Synchronisation: {last_sync}
+- Verbindungsfehler: {sync_errors}
+
+🔋 <b>Funktionen:</b>
+- Automatische Analyse bei neuen Schlafdaten
+- Personalisierte Empfehlungen  
+- Trend-Tracking""",
+
+"garmin_status_not_connected": "❌ <b>Garmin nicht verbunden</b>\n\nVerbinden Sie Ihr Garmin Connect-Konto, um Gesundheitsanalysen zu erhalten.",
+
+"garmin_status_error": "❌ Fehler beim Abrufen des Status",
+"garmin_no_sync_yet": "noch nicht", 
+"garmin_menu_description": """📱 <b>Garmin-Integration</b>
+
+🩺 <b>Was Sie erhalten:</b>
+- Tägliche KI-Gesundheitsanalyse
+- Personalisierte Empfehlungen
+- Fortschrittsverfolgung
+- Zusammenhang zwischen Schlaf, Aktivität und Wohlbefinden
+
+⚠️ <b>Wichtig:</b> Die Analyse ist nur mit detaillierten Beratungen verfügbar (Abonnement oder Paketkauf)
+
+🔄 Die Analyse wird automatisch erstellt, wenn neue Schlafdaten erscheinen""",
     "garmin_connect": "📱 Garmin",
 "garmin_menu_title": "📱 <b>Garmin-Integration</b>",
 "garmin_connected": "✅ Garmin verbunden",
