@@ -104,7 +104,12 @@ async def create_tables():
         language TEXT DEFAULT 'ru',
         gdpr_consent BOOLEAN DEFAULT FALSE,
         gdpr_consent_time TIMESTAMP DEFAULT NULL,
-        total_messages_count INTEGER DEFAULT 0        
+        total_messages_count INTEGER DEFAULT 0,
+        
+        -- 🆕 Колонки для веб-авторизации
+        google_id VARCHAR(255) UNIQUE,
+        email VARCHAR(255) UNIQUE,
+        registration_source VARCHAR(20) DEFAULT 'telegram'
     );
 
     -- 💬 ИСТОРИЯ ЧАТА
@@ -426,6 +431,24 @@ async def create_tables():
         last_analysis_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
+    -- ============================================
+    -- 🔗 ТАБЛИЦА ДЛЯ ПРИВЯЗКИ АККАУНТОВ
+    -- ============================================
+    
+    CREATE TABLE IF NOT EXISTS account_links (
+        link_code VARCHAR(6) PRIMARY KEY,
+        telegram_user_id BIGINT,
+        web_user_id BIGINT,
+        direction VARCHAR(20),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP NOT NULL,
+        is_used BOOLEAN DEFAULT FALSE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_account_links_telegram ON account_links(telegram_user_id);
+    CREATE INDEX IF NOT EXISTS idx_account_links_web ON account_links(web_user_id);
+    CREATE INDEX IF NOT EXISTS idx_account_links_active ON account_links(link_code) WHERE is_used = FALSE;
+
     """
     
     # НОВАЯ СЕКЦИЯ: Миграция для добавления полей в существующие таблицы

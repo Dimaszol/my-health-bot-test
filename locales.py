@@ -345,13 +345,14 @@ translations = {
         "error_unknown_error": "❌ Неожиданная ошибка. Мы уже работаем над исправлением.",
         "error_unexpected_general": "❌ Произошла неожиданная ошибка. Попробуйте позже.",
         "profile_delete_data": "Удалить профиль",
-        "gdpr_welcome_title": "👋 Добро пожаловать в PulseBook!",
-        "gdpr_welcome_text": """🩺 <b>PulseBook</b> — Ваш умный медицинский помощник, который поможет анализировать документы и отвечать на вопросы о здоровье.
+        "gdpr_welcome_title": "👋 Привет! Я PulseBook — ваш личный помощник здоровья",
+        "gdpr_welcome_text": """
+        <b>Что я умею:</b>
+        • 📄 Анализирую медицинские документы
+        • 💬 Отвечаю на вопросы о здоровье
+        • 🧠 Запоминаю вашу историю
 
-        <b>Важно знать:</b>
-        • 🔒 Ваши данные защищены и видны только вам
-        • 📄 Сохраняем загруженные документы и историю чата
-        • ❌ Это информационный ассистент, не замена врача
+        🔒 Всё конфиденциально — доступ только у вас
 
         📋 <a href="https://bit.ly/pulsebook-privacy">Политика конфиденциальности</a>""",
         "gdpr_consent_button": "☑️ Понятно, начинаем!",
@@ -990,13 +991,14 @@ translations = {
     "error_unknown_error": "❌ Неочікувана помилка. Ми вже працюємо над виправленням.",
     "error_unexpected_general": "❌ Сталася неочікувана помилка. Спробуйте пізніше.",
     "profile_delete_data": "Видалити профіль",
-    "gdpr_welcome_title": "👋 Ласкаво просимо до PulseBook!",
-    "gdpr_welcome_text": """🩺 <b>PulseBook</b> — Ваш розумний медичний помічник, який допоможе аналізувати документи та відповідати на питання про здоров'я.
+    "gdpr_welcome_title": "👋 Привіт! Я PulseBook — ваш особистий помічник здоров'я",
+    "gdpr_welcome_text": """
+    <b>Що я вмію:</b>
+    - 📄 Аналізую медичні документи
+    - 💬 Відповідаю на питання про здоров'я
+    - 🧠 Запам'ятовую вашу історію
 
-    <b>Важливо знати:</b>
-    • 🔒 Ваші дані захищено та видні тільки вам
-    • 📄 Зберігаємо завантажені документи та історію чату
-    • ❌ Це інформаційний асистент, не заміна лікаря
+    🔒 Все конфіденційно — доступ тільки у вас
 
     📋 <a href="https://bit.ly/pulsebook-privacy">Політика конфіденційності</a>""",
     "gdpr_consent_button": "☑️ Зрозуміло, починаємо!",
@@ -1631,13 +1633,14 @@ Garmin analysis requires detailed consultations.
     "error_unknown_error": "❌ Unexpected error. We're already working on a fix.",
     "error_unexpected_general": "❌ An unexpected error occurred. Try again later.",
     "profile_delete_data": "Delete profile",
-    "gdpr_welcome_title": "👋 Welcome to PulseBook!",
-    "gdpr_welcome_text": """🩺 <b>PulseBook</b> — Your smart medical assistant that helps analyze documents and answer health questions.
+    "gdpr_welcome_title": "👋 Hi! I'm PulseBook — your personal health assistant",
+    "gdpr_welcome_text": """
+    <b>What I can do:</b>
+    - 📄 Analyze medical documents
+    - 💬 Answer health questions
+    - 🧠 Remember your history
 
-    <b>Important to know:</b>
-    • 🔒 Your data is protected and visible only to you
-    • 📄 We save uploaded documents and chat history
-    • ❌ This is an informational assistant, not a doctor replacement
+    🔒 Everything is confidential — only you have access
 
     📋 <a href="https://bit.ly/pulsebook-privacy">Privacy Policy</a>""",
     "gdpr_consent_button": "☑️ Understood, let's start!",
@@ -2238,15 +2241,16 @@ Für die Garmin-Analyse sind detaillierte Beratungen erforderlich.
     "error_unknown_error": "❌ Unerwarteter Fehler. Wir arbeiten bereits an einer Lösung.",
     "error_unexpected_general": "❌ Ein unerwarteter Fehler ist aufgetreten. Versuchen Sie es später.",
     "profile_delete_data": "Profil löschen",
-    "gdpr_welcome_title": "👋 Willkommen bei PulseBook!",
-    "gdpr_welcome_text": """🩺 <b>PulseBook</b> — Ihr intelligenter medizinischer Assistent, der beim Analysieren von Dokumenten und Beantworten von Gesundheitsfragen hilft.
+    "gdpr_welcome_title": "👋 Hallo! Ich bin PulseBook — Ihr persönlicher Gesundheitsassistent",
+    "gdpr_welcome_text": """<b>Was ich kann:</b>
+    - 📄 Medizinische Dokumente analysieren
+    - 💬 Gesundheitsfragen beantworten  
+    - 🧠 Ihre Geschichte merken
 
-    <b>Wichtig zu wissen:</b>
-    • 🔒 Ihre Daten sind geschützt und nur für Sie sichtbar
-    • 📄 Wir speichern hochgeladene Dokumente und Chat-Verlauf
-    • ❌ Dies ist ein informativer Assistent, kein Arzt-Ersatz
+    🔒 Alles vertraulich — nur Sie haben Zugriff
 
-    📋 <a href="https://bit.ly/pulsebook-privacy">Datenschutzrichtlinie</a>""",
+    📋 <a href="https://bit.ly/pulsebook-privacy">Datenschutzerklärung</a>""",
+    "gdpr_consent_button": "✨ Jetzt starten",
     "gdpr_consent_button": "☑️ Verstanden, lassen Sie uns beginnen!",
     "gdpr_consent_given": "✅ Einverständnis erhalten! Registrierung wird gestartet...",
 

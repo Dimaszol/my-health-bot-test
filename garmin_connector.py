@@ -141,16 +141,16 @@ class GarminConnector:
             api = Garmin(email, password)
             await asyncio.get_event_loop().run_in_executor(None, api.login)
             profile = await asyncio.get_event_loop().run_in_executor(None, api.get_full_name)
-            return True, f"Подключение успешно! Пользователь: {profile}"
+            return True, f"User: {profile}"
             
         except Exception as e:
             error_msg = str(e).lower()
             if "username" in error_msg or "password" in error_msg or "credentials" in error_msg:
-                return False, "Неверный email или пароль"
+                return False, "Invalid email or password"
             elif "rate limit" in error_msg:
                 return False, "Превышен лимит запросов. Попробуйте позже"
             else:
-                return False, f"Ошибка подключения: {str(e)}"
+                return False, f"Connection error: {str(e)}"
 
     async def disconnect_garmin(self, user_id: int) -> bool:
         """Отключить Garmin для пользователя"""
