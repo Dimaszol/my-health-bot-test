@@ -1,231 +1,183 @@
 {% extends "base.html" %}
 
-{% block title %}Личный кабинет - Медицинский Ассистент{% endblock %}
+{% block title %}Личный кабинет - Medical Assistant{% endblock %}
 
 {% block content %}
-<!-- 📊 ЛИЧНЫЙ КАБИНЕТ -->
 
 <!-- 👋 ПРИВЕТСТВИЕ -->
-<div style="margin-bottom: 2rem;">
-    <h1 style="color: #667eea; margin-bottom: 0.5rem;">
-        Добро пожаловать, {{ user.name }}! 👋
+<div style="margin-bottom: 3rem;">
+    <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem;">
+        Добро пожаловать, <span class="gradient-text">{{ user.name }}</span>! 👋
     </h1>
-    <p style="color: #666; font-size: 1.1rem;">
+    <p style="color: var(--text-secondary); font-size: 1.1rem;">
         Ваш персональный медицинский кабинет
     </p>
 </div>
 
-<!-- 📈 СТАТИСТИКА -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+<!-- 📈 СТАТИСТИКА (Карточки) -->
+<div class="card-grid" style="margin-bottom: 3rem;">
     <!-- Документы -->
-    <div class="card" style="text-align: center;">
-        <div style="font-size: 3rem; margin-bottom: 0.5rem;">📄</div>
-        <h3 style="font-size: 2rem; margin-bottom: 0.5rem;">{{ stats.total_documents }}</h3>
-        <p style="color: #666;">Загружено документов</p>
-        <p style="color: #999; font-size: 0.9rem; margin-top: 0.5rem;">
-            Осталось: {{ stats.documents_left }}
+    <div class="stat-card">
+        <div class="card-icon">📄</div>
+        <div class="stat-number">{{ stats.total_documents }}</div>
+        <p style="color: var(--text-secondary); font-weight: 600;">Загружено документов</p>
+        <p style="color: var(--text-light); font-size: 0.9rem; margin-top: 0.5rem;">
+            Осталось: <strong style="color: var(--primary-color);">{{ stats.documents_left }}</strong>
         </p>
+        <a href="/dashboard/documents" class="btn btn-outline" style="margin-top: 1rem; padding: 8px 20px; font-size: 0.9rem;">
+            Загрузить документ
+        </a>
     </div>
     
     <!-- Сообщения -->
-    <div class="card" style="text-align: center;">
-        <div style="font-size: 3rem; margin-bottom: 0.5rem;">💬</div>
-        <h3 style="font-size: 2rem; margin-bottom: 0.5rem;">{{ stats.total_messages }}</h3>
-        <p style="color: #666;">Сообщений с ИИ</p>
-        <p style="color: #999; font-size: 0.9rem; margin-top: 0.5rem;">
-            Осталось запросов: {{ stats.queries_left }}
+    <div class="stat-card">
+        <div class="card-icon">💬</div>
+        <div class="stat-number">{{ stats.total_messages }}</div>
+        <p style="color: var(--text-secondary); font-weight: 600;">Сообщений с AI</p>
+        <p style="color: var(--text-light); font-size: 0.9rem; margin-top: 0.5rem;">
+            Осталось запросов: <strong style="color: var(--primary-color);">{{ stats.queries_left }}</strong>
         </p>
+        <a href="/dashboard/chat" class="btn btn-outline" style="margin-top: 1rem; padding: 8px 20px; font-size: 0.9rem;">
+            Открыть чат
+        </a>
     </div>
     
-    <!-- Статус -->
-    <div class="card" style="text-align: center;">
-        <div style="font-size: 3rem; margin-bottom: 0.5rem;">✨</div>
-        <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Free Plan</h3>
-        <p style="color: #666;">Текущий тариф</p>
-        <a href="#" style="color: #667eea; font-size: 0.9rem; margin-top: 0.5rem; display: inline-block;">
-            Улучшить →
+    <!-- Тариф -->
+    <div class="stat-card" style="background: var(--gradient-hero); border: 2px solid var(--primary-color);">
+        <div class="card-icon">✨</div>
+        <h3 style="font-size: 1.5rem; margin: 1rem 0;">Free Plan</h3>
+        <p style="color: var(--text-secondary); font-weight: 600;">Текущий тариф</p>
+        <a href="#" class="btn" style="margin-top: 1rem; padding: 8px 20px; font-size: 0.9rem;">
+            Улучшить план →
         </a>
     </div>
 </div>
 
-<!-- 🚀 БЫСТРЫЕ ДЕЙСТВИЯ -->
+<!-- 📊 БЫСТРЫЕ ДЕЙСТВИЯ -->
 <div style="margin-bottom: 3rem;">
-    <h2 style="color: #333; margin-bottom: 1.5rem;">
-        🚀 Быстрые действия
+    <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--text-primary);">
+        Быстрые действия
     </h2>
     
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
-        <!-- Чат -->
-        <a href="/dashboard/chat" style="text-decoration: none;">
-            <div class="card" style="cursor: pointer; transition: all 0.3s;">
-                <div style="font-size: 2.5rem; margin-bottom: 1rem;">💬</div>
-                <h3>Чат с ИИ-ассистентом</h3>
-                <p style="color: #666;">
-                    Задайте вопрос о вашем здоровье и получите ответ на основе ваших документов
-                </p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+        <!-- Чат с AI -->
+        <a href="/dashboard/chat" class="card" style="text-decoration: none; cursor: pointer; transition: all 0.3s;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="font-size: 2.5rem;">💬</div>
+                <div>
+                    <h4 style="color: var(--text-primary); margin-bottom: 0.3rem;">Задать вопрос AI</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">Получите консультацию</p>
+                </div>
             </div>
         </a>
         
-        <!-- Загрузка -->
-        <a href="/dashboard/documents" style="text-decoration: none;">
-            <div class="card" style="cursor: pointer; transition: all 0.3s;">
-                <div style="font-size: 2.5rem; margin-bottom: 1rem;">📤</div>
-                <h3>Загрузить документ</h3>
-                <p style="color: #666;">
-                    Загрузите анализы, снимки или заключения врачей
-                </p>
+        <!-- Загрузить документ -->
+        <a href="/dashboard/documents" class="card" style="text-decoration: none; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="font-size: 2.5rem;">📤</div>
+                <div>
+                    <h4 style="color: var(--text-primary); margin-bottom: 0.3rem;">Загрузить документ</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">Анализы, снимки, выписки</p>
+                </div>
             </div>
         </a>
         
         <!-- Профиль -->
-        <a href="/dashboard/profile" style="text-decoration: none;">
-            <div class="card" style="cursor: pointer; transition: all 0.3s;">
-                <div style="font-size: 2.5rem; margin-bottom: 1rem;">👤</div>
-                <h3>Мой профиль</h3>
-                <p style="color: #666;">
-                    Просмотрите и обновите вашу медицинскую анкету
-                </p>
+        <a href="/dashboard/profile" class="card" style="text-decoration: none; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="font-size: 2.5rem;">👤</div>
+                <div>
+                    <h4 style="color: var(--text-primary); margin-bottom: 0.3rem;">Медицинская анкета</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">Обновить данные</p>
+                </div>
             </div>
         </a>
     </div>
 </div>
 
-<!-- 📄 ПОСЛЕДНИЕ ДОКУМЕНТЫ -->
-{% if documents %}
-<div style="margin-bottom: 3rem;">
-    <h2 style="color: #333; margin-bottom: 1.5rem;">
-        📄 Последние документы
-    </h2>
-    
-    <div style="background: #f8f9fa; border-radius: 10px; overflow: hidden;">
-        {% for doc in documents[:5] %}
-        <div style="padding: 1rem 1.5rem; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h4 style="color: #333; margin-bottom: 0.3rem;">{{ doc.title }}</h4>
-                <p style="color: #999; font-size: 0.9rem;">
-                    {% if doc.uploaded_at %}
-                        Загружено: {{ doc.uploaded_at.strftime('%d.%m.%Y') }}
-                    {% else %}
-                        Загружено: Неизвестно
-                    {% endif %}
-                </p>
-            </div>
-            <div>
-                <span style="background: #667eea; color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem;">
-                    {{ doc.file_type }}
-                </span>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    
-    <div style="text-align: center; margin-top: 1rem;">
-        <a href="/dashboard/documents" class="btn">
-            Посмотреть все документы →
-        </a>
-    </div>
-</div>
-{% else %}
-<div class="alert alert-info">
-    <strong>💡 Совет:</strong> У вас пока нет загруженных документов. 
-    <a href="/dashboard/documents" style="color: #0c5460; text-decoration: underline;">
-        Загрузите первый документ
-    </a>
-</div>
-{% endif %}
-
-<!-- 💬 ПОСЛЕДНИЕ СООБЩЕНИЯ -->
-{% if chat_history %}
+<!-- 📜 ПОСЛЕДНЯЯ АКТИВНОСТЬ -->
 <div>
-    <h2 style="color: #333; margin-bottom: 1.5rem;">
-        💬 Последняя беседа с ИИ
+    <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--text-primary);">
+        Последняя активность
     </h2>
     
-    <div class="chat-container">
-        {% for msg in chat_history[:5] %}
-        <div class="chat-message {% if msg.role == 'user' %}user-msg{% else %}ai-msg{% endif %}">
-            <div class="chat-bubble">
-                {{ msg.message }}
+    {% if recent_chats %}
+        <div class="card">
+            <h3 style="margin-bottom: 1rem;">💬 Недавние вопросы</h3>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                {% for chat in recent_chats %}
+                <div style="padding: 1rem; background: var(--background-light); border-radius: var(--radius-sm); border-left: 3px solid var(--primary-color);">
+                    <p style="color: var(--text-primary); margin-bottom: 0.5rem;">
+                        <strong>Вы:</strong> {{ chat.message[:100] }}{% if chat.message|length > 100 %}...{% endif %}
+                    </p>
+                    <p style="color: var(--text-light); font-size: 0.85rem;">
+                        {{ chat.timestamp.strftime('%d.%m.%Y в %H:%M') if chat.timestamp else 'Недавно' }}
+                    </p>
+                </div>
+                {% endfor %}
             </div>
-            <div class="chat-time">
-                {% if msg.timestamp %}
-                    {{ msg.timestamp.strftime('%H:%M') }}
-                {% endif %}
+            <a href="/dashboard/chat" style="display: inline-block; margin-top: 1rem; color: var(--primary-color); font-weight: 600; text-decoration: none;">
+                Перейти в чат →
+            </a>
+        </div>
+    {% else %}
+        <!-- Пустое состояние -->
+        <div class="alert alert-info">
+            <div style="text-align: center; padding: 2rem;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">🤖</div>
+                <h3 style="margin-bottom: 0.5rem;">Начните общение с AI</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    Задайте первый вопрос о вашем здоровье
+                </p>
+                <a href="/dashboard/chat" class="btn">
+                    Открыть чат 💬
+                </a>
             </div>
         </div>
-        {% endfor %}
-    </div>
-    
-    <div style="text-align: center; margin-top: 1rem;">
-        <a href="/dashboard/chat" class="btn">
-            Продолжить беседу →
-        </a>
+    {% endif %}
+</div>
+
+<!-- 💡 ПОДСКАЗКИ -->
+<div style="margin-top: 3rem;">
+    <div class="alert alert-warning">
+        <h4 style="margin-bottom: 0.5rem;">💡 Совет дня</h4>
+        <p>
+            Загрузите все ваши медицинские документы, чтобы AI мог давать более точные рекомендации на основе полной картины вашего здоровья.
+        </p>
     </div>
 </div>
-{% else %}
-<div class="alert alert-info">
-    <strong>👋 Привет!</strong> Начните беседу с ИИ-ассистентом. 
-    <a href="/dashboard/chat" style="color: #0c5460; text-decoration: underline;">
-        Задать первый вопрос
-    </a>
-</div>
-{% endif %}
 
 {% endblock %}
 
 {% block extra_styles %}
 <style>
-    /* Анимация карточек при наведении */
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    /* Дополнительные анимации для dashboard */
+    .stat-card {
+        animation: fadeInUp 0.5s ease;
+        animation-fill-mode: both;
     }
     
-    /* Контейнер чата */
-    .chat-container {
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 1.5rem;
-        max-height: 400px;
-        overflow-y: auto;
+    .stat-card:nth-child(1) {
+        animation-delay: 0.1s;
     }
     
-    /* Стили для сообщений в чате */
-    .chat-message {
-        margin-bottom: 1rem;
+    .stat-card:nth-child(2) {
+        animation-delay: 0.2s;
     }
     
-    .user-msg {
-        text-align: right;
+    .stat-card:nth-child(3) {
+        animation-delay: 0.3s;
     }
     
-    .ai-msg {
-        text-align: left;
-    }
-    
-    .chat-bubble {
-        display: inline-block;
-        padding: 0.8rem 1.2rem;
-        border-radius: 15px;
-        max-width: 70%;
-        word-wrap: break-word;
-    }
-    
-    .user-msg .chat-bubble {
-        background: #667eea;
-        color: white;
-    }
-    
-    .ai-msg .chat-bubble {
-        background: white;
-        color: #333;
-        border: 1px solid #e0e0e0;
-    }
-    
-    .chat-time {
-        font-size: 0.75rem;
-        color: #999;
-        margin-top: 0.3rem;
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>
 {% endblock %}
