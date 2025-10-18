@@ -129,8 +129,19 @@ def chat_message():
         # Логируем (БЕЗ персональных данных - только user_id)
         print(f"💬 Новое сообщение от user_id={user_id}")
         
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        # ✅ ИСПРАВЛЕНО: Используем СУЩЕСТВУЮЩИЙ event loop из app.py
+        # Импортируем глобальный loop из главного модуля
+        from flask import current_app
+        loop = current_app.extensions.get('loop')
+        
+        # Если loop не найден, используем текущий
+        if not loop:
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                # Если нет текущего loop, создаём новый (только в крайнем случае)
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
         
         # 1. Сохраняем сообщение пользователя
         loop.run_until_complete(
@@ -140,17 +151,17 @@ def chat_message():
         # 2. Получаем профиль для контекста
         profile = loop.run_until_complete(get_user_profile(user_id))
         
-        # 3. Генерируем ответ ИИ (используем функцию из gpt.py!)
-        # ask_doctor - основная функция для общения с GPT
-        # Нужны параметры: context_text, user_question, lang, user_id
-        
-        # Получаем язык пользователя
+        # 3. Получаем язык пользователя
         from db_postgresql import get_user_language
         lang = loop.run_until_complete(get_user_language(user_id))
         
-        # Формируем контекст из профиля
-        context_text = f"Профиль пользователя: {profile}"
+        # 4. Формируем контекст из профиля
+        if profile:
+            context_text = f"Профиль пользователя: {profile}"
+        else:
+            context_text = ""
         
+        # 5. Генерируем ответ ИИ
         ai_response = loop.run_until_complete(
             ask_doctor(
                 context_text=context_text,
@@ -161,14 +172,14 @@ def chat_message():
             )
         )
         
-        # 4. Сохраняем ответ ИИ
+        # 6. Сохраняем ответ ИИ
         loop.run_until_complete(
             save_message(user_id, 'assistant', ai_response)
         )
         
         print(f"✅ Ответ отправлен user_id={user_id}")
         
-        # 5. Возвращаем ответ
+        # 7. Возвращаем ответ
         return jsonify({
             'success': True,
             'response': ai_response,
@@ -177,11 +188,13 @@ def chat_message():
         
     except Exception as e:
         print(f"❌ Ошибка в /api/chat: {e}")
+        import traceback
+        traceback.print_exc()  # ✅ Печатаем полный traceback для отладки
+        
         return jsonify({
             'success': False,
             'error': 'Произошла ошибка при обработке сообщения'
         }), 500
-
 
 # 📤 API: Загрузка документа
 @api_bp.route('/upload', methods=['POST'])

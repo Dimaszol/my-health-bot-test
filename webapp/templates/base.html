@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ lang }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Медицинский Ассистент - Ваш AI-помощник здоровья{% endblock %}</title>
+    <title>{% block title %}{{ t('site_title', lang) }} - {{ t('hero_subtitle', lang) }}{% endblock %}</title>
     
     <!-- 🎨 СТИЛИ -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- 📱 META ТЕГИ -->
-    <meta name="description" content="Медицинский AI-ассистент для анализа документов и консультаций">
+    <meta name="description" content="{{ t('hero_subtitle', lang) }}">
     <meta name="keywords" content="медицина, AI, здоровье, телемедицина, консультация">
     <meta name="author" content="Medical Assistant">
     
@@ -39,17 +39,49 @@
                     <ul>
                         {% if session.get('user_id') %}
                             <!-- 👤 Меню для авторизованных пользователей -->
-                            <li><a href="/dashboard">📊 Кабинет</a></li>
-                            <li><a href="/dashboard/chat">💬 Чат с AI</a></li>
-                            <li><a href="/dashboard/documents">📄 Документы</a></li>
-                            <li><a href="/dashboard/profile">👤 Профиль</a></li>
-                            <li><a href="/logout" class="btn btn-secondary">Выход</a></li>
+                            <li><a href="/dashboard">📊 {{ t('menu_dashboard', lang) }}</a></li>
+                            <li><a href="/dashboard/chat">💬 {{ t('menu_chat', lang) }}</a></li>
+                            <li><a href="/dashboard/documents">📄 {{ t('menu_documents', lang) }}</a></li>
+                            <li><a href="/dashboard/profile">👤 {{ t('menu_profile', lang) }}</a></li>
+                            
+                            <!-- 🌍 Переключатель языка -->
+                            <li class="language-selector">
+                                <button class="lang-btn" onclick="toggleLangDropdown()" type="button">
+                                    🌐 <span>{{ t('language_selector', lang) }}</span>
+                                </button>
+                                <div class="lang-dropdown" id="langDropdown">
+                                    {% for language in supported_languages %}
+                                    <a href="/set-language/{{ language.code }}" 
+                                       class="lang-option {% if lang == language.code %}active{% endif %}">
+                                        {{ language.flag }} {{ language.name }}
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </li>
+                            
+                            <li><a href="/logout" class="btn btn-secondary">{{ t('btn_logout', lang) }}</a></li>
                         {% else %}
                             <!-- 🏠 Меню для гостей -->
-                            <li><a href="/">Главная</a></li>
-                            <li><a href="/#features">Возможности</a></li>
-                            <li><a href="/#security">Безопасность</a></li>
-                            <li><a href="/login" class="btn">Войти через Google</a></li>
+                            <li><a href="/">{{ t('menu_home', lang) }}</a></li>
+                            <li><a href="/#features">{{ t('menu_features', lang) }}</a></li>
+                            <li><a href="/#security">{{ t('menu_security', lang) }}</a></li>
+                            
+                            <!-- 🌍 Переключатель языка для гостей -->
+                            <li class="language-selector">
+                                <button class="lang-btn" onclick="toggleLangDropdown()" type="button">
+                                    🌐 <span>{{ t('language_selector', lang) }}</span>
+                                </button>
+                                <div class="lang-dropdown" id="langDropdown">
+                                    {% for language in supported_languages %}
+                                    <a href="/set-language/{{ language.code }}" 
+                                       class="lang-option {% if lang == language.code %}active{% endif %}">
+                                        {{ language.flag }} {{ language.name }}
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </li>
+                            
+                            <li><a href="/login" class="btn">{{ t('btn_login_google', lang) }}</a></li>
                         {% endif %}
                     </ul>
                 </nav>
@@ -84,36 +116,82 @@
                 <div class="footer-section">
                     <h4>🏥 Medical Assistant</h4>
                     <p style="color: rgba(255,255,255,0.7); line-height: 1.6;">
-                        Ваш персональный AI-помощник для анализа медицинских документов и консультаций
+                        {{ t('hero_subtitle', lang) }}
                     </p>
                 </div>
                 
                 <!-- Быстрые ссылки -->
                 <div class="footer-section">
-                    <h4>Быстрые ссылки</h4>
+                    <h4>{{ t('menu_home', lang) }}</h4>
                     <ul>
-                        <li><a href="/">Главная</a></li>
-                        <li><a href="/dashboard">Кабинет</a></li>
-                        <li><a href="/dashboard/chat">Чат с AI</a></li>
-                        <li><a href="/dashboard/documents">Документы</a></li>
+                        <li><a href="/">{{ t('menu_home', lang) }}</a></li>
+                        <li><a href="/dashboard">{{ t('menu_dashboard', lang) }}</a></li>
+                        <li><a href="/dashboard/chat">{{ t('menu_chat', lang) }}</a></li>
+                        <li><a href="/dashboard/documents">{{ t('menu_documents', lang) }}</a></li>
                     </ul>
                 </div>
                 
                 <!-- Поддержка -->
                 <div class="footer-section">
-                    <h4>Поддержка</h4>
+                    <h4>{{ t('menu_features', lang) }}</h4>
                     <ul>
                         <li><a href="#">FAQ</a></li>
-                        <li><a href="#">Справка</a></li>
-                        <li><a href="#">Контакты</a></li>
-                        <li><a href="#">Политика конфиденциальности</a></li>
+                        <li><a href="#">{{ t('menu_profile', lang) }}</a></li>
+                        <li><a href="#">{{ t('menu_security', lang) }}</a></li>
                     </ul>
                 </div>
                 
                 <!-- Технологии -->
                 <div class="footer-section">
-                    <h4>Технологии</h4>
+                    <h4>{{ t('footer_powered', lang) }}</h4>
                     <ul>
                         <li>🤖 OpenAI GPT-4</li>
                         <li>🗄️ PostgreSQL + pgvector</li>
-                        <li>🔒 SOC 2, HIPAA, GDPR
+                        <li>🔒 SOC 2, HIPAA, GDPR</li>
+                        <li>🐍 Python + Flask</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Copyright -->
+            <div style="text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                <p style="color: rgba(255,255,255,0.5);">
+                    © 2025 Medical Assistant. {{ t('footer_text', lang) }}
+                </p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- 🎯 JAVASCRIPT для переключателя языка -->
+    <script>
+        // Показать/скрыть выпадающее меню языков
+        function toggleLangDropdown() {
+            const dropdown = document.getElementById('langDropdown');
+            dropdown.classList.toggle('show');
+        }
+        
+        // Закрыть меню при клике вне его
+        window.addEventListener('click', function(event) {
+            // Проверяем, что клик был НЕ по кнопке языка
+            if (!event.target.matches('.lang-btn') && !event.target.closest('.lang-btn')) {
+                const dropdown = document.getElementById('langDropdown');
+                if (dropdown && dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            }
+        });
+        
+        // Закрыть меню при нажатии Escape
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const dropdown = document.getElementById('langDropdown');
+                if (dropdown && dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            }
+        });
+    </script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

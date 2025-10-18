@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Medical Assistant - Ваш AI-помощник здоровья{% endblock %}
+{% block title %}{{ t('site_title', lang) }} - {{ t('hero_subtitle', lang) }}{% endblock %}
 
 {% block content %}
 
@@ -11,20 +11,20 @@
             <!-- Текстовая часть -->
             <div class="hero-text">
                 <h1>
-                    Ваша <span class="highlight">AI-платформа</span><br>
-                    для управления здоровьем
+                    {{ t('hero_main_title_part1', lang) }} <span class="highlight">{{ t('hero_main_title_highlight', lang) }}</span><br>
+                    {{ t('hero_main_title_part2', lang) }}
                 </h1>
                 
                 <p>
-                    Для пациентов, врачей и медицинских компаний: Medical Assistant предоставляет надежные AI-инструменты там, где они нужны больше всего.
+                    {{ t('hero_description', lang) }}
                 </p>
                 
                 <div class="hero-buttons">
                     <a href="/login" class="btn btn-large">
-                        🚀 Попробовать бесплатно
+                        🚀 {{ t('btn_try_free', lang) }}
                     </a>
                     <a href="#features" class="btn btn-outline btn-large">
-                        Узнать больше
+                        {{ t('btn_learn_more', lang) }}
                     </a>
                 </div>
                 
@@ -32,8 +32,8 @@
                 <div class="trust-badge">
                     <div class="trust-stars">★★★★★</div>
                     <div>
-                        <div class="trust-rating">Отлично</div>
-                        <div style="font-size: 0.85rem; color: #718096;">4.8 из 5 на Trustpilot</div>
+                        <div class="trust-rating">{{ t('trustpilot_excellent', lang) }}</div>
+                        <div style="font-size: 0.85rem; color: #718096;">{{ t('trustpilot_rating', lang) }}</div>
                     </div>
                 </div>
             </div>
@@ -74,7 +74,7 @@
                     
                     <!-- Кнопки -->
                     <rect x="205" y="280" width="90" height="30" rx="15" fill="url(#grad2)"/>
-                    <text x="250" y="300" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">AI Чат</text>
+                    <text x="250" y="300" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">{{ t('menu_chat', lang) }}</text>
                     
                     <!-- Декоративные элементы -->
                     <circle cx="380" cy="150" r="30" fill="url(#grad2)" opacity="0.2"/>
@@ -96,10 +96,10 @@
     <div class="container">
         <div class="text-center mb-4">
             <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-primary);">
-                Что вы можете делать
+                {{ t('section_features', lang) }}
             </h2>
             <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 700px; margin: 0 auto;">
-                Мощные AI-инструменты для управления вашим здоровьем
+                {{ t('features_subtitle', lang) }}
             </p>
         </div>
         
@@ -107,42 +107,42 @@
             <!-- Карточка 1: Загрузка документов -->
             <div class="card">
                 <div class="card-icon">📄</div>
-                <h3>Анализ документов</h3>
+                <h3>{{ t('feature_upload_title', lang) }}</h3>
                 <p style="color: var(--text-secondary); line-height: 1.7;">
-                    Загружайте анализы, снимки, заключения врачей в форматах PDF, DOCX, изображения. AI автоматически извлечет все важные данные.
+                    {{ t('feature_upload_text', lang) }}
                 </p>
                 <ul style="margin-top: 1rem; color: var(--text-secondary);">
-                    <li>✓ Результаты анализов крови, мочи</li>
-                    <li>✓ Рентген, МРТ, УЗИ снимки</li>
-                    <li>✓ Выписки и заключения врачей</li>
+                    <li>✓ {{ t('feature_upload_list1', lang) }}</li>
+                    <li>✓ {{ t('feature_upload_list2', lang) }}</li>
+                    <li>✓ {{ t('feature_upload_list3', lang) }}</li>
                 </ul>
             </div>
             
             <!-- Карточка 2: AI-консультант -->
             <div class="card">
                 <div class="card-icon">🤖</div>
-                <h3>AI-консультант 24/7</h3>
+                <h3>{{ t('feature_ai_title_247', lang) }}</h3>
                 <p style="color: var(--text-secondary); line-height: 1.7;">
-                    Задавайте вопросы о вашем здоровье и получайте ответы на основе ваших документов. GPT-4 анализирует вашу историю.
+                    {{ t('feature_ai_text', lang) }}
                 </p>
                 <ul style="margin-top: 1rem; color: var(--text-secondary);">
-                    <li>✓ Мгновенные ответы на вопросы</li>
-                    <li>✓ Анализ на основе ваших данных</li>
-                    <li>✓ Понятные объяснения терминов</li>
+                    <li>✓ {{ t('feature_ai_list1', lang) }}</li>
+                    <li>✓ {{ t('feature_ai_list2', lang) }}</li>
+                    <li>✓ {{ t('feature_ai_list3', lang) }}</li>
                 </ul>
             </div>
             
             <!-- Карточка 3: История здоровья -->
             <div class="card">
                 <div class="card-icon">📊</div>
-                <h3>Медицинская карта</h3>
+                <h3>{{ t('feature_history_title', lang) }}</h3>
                 <p style="color: var(--text-secondary); line-height: 1.7;">
-                    Вся ваша медицинская информация в одном месте, доступна в любое время. Отслеживайте динамику показателей.
+                    {{ t('feature_history_text', lang) }}
                 </p>
                 <ul style="margin-top: 1rem; color: var(--text-secondary);">
-                    <li>✓ Хронология всех документов</li>
-                    <li>✓ Графики изменения анализов</li>
-                    <li>✓ Экспорт данных для врача</li>
+                    <li>✓ {{ t('feature_history_list1', lang) }}</li>
+                    <li>✓ {{ t('feature_history_list2', lang) }}</li>
+                    <li>✓ {{ t('feature_history_list3', lang) }}</li>
                 </ul>
             </div>
         </div>
@@ -154,10 +154,10 @@
     <div class="container">
         <h3>
             <span>🔒</span>
-            Ваши данные в полной безопасности
+            {{ t('security_title', lang) }}
         </h3>
         <p style="color: var(--text-secondary); max-width: 800px; margin: 1rem auto; font-size: 1.1rem;">
-            Мы используем шифрование данных, безопасную авторизацию через Google и храним информацию на защищённых серверах. Ваша медицинская информация доступна только вам.
+            {{ t('security_description', lang) }}
         </p>
         
         <!-- Бейджи безопасности -->
@@ -177,7 +177,7 @@
         </div>
         
         <p style="margin-top: 2rem; color: var(--text-light); font-size: 0.95rem;">
-            <strong>Privacy Note:</strong> Ваши данные конфиденциальны и защищены стандартами SOC 2, HIPAA и GDPR.
+            <strong>{{ t('security_note_title', lang) }}:</strong> {{ t('security_note_text', lang) }}
         </p>
     </div>
 </section>
@@ -187,7 +187,7 @@
     <div class="container">
         <div class="text-center mb-4">
             <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem;">
-                Нам доверяют тысячи пользователей
+                {{ t('stats_trust_title', lang) }}
             </h2>
         </div>
         
@@ -195,19 +195,19 @@
             <div class="stat-card">
                 <div style="font-size: 3rem; margin-bottom: 0.5rem;">👥</div>
                 <div class="stat-number">10,000+</div>
-                <p style="color: var(--text-secondary);">Активных пользователей</p>
+                <p style="color: var(--text-secondary);">{{ t('stats_active_users', lang) }}</p>
             </div>
             
             <div class="stat-card">
                 <div style="font-size: 3rem; margin-bottom: 0.5rem;">📄</div>
                 <div class="stat-number">50,000+</div>
-                <p style="color: var(--text-secondary);">Проанализированных документов</p>
+                <p style="color: var(--text-secondary);">{{ t('stats_documents_analyzed', lang) }}</p>
             </div>
             
             <div class="stat-card">
                 <div style="font-size: 3rem; margin-bottom: 0.5rem;">💬</div>
                 <div class="stat-number">100,000+</div>
-                <p style="color: var(--text-secondary);">AI-консультаций</p>
+                <p style="color: var(--text-secondary);">{{ t('stats_ai_consultations', lang) }}</p>
             </div>
         </div>
     </div>
@@ -217,18 +217,18 @@
 <section style="background: var(--gradient-hero); padding: 4rem 2rem; border-radius: var(--radius-lg); margin: 4rem 0; text-align: center;">
     <div class="container">
         <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-primary);">
-            Готовы начать заботиться о своём здоровье?
+            {{ t('cta_title', lang) }}
         </h2>
         <p style="font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">
-            Присоединяйтесь к тысячам пользователей, которые уже управляют своим здоровьем с помощью AI
+            {{ t('cta_description', lang) }}
         </p>
         
         <a href="/login" class="btn btn-large glow">
-            Начать бесплатно 🚀
+            {{ t('cta_button', lang) }}
         </a>
         
         <p style="margin-top: 1rem; color: var(--text-light); font-size: 0.9rem;">
-            Регистрация занимает всего 30 секунд • Не требуется кредитная карта
+            {{ t('cta_note', lang) }}
         </p>
     </div>
 </section>

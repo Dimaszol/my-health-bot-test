@@ -1,8 +1,12 @@
 # webapp/translations.py
-# 🌍 Система многоязычности для веб-приложения
+# 🌍 Полная система многоязычности для веб-приложения
 
 """
-Простая система переводов для Flask веб-приложения.
+Система переводов для Flask веб-приложения с поддержкой 4 языков:
+- Русский (ru) 🇷🇺
+- Украинский (uk) 🇺🇦
+- Английский (en) 🇬🇧
+- Немецкий (de) 🇩🇪
 
 Использование в шаблонах:
     {{ t('welcome', lang) }}
@@ -19,37 +23,138 @@ TRANSLATIONS = {
     'site_title': {
         'ru': 'Медицинский Ассистент',
         'en': 'Medical Assistant',
-        'uk': 'Медичний Асистент'
+        'uk': 'Медичний Асистент',
+        'de': 'Medizinischer Assistent'
     },
     'hero_title': {
         'ru': 'Ваш личный медицинский ассистент',
         'en': 'Your Personal Medical Assistant',
-        'uk': 'Ваш особистий медичний асистент'
+        'uk': 'Ваш особистий медичний асистент',
+        'de': 'Ihr persönlicher medizinischer Assistent'
     },
     'hero_subtitle': {
         'ru': 'Загружайте медицинские документы, общайтесь с ИИ-помощником и храните всю вашу медицинскую историю в одном месте',
         'en': 'Upload medical documents, chat with AI assistant and store all your medical history in one place',
-        'uk': 'Завантажуйте медичні документи, спілкуйтеся з AI-помічником та зберігайте всю вашу медичну історію в одному місці'
+        'uk': 'Завантажуйте медичні документи, спілкуйтеся з AI-помічником та зберігайте всю вашу медичну історію в одному місці',
+        'de': 'Laden Sie medizinische Dokumente hoch, chatten Sie mit dem KI-Assistenten und speichern Sie Ihre gesamte Krankengeschichte an einem Ort'
+    },
+    'hero_main_title_part1': {
+        'ru': 'Ваша',
+        'en': 'Your',
+        'uk': 'Ваша',
+        'de': 'Ihre'
+    },
+    'hero_main_title_highlight': {
+        'ru': 'AI-платформа',
+        'en': 'AI-platform',
+        'uk': 'AI-платформа',
+        'de': 'KI-Plattform'
+    },
+    'hero_main_title_part2': {
+        'ru': 'для управления здоровьем',
+        'en': 'for health management',
+        'uk': 'для управління здоров\'ям',
+        'de': 'für Gesundheitsmanagement'
+    },
+    'hero_description': {
+        'ru': 'Для пациентов, врачей и медицинских компаний: Medical Assistant предоставляет надежные AI-инструменты там, где они нужны больше всего.',
+        'en': 'For patients, doctors and medical companies: Medical Assistant provides reliable AI tools where they are needed most.',
+        'uk': 'Для пацієнтів, лікарів та медичних компаній: Medical Assistant надає надійні AI-інструменти там, де вони потрібні найбільше.',
+        'de': 'Für Patienten, Ärzte und medizinische Unternehmen: Medical Assistant bietet zuverlässige KI-Tools dort, wo sie am meisten benötigt werden.'
+    },
+    'btn_try_free': {
+        'ru': 'Попробовать бесплатно',
+        'en': 'Try for free',
+        'uk': 'Спробувати безкоштовно',
+        'de': 'Kostenlos testen'
+    },
+    'btn_learn_more': {
+        'ru': 'Узнать больше',
+        'en': 'Learn more',
+        'uk': 'Дізнатися більше',
+        'de': 'Mehr erfahren'
+    },
+    'trustpilot_excellent': {
+        'ru': 'Отлично',
+        'en': 'Excellent',
+        'uk': 'Відмінно',
+        'de': 'Ausgezeichnet'
+    },
+    'trustpilot_rating': {
+        'ru': '4.8 из 5 на Trustpilot',
+        'en': '4.8 out of 5 on Trustpilot',
+        'uk': '4.8 з 5 на Trustpilot',
+        'de': '4.8 von 5 auf Trustpilot'
     },
     'btn_get_started': {
         'ru': 'Начать работу',
         'en': 'Get Started',
-        'uk': 'Почати роботу'
+        'uk': 'Почати роботу',
+        'de': 'Jetzt starten'
     },
     'btn_login': {
         'ru': 'Войти',
         'en': 'Login',
-        'uk': 'Увійти'
+        'uk': 'Увійти',
+        'de': 'Anmelden'
     },
     'btn_login_google': {
         'ru': 'Войти через Google',
         'en': 'Login with Google',
-        'uk': 'Увійти через Google'
+        'uk': 'Увійти через Google',
+        'de': 'Mit Google anmelden'
     },
     'btn_logout': {
         'ru': 'Выход',
         'en': 'Logout',
-        'uk': 'Вихід'
+        'uk': 'Вихід',
+        'de': 'Abmelden'
+    },
+    
+    # ============================================
+    # 📊 МЕНЮ НАВИГАЦИИ
+    # ============================================
+    'menu_home': {
+        'ru': 'Главная',
+        'en': 'Home',
+        'uk': 'Головна',
+        'de': 'Startseite'
+    },
+    'menu_dashboard': {
+        'ru': 'Кабинет',
+        'en': 'Dashboard',
+        'uk': 'Кабінет',
+        'de': 'Dashboard'
+    },
+    'menu_chat': {
+        'ru': 'Чат с AI',
+        'en': 'AI Chat',
+        'uk': 'Чат з AI',
+        'de': 'KI-Chat'
+    },
+    'menu_documents': {
+        'ru': 'Документы',
+        'en': 'Documents',
+        'uk': 'Документи',
+        'de': 'Dokumente'
+    },
+    'menu_profile': {
+        'ru': 'Профиль',
+        'en': 'Profile',
+        'uk': 'Профіль',
+        'de': 'Profil'
+    },
+    'menu_features': {
+        'ru': 'Возможности',
+        'en': 'Features',
+        'uk': 'Можливості',
+        'de': 'Funktionen'
+    },
+    'menu_security': {
+        'ru': 'Безопасность',
+        'en': 'Security',
+        'uk': 'Безпека',
+        'de': 'Sicherheit'
     },
     
     # ============================================
@@ -58,227 +163,760 @@ TRANSLATIONS = {
     'section_features': {
         'ru': 'Что вы можете делать',
         'en': 'What you can do',
-        'uk': 'Що ви можете робити'
+        'uk': 'Що ви можете робити',
+        'de': 'Was Sie tun können'
+    },
+    'features_subtitle': {
+        'ru': 'Мощные AI-инструменты для управления вашим здоровьем',
+        'en': 'Powerful AI tools for managing your health',
+        'uk': 'Потужні AI-інструменти для управління вашим здоров\'ям',
+        'de': 'Leistungsstarke KI-Tools zur Verwaltung Ihrer Gesundheit'
     },
     'feature_upload_title': {
-        'ru': 'Загрузка документов',
-        'en': 'Upload Documents',
-        'uk': 'Завантаження документів'
+        'ru': 'Анализ документов',
+        'en': 'Document Analysis',
+        'uk': 'Аналіз документів',
+        'de': 'Dokumentenanalyse'
     },
     'feature_upload_text': {
-        'ru': 'Загружайте анализы, снимки, заключения врачей в форматах PDF, DOCX, изображения',
-        'en': 'Upload tests, images, doctor reports in PDF, DOCX, image formats',
-        'uk': 'Завантажуйте аналізи, знімки, висновки лікарів у форматах PDF, DOCX, зображення'
+        'ru': 'Загружайте анализы, снимки, заключения врачей в форматах PDF, DOCX, изображения. AI автоматически извлечет все важные данные.',
+        'en': 'Upload tests, images, doctor reports in PDF, DOCX, image formats. AI will automatically extract all important data.',
+        'uk': 'Завантажуйте аналізи, знімки, висновки лікарів у форматах PDF, DOCX, зображення. AI автоматично витягне всі важливі дані.',
+        'de': 'Laden Sie Tests, Bilder, Arztberichte in PDF-, DOCX- und Bildformaten hoch. KI extrahiert automatisch alle wichtigen Daten.'
+    },
+    'feature_upload_list1': {
+        'ru': 'Результаты анализов крови, мочи',
+        'en': 'Blood and urine test results',
+        'uk': 'Результати аналізів крові, сечі',
+        'de': 'Blut- und Urintestergebnisse'
+    },
+    'feature_upload_list2': {
+        'ru': 'Рентген, МРТ, УЗИ снимки',
+        'en': 'X-ray, MRI, ultrasound images',
+        'uk': 'Рентген, МРТ, УЗД знімки',
+        'de': 'Röntgen-, MRT-, Ultraschallbilder'
+    },
+    'feature_upload_list3': {
+        'ru': 'Выписки и заключения врачей',
+        'en': 'Medical reports and conclusions',
+        'uk': 'Виписки та висновки лікарів',
+        'de': 'Arztberichte und Schlussfolgerungen'
     },
     'feature_ai_title': {
         'ru': 'ИИ-консультант',
         'en': 'AI Consultant',
-        'uk': 'AI-консультант'
+        'uk': 'AI-консультант',
+        'de': 'KI-Berater'
+    },
+    'feature_ai_title_247': {
+        'ru': 'AI-консультант 24/7',
+        'en': 'AI Consultant 24/7',
+        'uk': 'AI-консультант 24/7',
+        'de': 'KI-Berater 24/7'
     },
     'feature_ai_text': {
-        'ru': 'Задавайте вопросы о вашем здоровье и получайте ответы на основе ваших документов',
-        'en': 'Ask questions about your health and get answers based on your documents',
-        'uk': 'Задавайте питання про ваше здоров\'я та отримуйте відповіді на основі ваших документів'
+        'ru': 'Задавайте вопросы о вашем здоровье и получайте ответы на основе ваших документов. GPT-4 анализирует вашу историю.',
+        'en': 'Ask health questions and get answers based on your documents. GPT-4 analyzes your history.',
+        'uk': 'Ставте питання про ваше здоров\'я та отримуйте відповіді на основі ваших документів. GPT-4 аналізує вашу історію.',
+        'de': 'Stellen Sie Gesundheitsfragen und erhalten Sie Antworten basierend auf Ihren Dokumenten. GPT-4 analysiert Ihre Geschichte.'
+    },
+    'feature_ai_list1': {
+        'ru': 'Мгновенные ответы на вопросы',
+        'en': 'Instant answers to questions',
+        'uk': 'Миттєві відповіді на питання',
+        'de': 'Sofortige Antworten auf Fragen'
+    },
+    'feature_ai_list2': {
+        'ru': 'Анализ на основе ваших данных',
+        'en': 'Analysis based on your data',
+        'uk': 'Аналіз на основі ваших даних',
+        'de': 'Analyse basierend auf Ihren Daten'
+    },
+    'feature_ai_list3': {
+        'ru': 'Понятные объяснения терминов',
+        'en': 'Clear explanations of terms',
+        'uk': 'Зрозумілі пояснення термінів',
+        'de': 'Klare Erklärungen von Begriffen'
     },
     'feature_history_title': {
-        'ru': 'История здоровья',
-        'en': 'Health History',
-        'uk': 'Історія здоров\'я'
+        'ru': 'Медицинская карта',
+        'en': 'Medical Record',
+        'uk': 'Медична карта',
+        'de': 'Krankenakte'
     },
     'feature_history_text': {
-        'ru': 'Вся ваша медицинская информация в одном месте, доступна в любое время',
-        'en': 'All your medical information in one place, available anytime',
-        'uk': 'Вся ваша медична інформація в одному місці, доступна в будь-який час'
+        'ru': 'Вся ваша медицинская информация в одном месте, доступна в любое время. Отслеживайте динамику показателей.',
+        'en': 'All your medical information in one place, accessible anytime. Track metrics dynamics.',
+        'uk': 'Вся ваша медична інформація в одному місці, доступна в будь-який час. Відстежуйте динаміку показників.',
+        'de': 'Alle Ihre medizinischen Informationen an einem Ort, jederzeit zugänglich. Verfolgen Sie die Dynamik der Kennzahlen.'
+    },
+    'feature_history_list1': {
+        'ru': 'Хронология всех документов',
+        'en': 'Timeline of all documents',
+        'uk': 'Хронологія всіх документів',
+        'de': 'Zeitleiste aller Dokumente'
+    },
+    'feature_history_list2': {
+        'ru': 'Графики изменения анализов',
+        'en': 'Test results trend charts',
+        'uk': 'Графіки зміни аналізів',
+        'de': 'Trenddiagramme der Testergebnisse'
+    },
+    'feature_history_list3': {
+        'ru': 'Экспорт данных для врача',
+        'en': 'Data export for doctor',
+        'uk': 'Експорт даних для лікаря',
+        'de': 'Datenexport für Arzt'
     },
     
     # ============================================
     # 🔒 БЕЗОПАСНОСТЬ
     # ============================================
     'security_title': {
-        'ru': 'Ваши данные в безопасности',
-        'en': 'Your Data is Secure',
-        'uk': 'Ваші дані в безпеці'
+        'ru': 'Ваши данные в полной безопасности',
+        'en': 'Your data is completely secure',
+        'uk': 'Ваші дані в повній безпеці',
+        'de': 'Ihre Daten sind vollständig sicher'
     },
-    'security_text': {
+    'security_description': {
         'ru': 'Мы используем шифрование данных, безопасную авторизацию через Google и храним информацию на защищённых серверах. Ваша медицинская информация доступна только вам.',
         'en': 'We use data encryption, secure Google authentication and store information on protected servers. Your medical information is accessible only to you.',
-        'uk': 'Ми використовуємо шифрування даних, безпечну авторизацію через Google та зберігаємо інформацію на захищених серверах. Ваша медична інформація доступна лише вам.'
+        'uk': 'Ми використовуємо шифрування даних, безпечну авторизацію через Google і зберігаємо інформацію на захищених серверах. Ваша медична інформація доступна тільки вам.',
+        'de': 'Wir verwenden Datenverschlüsselung, sichere Google-Authentifizierung und speichern Informationen auf geschützten Servern. Ihre medizinischen Informationen sind nur für Sie zugänglich.'
     },
-    'cta_title': {
-        'ru': 'Готовы начать заботиться о своём здоровье?',
-        'en': 'Ready to start taking care of your health?',
-        'uk': 'Готові почати піклуватися про своє здоров\'я?'
+    'security_note_title': {
+        'ru': 'Примечание о конфиденциальности',
+        'en': 'Privacy Note',
+        'uk': 'Примітка про конфіденційність',
+        'de': 'Datenschutzhinweis'
     },
-    'cta_subtitle': {
-        'ru': 'Вход занимает всего несколько секунд',
-        'en': 'Login takes only a few seconds',
-        'uk': 'Вхід займає лише кілька секунд'
+    'security_note_text': {
+        'ru': 'Ваши данные конфиденциальны и защищены стандартами SOC 2, HIPAA и GDPR.',
+        'en': 'Your data is confidential and protected by SOC 2, HIPAA and GDPR standards.',
+        'uk': 'Ваші дані конфіденційні та захищені стандартами SOC 2, HIPAA і GDPR.',
+        'de': 'Ihre Daten sind vertraulich und durch SOC 2-, HIPAA- und GDPR-Standards geschützt.'
     },
     
     # ============================================
-    # 📊 ЛИЧНЫЙ КАБИНЕТ (dashboard.html)
+    # 📈 СТАТИСТИКА
     # ============================================
-    'nav_dashboard': {
-        'ru': 'Кабинет',
-        'en': 'Dashboard',
-        'uk': 'Кабінет'
+    'stats_trust_title': {
+        'ru': 'Нам доверяют тысячи пользователей',
+        'en': 'Thousands of users trust us',
+        'uk': 'Нам довіряють тисячі користувачів',
+        'de': 'Tausende von Benutzern vertrauen uns'
     },
-    'nav_chat': {
-        'ru': 'Чат',
-        'en': 'Chat',
-        'uk': 'Чат'
+    'stats_active_users': {
+        'ru': 'Активных пользователей',
+        'en': 'Active users',
+        'uk': 'Активних користувачів',
+        'de': 'Aktive Benutzer'
     },
-    'nav_documents': {
-        'ru': 'Документы',
-        'en': 'Documents',
-        'uk': 'Документи'
+    'stats_documents_analyzed': {
+        'ru': 'Проанализированных документов',
+        'en': 'Documents analyzed',
+        'uk': 'Проаналізованих документів',
+        'de': 'Analysierte Dokumente'
     },
-    'nav_profile': {
-        'ru': 'Профиль',
-        'en': 'Profile',
-        'uk': 'Профіль'
+    'stats_ai_consultations': {
+        'ru': 'AI-консультаций',
+        'en': 'AI consultations',
+        'uk': 'AI-консультацій',
+        'de': 'KI-Beratungen'
     },
-    'nav_home': {
-        'ru': 'Главная',
-        'en': 'Home',
-        'uk': 'Головна'
+    
+    # ============================================
+    # 🚀 ПРИЗЫВ К ДЕЙСТВИЮ
+    # ============================================
+    'cta_title': {
+        'ru': 'Готовы начать заботиться о своём здоровье?',
+        'en': 'Ready to start taking care of your health?',
+        'uk': 'Готові почати дбати про своє здоров\'я?',
+        'de': 'Bereit, sich um Ihre Gesundheit zu kümmern?'
     },
+    'cta_description': {
+        'ru': 'Присоединяйтесь к тысячам пользователей, которые уже управляют своим здоровьем с помощью AI',
+        'en': 'Join thousands of users who are already managing their health with AI',
+        'uk': 'Приєднуйтесь до тисяч користувачів, які вже керують своїм здоров\'ям за допомогою AI',
+        'de': 'Schließen Sie sich Tausenden von Benutzern an, die ihre Gesundheit bereits mit KI verwalten'
+    },
+    'cta_button': {
+        'ru': 'Начать бесплатно 🚀',
+        'en': 'Start for free 🚀',
+        'uk': 'Почати безкоштовно 🚀',
+        'de': 'Kostenlos starten 🚀'
+    },
+    'cta_note': {
+        'ru': 'Регистрация занимает всего 30 секунд • Не требуется кредитная карта',
+        'en': 'Registration takes only 30 seconds • No credit card required',
+        'uk': 'Реєстрація займає всього 30 секунд • Не потрібна кредитна картка',
+        'de': 'Registrierung dauert nur 30 Sekunden • Keine Kreditkarte erforderlich'
+    },
+    
+    # ============================================
+    # 🏥 DASHBOARD (Личный кабинет)
+    # ============================================
     'dashboard_welcome': {
         'ru': 'Добро пожаловать',
         'en': 'Welcome',
-        'uk': 'Ласкаво просимо'
+        'uk': 'Ласкаво просимо',
+        'de': 'Willkommen'
     },
     'dashboard_subtitle': {
         'ru': 'Ваш персональный медицинский кабинет',
-        'en': 'Your Personal Medical Dashboard',
-        'uk': 'Ваш персональний медичний кабінет'
+        'en': 'Your personal medical dashboard',
+        'uk': 'Ваш особистий медичний кабінет',
+        'de': 'Ihr persönliches medizinisches Dashboard'
     },
     'stats_documents_uploaded': {
         'ru': 'Загружено документов',
         'en': 'Documents Uploaded',
-        'uk': 'Завантажено документів'
+        'uk': 'Завантажено документів',
+        'de': 'Hochgeladene Dokumente'
     },
     'stats_documents_left': {
         'ru': 'Осталось',
         'en': 'Remaining',
-        'uk': 'Залишилось'
+        'uk': 'Залишилось',
+        'de': 'Verbleibend'
     },
     'stats_messages': {
-        'ru': 'Сообщений с ИИ',
+        'ru': 'Сообщений с AI',
         'en': 'AI Messages',
-        'uk': 'Повідомлень з AI'
+        'uk': 'Повідомлень з AI',
+        'de': 'KI-Nachrichten'
     },
     'stats_queries_left': {
         'ru': 'Осталось запросов',
-        'en': 'Queries Remaining',
-        'uk': 'Залишилось запитів'
+        'en': 'Queries remaining',
+        'uk': 'Залишилось запитів',
+        'de': 'Verbleibende Anfragen'
     },
-    'stats_plan': {
+    'stats_current_plan': {
         'ru': 'Текущий тариф',
         'en': 'Current Plan',
-        'uk': 'Поточний тариф'
+        'uk': 'Поточний тариф',
+        'de': 'Aktueller Tarif'
     },
-    'btn_upgrade': {
-        'ru': 'Улучшить',
-        'en': 'Upgrade',
-        'uk': 'Покращити'
-    },
-    
-    # ============================================
-    # 🚀 БЫСТРЫЕ ДЕЙСТВИЯ
-    # ============================================
-    'section_quick_actions': {
-        'ru': 'Быстрые действия',
-        'en': 'Quick Actions',
-        'uk': 'Швидкі дії'
-    },
-    'action_chat_title': {
-        'ru': 'Чат с ИИ-ассистентом',
-        'en': 'Chat with AI Assistant',
-        'uk': 'Чат з AI-асистентом'
-    },
-    'action_chat_text': {
-        'ru': 'Задайте вопрос о вашем здоровье и получите ответ на основе ваших документов',
-        'en': 'Ask a question about your health and get an answer based on your documents',
-        'uk': 'Поставте питання про ваше здоров\'я та отримайте відповідь на основі ваших документів'
-    },
-    'action_upload_title': {
+    'btn_upload_document': {
         'ru': 'Загрузить документ',
         'en': 'Upload Document',
-        'uk': 'Завантажити документ'
+        'uk': 'Завантажити документ',
+        'de': 'Dokument hochladen'
     },
-    'action_upload_text': {
-        'ru': 'Загрузите анализы, снимки или заключения врачей',
-        'en': 'Upload tests, images or doctor reports',
-        'uk': 'Завантажте аналізи, знімки або висновки лікарів'
+    'btn_open_chat': {
+        'ru': 'Открыть чат',
+        'en': 'Open Chat',
+        'uk': 'Відкрити чат',
+        'de': 'Chat öffnen'
     },
-    'action_profile_title': {
-        'ru': 'Мой профиль',
-        'en': 'My Profile',
-        'uk': 'Мій профіль'
+    'btn_upgrade_plan': {
+        'ru': 'Улучшить план',
+        'en': 'Upgrade Plan',
+        'uk': 'Покращити план',
+        'de': 'Plan upgraden'
     },
-    'action_profile_text': {
-        'ru': 'Просмотрите и обновите вашу медицинскую анкету',
-        'en': 'View and update your medical profile',
-        'uk': 'Перегляньте та оновіть вашу медичну анкету'
+    'quick_actions': {
+        'ru': 'Быстрые действия',
+        'en': 'Quick Actions',
+        'uk': 'Швидкі дії',
+        'de': 'Schnellaktionen'
+    },
+    'action_ask_ai': {
+        'ru': 'Задать вопрос AI',
+        'en': 'Ask AI',
+        'uk': 'Поставити питання AI',
+        'de': 'KI fragen'
+    },
+    'action_ask_ai_desc': {
+        'ru': 'Получите консультацию',
+        'en': 'Get consultation',
+        'uk': 'Отримати консультацію',
+        'de': 'Beratung erhalten'
+    },
+    'action_upload_desc': {
+        'ru': 'Анализы, снимки, выписки',
+        'en': 'Tests, images, reports',
+        'uk': 'Аналізи, знімки, виписки',
+        'de': 'Tests, Bilder, Berichte'
+    },
+    'action_profile': {
+        'ru': 'Медицинская анкета',
+        'en': 'Medical Profile',
+        'uk': 'Медична анкета',
+        'de': 'Medizinisches Profil'
+    },
+    'action_profile_desc': {
+        'ru': 'Обновить данные',
+        'en': 'Update data',
+        'uk': 'Оновити дані',
+        'de': 'Daten aktualisieren'
+    },
+    'recent_activity': {
+        'ru': 'Последняя активность',
+        'en': 'Recent Activity',
+        'uk': 'Остання активність',
+        'de': 'Letzte Aktivität'
+    },
+    'recent_questions': {
+        'ru': 'Недавние вопросы',
+        'en': 'Recent Questions',
+        'uk': 'Останні питання',
+        'de': 'Letzte Fragen'
+    },
+    'tip_of_day': {
+        'ru': 'Совет дня',
+        'en': 'Tip of the day',
+        'uk': 'Порада дня',
+        'de': 'Tipp des Tages'
+    },
+    'tip_upload_docs': {
+        'ru': 'Загрузите все ваши медицинские документы, чтобы AI мог давать более точные рекомендации на основе полной картины вашего здоровья.',
+        'en': 'Upload all your medical documents so AI can provide more accurate recommendations based on your complete health picture.',
+        'uk': 'Завантажте всі ваші медичні документи, щоб AI міг давати більш точні рекомендації на основі повної картини вашого здоров\'я.',
+        'de': 'Laden Sie alle Ihre medizinischen Dokumente hoch, damit die KI genauere Empfehlungen basierend auf Ihrem vollständigen Gesundheitsbild geben kann.'
+    },
+    'start_ai_conversation': {
+        'ru': 'Начните общение с AI',
+        'en': 'Start AI conversation',
+        'uk': 'Почніть спілкування з AI',
+        'de': 'KI-Konversation starten'
+    },
+    'ask_first_question': {
+        'ru': 'Задайте первый вопрос о вашем здоровье',
+        'en': 'Ask your first health question',
+        'uk': 'Поставте перше питання про ваше здоров\'я',
+        'de': 'Stellen Sie Ihre erste Gesundheitsfrage'
+    },
+    'you': {
+        'ru': 'Вы',
+        'en': 'You',
+        'uk': 'Ви',
+        'de': 'Sie'
+    },
+    'recently': {
+        'ru': 'Недавно',
+        'en': 'Recently',
+        'uk': 'Нещодавно',
+        'de': 'Kürzlich'
+    },
+    'go_to_chat': {
+        'ru': 'Перейти в чат',
+        'en': 'Go to chat',
+        'uk': 'Перейти в чат',
+        'de': 'Zum Chat gehen'
     },
     
     # ============================================
-    # 📄 ДОКУМЕНТЫ
+    # 📄 СТРАНИЦА ДОКУМЕНТОВ
     # ============================================
-    'section_recent_documents': {
-        'ru': 'Последние документы',
-        'en': 'Recent Documents',
-        'uk': 'Останні документи'
+    'page_documents_title': {
+        'ru': 'Мои документы',
+        'en': 'My Documents',
+        'uk': 'Мої документи',
+        'de': 'Meine Dokumente'
+    },
+    'page_documents_subtitle': {
+        'ru': 'Управляйте вашими медицинскими файлами',
+        'en': 'Manage your medical files',
+        'uk': 'Керуйте вашими медичними файлами',
+        'de': 'Verwalten Sie Ihre medizinischen Dateien'
+    },
+    'upload_new_document': {
+        'ru': 'Загрузить новый документ',
+        'en': 'Upload new document',
+        'uk': 'Завантажити новий документ',
+        'de': 'Neues Dokument hochladen'
+    },
+    'document_title_optional': {
+        'ru': 'Название документа (необязательно)',
+        'en': 'Document title (optional)',
+        'uk': 'Назва документа (необов\'язково)',
+        'de': 'Dokumententitel (optional)'
+    },
+    'document_title_placeholder': {
+        'ru': 'Например: Анализ крови от 15.01.2025',
+        'en': 'Example: Blood test from 15.01.2025',
+        'uk': 'Наприклад: Аналіз крові від 15.01.2025',
+        'de': 'Beispiel: Bluttest vom 15.01.2025'
+    },
+    'select_file': {
+        'ru': 'Выберите файл',
+        'en': 'Select file',
+        'uk': 'Виберіть файл',
+        'de': 'Datei auswählen'
+    },
+    'supported_formats': {
+        'ru': 'Поддерживаемые форматы: PDF, DOCX, TXT, JPG, PNG (макс. 10 МБ)',
+        'en': 'Supported formats: PDF, DOCX, TXT, JPG, PNG (max. 10 MB)',
+        'uk': 'Підтримувані формати: PDF, DOCX, TXT, JPG, PNG (макс. 10 МБ)',
+        'de': 'Unterstützte Formate: PDF, DOCX, TXT, JPG, PNG (max. 10 MB)'
+    },
+    'uploaded_documents': {
+        'ru': 'Загруженные документы',
+        'en': 'Uploaded documents',
+        'uk': 'Завантажені документи',
+        'de': 'Hochgeladene Dokumente'
     },
     'document_uploaded': {
-        'ru': 'Загружено',
+        'ru': 'Загружен',
         'en': 'Uploaded',
-        'uk': 'Завантажено'
+        'uk': 'Завантажено',
+        'de': 'Hochgeladen'
     },
-    'document_uploaded_unknown': {
-        'ru': 'Неизвестно',
-        'en': 'Unknown',
-        'uk': 'Невідомо'
+    'document_type': {
+        'ru': 'Тип',
+        'en': 'Type',
+        'uk': 'Тип',
+        'de': 'Typ'
     },
-    'btn_view_all_documents': {
-        'ru': 'Посмотреть все документы',
-        'en': 'View All Documents',
-        'uk': 'Переглянути всі документи'
+    'document_summary': {
+        'ru': 'Краткое содержание',
+        'en': 'Summary',
+        'uk': 'Короткий зміст',
+        'de': 'Zusammenfassung'
     },
-    'no_documents_tip': {
-        'ru': 'У вас пока нет загруженных документов.',
-        'en': 'You have no uploaded documents yet.',
-        'uk': 'У вас поки немає завантажених документів.'
+    'document_view': {
+        'ru': 'Посмотреть',
+        'en': 'View',
+        'uk': 'Переглянути',
+        'de': 'Ansehen'
+    },
+    'document_delete': {
+        'ru': 'Удалить',
+        'en': 'Delete',
+        'uk': 'Видалити',
+        'de': 'Löschen'
+    },
+    'no_documents_yet': {
+        'ru': 'У вас пока нет документов',
+        'en': 'You have no documents yet',
+        'uk': 'У вас поки немає документів',
+        'de': 'Sie haben noch keine Dokumente'
     },
     'no_documents_action': {
-        'ru': 'Загрузите первый документ',
-        'en': 'Upload your first document',
-        'uk': 'Завантажте перший документ'
+        'ru': 'Загрузите ваш первый медицинский документ используя форму выше',
+        'en': 'Upload your first medical document using the form above',
+        'uk': 'Завантажте ваш перший медичний документ, використовуючи форму вище',
+        'de': 'Laden Sie Ihr erstes medizinisches Dokument mit dem obigen Formular hoch'
+    },
+    'unknown': {
+        'ru': 'Неизвестно',
+        'en': 'Unknown',
+        'uk': 'Невідомо',
+        'de': 'Unbekannt'
+    },
+    'please_select_file': {
+        'ru': 'Пожалуйста, выберите файл',
+        'en': 'Please select a file',
+        'uk': 'Будь ласка, виберіть файл',
+        'de': 'Bitte wählen Sie eine Datei'
+    },
+    'confirm_delete_document': {
+        'ru': 'Вы уверены что хотите удалить этот документ?',
+        'en': 'Are you sure you want to delete this document?',
+        'uk': 'Ви впевнені, що хочете видалити цей документ?',
+        'de': 'Sind Sie sicher, dass Sie dieses Dokument löschen möchten?'
+    },
+    'document_deleted': {
+        'ru': 'Документ удалён',
+        'en': 'Document deleted',
+        'uk': 'Документ видалено',
+        'de': 'Dokument gelöscht'
     },
     
     # ============================================
-    # 💬 ЧАТ
+    # 💬 СТРАНИЦА ЧАТА
     # ============================================
-    'section_recent_chat': {
-        'ru': 'Последняя беседа с ИИ',
-        'en': 'Recent AI Conversation',
-        'uk': 'Остання бесіда з AI'
+    'page_chat_title': {
+        'ru': 'Чат с ИИ-ассистентом',
+        'en': 'Chat with AI Assistant',
+        'uk': 'Чат з AI-асистентом',
+        'de': 'Chat mit KI-Assistent'
     },
-    'btn_continue_chat': {
-        'ru': 'Продолжить беседу',
-        'en': 'Continue Chat',
-        'uk': 'Продовжити бесіду'
+    'page_chat_subtitle': {
+        'ru': 'Задавайте вопросы о вашем здоровье. ИИ использует ваши медицинские документы для ответов.',
+        'en': 'Ask questions about your health. AI uses your medical documents to answer.',
+        'uk': 'Ставте питання про ваше здоров\'я. AI використовує ваші медичні документи для відповідей.',
+        'de': 'Stellen Sie Fragen zu Ihrer Gesundheit. KI verwendet Ihre medizinischen Dokumente für Antworten.'
     },
-    'no_chat_greeting': {
-        'ru': 'Привет! Начните беседу с ИИ-ассистентом.',
-        'en': 'Hello! Start a conversation with AI assistant.',
-        'uk': 'Привіт! Почніть бесіду з AI-асистентом.'
+    'chat_greeting': {
+        'ru': 'Привет! Я ваш персональный медицинский ассистент.',
+        'en': 'Hello! I am your personal medical assistant.',
+        'uk': 'Привіт! Я ваш персональний медичний асистент.',
+        'de': 'Hallo! Ich bin Ihr persönlicher medizinischer Assistent.'
     },
-    'no_chat_action': {
-        'ru': 'Задать первый вопрос',
-        'en': 'Ask First Question',
-        'uk': 'Поставити перше питання'
+    'chat_start_conversation': {
+        'ru': 'Начните разговор — задайте мне любой вопрос о вашем здоровье',
+        'en': 'Start a conversation — ask me any question about your health',
+        'uk': 'Почніть розмову — поставте мені будь-яке питання про ваше здоров\'я',
+        'de': 'Starten Sie ein Gespräch — stellen Sie mir eine Frage zu Ihrer Gesundheit'
+    },
+    'chat_placeholder': {
+        'ru': 'Напишите ваш вопрос...',
+        'en': 'Type your question...',
+        'uk': 'Напишіть ваше питання...',
+        'de': 'Geben Sie Ihre Frage ein...'
+    },
+    'btn_send': {
+        'ru': 'Отправить',
+        'en': 'Send',
+        'uk': 'Відправити',
+        'de': 'Senden'
+    },
+    'chat_examples_title': {
+        'ru': 'Примеры вопросов',
+        'en': 'Example questions',
+        'uk': 'Приклади питань',
+        'de': 'Beispielfragen'
+    },
+    'chat_example_1': {
+        'ru': 'Какие анализы у меня в последнем документе?',
+        'en': 'What tests are in my latest document?',
+        'uk': 'Які аналізи у мене в останньому документі?',
+        'de': 'Welche Tests sind in meinem letzten Dokument?'
+    },
+    'chat_example_2': {
+        'ru': 'Есть ли у меня показатели вне нормы?',
+        'en': 'Do I have any abnormal values?',
+        'uk': 'Чи є у мене показники поза нормою?',
+        'de': 'Habe ich abnormale Werte?'
+    },
+    'chat_example_3': {
+        'ru': 'Что означает диагноз из последнего заключения?',
+        'en': 'What does the diagnosis from the last report mean?',
+        'uk': 'Що означає діагноз з останнього висновку?',
+        'de': 'Was bedeutet die Diagnose aus dem letzten Bericht?'
+    },
+    'chat_example_4': {
+        'ru': 'Какие рекомендации дал врач?',
+        'en': 'What recommendations did the doctor give?',
+        'uk': 'Які рекомендації дав лікар?',
+        'de': 'Welche Empfehlungen hat der Arzt gegeben?'
+    },
+    
+    # ============================================
+    # 👤 СТРАНИЦА ПРОФИЛЯ
+    # ============================================
+    'page_profile_title': {
+        'ru': 'Мой профиль',
+        'en': 'My Profile',
+        'uk': 'Мій профіль',
+        'de': 'Mein Profil'
+    },
+    'page_profile_subtitle': {
+        'ru': 'Управление вашей медицинской анкетой',
+        'en': 'Manage your medical profile',
+        'uk': 'Керування вашою медичною анкетою',
+        'de': 'Verwalten Sie Ihr medizinisches Profil'
+    },
+    'profile_basic_info': {
+        'ru': 'Основная информация',
+        'en': 'Basic Information',
+        'uk': 'Основна інформація',
+        'de': 'Grundinformationen'
+    },
+    'profile_name': {
+        'ru': 'Имя',
+        'en': 'Name',
+        'uk': 'Ім\'я',
+        'de': 'Name'
+    },
+    'profile_email': {
+        'ru': 'Email',
+        'en': 'Email',
+        'uk': 'Email',
+        'de': 'E-Mail'
+    },
+    'profile_registered': {
+        'ru': 'Зарегистрирован',
+        'en': 'Registered',
+        'uk': 'Зареєстровано',
+        'de': 'Registriert'
+    },
+    'profile_medical_form': {
+        'ru': 'Медицинская анкета',
+        'en': 'Medical Form',
+        'uk': 'Медична анкета',
+        'de': 'Medizinisches Formular'
+    },
+    'profile_medical_form_desc': {
+        'ru': 'Эта информация помогает ИИ давать более точные рекомендации',
+        'en': 'This information helps AI provide more accurate recommendations',
+        'uk': 'Ця інформація допомагає AI давати більш точні рекомендації',
+        'de': 'Diese Informationen helfen der KI, genauere Empfehlungen zu geben'
+    },
+    'profile_birth_year': {
+        'ru': 'Год рождения',
+        'en': 'Birth Year',
+        'uk': 'Рік народження',
+        'de': 'Geburtsjahr'
+    },
+    'profile_gender': {
+        'ru': 'Пол',
+        'en': 'Gender',
+        'uk': 'Стать',
+        'de': 'Geschlecht'
+    },
+    'profile_height': {
+        'ru': 'Рост',
+        'en': 'Height',
+        'uk': 'Зріст',
+        'de': 'Größe'
+    },
+    'profile_weight': {
+        'ru': 'Вес',
+        'en': 'Weight',
+        'uk': 'Вага',
+        'de': 'Gewicht'
+    },
+    'profile_chronic_conditions': {
+        'ru': 'Хронические заболевания',
+        'en': 'Chronic Conditions',
+        'uk': 'Хронічні захворювання',
+        'de': 'Chronische Erkrankungen'
+    },
+    'profile_allergies': {
+        'ru': 'Аллергии',
+        'en': 'Allergies',
+        'uk': 'Алергії',
+        'de': 'Allergien'
+    },
+    'profile_medications': {
+        'ru': 'Принимаемые лекарства',
+        'en': 'Medications taken',
+        'uk': 'Ліки, що приймаються',
+        'de': 'Eingenommene Medikamente'
+    },
+    'profile_lifestyle': {
+        'ru': 'Образ жизни',
+        'en': 'Lifestyle',
+        'uk': 'Спосіб життя',
+        'de': 'Lebensstil'
+    },
+    'profile_smoking': {
+        'ru': 'Курение',
+        'en': 'Smoking',
+        'uk': 'Куріння',
+        'de': 'Rauchen'
+    },
+    'profile_alcohol': {
+        'ru': 'Алкоголь',
+        'en': 'Alcohol',
+        'uk': 'Алкоголь',
+        'de': 'Alkohol'
+    },
+    'profile_physical_activity': {
+        'ru': 'Физическая активность',
+        'en': 'Physical activity',
+        'uk': 'Фізична активність',
+        'de': 'Körperliche Aktivität'
+    },
+    'profile_how_to_fill': {
+        'ru': 'Как заполнить анкету?',
+        'en': 'How to fill out the form?',
+        'uk': 'Як заповнити анкету?',
+        'de': 'Wie fülle ich das Formular aus?'
+    },
+    'profile_fill_instruction': {
+        'ru': 'Если вы зарегистрировались через веб-сайт, анкета пока пустая. Вы можете заполнить её через Telegram-бота или мы добавим форму редактирования позже.',
+        'en': 'If you registered through the website, the form is still empty. You can fill it out via the Telegram bot or we will add an editing form later.',
+        'uk': 'Якщо ви зареєструвалися через веб-сайт, анкета поки порожня. Ви можете заповнити її через Telegram-бота або ми додамо форму редагування пізніше.',
+        'de': 'Wenn Sie sich über die Website registriert haben, ist das Formular noch leer. Sie können es über den Telegram-Bot ausfüllen oder wir werden später ein Bearbeitungsformular hinzufügen.'
+    },
+    'profile_danger_zone': {
+        'ru': 'Опасная зона',
+        'en': 'Danger zone',
+        'uk': 'Небезпечна зона',
+        'de': 'Gefahrenzone'
+    },
+    'profile_delete_warning': {
+        'ru': 'Удаление аккаунта приведёт к безвозвратной потере всех ваших данных, документов и истории чатов.',
+        'en': 'Deleting your account will result in the irreversible loss of all your data, documents and chat history.',
+        'uk': 'Видалення акаунту призведе до безповоротної втрати всіх ваших даних, документів та історії чатів.',
+        'de': 'Das Löschen des Kontos führt zum unwiderruflichen Verlust aller Ihrer Daten, Dokumente und Chat-Verläufe.'
+    },
+    'profile_delete_account': {
+        'ru': 'Удалить мой аккаунт',
+        'en': 'Delete my account',
+        'uk': 'Видалити мій акаунт',
+        'de': 'Mein Konto löschen'
+    },
+    'profile_not_specified': {
+        'ru': 'Не указано',
+        'en': 'Not specified',
+        'uk': 'Не вказано',
+        'de': 'Nicht angegeben'
+    },
+    'profile_height_unit': {
+        'ru': 'см',
+        'en': 'cm',
+        'uk': 'см',
+        'de': 'cm'
+    },
+    'profile_weight_unit': {
+        'ru': 'кг',
+        'en': 'kg',
+        'uk': 'кг',
+        'de': 'kg'
+    },
+    
+    # ============================================
+    # 🗑️ УДАЛЕНИЕ АККАУНТА
+    # ============================================
+    'confirm_delete_account_message': {
+        'ru': 'Вы уверены что хотите удалить ваш аккаунт?',
+        'en': 'Are you sure you want to delete your account?',
+        'uk': 'Ви впевнені, що хочете видалити ваш акаунт?',
+        'de': 'Sind Sie sicher, dass Sie Ihr Konto löschen möchten?'
+    },
+    'will_be_deleted': {
+        'ru': 'Будут удалены',
+        'en': 'Will be deleted',
+        'uk': 'Буде видалено',
+        'de': 'Wird gelöscht'
+    },
+    'all_documents': {
+        'ru': 'Все ваши документы',
+        'en': 'All your documents',
+        'uk': 'Всі ваші документи',
+        'de': 'Alle Ihre Dokumente'
+    },
+    'chat_history': {
+        'ru': 'История чатов',
+        'en': 'Chat history',
+        'uk': 'Історія чатів',
+        'de': 'Chat-Verlauf'
+    },
+    'medical_profile': {
+        'ru': 'Медицинская анкета',
+        'en': 'Medical profile',
+        'uk': 'Медична анкета',
+        'de': 'Medizinisches Profil'
+    },
+    'profile': {
+        'ru': 'Профиль',
+        'en': 'Profile',
+        'uk': 'Профіль',
+        'de': 'Profil'
+    },
+    'action_irreversible': {
+        'ru': 'Это действие НЕОБРАТИМО',
+        'en': 'This action is IRREVERSIBLE',
+        'uk': 'Ця дія НЕЗВОРОТНА',
+        'de': 'Diese Aktion ist UNWIDERRUFLICH'
+    },
+    'double_confirm_message': {
+        'ru': 'Вы ТОЧНО уверены? Это действие нельзя отменить!',
+        'en': 'Are you ABSOLUTELY sure? This cannot be undone!',
+        'uk': 'Ви ТОЧНО впевнені? Цю дію не можна скасувати!',
+        'de': 'Sind Sie ABSOLUT sicher? Dies kann nicht rückgängig gemacht werden!'
+    },
+    'delete_feature_coming_soon': {
+        'ru': 'Функция удаления аккаунта будет добавлена позже',
+        'en': 'Account deletion feature will be added later',
+        'uk': 'Функція видалення акаунту буде додана пізніше',
+        'de': 'Kontolöschfunktion wird später hinzugefügt'
     },
     
     # ============================================
@@ -287,12 +925,14 @@ TRANSLATIONS = {
     'footer_text': {
         'ru': 'Ваше здоровье - наш приоритет.',
         'en': 'Your health is our priority.',
-        'uk': 'Ваше здоров\'я - наш пріоритет.'
+        'uk': 'Ваше здоров\'я - наш пріоритет.',
+        'de': 'Ihre Gesundheit ist unsere Priorität.'
     },
     'footer_powered': {
         'ru': 'Работает на',
         'en': 'Powered by',
-        'uk': 'Працює на'
+        'uk': 'Працює на',
+        'de': 'Betrieben von'
     },
     
     # ============================================
@@ -301,57 +941,194 @@ TRANSLATIONS = {
     'language_selector': {
         'ru': 'Язык',
         'en': 'Language',
-        'uk': 'Мова'
+        'uk': 'Мова',
+        'de': 'Sprache'
     },
     'lang_ru': {
         'ru': 'Русский',
         'en': 'Russian',
-        'uk': 'Російська'
+        'uk': 'Російська',
+        'de': 'Russisch'
     },
     'lang_en': {
         'ru': 'Английский',
         'en': 'English',
-        'uk': 'Англійська'
+        'uk': 'Англійська',
+        'de': 'Englisch'
     },
     'lang_uk': {
         'ru': 'Украинский',
         'en': 'Ukrainian',
-        'uk': 'Українська'
+        'uk': 'Українська',
+        'de': 'Ukrainisch'
+    },
+    'lang_de': {
+        'ru': 'Немецкий',
+        'en': 'German',
+        'uk': 'Німецька',
+        'de': 'Deutsch'
     },
     
+    # ============================================
+    # 🔐 СТРАНИЦА ВХОДА (login.html)
+    # ============================================
+    'login_page_title': {
+        'ru': 'Вход',
+        'en': 'Login',
+        'uk': 'Вхід',
+        'de': 'Anmeldung'
+    },
+    'login_title': {
+        'ru': 'Вход в систему',
+        'en': 'Sign In',
+        'uk': 'Вхід до системи',
+        'de': 'Anmelden'
+    },
+    'login_subtitle': {
+        'ru': 'Используйте ваш Google аккаунт для быстрого и безопасного входа',
+        'en': 'Use your Google account for quick and secure sign in',
+        'uk': 'Використовуйте ваш Google акаунт для швидкого та безпечного входу',
+        'de': 'Verwenden Sie Ihr Google-Konto für eine schnelle und sichere Anmeldung'
+    },
+    'why_google_title': {
+        'ru': 'Почему Google?',
+        'en': 'Why Google?',
+        'uk': 'Чому Google?',
+        'de': 'Warum Google?'
+    },
+    'why_google_secure_title': {
+        'ru': 'Безопасно',
+        'en': 'Secure',
+        'uk': 'Безпечно',
+        'de': 'Sicher'
+    },
+    'why_google_secure_desc': {
+        'ru': 'мы не храним ваш пароль',
+        'en': 'we don\'t store your password',
+        'uk': 'ми не зберігаємо ваш пароль',
+        'de': 'wir speichern Ihr Passwort nicht'
+    },
+    'why_google_fast_title': {
+        'ru': 'Быстро',
+        'en': 'Fast',
+        'uk': 'Швидко',
+        'de': 'Schnell'
+    },
+    'why_google_fast_desc': {
+        'ru': 'вход за несколько секунд',
+        'en': 'sign in within seconds',
+        'uk': 'вхід за кілька секунд',
+        'de': 'Anmeldung in Sekunden'
+    },
+    'why_google_convenient_title': {
+        'ru': 'Удобно',
+        'en': 'Convenient',
+        'uk': 'Зручно',
+        'de': 'Bequem'
+    },
+    'why_google_convenient_desc': {
+        'ru': 'используйте существующий аккаунт',
+        'en': 'use your existing account',
+        'uk': 'використовуйте існуючий акаунт',
+        'de': 'verwenden Sie Ihr bestehendes Konto'
+    },
+    'why_google_reliable_title': {
+        'ru': 'Надёжно',
+        'en': 'Reliable',
+        'uk': 'Надійно',
+        'de': 'Zuverlässig'
+    },
+    'why_google_reliable_desc': {
+        'ru': 'защита от Google',
+        'en': 'protected by Google',
+        'uk': 'захист від Google',
+        'de': 'geschützt von Google'
+    },
+    'privacy_info': {
+        'ru': 'Мы запрашиваем только ваше имя и email. Ваши медицинские данные защищены и не передаются третьим лицам.',
+        'en': 'We only request your name and email. Your medical data is protected and not shared with third parties.',
+        'uk': 'Ми запитуємо лише ваше ім\'я та email. Ваші медичні дані захищені та не передаються третім особам.',
+        'de': 'Wir fordern nur Ihren Namen und Ihre E-Mail-Adresse an. Ihre medizinischen Daten sind geschützt und werden nicht an Dritte weitergegeben.'
+    },
+
     # ============================================
     # ⚠️ УВЕДОМЛЕНИЯ И АЛЕРТЫ
     # ============================================
     'tip': {
         'ru': 'Совет',
         'en': 'Tip',
-        'uk': 'Порада'
+        'uk': 'Порада',
+        'de': 'Tipp'
     },
     'success': {
         'ru': 'Успешно',
         'en': 'Success',
-        'uk': 'Успішно'
+        'uk': 'Успішно',
+        'de': 'Erfolgreich'
     },
     'error': {
         'ru': 'Ошибка',
         'en': 'Error',
-        'uk': 'Помилка'
+        'uk': 'Помилка',
+        'de': 'Fehler'
     },
     'warning': {
         'ru': 'Внимание',
         'en': 'Warning',
-        'uk': 'Увага'
+        'uk': 'Увага',
+        'de': 'Warnung'
+    },
+    'language_changed': {
+        'ru': 'Язык изменен',
+        'en': 'Language changed',
+        'uk': 'Мову змінено',
+        'de': 'Sprache geändert'
+    },
+    
+    # ============================================
+    # 🔒 ОШИБКИ И СООБЩЕНИЯ API
+    # ============================================
+    'error_not_authorized': {
+        'ru': 'Не авторизован. Войдите в систему.',
+        'en': 'Not authorized. Please log in.',
+        'uk': 'Не авторизовано. Увійдіть у систему.',
+        'de': 'Nicht autorisiert. Bitte melden Sie sich an.'
+    },
+    'error_server': {
+        'ru': 'Ошибка сервера. Попробуйте позже.',
+        'en': 'Server error. Please try again later.',
+        'uk': 'Помилка сервера. Спробуйте пізніше.',
+        'de': 'Serverfehler. Bitte versuchen Sie es später erneut.'
+    },
+    'error_upload_failed': {
+        'ru': 'Не удалось загрузить файл',
+        'en': 'Failed to upload file',
+        'uk': 'Не вдалося завантажити файл',
+        'de': 'Datei konnte nicht hochgeladen werden'
+    },
+    'success_document_uploaded': {
+        'ru': 'Документ успешно загружен',
+        'en': 'Document uploaded successfully',
+        'uk': 'Документ успішно завантажено',
+        'de': 'Dokument erfolgreich hochgeladen'
+    },
+    'success_message_sent': {
+        'ru': 'Сообщение отправлено',
+        'en': 'Message sent',
+        'uk': 'Повідомлення надіслано',
+        'de': 'Nachricht gesendet'
     },
 }
 
 
-def t(key: str, lang: str = 'ru') -> str:
+def t(key: str, lang: str = 'ru', **kwargs) -> str:
     """
-    Получить перевод по ключу
+    Получить перевод по ключу с поддержкой параметров
     
     Args:
         key: Ключ перевода (например, 'welcome')
-        lang: Язык ('ru', 'en', 'uk')
+        lang: Язык ('ru', 'en', 'uk', 'de')
+        **kwargs: Дополнительные параметры для форматирования строки
     
     Returns:
         Переведенная строка или ключ, если перевод не найден
@@ -359,26 +1136,37 @@ def t(key: str, lang: str = 'ru') -> str:
     Examples:
         >>> t('welcome', 'ru')
         'Добро пожаловать'
-        >>> t('welcome', 'en')
+        >>> t('dashboard_welcome', 'en')
         'Welcome'
+        >>> t('hello_name', 'ru', name='Иван')
+        'Привет, Иван!'
     """
     # Проверяем что язык поддерживается
-    if lang not in ['ru', 'en', 'uk']:
+    if lang not in ['ru', 'en', 'uk', 'de']:
         lang = 'ru'  # По умолчанию русский
     
     # Получаем перевод
     translation = TRANSLATIONS.get(key, {})
+    text = translation.get(lang, key)
     
-    # Возвращаем перевод или ключ если не найден
-    return translation.get(lang, key)
+    # Если есть параметры для форматирования - применяем их
+    if kwargs:
+        try:
+            text = text.format(**kwargs)
+        except (KeyError, ValueError):
+            # Если форматирование не удалось - возвращаем как есть
+            pass
+    
+    return text
 
 
 def get_supported_languages():
-    """Получить список поддерживаемых языков"""
+    """Получить список поддерживаемых языков с флагами"""
     return [
         {'code': 'ru', 'name': 'Русский', 'flag': '🇷🇺'},
+        {'code': 'uk', 'name': 'Українська', 'flag': '🇺🇦'},
         {'code': 'en', 'name': 'English', 'flag': '🇬🇧'},
-        {'code': 'uk', 'name': 'Українська', 'flag': '🇺🇦'}
+        {'code': 'de', 'name': 'Deutsch', 'flag': '🇩🇪'}
     ]
 
 
@@ -390,7 +1178,7 @@ def get_current_language(session):
         session: Flask session объект
     
     Returns:
-        Код языка ('ru', 'en', 'uk')
+        Код языка ('ru', 'en', 'uk', 'de')
     """
     return session.get('language', 'ru')
 
@@ -401,8 +1189,8 @@ def set_language(session, lang_code: str):
     
     Args:
         session: Flask session объект
-        lang_code: Код языка ('ru', 'en', 'uk')
+        lang_code: Код языка ('ru', 'en', 'uk', 'de')
     """
-    if lang_code in ['ru', 'en', 'uk']:
+    if lang_code in ['ru', 'en', 'uk', 'de']:
         session['language'] = lang_code
         session.modified = True

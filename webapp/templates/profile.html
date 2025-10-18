@@ -1,140 +1,151 @@
 {% extends "base.html" %}
 
-{% block title %}Мой профиль - Медицинский Ассистент{% endblock %}
+{% block title %}{{ t('page_profile_title', lang) }} - {{ t('site_title', lang) }}{% endblock %}
 
 {% block content %}
 <!-- 👤 СТРАНИЦА ПРОФИЛЯ -->
 
 <div style="margin-bottom: 2rem;">
-    <h1 style="color: #667eea;">👤 Мой профиль</h1>
+    <h1 style="color: #667eea;">👤 {{ t('page_profile_title', lang) }}</h1>
     <p style="color: #666;">
-        Управление вашей медицинской анкетой
+        {{ t('page_profile_subtitle', lang) }}
     </p>
 </div>
 
 <!-- 📊 ОСНОВНАЯ ИНФОРМАЦИЯ -->
 <div class="card">
-    <h3>Основная информация</h3>
+    <h3>{{ t('profile_basic_info', lang) }}</h3>
     
     <div style="margin-top: 1.5rem;">
         <div style="display: grid; grid-template-columns: 200px 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <strong>Имя:</strong>
-            <span>{{ user.name if user else 'Не указано' }}</span>
+            <strong>{{ t('profile_name', lang) }}:</strong>
+            <span>{{ user.name if user else t('profile_not_specified', lang) }}</span>
         </div>
         
         <div style="display: grid; grid-template-columns: 200px 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <strong>Email:</strong>
-            <span>{{ user.email if user else 'Не указано' }}</span>
+            <strong>{{ t('profile_email', lang) }}:</strong>
+            <span>{{ user.email if user else t('profile_not_specified', lang) }}</span>
         </div>
         
         <div style="display: grid; grid-template-columns: 200px 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <strong>Зарегистрирован:</strong>
-            <span>{{ user.created_at.strftime('%d.%m.%Y') if user and user.created_at else 'Неизвестно' }}</span>
+            <strong>{{ t('profile_registered', lang) }}:</strong>
+            <span>{{ user.created_at.strftime('%d.%m.%Y') if user and user.created_at else t('unknown', lang) }}</span>
         </div>
     </div>
 </div>
 
 <!-- 🏥 МЕДИЦИНСКАЯ АНКЕТА -->
 <div class="card">
-    <h3>Медицинская анкета</h3>
+    <h3>{{ t('profile_medical_form', lang) }}</h3>
     <p style="color: #666; margin-bottom: 1.5rem;">
-        Эта информация помогает ИИ давать более точные рекомендации
+        {{ t('profile_medical_form_desc', lang) }}
     </p>
     
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
         <!-- Возраст -->
         <div>
-            <strong style="display: block; margin-bottom: 0.5rem;">Год рождения</strong>
-            <span style="color: #666;">{{ user.birth_year if user and user.birth_year else 'Не указано' }}</span>
+            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_birth_year', lang) }}</strong>
+            <span style="color: #666;">{{ user.birth_year if user and user.birth_year else t('profile_not_specified', lang) }}</span>
         </div>
         
         <!-- Пол -->
         <div>
-            <strong style="display: block; margin-bottom: 0.5rem;">Пол</strong>
-            <span style="color: #666;">{{ user.gender if user and user.gender else 'Не указано' }}</span>
+            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_gender', lang) }}</strong>
+            <span style="color: #666;">{{ user.gender if user and user.gender else t('profile_not_specified', lang) }}</span>
         </div>
         
         <!-- Рост -->
         <div>
-            <strong style="display: block; margin-bottom: 0.5rem;">Рост</strong>
-            <span style="color: #666;">{{ user.height_cm if user and user.height_cm else 'Не указано' }} см</span>
+            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_height', lang) }}</strong>
+            <span style="color: #666;">
+                {% if user and user.height_cm %}
+                    {{ user.height_cm }} {{ t('profile_height_unit', lang) }}
+                {% else %}
+                    {{ t('profile_not_specified', lang) }}
+                {% endif %}
+            </span>
         </div>
         
         <!-- Вес -->
         <div>
-            <strong style="display: block; margin-bottom: 0.5rem;">Вес</strong>
-            <span style="color: #666;">{{ user.weight_kg if user and user.weight_kg else 'Не указано' }} кг</span>
+            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_weight', lang) }}</strong>
+            <span style="color: #666;">
+                {% if user and user.weight_kg %}
+                    {{ user.weight_kg }} {{ t('profile_weight_unit', lang) }}
+                {% else %}
+                    {{ t('profile_not_specified', lang) }}
+                {% endif %}
+            </span>
         </div>
     </div>
     
     <!-- Хронические заболевания -->
     <div style="margin-top: 1.5rem;">
-        <strong style="display: block; margin-bottom: 0.5rem;">Хронические заболевания</strong>
+        <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_chronic_conditions', lang) }}</strong>
         <p style="color: #666; padding: 1rem; background: white; border-radius: 8px;">
-            {{ user.chronic_conditions if user and user.chronic_conditions else 'Не указано' }}
+            {{ user.chronic_conditions if user and user.chronic_conditions else t('profile_not_specified', lang) }}
         </p>
     </div>
     
     <!-- Аллергии -->
     <div style="margin-top: 1.5rem;">
-        <strong style="display: block; margin-bottom: 0.5rem;">Аллергии</strong>
+        <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_allergies', lang) }}</strong>
         <p style="color: #666; padding: 1rem; background: white; border-radius: 8px;">
-            {{ user.allergies if user and user.allergies else 'Не указано' }}
+            {{ user.allergies if user and user.allergies else t('profile_not_specified', lang) }}
         </p>
     </div>
     
     <!-- Лекарства -->
     <div style="margin-top: 1.5rem;">
-        <strong style="display: block; margin-bottom: 0.5rem;">Принимаемые лекарства</strong>
+        <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_medications', lang) }}</strong>
         <p style="color: #666; padding: 1rem; background: white; border-radius: 8px;">
-            {{ user.medications if user and user.medications else 'Не указано' }}
+            {{ user.medications if user and user.medications else t('profile_not_specified', lang) }}
         </p>
     </div>
 </div>
 
 <!-- 🔄 ОБРАЗ ЖИЗНИ -->
 <div class="card">
-    <h3>Образ жизни</h3>
+    <h3>{{ t('profile_lifestyle', lang) }}</h3>
     
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
         <!-- Курение -->
         <div>
-            <strong style="display: block; margin-bottom: 0.5rem;">🚬 Курение</strong>
-            <span style="color: #666;">{{ user.smoking if user and user.smoking else 'Не указано' }}</span>
+            <strong style="display: block; margin-bottom: 0.5rem;">🚬 {{ t('profile_smoking', lang) }}</strong>
+            <span style="color: #666;">{{ user.smoking if user and user.smoking else t('profile_not_specified', lang) }}</span>
         </div>
         
         <!-- Алкоголь -->
         <div>
-            <strong style="display: block; margin-bottom: 0.5rem;">🍷 Алкоголь</strong>
-            <span style="color: #666;">{{ user.alcohol if user and user.alcohol else 'Не указано' }}</span>
+            <strong style="display: block; margin-bottom: 0.5rem;">🍷 {{ t('profile_alcohol', lang) }}</strong>
+            <span style="color: #666;">{{ user.alcohol if user and user.alcohol else t('profile_not_specified', lang) }}</span>
         </div>
         
         <!-- Физическая активность -->
         <div>
-            <strong style="display: block; margin-bottom: 0.5rem;">🏃 Физическая активность</strong>
-            <span style="color: #666;">{{ user.physical_activity if user and user.physical_activity else 'Не указано' }}</span>
+            <strong style="display: block; margin-bottom: 0.5rem;">🏃 {{ t('profile_physical_activity', lang) }}</strong>
+            <span style="color: #666;">{{ user.physical_activity if user and user.physical_activity else t('profile_not_specified', lang) }}</span>
         </div>
     </div>
 </div>
 
 <!-- ℹ️ ИНФОРМАЦИЯ -->
 <div class="alert alert-info">
-    <strong>💡 Как заполнить анкету?</strong><br>
-    Если вы зарегистрировались через веб-сайт, анкета пока пустая. 
-    Вы можете заполнить её через Telegram-бота или мы добавим форму редактирования позже.
+    <strong>💡 {{ t('profile_how_to_fill', lang) }}</strong><br>
+    {{ t('profile_fill_instruction', lang) }}
 </div>
 
 <!-- 🗑️ УДАЛЕНИЕ ДАННЫХ -->
 <div class="card" style="border-left-color: #dc3545;">
-    <h3 style="color: #dc3545;">⚠️ Опасная зона</h3>
+    <h3 style="color: #dc3545;">⚠️ {{ t('profile_danger_zone', lang) }}</h3>
     <p style="color: #666; margin: 1rem 0;">
-        Удаление аккаунта приведёт к безвозвратной потере всех ваших данных, документов и истории чатов.
+        {{ t('profile_delete_warning', lang) }}
     </p>
     <button 
         onclick="confirmDelete()"
         class="btn btn-danger"
     >
-        🗑️ Удалить мой аккаунт
+        🗑️ {{ t('profile_delete_account', lang) }}
     </button>
 </div>
 
@@ -144,21 +155,21 @@
 <script>
 function confirmDelete() {
     const confirmed = confirm(
-        '⚠️ ВНИМАНИЕ!\n\n' +
-        'Вы уверены что хотите удалить ваш аккаунт?\n\n' +
-        'Будут удалены:\n' +
-        '• Все ваши документы\n' +
-        '• История чатов\n' +
-        '• Медицинская анкета\n' +
-        '• Профиль\n\n' +
-        'Это действие НЕОБРАТИМО!'
+        '⚠️ {{ t("warning", lang) }}!\n\n' +
+        '{{ t("confirm_delete_account_message", lang) }}\n\n' +
+        '{{ t("will_be_deleted", lang) }}:\n' +
+        '• {{ t("all_documents", lang) }}\n' +
+        '• {{ t("chat_history", lang) }}\n' +
+        '• {{ t("medical_profile", lang) }}\n' +
+        '• {{ t("profile", lang) }}\n\n' +
+        '{{ t("action_irreversible", lang) }}!'
     );
     
     if (confirmed) {
-        const doubleConfirm = confirm('Вы ТОЧНО уверены? Введите "ДА" для подтверждения');
+        const doubleConfirm = confirm('{{ t("double_confirm_message", lang) }}');
         
         if (doubleConfirm) {
-            alert('Функция удаления аккаунта будет добавлена позже');
+            alert('{{ t("delete_feature_coming_soon", lang) }}');
             // TODO: Реализовать API endpoint для удаления
         }
     }
