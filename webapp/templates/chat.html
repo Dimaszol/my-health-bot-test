@@ -2,98 +2,73 @@
 
 {% block title %}{{ t('page_chat_title', lang) }} - {{ t('site_title', lang) }}{% endblock %}
 
-{% block content %}
-<!-- 💬 ЧАТ С ИИ -->
-
-<div style="margin-bottom: 2rem;">
-    <h1 style="color: #667eea;">💬 {{ t('page_chat_title', lang) }}</h1>
-    <p style="color: #666;">
-        {{ t('page_chat_subtitle', lang) }}
-    </p>
-</div>
-
-<!-- 📱 ОКНО ЧАТА -->
-<div id="chat-container" style="
-    background: #f8f9fa;
-    border-radius: 15px;
-    height: 500px;
-    overflow-y: auto;
-    padding: 2rem;
-    margin-bottom: 1.5rem;
-    border: 2px solid #e0e0e0;
-">
-    <!-- История сообщений -->
-    {% if chat_history %}
-        {% for msg in chat_history %}
-        <div class="message {% if msg.role == 'user' %}user-message{% else %}ai-message{% endif %}">
-            <div class="message-bubble">
-                {{ msg.message }}
-            </div>
-            <div class="message-time">
-                {{ msg.timestamp.strftime('%H:%M') if msg.timestamp else '' }}
-            </div>
-        </div>
-        {% endfor %}
-    {% else %}
-        <div style="text-align: center; color: #999; margin-top: 5rem;">
-            <div style="font-size: 4rem; margin-bottom: 1rem;">🤖</div>
-            <p style="font-size: 1.1rem;">{{ t('chat_greeting', lang) }}</p>
-            <p>{{ t('chat_start_conversation', lang) }}</p>
-        </div>
-    {% endif %}
-    
-    <!-- Индикатор печатания -->
-    <div id="typing-indicator" style="display: none;">
-        <div class="message ai-message">
-            <div class="message-bubble">
-                <span class="typing-dots">
-                    <span></span><span></span><span></span>
-                </span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ✍️ ФОРМА ВВОДА СООБЩЕНИЯ -->
-<form id="chat-form" style="display: flex; gap: 1rem;">
-    <input 
-        type="text" 
-        id="message-input" 
-        placeholder="{{ t('chat_placeholder', lang) }}"
-        style="
-            flex: 1;
-            padding: 1rem 1.5rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 1rem;
-        "
-        required
-    />
-    <button type="submit" class="btn" style="border-radius: 25px; padding: 1rem 2rem;">
-        {{ t('btn_send', lang) }} 📤
-    </button>
-</form>
-
-<!-- ℹ️ ПОДСКАЗКИ -->
-<div style="margin-top: 2rem; padding: 1rem; background: #fff3cd; border-radius: 10px; border-left: 4px solid #ffc107;">
-    <strong>💡 {{ t('chat_examples_title', lang) }}:</strong>
-    <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: #856404;">
-        <li>{{ t('chat_example_1', lang) }}</li>
-        <li>{{ t('chat_example_2', lang) }}</li>
-        <li>{{ t('chat_example_3', lang) }}</li>
-        <li>{{ t('chat_example_4', lang) }}</li>
-    </ul>
-</div>
-
-{% endblock %}
-
 {% block extra_styles %}
 <style>
-    /* 💬 СТИЛИ СООБЩЕНИЙ */
-    .message {
-        margin-bottom: 1.5rem;
+    /* 🎯 СКРЫВАЕМ FOOTER на странице чата */
+    footer {
+        display: none !important;
+    }
+    
+    /* 💬 ПОЛНОЭКРАННЫЙ ЧАТ */
+    body {
+        overflow: hidden;
+    }
+    
+    /* ✅ НЕ ТРОГАЕМ header - пусть остаётся как на главной */
+    header {
+        /* Оставляем стили по умолчанию */
+    }
+    
+    main {
+        height: calc(100vh - 80px); /* Вся высота минус header */
+        overflow: hidden;
+        padding: 0 !important;
+        margin: 0;
+    }
+    
+    main > .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        height: 100%;
+    }
+    
+    .chat-container-wrapper {
+        flex: 1;
         display: flex;
         flex-direction: column;
+        max-width: 900px;
+        margin: 0 auto;
+        width: 100%;
+        padding: 0 2rem;
+        height: 100%; /* ✅ ДОБАВИЛИ */
+        overflow: hidden;
+    }
+    
+    /* ОКНО СООБЩЕНИЙ - прокручивается */
+    #chat-container {
+        flex: 1;
+        overflow-y: auto; /* ✅ ВОТ ЭТО ВАЖНО */
+        padding: 2rem 0;
+        scroll-behavior: smooth;
+    }
+    
+    /* СТИЛИ СООБЩЕНИЙ */
+    .message {
+        margin-bottom: 2rem;
+        display: flex;
+        flex-direction: column;
+        animation: messageSlide 0.3s ease;
+    }
+    
+    @keyframes messageSlide {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
     
     .user-message {
@@ -105,16 +80,18 @@
     }
     
     .message-bubble {
-        max-width: 70%;
+        max-width: 80%;
         padding: 1rem 1.5rem;
         border-radius: 15px;
         word-wrap: break-word;
+        line-height: 1.6;
     }
     
     .user-message .message-bubble {
-        background: #667eea;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border-bottom-right-radius: 5px;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
     }
     
     .ai-message .message-bubble {
@@ -122,6 +99,30 @@
         color: #333;
         border: 1px solid #e0e0e0;
         border-bottom-left-radius: 5px;
+        white-space: pre-line; /* ✅ Сохраняет переносы строк */
+    }
+    
+    /* Стили для HTML внутри AI сообщений */
+    .ai-message .message-bubble strong {
+        font-weight: 700;
+        color: #00c9a7;
+    }
+    
+    .ai-message .message-bubble h1,
+    .ai-message .message-bubble h2,
+    .ai-message .message-bubble h3 {
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+        color: #00c9a7;
+    }
+    
+    .ai-message .message-bubble ul {
+        margin: 0.5rem 0 0.5rem 1.5rem;
+        padding: 0;
+    }
+    
+    .ai-message .message-bubble li {
+        margin-bottom: 0.3rem;
     }
     
     .message-time {
@@ -131,7 +132,7 @@
         padding: 0 0.5rem;
     }
     
-    /* ⏳ ИНДИКАТОР ПЕЧАТАНИЯ */
+    /* ИНДИКАТОР ПЕЧАТАНИЯ */
     .typing-dots {
         display: flex;
         gap: 5px;
@@ -162,11 +163,151 @@
         }
     }
     
-    /* 📱 АВТОСКРОЛЛ */
-    #chat-container {
-        scroll-behavior: smooth;
+    /* ФОРМА ВВОДА - фиксирована внизу */
+    .chat-input-wrapper {
+        padding: 1.5rem 0;
+        background: #f8f9fa;
+        border-top: 1px solid #e0e0e0;
+        flex-shrink: 0;
+    }
+    
+    #chat-form {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+    
+    #message-input {
+        flex: 1;
+        padding: 1rem 1.5rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 25px;
+        font-size: 1rem;
+        background: white;
+        transition: all 0.2s;
+    }
+    
+    #message-input:focus {
+        outline: none;
+        border-color: #00c9a7;
+        box-shadow: 0 0 0 3px rgba(0, 201, 167, 0.1);
+    }
+    
+    .send-button {
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #00c9a7, #00b894);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .send-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 201, 167, 0.3);
+    }
+    
+    .send-button:active {
+        transform: translateY(0);
+    }
+    
+    /* ПУСТОЕ СОСТОЯНИЕ */
+    .empty-state {
+        text-align: center;
+        color: #999;
+        padding: 4rem 2rem;
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* АДАПТИВНОСТЬ */
+    @media (max-width: 768px) {
+        .chat-container-wrapper {
+            padding: 0 1rem;
+        }
+        
+        .message-bubble {
+            max-width: 90%;
+        }
+        
+        #chat-form {
+            gap: 0.5rem;
+        }
+        
+        .send-button {
+            padding: 1rem 1.5rem;
+        }
     }
 </style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container-wrapper">
+    <!-- ОКНО СООБЩЕНИЙ -->
+    <div id="chat-container">
+        <!-- История сообщений -->
+        {% if chat_history %}
+            {% for msg in chat_history %}
+            <div class="message {% if msg.role == 'user' %}user-message{% else %}ai-message{% endif %}">
+                <div class="message-bubble">
+                    {% if msg.role == 'assistant' %}
+                        {{ msg.message | safe }}
+                    {% else %}
+                        {{ msg.message }}
+                    {% endif %}
+                </div>
+                <div class="message-time">
+                    {{ msg.timestamp.strftime('%H:%M') if msg.timestamp else '' }}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <!-- Пустое состояние -->
+            <div class="empty-state">
+                <div class="empty-state-icon">🤖</div>
+                <h2 style="margin-bottom: 0.5rem; color: #333;">{{ t('chat_greeting', lang) }}</h2>
+                <p>{{ t('chat_start_conversation', lang) }}</p>
+            </div>
+        {% endif %}
+        
+        <!-- Индикатор печатания -->
+        <div id="typing-indicator" style="display: none;">
+            <div class="message ai-message">
+                <div class="message-bubble">
+                    <span class="typing-dots">
+                        <span></span><span></span><span></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ФОРМА ВВОДА - фиксирована внизу -->
+    <div class="chat-input-wrapper">
+        <form id="chat-form">
+            <input 
+                type="text" 
+                id="message-input" 
+                placeholder="{{ t('chat_placeholder', lang) }}"
+                autocomplete="off"
+                required
+            />
+            <button type="submit" class="send-button">
+                <span>{{ t('btn_send', lang) }}</span>
+                <span>📤</span>
+            </button>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -212,7 +353,7 @@ chatForm.addEventListener('submit', async (e) => {
             // Добавляем ответ ИИ
             addMessage(data.response, 'ai');
         } else {
-            // Ошибка - используем локализованное сообщение
+            // Ошибка
             addMessage('{{ t("error_server", lang) }}: ' + data.error, 'ai');
         }
         
@@ -232,12 +373,22 @@ function addMessage(text, role) {
     const time = now.getHours().toString().padStart(2, '0') + ':' + 
                  now.getMinutes().toString().padStart(2, '0');
     
-    messageDiv.innerHTML = `
-        <div class="message-bubble">
-            ${text}
-        </div>
-        <div class="message-time">${time}</div>
-    `;
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+    
+    // Для AI используем innerHTML, для пользователя - textContent
+    if (role === 'ai') {
+        bubble.innerHTML = text;
+    } else {
+        bubble.textContent = text;
+    }
+    
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'message-time';
+    timeDiv.textContent = time;
+    
+    messageDiv.appendChild(bubble);
+    messageDiv.appendChild(timeDiv);
     
     // Вставляем перед индикатором печатания
     chatContainer.insertBefore(messageDiv, typingIndicator);
@@ -253,5 +404,8 @@ function scrollToBottom() {
 
 // Прокручиваем вниз при загрузке страницы
 window.addEventListener('load', scrollToBottom);
+
+// Фокус на поле ввода при загрузке
+messageInput.focus();
 </script>
 {% endblock %}

@@ -96,9 +96,41 @@ def google_callback():
             session['name'] = name
             session['google_id'] = google_id
             
+            try:
+                import psycopg2
+                from urllib.parse import urlparse, urlunparse
+                
+                database_url = os.getenv('DATABASE_URL')
+                parsed = urlparse(database_url)
+                clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
+                
+                conn = psycopg2.connect(clean_url)
+                cursor = conn.cursor()
+                
+                # Получаем язык пользователя из БД
+                cursor.execute("SELECT language FROM users WHERE user_id = %s", (user['user_id'],))
+                result = cursor.fetchone()
+                
+                if result and result[0]:
+                    user_language = result[0]
+                    session['language'] = user_language
+                    print(f"✅ Язык загружен из БД: {user_language}")
+                else:
+                    # Если язык не установлен - ставим русский
+                    session['language'] = 'ru'
+                    print(f"⚠️ Язык не найден в БД, используем русский")
+                
+                cursor.close()
+                conn.close()
+                
+            except Exception as e:
+                print(f"⚠️ Ошибка загрузки языка: {e}")
+                session['language'] = 'ru'  # По умолчанию русский
+            
             print(f"✅ Пользователь авторизован: user_id={user['user_id']}")
             
             return redirect(url_for('dashboard.dashboard'))
+            
         else:
             print("❌ Не удалось создать пользователя")
             return redirect(url_for('login'))

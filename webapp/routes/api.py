@@ -23,6 +23,8 @@ from db_postgresql import (
     get_db_connection,      # Подключение к БД
     release_db_connection   # Освобождение подключения
 )
+# ✅ НОВОЕ: Импорт форматирования для веба
+from webapp.utils.text_formatter import format_for_web
 
 # ==========================================
 # ✅ ИМПОРТЫ ФУНКЦИЙ БОТА (проверены)
@@ -249,6 +251,8 @@ def chat_message():
         )
         
         print(f"✅ [ШАГ 6] Ответ получен: {len(ai_response)} символов")
+        formatted_response = format_for_web(ai_response)
+        print(f"🎨 Ответ отформатирован для веба")
         
         # ==========================================
         # ШАГ 7: СПИСЫВАЕМ ЛИМИТ (если использовали GPT-5)
@@ -285,7 +289,7 @@ def chat_message():
         # Возвращаем успешный ответ
         return jsonify({
             'success': True,
-            'response': ai_response,
+            'response': formatted_response,
             'user_message': user_message,
             'model_used': model_name,  # Показываем какая модель использовалась
             'had_limits': has_premium_limits  # Были ли лимиты

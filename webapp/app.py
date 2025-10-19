@@ -171,28 +171,40 @@ def logout():
 # 🌍 НОВОЕ: Смена языка интерфейса
 @app.route('/set-language/<lang>')
 def set_language_route(lang):
-    """
-    Изменяет язык интерфейса
-    
-    Args:
-        lang: Код языка ('ru', 'uk', 'en', 'de')
-    
-    Логика:
-    1. Проверяем, что язык поддерживается
-    2. Сохраняем в сессию
-    3. Возвращаем пользователя на ту же страницу (используя request.referrer)
-    
-    Примеры URL:
-    - /set-language/ru - переключить на русский
-    - /set-language/en - переключить на английский
-    """
     if lang in ['ru', 'uk', 'en', 'de']:
         set_language(session, lang)
         print(f"🌍 Язык изменён на: {lang}")
+        
+        # ✅ НОВОЕ: Сохраняем язык в БД (если пользователь авторизован)
+        if 'user_id' in session:
+            try:
+                import psycopg2
+                from urllib.parse import urlparse, urlunparse
+                
+                database_url = os.getenv('DATABASE_URL')
+                parsed = urlparse(database_url)
+                clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
+                
+                conn = psycopg2.connect(clean_url)
+                cursor = conn.cursor()
+                
+                # Обновляем язык в БД
+                cursor.execute(
+                    "UPDATE users SET language = %s WHERE user_id = %s",
+                    (lang, session['user_id'])
+                )
+                
+                conn.commit()
+                cursor.close()
+                conn.close()
+                
+                print(f"✅ Язык сохранён в БД: {lang}")
+                
+            except Exception as e:
+                print(f"⚠️ Ошибка сохранения языка в БД: {e}")
     else:
         print(f"⚠️ Неподдерживаемый язык: {lang}")
     
-    # Возвращаем на предыдущую страницу или на главную
     return redirect(request.referrer or url_for('index'))
 
 

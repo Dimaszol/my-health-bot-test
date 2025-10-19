@@ -555,6 +555,7 @@ main {
     color: var(--text-primary);
     border: 1px solid var(--border-color);
     border-bottom-left-radius: 4px;
+    white-space: pre-line; 
 }
 
 .message-time {
@@ -905,12 +906,6 @@ footer {
     background: var(--gradient-hero);
     color: var(--primary-color);
     font-weight: 600;
-}
-
-.lang-option.active::after {
-    content: '✓';
-    margin-left: auto;
-    color: var(--primary-color);
 }
 
 /* Адаптация для мобильных */

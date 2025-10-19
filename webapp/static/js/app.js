@@ -149,7 +149,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
-        bubble.textContent = text;
+        
+        // ✅ КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ:
+        // Для AI используем innerHTML (отображает HTML теги)
+        // Для пользователя используем textContent (безопасность)
+        if (role === 'ai') {
+            bubble.innerHTML = text;  // ✅ AI сообщения с HTML
+        } else {
+            bubble.textContent = text;  // ✅ Сообщения пользователя - только текст
+        }
         
         const time = document.createElement('div');
         time.className = 'message-time';
