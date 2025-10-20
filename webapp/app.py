@@ -1,11 +1,16 @@
 # webapp/app.py
-# 🌐 Главный файл Flask приложения для медицинского бота
+# 🌐 Главный файл FastAPI приложения для медицинского бота
+# ✅ ПОЛНОСТЬЮ АСИНХРОННЫЙ - без костылей с loop!
 
 import os
 import sys
-import asyncio
-from flask import Flask, render_template, session, redirect, url_for, request
-from flask_session import Session
+from pathlib import Path
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 
 # 📁 Добавляем корневую папку в путь (чтобы импортировать db_postgresql.py)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -13,275 +18,236 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # 🔧 Импортируем настройки
 from webapp.config import Config, validate_config
 
-# 🌍 НОВОЕ: Импортируем функции локализации
+# 🌍 Импортируем функции локализации
 from webapp.translations import t, get_current_language, set_language, get_supported_languages
 
 # 🗄️ Импортируем функции базы данных
-from db_postgresql import initialize_db_pool, close_db_pool
+from db_postgresql import initialize_db_pool, close_db_pool, update_user_profile
+
+from webapp.utils.flash import get_flashed_messages, flash
+
+from webapp.utils.context import get_template_context
 
 """
 🎯 ЧТО ДЕЛАЕТ ЭТО ПРИЛОЖЕНИЕ:
 
-1. Запускает веб-сервер на http://localhost:5000
+1. Запускает FastAPI сервер (ASYNC!)
 2. Позволяет пользователям входить через Google
 3. Показывает личный кабинет с данными из PostgreSQL
 4. Предоставляет чат с ИИ (используя gpt.py)
 5. Позволяет загружать медицинские документы
-6. 🆕 ПОДДЕРЖКА 4 ЯЗЫКОВ: русский, украинский, английский, немецкий
+6. 🆕 ПОЛНОСТЬЮ АСИНХРОННЫЙ - нет костылей с loop.run_until_complete!
 
 ВСЕ данные берутся из той же БД, что использует Telegram бот!
 """
 
-# 🏗️ СОЗДАЁМ FLASK ПРИЛОЖЕНИЕ
-app = Flask(__name__)
-app.config.from_object(Config)
+# ==========================================
+# 🔄 LIFESPAN: Управление жизненным циклом
+# ==========================================
 
-# 📦 НАСТРОЙКА СЕССИЙ
-# Сессии нужны чтобы запомнить кто вошёл в систему
-app.config['SESSION_TYPE'] = 'filesystem'  # Храним сессии в файлах (не в памяти)
-app.config['SESSION_PERMANENT'] = True
-app.config['SESSION_USE_SIGNER'] = True  # Подписываем сессии (безопасность)
-Session(app)
-
-# ✅ НОВОЕ: Создаём extensions для хранения loop
-if not hasattr(app, 'extensions'):
-    app.extensions = {}
-
-# 🌍 ГЛОБАЛЬНАЯ ПЕРЕМЕННАЯ для event loop
-# Нужна для асинхронных функций (база данных работает асинхронно)
-loop = None
-db_initialized = False  # Флаг инициализации БД
-
-
-# 🔄 ИНИЦИАЛИЗАЦИЯ БД при запуске приложения
-async def init_database():
-    """Инициализирует БД один раз при запуске"""
-    global db_initialized
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Управление жизненным циклом приложения
+    (современная замена on_event startup/shutdown)
+    """
+    # ==========================================
+    # 🚀 STARTUP (выполняется при запуске)
+    # ==========================================
+    print("\n" + "="*50)
+    print("🏥 МЕДИЦИНСКИЙ БОТ - FASTAPI ВЕРСИЯ")
+    print("="*50)
+    print("🔄 Инициализация базы данных...")
     
-    if not db_initialized:
+    try:
         await initialize_db_pool()
-        print("✅ База данных подключена к Flask приложению")
-        db_initialized = True
-
-
-# 🔄 ПРОВЕРКА БД при запросе (не инициализация!)
-@app.before_request
-def check_db():
-    """
-    Проверяем БД перед запросом (но не инициализируем!)
-    """
-    global loop, db_initialized
+        print("✅ База данных подключена!")
+    except Exception as e:
+        print(f"❌ Ошибка подключения к БД: {e}")
+        raise
     
-    if loop is None:
-        # Создаём event loop только один раз
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        # ✅ Сохраняем в extensions
-        app.extensions['loop'] = loop
+    print(f"📊 База данных: PostgreSQL (Supabase)")
+    print(f"🌍 Поддержка языков: RU, UK, EN, DE")
+    print(f"⚡ Режим: Асинхронный (FastAPI)")
+    print("="*50 + "\n")
     
-    # БД уже должна быть инициализирована при старте приложения
-    if not db_initialized:
-        # Если вдруг не инициализирована - делаем это сейчас
-        loop.run_until_complete(init_database())
-
-
-# 🌍 НОВОЕ: Установка языка по умолчанию
-@app.before_request
-def set_default_language():
-    """
-    Устанавливает язык по умолчанию, если его нет в сессии
+    # ✅ yield = приложение работает здесь
+    yield
     
-    Приоритет определения языка:
-    1. Язык из сессии (если пользователь уже выбрал)
-    2. Язык из заголовка Accept-Language браузера
-    3. Русский язык (по умолчанию)
-    """
-    if 'language' not in session:
-        # Пытаемся определить язык из браузера
-        browser_lang = request.accept_languages.best_match(['ru', 'uk', 'en', 'de'])
-        session['language'] = browser_lang if browser_lang else 'ru'
+    # ==========================================
+    # 🛑 SHUTDOWN (выполняется при остановке)
+    # ==========================================
+    print("\n🧹 Закрытие базы данных...")
+    try:
+        await close_db_pool()
+        print("✅ База данных корректно закрыта")
+    except Exception as e:
+        print(f"⚠️ Ошибка при закрытии БД: {e}")
 
+# 🏗️ СОЗДАЁМ FASTAPI ПРИЛОЖЕНИЕ
+app = FastAPI(
+    title="Медицинский Бот - Веб Версия",
+    description="Асинхронный веб-интерфейс для медицинского бота",
+    version="2.0.0",
+    lifespan=lifespan
+)
 
-# 🌍 НОВОЕ: Context processor - делает переменные доступными во ВСЕХ шаблонах
-@app.context_processor
-def inject_language():
+# 🔐 ДОБАВЛЯЕМ ПОДДЕРЖКУ СЕССИЙ (как в Flask)
+app.add_middleware(SessionMiddleware, secret_key=Config.SECRET_KEY)
+
+# 📁 НАСТРОЙКА ШАБЛОНОВ И СТАТИКИ
+# Используем те же папки что были в Flask
+templates = Jinja2Templates(directory="webapp/templates")
+app.mount("/static", StaticFiles(directory="webapp/static"), name="static")
+# ==========================================
+# 📍 БАЗОВЫЕ МАРШРУТЫ
+# ==========================================
+
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
     """
-    Автоматически добавляет в контекст всех шаблонов:
-    - lang: текущий язык ('ru', 'uk', 'en', 'de')
-    - t: функция перевода
-    - supported_languages: список поддерживаемых языков
+    Главная страница
     
-    Теперь в любом HTML шаблоне можно писать:
-    {{ t('welcome', lang) }}
+    Логика:
+    - Если пользователь уже вошёл → редирект в dashboard
+    - Если не вошёл → показываем главную страницу
     """
+    if request.session.get('user_id'):
+        return RedirectResponse(url='/dashboard', status_code=302)
+    
+    context = get_template_context(request)
+    return templates.TemplateResponse('index.html', context)
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login(request: Request):
+    """
+    Страница входа через Google OAuth
+    """
+    if request.session.get('user_id'):
+        return RedirectResponse(url='/dashboard', status_code=302)
+    
+    context = get_template_context(request)
+    return templates.TemplateResponse('login.html', context)
+
+
+@app.get("/logout")
+async def logout(request: Request):
+    """
+    Выход из системы
+    Очищаем сессию и редиректим на главную
+    """
+    request.session.clear()
+    return RedirectResponse(url='/', status_code=302)
+
+
+@app.get("/set-language/{lang}")
+async def set_language_route(request: Request, lang: str):
+    """
+    Смена языка интерфейса
+    
+    ✅ СМОТРИ КАК ЧИСТО! Никаких psycopg2!
+    Просто используем готовую async функцию из db_postgresql.py
+    """
+    if lang in ['ru', 'uk', 'en', 'de']:
+        request.session['language'] = lang
+        print(f"🌍 Язык изменён на: {lang}")
+        
+        # Если пользователь авторизован - сохраняем в БД
+        user_id = request.session.get('user_id')
+        if user_id:
+            try:
+                # ✅ ПРОСТО AWAIT! Используем готовую функцию!
+                await update_user_profile(user_id, 'language', lang)
+                print(f"✅ Язык сохранён в БД для user_id={user_id}")
+            except Exception as e:
+                print(f"⚠️ Ошибка сохранения языка: {e}")
+    
+    # Редиректим обратно на предыдущую страницу
+    referer = request.headers.get('referer', '/')
+    return RedirectResponse(url=referer, status_code=302)
+
+
+# ==========================================
+# 📚 РЕГИСТРАЦИЯ РОУТЕРОВ (Blueprints в FastAPI)
+# ==========================================
+
+try:
+    from webapp.routes import auth, dashboard, api
+    
+    # Регистрируем роутеры (как blueprints в Flask)
+    app.include_router(auth.router, prefix="/auth", tags=["auth"])
+    app.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
+    app.include_router(api.router, prefix="/api", tags=["api"])
+    
+    print("✅ Все роутеры зарегистрированы")
+    
+except ImportError as e:
+    print(f"⚠️ Роутеры будут добавлены следующим шагом: {e}")
+
+
+# ==========================================
+# 🧪 ТЕСТОВЫЕ РОУТЫ
+# ==========================================
+
+@app.get("/test")
+async def test_route():
+    """Проверка что FastAPI работает"""
     return {
-        'lang': get_current_language(session),
-        't': t,
-        'supported_languages': get_supported_languages()
+        "status": "ok",
+        "message": "FastAPI работает! 🚀",
+        "version": "2.0.0",
+        "framework": "FastAPI (async)"
     }
 
 
-# 🏠 ГЛАВНАЯ СТРАНИЦА
-@app.route('/')
-def index():
-    """
-    Показывает главную страницу
-    
-    Логика:
-    - Если пользователь уже вошёл (есть session['user_id']) → редирект в dashboard
-    - Если не вошёл → показываем главную страницу с кнопкой "Войти"
-    """
-    if 'user_id' in session:
-        # Пользователь уже авторизован - отправляем в кабинет
-        return redirect(url_for('dashboard.dashboard'))
-    
-    # Показываем главную страницу
-    return render_template('index.html')
-
-
-# 🔐 СТРАНИЦА ВХОДА
-@app.route('/login')
-def login():
-    """
-    Страница входа через Google OAuth
-    
-    Здесь будет кнопка "Войти через Google"
-    """
-    if 'user_id' in session:
-        # Уже вошли - редирект в кабинет
-        return redirect(url_for('dashboard.dashboard'))
-    
-    return render_template('login.html')
-
-
-# 🚪 ВЫХОД
-@app.route('/logout')
-def logout():
-    """
-    Выход из системы
-    
-    Что делаем:
-    1. Удаляем все данные из сессии
-    2. Перенаправляем на главную страницу
-    """
-    session.clear()
-    return redirect(url_for('index'))
-
-
-# 🌍 НОВОЕ: Смена языка интерфейса
-@app.route('/set-language/<lang>')
-def set_language_route(lang):
-    if lang in ['ru', 'uk', 'en', 'de']:
-        set_language(session, lang)
-        print(f"🌍 Язык изменён на: {lang}")
+@app.get("/health")
+async def health_check():
+    """Health check для Railway/мониторинга"""
+    try:
+        from db_postgresql import db_pool
         
-        # ✅ НОВОЕ: Сохраняем язык в БД (если пользователь авторизован)
-        if 'user_id' in session:
-            try:
-                import psycopg2
-                from urllib.parse import urlparse, urlunparse
-                
-                database_url = os.getenv('DATABASE_URL')
-                parsed = urlparse(database_url)
-                clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
-                
-                conn = psycopg2.connect(clean_url)
-                cursor = conn.cursor()
-                
-                # Обновляем язык в БД
-                cursor.execute(
-                    "UPDATE users SET language = %s WHERE user_id = %s",
-                    (lang, session['user_id'])
-                )
-                
-                conn.commit()
-                cursor.close()
-                conn.close()
-                
-                print(f"✅ Язык сохранён в БД: {lang}")
-                
-            except Exception as e:
-                print(f"⚠️ Ошибка сохранения языка в БД: {e}")
-    else:
-        print(f"⚠️ Неподдерживаемый язык: {lang}")
+        if db_pool:
+            return {
+                "status": "healthy",
+                "database": "connected",
+                "version": "2.0.0"
+            }
+        else:
+            return {
+                "status": "unhealthy",
+                "database": "disconnected"
+            }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error": str(e)
+        }
+
+
+# ==========================================
+# 🚀 ЗАПУСК (для локальной разработки)
+# ==========================================
+
+if __name__ == "__main__":
+    import uvicorn
     
-    return redirect(request.referrer or url_for('index'))
-
-
-# 📚 РЕГИСТРАЦИЯ МАРШРУТОВ (blueprints)
-# Blueprints - это как модули, которые группируют связанные маршруты
-
-try:
-    from webapp.routes.auth import auth_bp, init_oauth
-    from webapp.routes.dashboard import dashboard_bp
-    from webapp.routes.api import api_bp
-    
-    # Инициализируем OAuth
-    init_oauth(app)
-    
-    # Регистрируем маршруты
-    app.register_blueprint(auth_bp, url_prefix='/auth')        # /auth/...
-    app.register_blueprint(dashboard_bp, url_prefix='/dashboard')  # /dashboard/...
-    app.register_blueprint(api_bp, url_prefix='/api')          # /api/...
-    
-    print("✅ Все маршруты зарегистрированы")
-    
-except ImportError as e:
-    print(f"⚠️ Не удалось импортировать маршруты: {e}")
-    print("Создайте файлы: routes/auth.py, routes/dashboard.py, routes/api.py")
-
-
-# 🧹 ЗАКРЫТИЕ БД при остановке приложения (ПРАВИЛЬНО)
-# Убрали teardown_appcontext - он закрывал пул после каждого запроса!
-# Теперь пул будет закрыт только при остановке всего приложения
-
-import atexit
-
-@atexit.register
-def cleanup():
-    """
-    Закрываем пул БД при завершении процесса Python
-    Это вызовется только при реальной остановке приложения (Ctrl+C)
-    """
-    global loop
-    if loop and not loop.is_closed():
-        try:
-            loop.run_until_complete(close_db_pool())
-            print("🧹 База данных корректно закрыта")
-        except:
-            pass
-
-
-# 🚀 ЗАПУСК ПРИЛОЖЕНИЯ
-if __name__ == '__main__':
-    # Проверяем настройки перед запуском
+    # Проверяем настройки
     if not validate_config():
         print("\n❌ Исправьте настройки в .env файле и попробуйте снова\n")
         sys.exit(1)
     
-    print("\n" + "="*50)
-    print("🏥 МЕДИЦИНСКИЙ БОТ - ВЕБ ВЕРСИЯ")
-    print("="*50)
-    print(f"🌐 Открыть в браузере: http://localhost:5000")
-    print(f"🔒 Безопасный режим: {'ON' if Config.DEBUG else 'OFF'}")
-    print(f"📊 База данных: PostgreSQL (Supabase)")
-    print(f"🌍 Поддержка языков: RU, UK, EN, DE")
-    print("="*50 + "\n")
+    # ✅ ЧИТАЕМ DEBUG из .env
+    debug_mode = os.getenv('DEBUG', 'false').lower() == 'true'
     
-    # ✨ НОВОЕ: Инициализируем БД ПЕРЕД запуском сервера
-    print("🔄 Инициализация базы данных...")
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    print("\n🚀 Запуск FastAPI сервера...")
+    print(f"🐛 Режим отладки: {'ON (автоперезагрузка)' if debug_mode else 'OFF'}")
     
-    # ✅ КРИТИЧНО: Сохраняем loop для использования в API
-    app.extensions['loop'] = loop
-    
-    loop.run_until_complete(init_database())
-    print("✅ База данных готова!\n")
-    
-    # Запускаем Flask сервер
-    app.run(
-        host='0.0.0.0',      # Слушаем на всех интерфейсах
-        port=5000,           # Порт 5000
-        debug=Config.DEBUG   # Режим отладки (из .env)
+    # Запускаем сервер на том же порту что был Flask (5000)
+    uvicorn.run(
+        "webapp.app:app",
+        host="0.0.0.0",
+        port=5000,
+        reload=debug_mode,  # ← ИЗМЕНИЛИ! Теперь берётся из .env
+        log_level="info"
     )
