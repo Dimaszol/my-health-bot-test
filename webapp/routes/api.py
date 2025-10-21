@@ -295,10 +295,6 @@ async def chat_message(
         )
 
 
-# ==========================================
-# 📤 ЗАГРУЗКА ДОКУМЕНТА
-# ==========================================
-
 @router.post("/upload")
 async def upload_document(
     request: Request,
@@ -307,15 +303,20 @@ async def upload_document(
     user_id: int = Depends(get_current_user)
 ):
     """
-    Загрузка медицинского документа
+    📤 ЗАГРУЗКА И ОБРАБОТКА ДОКУМЕНТА (ВАРИАНТ 1 - мультиязычный)
     
-    ✅ БЕЗ КОСТЫЛЕЙ! Просто await!
+    Копируем логику из upload.py (Telegram бота)
     """
+    
+    # ✅ СНАЧАЛА получаем язык пользователя
+    lang = await get_user_language(user_id)
+    
     try:
         if not file.filename:
+            from db_postgresql import t
             return JSONResponse(
                 status_code=400,
-                content={'success': False, 'error': 'Файл не выбран'}
+                content={'success': False, 'error': t('file_not_selected', lang)}
             )
         
         # Проверяем расширение
@@ -323,60 +324,209 @@ async def upload_document(
         file_ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
         
         if file_ext not in Config.ALLOWED_EXTENSIONS:
+            from db_postgresql import t
             return JSONResponse(
                 status_code=400,
                 content={
                     'success': False,
-                    'error': f'Неподдерживаемый тип файла. Разрешены: {", ".join(Config.ALLOWED_EXTENSIONS)}'
+                    'error': t('unsupported_file_type', lang)
                 }
             )
         
-        # Используем title или имя файла
-        doc_title = title if title else filename
-        
         print(f"📤 Загрузка документа от user_id={user_id}: {filename}")
         
-        # Создаём папку для загрузок
-        os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+        # Создаём временную папку для загрузок
+        temp_dir = f"temp_{user_id}"
+        os.makedirs(temp_dir, exist_ok=True)
         
-        # Сохраняем файл
-        safe_filename = f"{user_id}_{filename}"
-        file_path = os.path.join(Config.UPLOAD_FOLDER, safe_filename)
+        # Сохраняем файл ВРЕМЕННО
+        local_file = os.path.join(temp_dir, filename)
         
         # ✅ Сохраняем асинхронно
         content = await file.read()
-        with open(file_path, 'wb') as f:
+        with open(local_file, 'wb') as f:
             f.write(content)
         
-        # ✅ ПРОСТО AWAIT! Сохраняем в БД
-        conn = await get_db_connection()
+        print(f"✅ Файл сохранён временно: {local_file}")
         
+        # ===================================================
+        # 🔧 КОПИРУЕМ ЛОГИКУ ИЗ upload.py (TELEGRAM БОТА)
+        # ===================================================
+        
+        # Импортируем функции из бота
+        from save_utils import send_to_gpt_vision, convert_pdf_to_images
+        from gpt import (
+            ask_structured, 
+            is_medical_text, 
+            generate_medical_summary, 
+            generate_title_from_text
+        )
+        from db_postgresql import save_document, t
+        from vector_db_postgresql import split_into_chunks, add_chunks_to_vector_db
+        from file_storage import get_file_storage
+        
+        file_type = "pdf" if file_ext == "pdf" else "image"
+        vision_text = ""
+        
+        # STEP 1: Извлекаем текст в зависимости от типа файла
+        if file_ext == 'pdf':
+            try:
+                image_paths = convert_pdf_to_images(local_file, f"{temp_dir}/pages")
+                
+                if not image_paths:
+                    return JSONResponse(
+                        status_code=400,
+                        content={'success': False, 'error': t('pdf_read_failed', lang)}
+                    )
+                
+                # Ограничиваем до 5 страниц
+                if len(image_paths) > 5:
+                    print(f"⚠️ PDF содержит {len(image_paths)} страниц, обрабатываем первые 5")
+                    image_paths = image_paths[:5]
+                
+                # Извлекаем текст с каждой страницы
+                for img_path in image_paths:
+                    try:
+                        page_text, _ = await send_to_gpt_vision(img_path, lang)
+                        if page_text:
+                            vision_text += page_text + "\n\n"
+                    except Exception as page_error:
+                        print(f"⚠️ Ошибка обработки страницы: {page_error}")
+                        continue
+                
+                vision_text = vision_text.strip()
+                
+                if not vision_text:
+                    return JSONResponse(
+                        status_code=400,
+                        content={'success': False, 'error': t('pdf_read_failed', lang)}
+                    )
+                    
+            except Exception as e:
+                print(f"❌ Ошибка обработки PDF: {e}")
+                import traceback
+                traceback.print_exc()
+                return JSONResponse(
+                    status_code=400,
+                    content={'success': False, 'error': t('pdf_processing_error', lang)}
+                )
+        
+        elif file_ext in ['jpg', 'jpeg', 'png', 'webp']:
+            # Изображение → анализируем через Vision API
+            try:
+                vision_text, _ = await send_to_gpt_vision(local_file, lang)
+            except Exception as e:
+                print(f"❌ Ошибка анализа изображения: {e}")
+                return JSONResponse(
+                    status_code=400,
+                    content={'success': False, 'error': t('image_analysis_error', lang)}
+                )
+        
+        else:
+            # Текстовый файл → читаем напрямую
+            try:
+                with open(local_file, 'r', encoding='utf-8') as f:
+                    vision_text = f.read()
+            except UnicodeDecodeError:
+                try:
+                    with open(local_file, 'r', encoding='cp1251') as f:
+                        vision_text = f.read()
+                except Exception as e:
+                    print(f"❌ Ошибка чтения файла: {e}")
+                    return JSONResponse(
+                        status_code=400,
+                        content={'success': False, 'error': t('file_read_error', lang)}
+                    )
+        
+        # STEP 2: Проверяем что это медицинский документ
+        if not await is_medical_text(vision_text):
+            return JSONResponse(
+                status_code=400,
+                content={'success': False, 'error': t('not_medical_doc', lang)}
+            )
+        
+        # STEP 3: 🎯 ГЛАВНОЕ! Генерируем заголовок
+        if title and title.strip():
+            # Пользователь указал название
+            auto_title = title.strip()
+            print(f"✅ Используем название от пользователя: {auto_title}")
+        else:
+            # Генерируем через GPT
+            auto_title = await generate_title_from_text(text=vision_text[:1500], lang=lang)
+            print(f"🤖 Сгенерирован заголовок: {auto_title}")
+        
+        # STEP 4: Создаём структурированный текст и резюме
+        raw_text = await ask_structured(vision_text[:8000], lang=lang)
+        summary = await generate_medical_summary(vision_text[:8000], lang)
+        
+        # STEP 5: Сохраняем файл в постоянное хранилище
+        storage = get_file_storage()
+        success, permanent_path = storage.save_file(
+            user_id=user_id,
+            filename=filename,
+            source_path=local_file
+        )
+        
+        if not success:
+            return JSONResponse(
+                status_code=500,
+                content={'success': False, 'error': t('file_storage_error', lang)}
+            )
+        
+        print(f"✅ Файл сохранён постоянно: {permanent_path}")
+        
+        # STEP 6: Сохраняем в БД
+        document_id = await save_document(
+            user_id=user_id,
+            title=auto_title,
+            file_path=permanent_path,
+            file_type=file_type,
+            raw_text=raw_text,
+            summary=summary
+        )
+        
+        print(f"✅ Документ сохранён в БД: document_id={document_id}")
+        
+        # STEP 7: Добавляем в векторную базу
+        chunks = await split_into_chunks(summary, document_id, user_id)
+        await add_chunks_to_vector_db(document_id, user_id, chunks)
+        
+        print(f"✅ Документ добавлен в векторную базу")
+        
+        # STEP 8: Удаляем временные файлы
         try:
-            document_id = await conn.fetchval("""
-                INSERT INTO documents (user_id, title, file_path, file_type, uploaded_at)
-                VALUES ($1, $2, $3, $4, NOW())
-                RETURNING id
-            """, user_id, doc_title, file_path, file_ext)
-            
-        finally:
-            await release_db_connection(conn)
+            if os.path.exists(local_file):
+                os.remove(local_file)
+            # Удаляем папку pages если есть
+            pages_dir = f"{temp_dir}/pages"
+            if os.path.exists(pages_dir):
+                import shutil
+                shutil.rmtree(pages_dir)
+            # Удаляем временную папку если пустая
+            if os.path.exists(temp_dir) and not os.listdir(temp_dir):
+                os.rmdir(temp_dir)
+        except Exception as e:
+            print(f"⚠️ Не удалось удалить временные файлы: {e}")
         
-        print(f"✅ Документ сохранён: document_id={document_id}")
+        # ✅ УСПЕХ! (с мультиязычным сообщением)
+        print(f"🎉 Документ успешно обработан!")
         
         return {
             'success': True,
             'document_id': document_id,
-            'message': 'Документ успешно загружен'
+            'title': auto_title,
+            'summary': summary[:200] + '...' if len(summary) > 200 else summary,  # Краткое резюме
+            'message': t('document_uploaded_successfully', lang, title=auto_title)
         }
         
     except Exception as e:
-        print(f"❌ Ошибка загрузки: {e}")
+        print(f"❌ Критическая ошибка загрузки: {e}")
         import traceback
         traceback.print_exc()
         
         return JSONResponse(
             status_code=500,
-            content={'success': False, 'error': 'Ошибка загрузки'}
+            content={'success': False, 'error': t('document_processing_error', lang) if 'lang' in locals() else 'Error processing document'}
         )
 
 
@@ -435,23 +585,3 @@ async def delete_document(
             status_code=500,
             content={'success': False, 'error': 'Ошибка удаления'}
         )
-
-
-# ==========================================
-# 📊 ИТОГО: ЧТО ИЗМЕНИЛОСЬ?
-# ==========================================
-"""
-❌ БЫЛО (Flask):
-- 450+ строк кода
-- 17 раз loop.run_until_complete() - КОСТЫЛИ! 🔴
-- Создание новых event loop в каждом эндпоинте
-- Проблемы с "Task got Future attached to different loop"
-
-✅ СТАЛО (FastAPI):
-- 350 строк кода
-- 0 раз loop.run_until_complete() - ПРОСТО AWAIT! ✅
-- Код ИДЕНТИЧЕН телеграм-боту
-- Никаких проблем с event loop
-
-РАЗНИЦА: -100 строк, 0 костылей, просто копируем из main.py! 🎉
-"""

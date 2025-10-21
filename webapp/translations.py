@@ -624,6 +624,70 @@ TRANSLATIONS = {
         'uk': 'Документ видалено',
         'de': 'Dokument gelöscht'
     },
+
+    # ============================================
+    # 📤 ЗАГРУЗКА ДОКУМЕНТОВ - API сообщения
+    # ============================================
+    'file_not_selected': {
+        'ru': 'Файл не выбран',
+        'en': 'File not selected',
+        'uk': 'Файл не вибрано',
+        'de': 'Datei nicht ausgewählt'
+    },
+    'unsupported_file_type': {
+        'ru': '❌ Неподдерживаемый тип файла. Разрешены: PDF, DOCX, TXT, JPG, PNG',
+        'en': '❌ Unsupported file type. Allowed: PDF, DOCX, TXT, JPG, PNG',
+        'uk': '❌ Непідтримуваний тип файлу. Дозволено: PDF, DOCX, TXT, JPG, PNG',
+        'de': '❌ Nicht unterstützter Dateityp. Erlaubt: PDF, DOCX, TXT, JPG, PNG'
+    },
+    'pdf_read_failed': {
+        'ru': '❌ Не удалось прочитать PDF файл. Возможно, он повреждён или защищён паролем.',
+        'en': '❌ Failed to read PDF file. It may be corrupted or password-protected.',
+        'uk': '❌ Не вдалося прочитати PDF файл. Можливо, він пошкоджений або захищений паролем.',
+        'de': '❌ PDF-Datei konnte nicht gelesen werden. Sie ist möglicherweise beschädigt oder passwortgeschützt.'
+    },
+    'pdf_processing_error': {
+        'ru': '❌ Ошибка обработки PDF. Попробуйте конвертировать файл в изображение.',
+        'en': '❌ PDF processing error. Try converting the file to an image.',
+        'uk': '❌ Помилка обробки PDF. Спробуйте конвертувати файл у зображення.',
+        'de': '❌ PDF-Verarbeitungsfehler. Versuchen Sie, die Datei in ein Bild zu konvertieren.'
+    },
+    'image_analysis_error': {
+        'ru': '❌ Ошибка анализа изображения. Убедитесь что изображение чёткое и текст читаемый.',
+        'en': '❌ Image analysis error. Make sure the image is clear and the text is readable.',
+        'uk': '❌ Помилка аналізу зображення. Переконайтеся, що зображення чітке і текст читабельний.',
+        'de': '❌ Bildanalysefehler. Stellen Sie sicher, dass das Bild klar und der Text lesbar ist.'
+    },
+    'file_read_error': {
+        'ru': '❌ Не удалось прочитать файл. Проверьте кодировку (должна быть UTF-8 или Windows-1251).',
+        'en': '❌ Failed to read file. Check encoding (should be UTF-8 or Windows-1251).',
+        'uk': '❌ Не вдалося прочитати файл. Перевірте кодування (має бути UTF-8 або Windows-1251).',
+        'de': '❌ Datei konnte nicht gelesen werden. Überprüfen Sie die Kodierung (sollte UTF-8 oder Windows-1251 sein).'
+    },
+    'not_medical_doc': {
+        'ru': '❌ Это не медицинский документ. Пожалуйста, загрузите анализы, снимки или заключения врачей.',
+        'en': '❌ This is not a medical document. Please upload test results, images or medical reports.',
+        'uk': '❌ Це не медичний документ. Будь ласка, завантажте аналізи, знімки або висновки лікарів.',
+        'de': '❌ Dies ist kein medizinisches Dokument. Bitte laden Sie Testergebnisse, Bilder oder Arztberichte hoch.'
+    },
+    'file_storage_error': {
+        'ru': '❌ Ошибка сохранения файла на сервере. Попробуйте ещё раз или обратитесь в поддержку.',
+        'en': '❌ File storage error on server. Please try again or contact support.',
+        'uk': '❌ Помилка збереження файлу на сервері. Спробуйте ще раз або зверніться до підтримки.',
+        'de': '❌ Dateispeicherfehler auf dem Server. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.'
+    },
+    'document_uploaded_successfully': {
+        'ru': '✅ Документ успешно загружен и обработан!\n\n📄 <b>{title}</b>\n\nДокумент проанализирован AI и добавлен в вашу медицинскую карту.',
+        'en': '✅ Document successfully uploaded and processed!\n\n📄 <b>{title}</b>\n\nThe document has been analyzed by AI and added to your medical records.',
+        'uk': '✅ Документ успішно завантажено і оброблено!\n\n📄 <b>{title}</b>\n\nДокумент проаналізовано AI і додано до вашої медичної картки.',
+        'de': '✅ Dokument erfolgreich hochgeladen und verarbeitet!\n\n📄 <b>{title}</b>\n\nDas Dokument wurde von AI analysiert und zu Ihrer Krankenakte hinzugefügt.'
+    },
+    'document_processing_error': {
+        'ru': '❌ Произошла ошибка при обработке документа. Попробуйте ещё раз или обратитесь в поддержку.',
+        'en': '❌ An error occurred while processing the document. Please try again or contact support.',
+        'uk': '❌ Сталася помилка при обробці документа. Спробуйте ще раз або зверніться до підтримки.',
+        'de': '❌ Beim Verarbeiten des Dokuments ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.'
+    },
     
     # ============================================
     # 💬 СТРАНИЦА ЧАТА

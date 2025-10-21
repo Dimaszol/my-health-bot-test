@@ -13,7 +13,7 @@
 </div>
 
 <!-- 📤 ФОРМА ЗАГРУЗКИ -->
-<div class="card" style="margin-bottom: 2rem;">
+<div class="card" style="margin-bottom: 2rem;" id="upload-card">
     <h3>📤 {{ t('upload_new_document', lang) }}</h3>
     
     <form id="upload-form" style="margin-top: 1.5rem;">
@@ -44,12 +44,34 @@
             {{ t('btn_upload_document', lang) }} 📤
         </button>
     </form>
-    
-    <!-- Прогресс загрузки -->
-    <div id="upload-progress" style="display: none; margin-top: 1rem;">
-        <div style="background: #e0e0e0; border-radius: 10px; overflow: hidden; height: 30px;">
-            <div id="progress-bar" class="progress-bar-inner">
-                0%
+</div>
+
+<!-- 🔄 КАРТОЧКА ПРОГРЕССА (скрыта по умолчанию) -->
+<div id="progress-card" class="card" style="display: none; margin-bottom: 2rem;">
+    <div style="text-align: center;">
+        <div class="spinner-container">
+            <div class="spinner"></div>
+        </div>
+        <h3 id="progress-title" style="margin: 1rem 0; color: #667eea;">📤 Загружаем файл...</h3>
+        <p id="progress-description" style="color: #999;">Пожалуйста, подождите...</p>
+        
+        <!-- Список этапов -->
+        <div class="progress-steps" style="margin-top: 1.5rem;">
+            <div class="progress-step" data-step="upload">
+                <span class="step-icon">⏳</span>
+                <span class="step-text">Загрузка файла</span>
+            </div>
+            <div class="progress-step" data-step="extract">
+                <span class="step-icon">○</span>
+                <span class="step-text">Извлечение текста</span>
+            </div>
+            <div class="progress-step" data-step="analyze">
+                <span class="step-icon">○</span>
+                <span class="step-text">Анализ AI</span>
+            </div>
+            <div class="progress-step" data-step="save">
+                <span class="step-icon">○</span>
+                <span class="step-text">Сохранение</span>
             </div>
         </div>
     </div>
@@ -57,45 +79,65 @@
 
 <!-- 📋 СПИСОК ДОКУМЕНТОВ -->
 {% if documents %}
-<div>
+<div id="documents-list">
     <h2 style="margin-bottom: 1.5rem;">{{ t('uploaded_documents', lang) }} ({{ documents|length }})</h2>
     
     {% for doc in documents %}
-    <div class="card document-card">
-        <div class="document-info">
-            <h3 style="margin-bottom: 0.5rem;">{{ doc.title }}</h3>
-            <p style="color: #999; font-size: 0.9rem;">
-                {% if doc.uploaded_at %}
-                    📅 {{ t('document_uploaded', lang) }}: {{ doc.uploaded_at.strftime('%d.%m.%Y %H:%M') }}
-                {% else %}
-                    📅 {{ t('document_uploaded', lang) }}: {{ t('unknown', lang) }}
-                {% endif %}
-                | 
-                📎 {{ t('document_type', lang) }}: {{ doc.file_type }}
-            </p>
-            
-            {% if doc.summary %}
-            <details style="margin-top: 1rem;">
-                <summary style="cursor: pointer; color: #667eea; font-weight: 600;">
-                    📝 {{ t('document_summary', lang) }}
-                </summary>
-                <p style="margin-top: 0.5rem; color: #666; padding: 1rem; background: white; border-radius: 8px;">
-                    {{ doc.summary }}
+    <div class="card document-card" data-doc-id="{{ doc.id }}">
+        <!-- Заголовок карточки (всегда видимый) -->
+        <div class="document-header">
+            <div class="document-header-left">
+                <h3 style="margin: 0;">📄 {{ doc.title }}</h3>
+                <p style="color: #999; font-size: 0.9rem; margin: 0.3rem 0 0 0;">
+                    📅 {{ doc.uploaded_at.strftime('%d.%m.%Y %H:%M') if doc.uploaded_at else t('unknown', lang) }}
                 </p>
-            </details>
-            {% endif %}
-        </div>
-        
-        <div class="document-actions">
-            <button 
-                class="btn btn-danger delete-btn"
-                data-doc-id="{{ doc.id }}"
-                style="padding: 0.5rem 1rem;"
-            >
-                🗑️ {{ t('document_delete', lang) }}
+            </div>
+            
+            <!-- ✅ Безопасно: ID в data-атрибуте -->
+            <button class="btn-toggle" type="button" data-doc-id="{{ doc.id }}">
+                <span class="toggle-icon">▶</span>
+                <span class="toggle-text">Показать</span>
             </button>
         </div>
-    </div>
+        
+        <!-- Раскрывающееся содержимое -->
+        <div class="document-body" style="display: none;">
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                <p style="color: #666; margin-bottom: 1rem;">
+                    <strong>📝 Тип:</strong> {{ doc.file_type }}
+                </p>
+                
+                <!-- 🤖 ПОКАЗЫВАЕМ AI-АНАЛИЗ -->
+                {% if doc.raw_text %}
+                <div style="background: #f0f7ff; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #667eea;">
+                    <h4 style="color: #667eea; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span>🤖</span>
+                        <span>AI-анализ документа</span>
+                    </h4>
+                    <div style="max-height: 400px; overflow-y: auto; background: white; padding: 1rem; border-radius: 6px;">
+                        <!-- ✅ ИЗМЕНИЛИ: добавили | markdown перед | safe -->
+                        <div style="color: #333; line-height: 1.6;">{{ doc.raw_text | markdown | safe }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <div style="background: #fff3cd; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; text-align: center; border-left: 4px solid #ffc107;">
+                    <p style="color: #856404; margin: 0; font-weight: 600;">⚠️ AI-анализ не выполнен</p>
+                    <p style="color: #856404; margin: 0.5rem 0 0 0; font-size: 0.9rem;">Документ не был обработан. Попробуйте загрузить заново.</p>
+                </div>
+                {% endif %}
+                
+                <div class="document-actions">
+                    <button 
+                        class="btn btn-danger delete-btn"
+                        data-doc-id="{{ doc.id }}"
+                        style="padding: 0.5rem 1rem;"
+                    >
+                        🗑️ {{ t('document_delete', lang) }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>  <!-- ✅ ВАЖНО: Закрывающий тег для document-card -->
     {% endfor %}
 </div>
 {% else %}
@@ -110,50 +152,262 @@
 
 {% block extra_styles %}
 <style>
-    /* Прогресс бар */
-    .progress-bar-inner {
-        background: linear-gradient(90deg, #667eea, #764ba2);
-        height: 100%;
-        width: 0%;
-        transition: width 0.3s;
+    /* ========================================
+       🔄 SPINNER И ПРОГРЕСС
+       ======================================== */
+    
+    .spinner-container {
         display: flex;
-        align-items: center;
         justify-content: center;
-        color: white;
-        font-weight: bold;
+        margin: 1rem 0;
     }
     
-    /* Карточка документа */
+    .spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid #e2e8f0;
+        border-top-color: #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Этапы прогресса */
+    .progress-steps {
+        display: flex;
+        justify-content: space-around;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .progress-step {
+        text-align: center;
+        flex: 1;
+    }
+    
+    .step-icon {
+        display: block;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .step-text {
+        display: block;
+        font-size: 0.9rem;
+        color: #999;
+    }
+    
+    .progress-step.active .step-icon {
+        animation: pulse 1s infinite;
+    }
+    
+    .progress-step.completed .step-icon {
+        color: #28a745;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    
+    /* ========================================
+       📄 КАРТОЧКА ДОКУМЕНТА (АККОРДЕОН)
+       ======================================== */
+    
     .document-card {
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Badge "НОВЫЙ" */
+    .document-card.new::before {
+        content: '✨ НОВЫЙ';
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        z-index: 10;
+        animation: fadeOut 3s forwards;
+    }
+    
+    @keyframes fadeOut {
+        0%, 90% { opacity: 1; }
+        100% { opacity: 0; }
+    }
+    
+    /* Заголовок карточки */
+    .document-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        flex-wrap: wrap;
         gap: 1rem;
+        user-select: none;
     }
     
-    .document-info {
+    .document-header-left {
         flex: 1;
-        min-width: 300px;
     }
+    
+    .btn-toggle {
+        background: transparent;
+        border: 2px solid #667eea;
+        color: #667eea;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+    
+    .btn-toggle:hover {
+        background: #667eea;
+        color: white;
+    }
+    
+    .toggle-icon {
+        transition: transform 0.3s ease;
+        display: inline-block;
+    }
+    
+    /* Когда раскрыт */
+    .document-card.expanded .toggle-icon {
+        transform: rotate(90deg);
+    }
+    
+    .document-card.expanded .btn-toggle {
+        background: #667eea;
+        color: white;
+    }
+    
+    /* Тело карточки */
+    .document-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease-in-out;
+    }
+    
+    .document-card.expanded .document-body {
+        max-height: 1000px;
+    }
+    
+    /* Анимация появления нового документа */
+    .document-card.new-animated {
+        animation: slideInFade 0.6s ease-out;
+    }
+    
+    @keyframes slideInFade {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Подсветка нового документа */
+    .document-card.new {
+        border: 2px solid #667eea;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    /* ========================================
+       🎨 КНОПКИ И ДЕЙСТВИЯ
+       ======================================== */
     
     .document-actions {
         display: flex;
         gap: 1rem;
+        margin-top: 1rem;
     }
     
+    .btn-danger {
+        background: #dc3545;
+    }
+    
+    .btn-danger:hover {
+        background: #c82333;
+    }
+    /* ========================================
+       📝 СТИЛИ ДЛЯ MARKDOWN В ДОКУМЕНТАХ
+       ======================================== */
+    
+    .document-body strong {
+        font-weight: 700;
+        color: #2c3e50;
+    }
+    
+    .document-body em {
+        font-style: italic;
+        color: #555;
+    }
+    
+    .document-body ul, 
+    .document-body ol {
+        margin-left: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .document-body li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .document-body p {
+        margin-bottom: 0.8rem;
+    }
+    
+    .document-body h3 {
+        color: #667eea;
+        font-size: 1.1rem;
+        margin-top: 1.2rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    /* ========================================
+       📱 АДАПТИВНОСТЬ
+       ======================================== */
+    
     @media (max-width: 768px) {
-        .document-card {
+        .document-header {
             flex-direction: column;
             align-items: flex-start;
         }
         
-        .document-actions {
+        .btn-toggle {
             width: 100%;
+            justify-content: center;
         }
         
-        .document-actions button {
-            width: 100%;
+        .progress-steps {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .progress-step {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .step-icon {
+            font-size: 1.5rem;
+            margin: 0;
         }
     }
 </style>
@@ -161,10 +415,37 @@
 
 {% block extra_scripts %}
 <script>
+// ========================================
+// 🔄 ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+// ========================================
+
+let currentOpenDocId = null; // ID текущего открытого документа (аккордеон)
+
+// ========================================
+// 🔘 ОБРАБОТЧИК КНОПОК TOGGLE
+// ========================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем обработчики на все кнопки toggle
+    const toggleButtons = document.querySelectorAll('.btn-toggle');
+    
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation(); // Останавливаем всплытие события
+            const docId = parseInt(this.getAttribute('data-doc-id'));
+            toggleDocument(docId);
+        });
+    });
+});
+
+// ========================================
 // 📤 ЗАГРУЗКА ДОКУМЕНТА
+// ========================================
+
 const uploadForm = document.getElementById('upload-form');
-const uploadProgress = document.getElementById('upload-progress');
-const progressBar = document.getElementById('progress-bar');
+const uploadCard = document.getElementById('upload-card');
+const progressCard = document.getElementById('progress-card');
+const documentsList = document.getElementById('documents-list');
 
 uploadForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -180,12 +461,14 @@ uploadForm.addEventListener('submit', async (e) => {
     // Создаём FormData
     const formData = new FormData();
     formData.append('file', fileInput.files[0]);
-    formData.append('title', titleInput.value || fileInput.files[0].name);
+    formData.append('title', titleInput.value || '');
     
-    // Показываем прогресс
-    uploadProgress.style.display = 'block';
-    progressBar.style.width = '10%';
-    progressBar.textContent = '10%';
+    // Скрываем форму, показываем прогресс
+    uploadCard.style.display = 'none';
+    progressCard.style.display = 'block';
+    
+    // Запускаем симуляцию этапов
+    simulateProgressSteps();
     
     try {
         const response = await fetch('/api/upload', {
@@ -193,34 +476,128 @@ uploadForm.addEventListener('submit', async (e) => {
             body: formData
         });
         
-        progressBar.style.width = '100%';
-        progressBar.textContent = '100%';
-        
         const data = await response.json();
         
         if (data.success) {
-            alert('✅ {{ t("success_document_uploaded", lang) }}!');
-            window.location.reload();
+            // Показываем финальный этап
+            updateProgressStep('save', 'completed', '✓');
+            updateProgressTitle('✅ Документ успешно обработан!');
+            
+            // Через секунду перезагружаем с параметром нового документа
+            setTimeout(() => {
+                window.location.href = window.location.pathname + '?new_doc_id=' + data.document_id;
+            }, 1500);
         } else {
             alert('❌ {{ t("error", lang) }}: ' + data.error);
+            resetUploadForm();
         }
         
     } catch (error) {
         alert('❌ {{ t("error_server", lang) }}');
         console.error('Error:', error);
-    } finally {
-        uploadProgress.style.display = 'none';
-        progressBar.style.width = '0%';
+        resetUploadForm();
     }
 });
 
+// ========================================
+// 🔄 СИМУЛЯЦИЯ ЭТАПОВ ОБРАБОТКИ
+// ========================================
+
+function simulateProgressSteps() {
+    const steps = [
+        { name: 'upload', icon: '⏳', text: 'Загружаем файл...', delay: 500 },
+        { name: 'extract', icon: '⏳', text: 'Извлекаем текст через AI...', delay: 3000 },
+        { name: 'analyze', icon: '⏳', text: 'Анализируем содержимое...', delay: 5000 },
+        { name: 'save', icon: '⏳', text: 'Сохраняем в базу данных...', delay: 7000 }
+    ];
+    
+    steps.forEach((step, index) => {
+        setTimeout(() => {
+            // Предыдущий этап завершён
+            if (index > 0) {
+                updateProgressStep(steps[index - 1].name, 'completed', '✓');
+            }
+            
+            // Текущий этап активен
+            updateProgressStep(step.name, 'active', step.icon);
+            updateProgressTitle(step.text);
+        }, step.delay);
+    });
+}
+
+function updateProgressStep(stepName, status, icon) {
+    const step = document.querySelector(`.progress-step[data-step="${stepName}"]`);
+    if (step) {
+        step.className = `progress-step ${status}`;
+        step.querySelector('.step-icon').textContent = icon;
+    }
+}
+
+function updateProgressTitle(text) {
+    document.getElementById('progress-title').textContent = text;
+}
+
+function resetUploadForm() {
+    progressCard.style.display = 'none';
+    uploadCard.style.display = 'block';
+    
+    // Сбрасываем все этапы
+    document.querySelectorAll('.progress-step').forEach(step => {
+        step.className = 'progress-step';
+        step.querySelector('.step-icon').textContent = '○';
+    });
+}
+
+// ========================================
+// 📄 АККОРДЕОН ДОКУМЕНТОВ
+// ========================================
+
+function toggleDocument(docId) {
+    const card = document.querySelector(`.document-card[data-doc-id="${docId}"]`);
+    const body = card.querySelector('.document-body');
+    const toggleText = card.querySelector('.toggle-text');
+    const isExpanded = card.classList.contains('expanded');
+    
+    // Закрываем ранее открытый документ (аккордеон)
+    if (currentOpenDocId && currentOpenDocId !== docId) {
+        const prevCard = document.querySelector(`.document-card[data-doc-id="${currentOpenDocId}"]`);
+        if (prevCard) {
+            prevCard.classList.remove('expanded');
+            prevCard.querySelector('.document-body').style.display = 'none';
+            prevCard.querySelector('.toggle-text').textContent = 'Показать';
+        }
+    }
+    
+    // Переключаем текущий документ
+    if (isExpanded) {
+        // Закрываем
+        card.classList.remove('expanded');
+        body.style.display = 'none';
+        toggleText.textContent = 'Показать';
+        currentOpenDocId = null;
+    } else {
+        // Открываем
+        card.classList.add('expanded');
+        body.style.display = 'block';
+        toggleText.textContent = 'Скрыть';
+        currentOpenDocId = docId;
+        
+        // Убираем badge "НОВЫЙ" при первом клике
+        card.classList.remove('new');
+    }
+}
+
+// ========================================
 // 🗑️ УДАЛЕНИЕ ДОКУМЕНТА
+// ========================================
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Находим все кнопки удаления
     const deleteButtons = document.querySelectorAll('.delete-btn');
     
     deleteButtons.forEach(button => {
-        button.addEventListener('click', async function() {
+        button.addEventListener('click', async function(e) {
+            e.stopPropagation(); // Не раскрываем карточку при клике на удаление
+            
             const docId = this.getAttribute('data-doc-id');
             
             if (!confirm('{{ t("confirm_delete_document", lang) }}')) {
@@ -247,6 +624,34 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+});
+
+// ========================================
+// ✨ АВТООТКРЫТИЕ НОВОГО ДОКУМЕНТА
+// ========================================
+
+// После загрузки страницы проверяем есть ли новый документ
+document.addEventListener('DOMContentLoaded', function() {
+    // Если в URL есть параметр ?new_doc_id=X, открываем этот документ
+    const urlParams = new URLSearchParams(window.location.search);
+    const newDocId = urlParams.get('new_doc_id');
+    
+    if (newDocId) {
+        const newCard = document.querySelector(`.document-card[data-doc-id="${newDocId}"]`);
+        if (newCard) {
+            // Добавляем классы для анимации и badge
+            newCard.classList.add('new', 'new-animated');
+            
+            // Автоматически раскрываем
+            toggleDocument(parseInt(newDocId));
+            
+            // Прокручиваем к документу
+            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Удаляем параметр из URL (чтобы при обновлении не показывался badge)
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
 });
 </script>
 {% endblock %}

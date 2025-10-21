@@ -11,6 +11,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
+import markdown
 
 # 📁 Добавляем корневую папку в путь (чтобы импортировать db_postgresql.py)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -99,6 +100,22 @@ app.add_middleware(SessionMiddleware, secret_key=Config.SECRET_KEY)
 # Используем те же папки что были в Flask
 templates = Jinja2Templates(directory="webapp/templates")
 app.mount("/static", StaticFiles(directory="webapp/static"), name="static")
+
+# ✅ Фильтр для преобразования markdown в HTML
+def markdown_filter(text):
+    """Преобразует markdown в HTML"""
+    if not text:
+        return ""
+    
+    html = markdown.markdown(
+        text,
+        extensions=['nl2br', 'sane_lists']
+    )
+    
+    return html
+
+templates.env.filters['markdown'] = markdown_filter
+
 # ==========================================
 # 📍 БАЗОВЫЕ МАРШРУТЫ
 # ==========================================

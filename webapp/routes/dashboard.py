@@ -6,6 +6,7 @@ import os
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from webapp.app import templates
 
 # Добавляем корневую папку в путь
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -26,7 +27,7 @@ from webapp.utils.context import get_template_context
 router = APIRouter()
 
 # 📁 НАСТРОЙКА ШАБЛОНОВ
-templates = Jinja2Templates(directory="webapp/templates")
+# templates = Jinja2Templates(directory="webapp/templates")
 
 async def get_user_stats(user_id: int) -> dict:
     """
@@ -138,19 +139,54 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
 
 
 @router.get("/documents", response_class=HTMLResponse)
-async def documents(request: Request, user_id: int = Depends(get_current_user)):
+async def documents_page(request: Request, user_id: int = Depends(get_current_user)):
     """
-    Страница со списком всех документов пользователя
+    Страница документов
     
-    ✅ БЕЗ КОСТЫЛЕЙ! Просто await!
+    ✅ С ПРАВИЛЬНОЙ ЗАГРУЗКОЙ raw_text и summary!
     """
-    # ✅ ПРОСТО AWAIT!
-    docs = await get_documents_by_user(user_id)
+    from db_postgresql import get_db_connection, release_db_connection
     
+    conn = await get_db_connection()
+    
+    try:
+        # ✅ ВАЖНО: Выбираем ВСЕ поля, включая raw_text и summary
+        documents = await conn.fetch("""
+            SELECT 
+                id, 
+                title, 
+                file_path, 
+                file_type, 
+                raw_text,      -- ✅ ОБЯЗАТЕЛЬНО!
+                summary,       -- ✅ ОБЯЗАТЕЛЬНО!
+                uploaded_at
+            FROM documents
+            WHERE user_id = $1
+            ORDER BY uploaded_at DESC
+        """, user_id)
+        
+        # Преобразуем в список словарей
+        docs_list = [dict(doc) for doc in documents]
+        
+        # 🐛 DEBUG: Выводим в консоль для проверки
+        print(f"\n📋 Загружено документов: {len(docs_list)}")
+        for doc in docs_list:
+            print(f"  - ID: {doc['id']}, title: {doc['title']}")
+            print(f"    has raw_text: {bool(doc.get('raw_text'))}")
+            print(f"    has summary: {bool(doc.get('summary'))}")
+            if doc.get('raw_text'):
+                print(f"    raw_text length: {len(doc['raw_text'])} chars")
+            if doc.get('summary'):
+                print(f"    summary length: {len(doc['summary'])} chars")
+        
+    finally:
+        await release_db_connection(conn)
+    
+    # ✅ ИСПОЛЬЗУЕМ get_template_context как в старой версии!
     context = get_template_context(request)
-    context['documents'] = docs
+    context['documents'] = docs_list
     
-    return templates.TemplateResponse('documents.html', context)
+    return templates.TemplateResponse("documents.html", context)
 
 
 @router.get("/chat", response_class=HTMLResponse)
