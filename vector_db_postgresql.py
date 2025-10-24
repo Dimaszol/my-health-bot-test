@@ -577,6 +577,18 @@ async def initialize_vector_db(db_pool=None):
     vector_db = PostgreSQLVectorDB(db_pool)
     await vector_db.initialize_vector_tables()
 
+async def close_vector_db():
+    """Закрывает векторную базу данных"""
+    global vector_db
+    if vector_db and vector_db.db_pool:
+        try:
+            # Векторная БД использует ТОТ ЖЕ пул что и основная БД
+            # Поэтому просто обнуляем ссылку
+            vector_db = None
+            logger.info("✅ Векторная БД закрыта")
+        except Exception as e:
+            logger.error(f"⚠️ Ошибка закрытия векторной БД: {e}")
+
 # 🛠️ ИСПРАВЛЕНИЯ В СУЩЕСТВУЮЩИХ ФУНКЦИЯХ
 
 # Исправляем функцию split_into_chunks если есть проблемы с extract_keywords

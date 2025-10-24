@@ -67,6 +67,23 @@ async def lifespan(app: FastAPI):
         print(f"❌ Ошибка подключения к БД: {e}")
         raise
     
+    # ==========================================
+    # 🧠 ИНИЦИАЛИЗАЦИЯ ВЕКТОРНОЙ БАЗЫ
+    # ==========================================
+    print("🧠 Инициализация векторной базы (pgvector)...")
+    
+    try:
+        from vector_db_postgresql import initialize_vector_db
+        
+        # Инициализируем векторную базу
+        await initialize_vector_db()
+        
+        print("✅ Векторная база инициализирована!")
+        
+    except Exception as e:
+        print(f"❌ Ошибка инициализации векторной базы: {e}")
+        print("⚠️ Веб-сервис будет работать БЕЗ векторного поиска")
+    
     print(f"📊 База данных: PostgreSQL (Supabase)")
     print(f"🌍 Поддержка языков: RU, UK, EN, DE")
     print(f"⚡ Режим: Асинхронный (FastAPI)")
@@ -78,10 +95,24 @@ async def lifespan(app: FastAPI):
     # ==========================================
     # 🛑 SHUTDOWN (выполняется при остановке)
     # ==========================================
-    print("\n🧹 Закрытие базы данных...")
+    print("\n🧹 Закрытие соединений...")
+    import asyncio
+
+    # Закрываем векторную БД
     try:
-        await close_db_pool()
-        print("✅ База данных корректно закрыта")
+        from vector_db_postgresql import close_vector_db
+        await close_vector_db()
+        print("✅ Векторная БД закрыта")
+    except Exception as e:
+        print(f"⚠️ Ошибка при закрытии векторной БД: {e}")
+
+    # Закрываем основную БД с таймаутом (для разработки)
+    try:
+        await asyncio.wait_for(close_db_pool(), timeout=2.0)
+        print("✅ Основная БД закрыта")
+    except asyncio.TimeoutError:
+        print("⚠️ Таймаут закрытия БД — принудительно завершаем")
+        # В разработке это нормально — соединения закроются автоматически
     except Exception as e:
         print(f"⚠️ Ошибка при закрытии БД: {e}")
 
@@ -115,6 +146,24 @@ def markdown_filter(text):
     return html
 
 templates.env.filters['markdown'] = markdown_filter
+
+# ==========================================
+# 📚 РЕГИСТРАЦИЯ РОУТЕРОВ (Blueprints в FastAPI)
+# ==========================================
+
+try:
+    from webapp.routes import auth, dashboard, api
+    
+    # Регистрируем роутеры (как blueprints в Flask)
+    app.include_router(auth.router, prefix="/auth", tags=["auth"])
+    app.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
+    app.include_router(api.router, prefix="/api", tags=["api"])
+    
+    print("✅ Все роутеры зарегистрированы")
+    
+except ImportError as e:
+    print(f"⚠️ Ошибка импорта роутеров: {e}")
+
 
 # ==========================================
 # 📍 БАЗОВЫЕ МАРШРУТЫ
@@ -183,24 +232,6 @@ async def set_language_route(request: Request, lang: str):
     # Редиректим обратно на предыдущую страницу
     referer = request.headers.get('referer', '/')
     return RedirectResponse(url=referer, status_code=302)
-
-
-# ==========================================
-# 📚 РЕГИСТРАЦИЯ РОУТЕРОВ (Blueprints в FastAPI)
-# ==========================================
-
-try:
-    from webapp.routes import auth, dashboard, api
-    
-    # Регистрируем роутеры (как blueprints в Flask)
-    app.include_router(auth.router, prefix="/auth", tags=["auth"])
-    app.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
-    app.include_router(api.router, prefix="/api", tags=["api"])
-    
-    print("✅ Все роутеры зарегистрированы")
-    
-except ImportError as e:
-    print(f"⚠️ Роутеры будут добавлены следующим шагом: {e}")
 
 
 # ==========================================

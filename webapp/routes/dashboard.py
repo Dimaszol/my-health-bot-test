@@ -6,7 +6,19 @@ import os
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from webapp.app import templates
+import markdown
+
+# Создаём templates и регистрируем фильтр markdown
+templates = Jinja2Templates(directory="webapp/templates")
+
+def markdown_filter(text):
+    """Преобразует markdown в HTML"""
+    if not text:
+        return ""
+    return markdown.markdown(text, extensions=['nl2br', 'sane_lists'])
+
+# Регистрируем фильтр
+templates.env.filters['markdown'] = markdown_filter
 
 # Добавляем корневую папку в путь
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -34,39 +46,36 @@ async def get_user_stats(user_id: int) -> dict:
     Получить статистику пользователя
     ✅ ПОЛНОСТЬЮ ASYNC!
     """
+    from db_postgresql import get_db_connection, release_db_connection
+    
+    conn = await get_db_connection()
+    
     try:
-        from db_postgresql import get_db_connection, release_db_connection
+        # Количество документов
+        total_docs = await conn.fetchval(
+            "SELECT COUNT(*) FROM documents WHERE user_id = $1", 
+            user_id
+        )
         
-        conn = await get_db_connection()
+        # Количество сообщений
+        total_messages = await conn.fetchval(
+            "SELECT COUNT(*) FROM chat_history WHERE user_id = $1", 
+            user_id
+        )
         
-        try:
-            # Количество документов
-            total_docs = await conn.fetchval(
-                "SELECT COUNT(*) FROM documents WHERE user_id = $1", 
-                user_id
-            )
-            
-            # Количество сообщений
-            total_messages = await conn.fetchval(
-                "SELECT COUNT(*) FROM chat_history WHERE user_id = $1", 
-                user_id
-            )
-            
-            # Лимиты
-            limits = await conn.fetchrow(
-                "SELECT documents_left, gpt4o_queries_left FROM user_limits WHERE user_id = $1",
-                user_id
-            )
-            
-            return {
-                'total_documents': total_docs or 0,
-                'total_messages': total_messages or 0,
-                'documents_left': limits['documents_left'] if limits else 2,
-                'queries_left': limits['gpt4o_queries_left'] if limits else 10
-            }
-        finally:
-            await release_db_connection(conn)
-            
+        # Лимиты
+        limits = await conn.fetchrow(
+            "SELECT documents_left, gpt4o_queries_left FROM user_limits WHERE user_id = $1",
+            user_id
+        )
+        
+        return {
+            'total_documents': total_docs or 0,
+            'total_messages': total_messages or 0,
+            'documents_left': limits['documents_left'] if limits else 2,
+            'queries_left': limits['gpt4o_queries_left'] if limits else 10
+        }
+        
     except Exception as e:
         print(f"❌ Ошибка get_user_stats: {e}")
         return {
@@ -75,6 +84,9 @@ async def get_user_stats(user_id: int) -> dict:
             'documents_left': 0,
             'queries_left': 0
         }
+        
+    finally:
+        await release_db_connection(conn)  # ✅ ВСЕГДА освобождаем!
 
 
 # ==========================================

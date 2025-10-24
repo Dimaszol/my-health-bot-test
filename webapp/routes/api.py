@@ -445,13 +445,11 @@ async def upload_document(
                 content={'success': False, 'error': t('not_medical_doc', lang)}
             )
         
-        # STEP 3: 🎯 ГЛАВНОЕ! Генерируем заголовок
+        # STEP 3: Генерируем заголовок
         if title and title.strip():
-            # Пользователь указал название
             auto_title = title.strip()
             print(f"✅ Используем название от пользователя: {auto_title}")
         else:
-            # Генерируем через GPT
             auto_title = await generate_title_from_text(text=vision_text[:1500], lang=lang)
             print(f"🤖 Сгенерирован заголовок: {auto_title}")
         
@@ -497,38 +495,53 @@ async def upload_document(
         try:
             if os.path.exists(local_file):
                 os.remove(local_file)
-            # Удаляем папку pages если есть
             pages_dir = f"{temp_dir}/pages"
             if os.path.exists(pages_dir):
                 import shutil
                 shutil.rmtree(pages_dir)
-            # Удаляем временную папку если пустая
             if os.path.exists(temp_dir) and not os.listdir(temp_dir):
                 os.rmdir(temp_dir)
-        except Exception as e:
-            print(f"⚠️ Не удалось удалить временные файлы: {e}")
+        except Exception as cleanup_error:
+            print(f"⚠️ Не удалось удалить временные файлы: {cleanup_error}")
         
-        # ✅ УСПЕХ! (с мультиязычным сообщением)
         print(f"🎉 Документ успешно обработан!")
         
+        # ✅ Возвращаем успех
         return {
             'success': True,
             'document_id': document_id,
             'title': auto_title,
-            'summary': summary[:200] + '...' if len(summary) > 200 else summary,  # Краткое резюме
+            'summary': summary[:200] + '...' if len(summary) > 200 else summary,
             'message': t('document_uploaded_successfully', lang, title=auto_title)
         }
-        
+    
+    # ❌ ЕДИНСТВЕННЫЙ except для всех ошибок
     except Exception as e:
         print(f"❌ Критическая ошибка загрузки: {e}")
         import traceback
         traceback.print_exc()
         
+        # Пытаемся удалить временные файлы даже при ошибке
+        try:
+            if 'local_file' in locals() and os.path.exists(local_file):
+                os.remove(local_file)
+            if 'temp_dir' in locals():
+                pages_dir = f"{temp_dir}/pages"
+                if os.path.exists(pages_dir):
+                    import shutil
+                    shutil.rmtree(pages_dir)
+                if os.path.exists(temp_dir) and not os.listdir(temp_dir):
+                    os.rmdir(temp_dir)
+        except:
+            pass  # Игнорируем ошибки очистки
+        
         return JSONResponse(
             status_code=500,
-            content={'success': False, 'error': t('document_processing_error', lang) if 'lang' in locals() else 'Error processing document'}
+            content={
+                'success': False,
+                'error': t('document_processing_error', lang) if 'lang' in locals() else 'Error processing document'
+            }
         )
-
 
 # ==========================================
 # 🗑️ УДАЛЕНИЕ ДОКУМЕНТА
