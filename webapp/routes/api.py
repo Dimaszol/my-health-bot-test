@@ -4,6 +4,7 @@
 
 import os
 import sys
+import tempfile
 from fastapi import APIRouter, Request, Depends, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -491,6 +492,30 @@ async def upload_document(
         
         print(f"✅ Документ добавлен в векторную базу")
         
+        # ✅ НОВОЕ: Извлекаем и сохраняем medical_timeline
+        print(f"🏥 Извлекаем medical timeline...")
+        try:
+            from medical_timeline import update_medical_timeline_on_document_upload
+            
+            # Используем полный текст документа для извлечения медицинских событий
+            medical_timeline_success = await update_medical_timeline_on_document_upload(
+                user_id=user_id,
+                document_id=document_id,
+                document_text=raw_text,  # Используем исходный текст
+                use_gemini=False  # По умолчанию GPT
+            )
+            
+            if medical_timeline_success:
+                print(f"✅ Medical timeline обновлён успешно!")
+            else:
+                print(f"⚠️ Medical timeline не обновлён (возможно нет важных данных)")
+                
+        except Exception as timeline_error:
+            # Не прерываем загрузку документа если timeline не сохранился
+            print(f"⚠️ Ошибка обновления medical timeline: {timeline_error}")
+            import traceback
+            traceback.print_exc()
+
         # STEP 8: Удаляем временные файлы
         try:
             if os.path.exists(local_file):
@@ -597,4 +622,140 @@ async def delete_document(
         return JSONResponse(
             status_code=500,
             content={'success': False, 'error': 'Ошибка удаления'}
+        )
+    
+# ==========================================
+# 🗑️ СКАЧИВАНИЕ ДОКУМЕНТА
+# ==========================================
+
+@router.get("/download-document/{document_id}")
+async def download_document(
+    document_id: int,
+    request: Request,
+    user_id: int = Depends(get_current_user)
+):
+    """
+    📥 Скачивание документа
+    
+    ✅ Использует существующий метод download_file из supabase_storage.py
+    """
+    from fastapi.responses import FileResponse
+    import tempfile
+    
+    try:
+        conn = await get_db_connection()
+        
+        try:
+            # 🔐 БЕЗОПАСНОСТЬ: Проверяем что документ принадлежит пользователю
+            doc = await conn.fetchrow(
+                "SELECT * FROM documents WHERE id = $1 AND user_id = $2",
+                document_id, user_id
+            )
+            
+            if not doc:
+                return JSONResponse(
+                    status_code=404,
+                    content={'success': False, 'error': 'Документ не найден'}
+                )
+            
+            file_path = doc['file_path']
+            
+            if not file_path:
+                return JSONResponse(
+                    status_code=404,
+                    content={'success': False, 'error': 'Путь к файлу не указан в БД'}
+                )
+            
+            # Получаем оригинальное имя файла
+            original_filename = doc['title']
+            if not original_filename.endswith(('.pdf', '.docx', '.txt', '.jpg', '.jpeg', '.png')):
+                ext = os.path.splitext(file_path)[1]
+                original_filename = f"{original_filename}{ext}"
+            
+            print(f"📥 Скачивание документа: document_id={document_id}, file={original_filename}")
+            print(f"📁 Путь в БД: {file_path}")
+            
+            # ==========================================
+            # ✅ ПРОВЕРЯЕМ ТИП ХРАНИЛИЩА
+            # ==========================================
+            
+            # Если путь начинается с "users/" - это Supabase Storage
+            if file_path.startswith("users/"):
+                print(f"☁️ Файл в Supabase Storage")
+                
+                # Скачиваем из Supabase во временный файл
+                from supabase_storage import get_storage_manager
+                storage = get_storage_manager()
+                
+                # Создаём временный файл
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file_path)[1])
+                temp_path = temp_file.name
+                temp_file.close()
+                
+                try:
+                    # ✅ ИСПОЛЬЗУЕМ СУЩЕСТВУЮЩИЙ МЕТОД download_file
+                    success = await storage.download_file(
+                        storage_path=file_path,
+                        local_path=temp_path
+                    )
+                    
+                    if not success:
+                        # Удаляем временный файл
+                        if os.path.exists(temp_path):
+                            os.remove(temp_path)
+                        return JSONResponse(
+                            status_code=404,
+                            content={'success': False, 'error': 'Файл не найден в Supabase Storage'}
+                        )
+                    
+                    print(f"✅ Файл скачан из Supabase во временный файл")
+                    
+                    # Возвращаем файл и удаляем его после отправки
+                    return FileResponse(
+                        path=temp_path,
+                        filename=original_filename,
+                        media_type='application/octet-stream',
+                        background=None  # Файл будет удален автоматически
+                    )
+                    
+                except Exception as e:
+                    # Удаляем временный файл при ошибке
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
+                    print(f"❌ Ошибка скачивания из Supabase: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    return JSONResponse(
+                        status_code=500,
+                        content={'success': False, 'error': f'Ошибка скачивания из облака: {str(e)}'}
+                    )
+            
+            # Если путь НЕ начинается с "users/" - это локальный файл
+            else:
+                print(f"💾 Файл локальный")
+                
+                # Проверяем что файл существует
+                if not os.path.exists(file_path):
+                    return JSONResponse(
+                        status_code=404,
+                        content={'success': False, 'error': 'Файл не найден на сервере'}
+                    )
+                
+                # Возвращаем локальный файл
+                return FileResponse(
+                    path=file_path,
+                    filename=original_filename,
+                    media_type='application/octet-stream'
+                )
+            
+        finally:
+            await release_db_connection(conn)
+        
+    except Exception as e:
+        print(f"❌ Ошибка скачивания: {e}")
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={'success': False, 'error': 'Ошибка скачивания файла'}
         )

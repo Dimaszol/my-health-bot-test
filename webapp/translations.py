@@ -688,6 +688,54 @@ TRANSLATIONS = {
         'uk': '❌ Сталася помилка при обробці документа. Спробуйте ще раз або зверніться до підтримки.',
         'de': '❌ Beim Verarbeiten des Dokuments ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.'
     },
+
+    # ============================================
+    # 🏥 MEDICAL TIMELINE НА СТРАНИЦЕ ДОКУМЕНТОВ
+    # ============================================
+    'medical_timeline_extracted': {
+        'ru': 'Извлечено из документа',
+        'uk': 'Витягнуто з документа',
+        'en': 'Extracted from document',
+        'de': 'Aus dem Dokument extrahiert'
+    },
+    
+    'importance_critical': {
+        'ru': 'Критически важно',
+        'uk': 'Критично важливо',
+        'en': 'Critical',
+        'de': 'Kritisch'
+    },
+    
+    'importance_important': {
+        'ru': 'Важно',
+        'uk': 'Важливо',
+        'en': 'Important',
+        'de': 'Wichtig'
+    },
+    
+    'importance_normal': {
+        'ru': 'Обычное',
+        'uk': 'Звичайне',
+        'en': 'Normal',
+        'de': 'Normal'
+    },
+
+    # ============================================
+    # 🔽 КНОПКИ ДОКУМЕНТОВ
+    # ============================================
+    'btn_download': {
+        'ru': 'Скачать',
+        'uk': 'Завантажити',
+        'en': 'Download',
+        'de': 'Herunterladen'
+    },
+    
+    'btn_show': {
+        'ru': 'Показать',
+        'uk': 'Показати',
+        'en': 'Show',
+        'de': 'Anzeigen'
+    },
     
     # ============================================
     # 💬 СТРАНИЦА ЧАТА

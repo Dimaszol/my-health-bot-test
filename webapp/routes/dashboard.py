@@ -155,9 +155,10 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
     """
     Страница документов
     
-    ✅ С ПРАВИЛЬНОЙ ЗАГРУЗКОЙ raw_text и summary!
+    ✅ ОБНОВЛЕНО: Загружаем medical_timeline + DEBUG логи
     """
     from db_postgresql import get_db_connection, release_db_connection
+    from medical_timeline import get_timeline_by_document  # ✅ НОВЫЙ ИМПОРТ
     
     conn = await get_db_connection()
     
@@ -180,6 +181,14 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
         # Преобразуем в список словарей
         docs_list = [dict(doc) for doc in documents]
         
+        # ✅ НОВОЕ: Для каждого документа загружаем его medical_timeline записи
+        for doc in docs_list:
+            # Получаем timeline записи для этого документа
+            timeline_entries = await get_timeline_by_document(doc['id'], user_id)
+            
+            # Добавляем записи в документ
+            doc['timeline_entries'] = timeline_entries
+        
         # 🐛 DEBUG: Выводим в консоль для проверки
         print(f"\n📋 Загружено документов: {len(docs_list)}")
         for doc in docs_list:
@@ -190,6 +199,9 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
                 print(f"    raw_text length: {len(doc['raw_text'])} chars")
             if doc.get('summary'):
                 print(f"    summary length: {len(doc['summary'])} chars")
+            # ✅ НОВЫЙ DEBUG: количество timeline записей
+            timeline_count = len(doc.get('timeline_entries', []))
+            print(f"    timeline entries: {timeline_count}")
         
     finally:
         await release_db_connection(conn)
@@ -199,7 +211,6 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
     context['documents'] = docs_list
     
     return templates.TemplateResponse("documents.html", context)
-
 
 @router.get("/chat", response_class=HTMLResponse)
 async def chat(request: Request, user_id: int = Depends(get_current_user)):

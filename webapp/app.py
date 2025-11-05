@@ -280,7 +280,7 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     
-    # Проверяем настройки
+    # ✅ СОХРАНЯЕМ ПРОВЕРКУ КОНФИГУРАЦИИ (это важно!)
     if not validate_config():
         print("\n❌ Исправьте настройки в .env файле и попробуйте снова\n")
         sys.exit(1)
@@ -288,14 +288,62 @@ if __name__ == "__main__":
     # ✅ ЧИТАЕМ DEBUG из .env
     debug_mode = os.getenv('DEBUG', 'false').lower() == 'true'
     
-    print("\n🚀 Запуск FastAPI сервера...")
-    print(f"🐛 Режим отладки: {'ON (автоперезагрузка)' if debug_mode else 'OFF'}")
+    # ✅ УЛУЧШЕННЫЕ ЛОГИ
+    print("\n" + "="*60)
+    print("🚀 Запуск FastAPI сервера...")
+    print(f"🐛 Режим отладки: {'🟢 ON (автоперезагрузка)' if debug_mode else '🔴 OFF'}")
+    print("="*60 + "\n")
     
-    # Запускаем сервер на том же порту что был Flask (5000)
-    uvicorn.run(
-        "webapp.app:app",
-        host="0.0.0.0",
-        port=5000,
-        reload=debug_mode,  # ← ИЗМЕНИЛИ! Теперь берётся из .env
-        log_level="info"
-    )
+    # ==========================================
+    # 🔧 ЗАПУСК С ПРАВИЛЬНЫМИ ПАРАМЕТРАМИ
+    # ==========================================
+    
+    if debug_mode:
+        # 🟢 РЕЖИМ РАЗРАБОТКИ: с автоперезагрузкой и фильтрацией файлов
+        print("📝 Следим за изменениями в файлах...")
+        print("💡 Чтобы ВЫКЛЮЧИТЬ автоперезагрузку, установите DEBUG=false в .env\n")
+        
+        uvicorn.run(
+            "webapp.app:app",
+            host="0.0.0.0",
+            port=5000,
+            reload=True,
+            reload_delay=1.0,  # ← Задержка убирает двойные перезагрузки
+            reload_excludes=[  # ← Игнорируем временные файлы (КРИТИЧНО!)
+                "*.log",
+                "*.tmp",
+                "*.temp",
+                "*.pyc",
+                "*.pyo",
+                "*.pyd",
+                "__pycache__",
+                ".pytest_cache",
+                "venv",
+                "env",
+                ".venv",
+                "ENV",
+                "myenv",
+                "*.db",
+                "*.sqlite",
+                "logs",
+                "temp",
+                "tmp",
+                "files",
+                "uploads",
+                "user_checker.py",  # ← Ваш debug файл
+                "*_debug.py",
+                "debug_*.py"
+            ],
+            log_level="info"
+        )
+    else:
+        # 🔴 ПРОДАКШЕН РЕЖИМ: без автоперезагрузки
+        print("🚀 Запуск в продакшен режиме (без автоперезагрузки)\n")
+        
+        uvicorn.run(
+            "webapp.app:app",
+            host="0.0.0.0",
+            port=5000,
+            reload=False,
+            log_level="info"
+        )

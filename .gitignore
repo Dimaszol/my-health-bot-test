@@ -16,11 +16,13 @@ vector_store/
 files/
 uploads/
 temp/
+tmp/
 
 # 📝 ЛОГИ
 *.log
 security.log
 bot_errors.log
+logs/
 
 # 🔧 СИСТЕМНЫЕ ФАЙЛЫ
 __pycache__/
@@ -43,13 +45,24 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+pip-wheel-metadata/
 
-# 🐍 ВИРТУАЛЬНОЕ ОКРУЖЕНИЕ (ДОБАВИТЬ!)
+# 🐍 ВИРТУАЛЬНОЕ ОКРУЖЕНИЕ (ВСЕ ВОЗМОЖНЫЕ ВАРИАНТЫ!)
 venv/
 env/
 ENV/
 .venv/
 .env/
+myenv/
+virtualenv/
+.virtualenv/
+python_env/
+py_env/
+# Pipenv
+Pipfile.lock
+# Poetry
+poetry.lock
+.poetry/
 
 # 🎯 IDE
 .vscode/
@@ -57,21 +70,35 @@ ENV/
 *.swp
 *.swo
 *~
+.project
+.pydevproject
+.settings/
 
 # 🖼️ ВРЕМЕННЫЕ ФАЙЛЫ
 *.tmp
 *.temp
 .DS_Store
 Thumbs.db
+*.bak
+*.swp
+*.swo
+*~
 
 # 📦 ЗАВИСИМОСТИ
 node_modules/
 .npm
+bower_components/
 
 # 🧪 ТЕСТЫ
 .coverage
 htmlcov/
 .pytest_cache/
+.tox/
+.hypothesis/
+.nox/
+coverage.xml
+*.cover
+.cache
 
 # 🧪 ТЕСТОВЫЕ И DEBUG ФАЙЛЫ  
 1*.py
@@ -79,22 +106,27 @@ test_*.py
 *_test.py
 *_debug.py
 debug_*.py
+user_checker.py
 
-# 🧹 УСТАРЕВШИЕ ФАЙЛЫ И BACKUP (ДОБАВИТЬ!)
+# 🧹 УСТАРЕВШИЕ ФАЙЛЫ И BACKUP
 *.backup_*
 *_backup_*
 cleanup_vector_db.py
 migrate_imports.py
 clear_vector_db.py
+*.old
+*.bak
 
-# 🔐 ДОПОЛНИТЕЛЬНАЯ БЕЗОПАСНОСТЬ (ДОБАВИТЬ!)
+# 🔐 ДОПОЛНИТЕЛЬНАЯ БЕЗОПАСНОСТЬ
 config.py
 secrets.json
 *.key
 *.pem
 *.crt
+*.p12
+*.pfx
 
-# 📊 СПЕЦИФИЧНЫЕ ДЛЯ МЕДИЦИНСКОГО БОТА (ДОБАВИТЬ!)
+# 📊 СПЕЦИФИЧНЫЕ ДЛЯ МЕДИЦИНСКОГО БОТА
 poppler/
 *.pdf
 *.doc
@@ -103,8 +135,11 @@ poppler/
 *.jpeg
 *.png
 *.gif
+*.webp
+*.svg
+*.ico
 
-# 🚫 СИСТЕМНЫЕ ФАЙЛЫ WINDOWS/MAC (ДОБАВИТЬ!)
+# 🚫 СИСТЕМНЫЕ ФАЙЛЫ WINDOWS/MAC
 Thumbs.db
 ehthumbs.db
 Desktop.ini
@@ -112,3 +147,26 @@ $RECYCLE.BIN/
 .DS_Store
 .AppleDouble
 .LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# 🔥 ФАЙЛЫ, СОЗДАВАЕМЫЕ ПРИ РАБОТЕ СЕРВЕРА (ВАЖНО!)
+# Эти файлы могут вызывать циклы перезагрузки
+*.pid
+*.seed
+*.pid.lock
+.watchman-cookie-*
+celerybeat-schedule
+celerybeat.pid
+
+# 📊 MYPY
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# 🔄 ПАКЕТНЫЕ МЕНЕДЖЕРЫ
+.yarn/
+yarn-error.log
+package-lock.json
+pnpm-debug.log*

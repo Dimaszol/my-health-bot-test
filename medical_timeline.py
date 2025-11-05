@@ -111,6 +111,63 @@ async def save_medical_timeline_entries(user_id: int, entries: List[Dict], sourc
     finally:
         await release_db_connection(conn)
 
+async def get_timeline_by_document(document_id: int, user_id: int) -> List[Dict]:
+    """
+    Получить записи medical_timeline для конкретного документа
+    
+    Используется на странице документов для отображения извлеченных данных
+    
+    Параметры:
+    - document_id: ID документа
+    - user_id: ID пользователя (для безопасности)
+    
+    Возвращает:
+    - Список словарей с записями timeline
+    """
+    conn = await get_db_connection()
+    
+    try:
+        # 🔐 БЕЗОПАСНОСТЬ: Проверяем что документ принадлежит пользователю
+        # через JOIN с таблицей documents
+        query = """
+        SELECT 
+            mt.id,
+            mt.event_date,
+            mt.category,
+            mt.importance,
+            mt.description
+        FROM medical_timeline mt
+        INNER JOIN documents d ON mt.source_document_id = d.id
+        WHERE mt.source_document_id = $1 
+            AND d.user_id = $2
+        ORDER BY mt.event_date DESC, mt.created_at DESC
+        """
+        
+        rows = await conn.fetch(query, document_id, user_id)
+        
+        # Преобразуем в список словарей
+        timeline_entries = []
+        for row in rows:
+            timeline_entries.append({
+                'id': row['id'],
+                'event_date': row['event_date'].strftime('%d.%m.%Y') if row['event_date'] else '',
+                'category': row['category'],
+                'importance': row['importance'],
+                'description': row['description']
+            })
+        
+        return timeline_entries
+        
+    except Exception as e:
+        log_error_with_context(e, {
+            "function": "get_timeline_by_document",
+            "document_id": document_id
+        })
+        return []
+        
+    finally:
+        await release_db_connection(conn)
+
 # ==========================================
 # ФУНКЦИИ ИЗВЛЕЧЕНИЯ ЧЕРЕЗ GPT И GEMINI
 # ==========================================

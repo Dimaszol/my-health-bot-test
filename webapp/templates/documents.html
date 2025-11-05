@@ -11,6 +11,118 @@
         {{ t('page_documents_subtitle', lang) }}
     </p>
 </div>
+<style>
+/* ========================================
+   🎨 ЕДИНЫЙ СТИЛЬ ДЛЯ ВСЕХ КНОПОК ДЕЙСТВИЙ
+   ======================================== */
+
+.btn-action {
+    /* Базовые стили */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    
+    /* Размеры */
+    padding: 0.65rem 1.2rem;
+    min-height: 44px;  /* Одинаковая высота */
+    width: 100%;       /* Занимают всю ширину контейнера */
+    
+    /* Шрифт */
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.2;
+    
+    /* Оформление */
+    border: 2px solid;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    
+    /* Анимации */
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-action:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Иконка кнопки */
+.btn-icon {
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Текст кнопки */
+.btn-text {
+    font-size: 0.95rem;
+}
+
+/* ========================================
+   🟢 ЗЕЛЁНАЯ КНОПКА СКАЧАТЬ
+   ======================================== */
+
+.btn-download {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.btn-download:hover {
+    background: #218838;
+    border-color: #1e7e34;
+}
+
+/* ========================================
+   🔵 СИНЯЯ КНОПКА ПОКАЗАТЬ
+   ======================================== */
+
+.btn-toggle {
+    background: transparent;
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.btn-toggle:hover {
+    background: #667eea;
+    color: white;
+}
+
+/* Анимация иконки при раскрытии */
+.document-card.expanded .btn-toggle .toggle-icon {
+    transform: rotate(90deg);
+}
+
+.toggle-icon {
+    transition: transform 0.3s ease;
+}
+
+/* ========================================
+   📱 АДАПТИВНОСТЬ ДЛЯ МОБИЛЬНЫХ
+   ======================================== */
+
+@media (max-width: 768px) {
+    .btn-action {
+        padding: 0.6rem 1rem;
+        min-height: 40px;
+        font-size: 0.9rem;
+    }
+    
+    .btn-icon {
+        font-size: 1rem;
+    }
+}
+
+</style>
 
 <!-- 📤 ФОРМА ЗАГРУЗКИ -->
 <div class="card" style="margin-bottom: 2rem;" id="upload-card">
@@ -89,15 +201,50 @@
             <div class="document-header-left">
                 <h3 style="margin: 0;">📄 {{ doc.title }}</h3>
                 <p style="color: #999; font-size: 0.9rem; margin: 0.3rem 0 0 0;">
-                    📅 {{ doc.uploaded_at.strftime('%d.%m.%Y %H:%M') if doc.uploaded_at else t('unknown', lang) }}
+                    📅 <span class="local-time" data-utc="{{ doc.uploaded_at.isoformat() if doc.uploaded_at else '' }}">
+                        {{ doc.uploaded_at.strftime('%d.%m.%Y %H:%M') if doc.uploaded_at else t('unknown', lang) }}
+                    </span>
                 </p>
+                <!-- ✅ MEDICAL TIMELINE ЗАПИСИ (МИНИМАЛИСТИЧНЫЙ ДИЗАЙН) -->
+                {% if doc.timeline_entries and doc.timeline_entries|length > 0 %}
+                <div style="margin-top: 1rem; padding-left: 0rem;">
+                    <ul style="margin: 0; padding-left: 1.2rem; color: #666; list-style-type: disc;">
+                        {% for entry in doc.timeline_entries %}
+                        <li style="margin-bottom: 0.4rem; line-height: 1.6;">
+                            <span style="color: #444;">{{ entry.description }}</span>
+                            {% if entry.importance == 'critical' %}
+                            <span style="color: #dc3545; margin-left: 0.3rem;" title="{{ t('importance_critical', lang) }}">🔴</span>
+                            {% elif entry.importance == 'important' %}
+                            <span style="color: #ffc107; margin-left: 0.3rem;" title="{{ t('importance_important', lang) }}">🟡</span>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                <!-- ✅ КОНЕЦ MEDICAL TIMELINE -->
             </div>
             
-            <!-- ✅ Безопасно: ID в data-атрибуте -->
-            <button class="btn-toggle" type="button" data-doc-id="{{ doc.id }}">
-                <span class="toggle-icon">▶</span>
-                <span class="toggle-text">Показать</span>
-            </button>
+            <!-- ✅ КНОПКИ СПРАВА (красивый единый дизайн) -->
+            <div style="display: flex; flex-direction: column; gap: 0.6rem; min-width: 160px;">
+                
+                <!-- Кнопка Скачать -->
+                <a href="/api/download-document/{{ doc.id }}" 
+                   class="btn-action btn-download" 
+                   download>
+                    <span class="btn-icon">📥</span>
+                    <span class="btn-text">{{ t('btn_download', lang) }}</span>
+                </a>
+                
+                <!-- Кнопка Показать -->
+                <button class="btn-action btn-toggle" 
+                        type="button" 
+                        data-doc-id="{{ doc.id }}">
+                    <span class="btn-icon toggle-icon">▶</span>
+                    <span class="btn-text toggle-text">{{ t('btn_show', lang) }}</span>
+                </button>
+                
+            </div>
         </div>
         
         <!-- Раскрывающееся содержимое -->
@@ -653,5 +800,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+function convertToLocalTime() {
+    const timeElements = document.querySelectorAll('.local-time');
+    
+    timeElements.forEach(element => {
+        const utcTime = element.getAttribute('data-utc');
+        
+        if (utcTime) {
+            try {
+                const date = new Date(utcTime);
+                
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                
+                element.textContent = `${day}.${month}.${year} ${hours}:${minutes}`;
+                
+            } catch (e) {
+                console.error('Ошибка конвертации:', e);
+            }
+        }
+    });
+}
+// Запуск при загрузке
+document.addEventListener('DOMContentLoaded', convertToLocalTime);
 </script>
 {% endblock %}
