@@ -852,9 +852,20 @@ async def generate_medical_summary(text: str, lang: str, document_date: str = No
 @async_safe_openai_call(max_retries=2, delay=1.0)
 async def generate_title_from_text(text: str, lang: str) -> str:  # 🔄 async
     """Безопасное создание заголовка из текста"""
+    # 🌍 УСИЛЕННЫЕ ЯЗЫКОВЫЕ ИНСТРУКЦИИ
+    lang_names = {
+        'ru': 'Russian',
+        'uk': 'Ukrainian',
+        'en': 'English',
+        'de': 'German'
+    }
+    
+    target_language = lang_names.get(lang, 'Russian')
     system_prompt = (
         "You are a medical assistant generating concise titles for documents. "
-        f"⚠️ Always reply strictly in the '{lang}' language."
+        f"⚠️ CRITICAL: You MUST respond ONLY in {target_language} language. "
+        f"⚠️ The entire title must be in {target_language}. "
+        f"⚠️ DO NOT mix languages - use ONLY {target_language}. "
     )
     
     title_prompt = (

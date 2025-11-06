@@ -506,7 +506,69 @@ TRANSLATIONS = {
         'uk': 'Перейти в чат',
         'de': 'Zum Chat gehen'
     },
-    
+    # ============================================
+    # 📤 ПРОГРЕСС ЗАГРУЗКИ ДОКУМЕНТОВ
+    # ============================================
+    'progress_upload': {
+        'ru': '📤 Загружаем файл...',
+        'en': '📤 Uploading file...',
+        'uk': '📤 Завантажуємо файл...',
+        'de': '📤 Datei wird hochgeladen...'
+    },
+    'progress_extract': {
+        'ru': '📝 Извлекаем текст через AI...',
+        'en': '📝 Extracting text via AI...',
+        'uk': '📝 Витягуємо текст через AI...',
+        'de': '📝 Text wird per KI extrahiert...'
+    },
+    'progress_analyze': {
+        'ru': '🔍 Анализируем содержимое...',
+        'en': '🔍 Analyzing content...',
+        'uk': '🔍 Аналізуємо вміст...',
+        'de': '🔍 Inhalt wird analysiert...'
+    },
+    'progress_save': {
+        'ru': '💾 Сохраняем в базу данных...',
+        'en': '💾 Saving to database...',
+        'uk': '💾 Зберігаємо в базу даних...',
+        'de': '💾 In Datenbank speichern...'
+    },
+    'progress_completed': {
+        'ru': '✅ Документ успешно обработан!',
+        'en': '✅ Document processed successfully!',
+        'uk': '✅ Документ успішно оброблено!',
+        'de': '✅ Dokument erfolgreich verarbeitet!'
+    },
+    'progress_step_upload': {
+        'ru': 'Загрузка файла',
+        'en': 'File upload',
+        'uk': 'Завантаження файлу',
+        'de': 'Datei-Upload'
+    },
+    'progress_step_extract': {
+        'ru': 'Извлечение текста',
+        'en': 'Text extraction',
+        'uk': 'Витягування тексту',
+        'de': 'Textextraktion'
+    },
+    'progress_step_analyze': {
+        'ru': 'Анализ AI',
+        'en': 'AI Analysis',
+        'uk': 'Аналіз AI',
+        'de': 'KI-Analyse'
+    },
+    'progress_step_save': {
+        'ru': 'Сохранение',
+        'en': 'Saving',
+        'uk': 'Збереження',
+        'de': 'Speichern'
+    },
+    'progress_please_wait': {
+        'ru': 'Пожалуйста, подождите...',
+        'en': 'Please wait...',
+        'uk': 'Будь ласка, зачекайте...',
+        'de': 'Bitte warten...'
+    },
     # ============================================
     # 📄 СТРАНИЦА ДОКУМЕНТОВ
     # ============================================

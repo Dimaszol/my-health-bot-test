@@ -40,7 +40,7 @@ try:
     CONTEXT_PROCESSOR_AVAILABLE = True
     print("✅ process_user_question_detailed импортирован")
     
-    from subscription_manager import check_gpt4o_limit, spend_gpt4o_limit
+    from subscription_manager import check_gpt4o_limit, spend_gpt4o_limit, SubscriptionManager
     LIMITS_AVAILABLE = True
     print("✅ subscription_manager импортирован")
     
@@ -312,6 +312,39 @@ async def upload_document(
     # ✅ СНАЧАЛА получаем язык пользователя
     lang = await get_user_language(user_id)
     
+    # ==========================================
+    # 🔒 БЛОК 1: ПРОВЕРКА ОСНОВНЫХ ЛИМИТОВ
+    # ==========================================
+    
+    print(f"🔍 Проверяем основные лимиты документов...")
+    
+    # ✅ Проверяем основные лимиты документов (documents_left)
+    from subscription_manager import check_document_limit
+    
+    has_document_limits = await check_document_limit(user_id)
+    
+    if not has_document_limits:
+        print(f"❌ Лимит документов исчерпан (documents_left = 0)")
+        
+        # Получаем текущие лимиты для сообщения
+        limits = await SubscriptionManager.get_user_limits(user_id)
+        
+        # Формируем мультиязычное сообщение
+        from db_postgresql import t
+        error_message = t("document_limit_exceeded", lang,
+                         documents_left=limits['documents_left'],
+                         gpt4o_queries_left=limits['gpt4o_queries_left'])
+        
+        return JSONResponse(
+            status_code=403,  # 403 = Forbidden (нет лимитов)
+            content={
+                'success': False,
+                'error': error_message
+            }
+        )
+    
+    print(f"✅ Лимиты проверены - можно загружать")
+    
     try:
         if not file.filename:
             from db_postgresql import t
@@ -530,6 +563,18 @@ async def upload_document(
             print(f"⚠️ Не удалось удалить временные файлы: {cleanup_error}")
         
         print(f"🎉 Документ успешно обработан!")
+        
+        # ==========================================
+        # 💳 БЛОК 2: СПИСАНИЕ ЛИМИТОВ
+        # ==========================================
+        
+        print(f"💳 Списываем основной лимит документов...")
+        
+        # Списываем основной лимит документов
+        await SubscriptionManager.spend_limits(user_id, documents=1)
+        print(f"✅ Основной лимит документов списан")
+        
+        print(f"🎉 Лимит успешно списан!")
         
         # ✅ Возвращаем успех
         return {
