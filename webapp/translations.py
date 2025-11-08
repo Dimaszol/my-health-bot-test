@@ -579,10 +579,10 @@ TRANSLATIONS = {
         'de': 'Dokumentenlimit erreicht'
     },
     'no_document_limits_message': {
-        'ru': 'Вы достигли лимита по количеству документов. Оформите подписку или купите дополнительные консультации, чтобы продолжить загрузку.',
-        'en': 'You have reached your document limit. Subscribe or purchase additional consultations to continue uploading.',
-        'uk': 'Ви досягли ліміту кількості документів. Оформіть підписку або купіть додаткові консультації, щоб продовжити завантаження.',
-        'de': 'Sie haben Ihr Dokumentenlimit erreicht. Abonnieren Sie oder kaufen Sie zusätzliche Konsultationen, um weiterhin hochzuladen.'
+        'ru': 'Вы достигли лимита по количеству документов. Оформите подписку или купите дополнительный пакет, чтобы продолжить загрузку.',
+        'en': 'You have reached your document limit. Subscribe or purchase an additional package to continue uploading.',
+        'uk': 'Ви досягли ліміту кількості документів. Оформіть підписку або купіть додатковий пакет, щоб продовжити завантаження.',
+        'de': 'Sie haben Ihr Dokumentenlimit erreicht. Abonnieren Sie oder kaufen Sie ein zusätzliches Paket, um weiterhin hochzuladen.'
     },
     'page_documents_title': {
         'ru': 'Мои документы',
@@ -699,6 +699,21 @@ TRANSLATIONS = {
         'de': 'Dokument gelöscht'
     },
 
+    'ai_disclaimer': {
+        'ru': 'Этот AI-анализ носит информационный характер и может содержать ошибки. Не является диагнозом или назначением. Перед принятием решений проконсультируйтесь с врачом.',
+        'en': 'This AI-generated analysis is for informational purposes only and may contain errors. It is not a diagnosis or prescription. Please consult a doctor before making any decisions.',
+        'uk': 'Цей AI-аналіз носить інформаційний характер і може містити помилки. Не є діагнозом або призначенням. Перед прийняттям рішень проконсультуйтеся з лікарем.',
+        'de': 'Diese KI-Analyse dient nur zu Informationszwecken und kann Fehler enthalten. Es ist keine Diagnose oder Verschreibung. Bitte konsultieren Sie einen Arzt, bevor Sie Entscheidungen treffen.'
+    },
+  
+
+    'btn_delete_document': {
+        'ru': 'Удалить',
+        'en': 'Delete',
+        'uk': 'Видалити',
+        'de': 'Löschen'
+    },
+
     # ============================================
     # 📤 ЗАГРУЗКА ДОКУМЕНТОВ - API сообщения
     # ============================================
@@ -792,6 +807,13 @@ TRANSLATIONS = {
         'uk': 'Звичайне',
         'en': 'Normal',
         'de': 'Normal'
+    },
+
+    'btn_hide': {
+        'ru': 'Скрыть',
+        'en': 'Hide',
+        'uk': 'Сховати',
+        'de': 'Verbergen'
     },
 
     # ============================================

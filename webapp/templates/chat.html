@@ -581,16 +581,16 @@
                 <button type="button" class="remove-photo" id="remove-photo">✕</button>
             </div>
             
-            <input 
-                type="text" 
+            <textarea 
                 id="message-input" 
                 placeholder="{{ t('chat_placeholder', lang) }}"
                 autocomplete="off"
                 required
-            />
+                rows="1"
+            ></textarea>
+
             <button type="submit" class="send-button">
                 <span>{{ t('btn_send', lang) }}</span>
-                <span>📤</span>
             </button>
         </form>
         

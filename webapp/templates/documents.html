@@ -17,49 +17,72 @@
    ======================================== */
 
 .btn-action {
-    /* Базовые стили */
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    
-    /* Размеры */
-    padding: 0.65rem 1.2rem;
-    min-height: 44px;  /* Одинаковая высота */
-    width: 100%;       /* Занимают всю ширину контейнера */
-    
-    /* Шрифт */
-    font-size: 0.95rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
     font-weight: 600;
-    line-height: 1.2;
-    
-    /* Оформление */
-    border: 2px solid;
-    border-radius: 8px;
+    border: none;
+    border-radius: 12px;
     cursor: pointer;
     text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     white-space: nowrap;
-    
-    /* Анимации */
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-action:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .btn-action:active {
     transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Иконка кнопки */
+/* 🟢 Зелёная кнопка Скачать */
+.btn-download {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.btn-download:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+/* 🔵 Синяя кнопка Показать */
+.btn-toggle {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-toggle:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* 🔴 Красная кнопка Удалить */
+.btn-delete {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.85rem;
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.btn-delete:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+/* Иконки в кнопках */
 .btn-icon {
     font-size: 1.1rem;
-    display: inline-flex;
-    align-items: center;
 }
 
 /* Текст кнопки */
@@ -210,92 +233,109 @@
     <div class="card document-card" data-doc-id="{{ doc.id }}">
         <!-- Заголовок карточки (всегда видимый) -->
         <div class="document-header">
-            <div class="document-header-left">
-                <h3 style="margin: 0;">📄 {{ doc.title }}</h3>
-                <p style="color: #999; font-size: 0.9rem; margin: 0.3rem 0 0 0;">
-                    📅 <span class="local-time" data-utc="{{ doc.uploaded_at.isoformat() if doc.uploaded_at else '' }}">
-                        {{ doc.uploaded_at.strftime('%d.%m.%Y %H:%M') if doc.uploaded_at else t('unknown', lang) }}
-                    </span>
-                </p>
-                <!-- ✅ MEDICAL TIMELINE ЗАПИСИ (МИНИМАЛИСТИЧНЫЙ ДИЗАЙН) -->
-                {% if doc.timeline_entries and doc.timeline_entries|length > 0 %}
-                <div style="margin-top: 1rem; padding-left: 0rem;">
-                    <ul style="margin: 0; padding-left: 1.2rem; color: #666; list-style-type: disc;">
-                        {% for entry in doc.timeline_entries %}
-                        <li style="margin-bottom: 0.4rem; line-height: 1.6;">
-                            <span style="color: #444;">{{ entry.description }}</span>
-                            {% if entry.importance == 'critical' %}
-                            <span style="color: #dc3545; margin-left: 0.3rem;" title="{{ t('importance_critical', lang) }}">🔴</span>
-                            {% elif entry.importance == 'important' %}
-                            <span style="color: #ffc107; margin-left: 0.3rem;" title="{{ t('importance_important', lang) }}">🟡</span>
-                            {% endif %}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
-                <!-- ✅ КОНЕЦ MEDICAL TIMELINE -->
-            </div>
+        <div class="document-header-left">
+            <!-- Название + Тип документа рядом -->
+            <h3 class="document-title">
+                {{ doc.title }}
+                <span class="doc-type-badge">
+                    {% if doc.file_path and doc.file_path.endswith('.pdf') %}
+                        PDF
+                    {% elif doc.file_path and doc.file_path.endswith('.docx') %}
+                        DOCX
+                    {% elif doc.file_path and doc.file_path.endswith('.txt') %}
+                        TXT
+                    {% elif doc.file_path and (doc.file_path.endswith('.jpg') or doc.file_path.endswith('.jpeg') or doc.file_path.endswith('.png')) %}
+                        IMAGE
+                    {% else %}
+                        DOC
+                    {% endif %}
+                </span>
+            </h3>
             
-            <!-- ✅ КНОПКИ СПРАВА (красивый единый дизайн) -->
-            <div style="display: flex; flex-direction: column; gap: 0.6rem; min-width: 160px;">
-                
-                <!-- Кнопка Скачать -->
-                <a href="/api/download-document/{{ doc.id }}" 
-                   class="btn-action btn-download" 
-                   download>
-                    <span class="btn-icon">📥</span>
-                    <span class="btn-text">{{ t('btn_download', lang) }}</span>
-                </a>
-                
-                <!-- Кнопка Показать -->
-                <button class="btn-action btn-toggle" 
-                        type="button" 
-                        data-doc-id="{{ doc.id }}">
-                    <span class="btn-icon toggle-icon">▶</span>
-                    <span class="btn-text toggle-text">{{ t('btn_show', lang) }}</span>
-                </button>
-                
+            <!-- Дата загрузки -->
+            <p class="document-date">
+                📅 <span class="local-time" data-utc="{{ doc.uploaded_at.isoformat() if doc.uploaded_at else '' }}">
+                    {{ doc.uploaded_at.strftime('%d.%m.%Y %H:%M') if doc.uploaded_at else t('unknown', lang) }}
+                </span>
+            </p>
+            
+            <!-- Medical timeline записи (без изменений) -->
+            {% if doc.timeline_entries and doc.timeline_entries|length > 0 %}
+            <div style="margin-top: 0.8rem;">
+                <ul style="margin: 0; padding-left: 1.2rem; color: #666; list-style-type: disc;">
+                    {% for entry in doc.timeline_entries %}
+                    <li style="margin-bottom: 0.4rem; line-height: 1.6;">
+                        <span style="color: #444;">{{ entry.description }}</span>
+                        {% if entry.importance == 'critical' %}
+                        <span style="color: #dc3545; margin-left: 0.3rem;" title="{{ t('importance_critical', lang) }}">🔴</span>
+                        {% elif entry.importance == 'important' %}
+                        <span style="color: #ffc107; margin-left: 0.3rem;" title="{{ t('importance_important', lang) }}">🟡</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
             </div>
+            {% endif %}
         </div>
         
+        <!-- Кнопки справа -->
+        <div style="display: flex; flex-direction: column; gap: 0.6rem; min-width: 140px;">
+            <!-- Кнопка Скачать -->
+            <a href="/api/download-document/{{ doc.id }}" 
+            class="btn-action btn-download" 
+            download>
+                <span class="btn-icon">📥</span>
+                <span>{{ t('btn_download', lang) }}</span>
+            </a>
+            
+            <!-- Кнопка Показать/Скрыть -->
+            <button 
+                class="btn-action btn-toggle"
+                onclick="toggleDocument('{{ doc.id }}')"
+            >
+                <span class="btn-icon toggle-icon">▶</span>
+                <span class="toggle-text">{{ t('btn_show', lang) }}</span>
+            </button>
+        </div>
+    </div>
+        
         <!-- Раскрывающееся содержимое -->
-        <div class="document-body" style="display: none;">
-            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
-                <p style="color: #666; margin-bottom: 1rem;">
-                    <strong>📝 Тип:</strong> {{ doc.file_type }}
-                </p>
-                
-                <!-- 🤖 ПОКАЗЫВАЕМ AI-АНАЛИЗ -->
-                {% if doc.raw_text %}
-                <div style="background: #f0f7ff; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #667eea;">
-                    <h4 style="color: #667eea; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <span>🤖</span>
-                        <span>AI-анализ документа</span>
-                    </h4>
-                    <div style="max-height: 400px; overflow-y: auto; background: white; padding: 1rem; border-radius: 6px;">
-                        <!-- ✅ ИЗМЕНИЛИ: добавили | markdown перед | safe -->
-                        <div style="color: #333; line-height: 1.6;">{{ doc.raw_text | markdown | safe }}</div>
-                    </div>
-                </div>
-                {% else %}
-                <div style="background: #fff3cd; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; text-align: center; border-left: 4px solid #ffc107;">
-                    <p style="color: #856404; margin: 0; font-weight: 600;">⚠️ AI-анализ не выполнен</p>
-                    <p style="color: #856404; margin: 0.5rem 0 0 0; font-size: 0.9rem;">Документ не был обработан. Попробуйте загрузить заново.</p>
-                </div>
-                {% endif %}
-                
-                <div class="document-actions">
-                    <button 
-                        class="btn btn-danger delete-btn"
-                        data-doc-id="{{ doc.id }}"
-                        style="padding: 0.5rem 1rem;"
-                    >
-                        🗑️ {{ t('document_delete', lang) }}
-                    </button>
+        <div class="document-body-wrapper" style="display: none;">
+        <div style="padding: 1rem 0; border-top: 1px solid #e5e7eb; margin-top: 1rem;">
+            
+            <!-- 🤖 AI-АНАЛИЗ ДОКУМЕНТА -->
+            {% if doc.raw_text %}
+            <div style="background: #f8f9ff; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem;">
+                <div style="color: #374151; line-height: 1.7;">
+                    {{ doc.raw_text | markdown | safe }}
                 </div>
             </div>
+            {% else %}
+            <div style="background: #fff3cd; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; text-align: center;">
+                <p style="color: #856404; margin: 0; font-weight: 600;">⚠️ {{ t('no_analysis_available', lang) }}</p>
+                <p style="color: #856404; margin: 0.5rem 0 0 0; font-size: 0.9rem;">{{ t('no_analysis_retry', lang) }}</p>
+            </div>
+            {% endif %}
+            
+            <!-- Disclaimer + Кнопка удаления -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                <!-- Disclaimer слева -->
+                <p style="margin: 0; font-size: 0.8rem; color: #6b7280; line-height: 1.4; flex: 1;">
+                    ⚠️ {{ t('ai_disclaimer', lang) }}
+                </p>
+                
+                <!-- Кнопка удаления справа -->
+                <button 
+                    class="btn-action btn-delete delete-btn"
+                    data-doc-id="{{ doc.id }}"
+                    type="button"
+                >
+                    <span class="btn-icon">🗑️</span>
+                    <span>{{ t('btn_delete_document', lang) }}</span>
+                </button>
+            </div>
         </div>
+    </div>
     </div>  <!-- ✅ ВАЖНО: Закрывающий тег для document-card -->
     {% endfor %}
 </div>
@@ -377,13 +417,58 @@
        ======================================== */
     
     .document-card {
-        margin-bottom: 1rem;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1rem;  /* было 1.5rem */
+        margin-bottom: 0.8rem;  /* было 1rem */
         cursor: pointer;
         transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
     
+    .document-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .document-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .document-header-left {
+        flex: 1;
+    }
+
+    .document-title {
+        margin: 0;
+        font-size: 1.1rem;
+        color: #1f2937;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .doc-type-badge {
+        display: inline-block;
+        background: #f3f4f6;
+        color: #6b7280;
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .document-date {
+        color: #9ca3af;
+        font-size: 0.85rem;
+        margin-top: 0.3rem;
+    }
+
     /* Badge "НОВЫЙ" */
     .document-card.new::before {
         content: '✨ НОВЫЙ';
@@ -403,19 +488,6 @@
     @keyframes fadeOut {
         0%, 90% { opacity: 1; }
         100% { opacity: 0; }
-    }
-    
-    /* Заголовок карточки */
-    .document-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-        user-select: none;
-    }
-    
-    .document-header-left {
-        flex: 1;
     }
     
     .btn-toggle {
@@ -454,10 +526,12 @@
     }
     
     /* Тело карточки */
-    .document-body {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.4s ease-in-out;
+    .document-body-wrapper {
+        display: none;
+    }
+
+    .document-card.expanded .document-body-wrapper {
+        display: block;
     }
     
     .document-card.expanded .document-body {
@@ -725,8 +799,9 @@ function resetUploadForm() {
 
 function toggleDocument(docId) {
     const card = document.querySelector(`.document-card[data-doc-id="${docId}"]`);
-    const body = card.querySelector('.document-body');
+    const body = card.querySelector('.document-body-wrapper');
     const toggleText = card.querySelector('.toggle-text');
+    const toggleIcon = card.querySelector('.toggle-icon');
     const isExpanded = card.classList.contains('expanded');
     
     // Закрываем ранее открытый документ (аккордеон)
@@ -734,8 +809,11 @@ function toggleDocument(docId) {
         const prevCard = document.querySelector(`.document-card[data-doc-id="${currentOpenDocId}"]`);
         if (prevCard) {
             prevCard.classList.remove('expanded');
-            prevCard.querySelector('.document-body').style.display = 'none';
-            prevCard.querySelector('.toggle-text').textContent = 'Показать';
+            prevCard.querySelector('.document-body-wrapper').style.display = 'none';
+            const prevToggleText = prevCard.querySelector('.toggle-text');
+            if (prevToggleText) {
+                prevToggleText.textContent = '{{ t("btn_show", lang) }}';
+            }
         }
     }
     
@@ -744,13 +822,13 @@ function toggleDocument(docId) {
         // Закрываем
         card.classList.remove('expanded');
         body.style.display = 'none';
-        toggleText.textContent = 'Показать';
+        toggleText.textContent = '{{ t("btn_show", lang) }}';
         currentOpenDocId = null;
     } else {
         // Открываем
         card.classList.add('expanded');
         body.style.display = 'block';
-        toggleText.textContent = 'Скрыть';
+        toggleText.textContent = '{{ t("btn_hide", lang) }}';
         currentOpenDocId = docId;
         
         // Убираем badge "НОВЫЙ" при первом клике
@@ -762,40 +840,36 @@ function toggleDocument(docId) {
 // 🗑️ УДАЛЕНИЕ ДОКУМЕНТА
 // ========================================
 
-document.addEventListener('DOMContentLoaded', function() {
-    const deleteButtons = document.querySelectorAll('.delete-btn');
+async function deleteDocument(docId) {
+    console.log('Удаление документа:', docId);
     
-    deleteButtons.forEach(button => {
-        button.addEventListener('click', async function(e) {
-            e.stopPropagation(); // Не раскрываем карточку при клике на удаление
-            
-            const docId = this.getAttribute('data-doc-id');
-            
-            if (!confirm('{{ t("confirm_delete_document", lang) }}')) {
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/delete-document/' + docId, {
-                    method: 'DELETE'
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert('✅ {{ t("document_deleted", lang) }}');
-                    window.location.reload();
-                } else {
-                    alert('❌ {{ t("error", lang) }}: ' + data.error);
-                }
-                
-            } catch (error) {
-                alert('❌ {{ t("error_server", lang) }}');
-                console.error('Error:', error);
-            }
+    if (!confirm('{{ t("confirm_delete_document", lang) }}')) {
+        console.log('Отменено пользователем');
+        return false;
+    }
+    
+    try {
+        console.log('Отправка запроса...');
+        const response = await fetch('/api/delete-document/' + docId, {
+            method: 'DELETE'
         });
-    });
-});
+        
+        const data = await response.json();
+        console.log('Ответ:', data);
+        
+        if (data.success) {
+            alert('✅ {{ t("document_deleted", lang) }}');
+            window.location.reload();
+        } else {
+            alert('❌ {{ t("error", lang) }}: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        alert('❌ {{ t("error_server", lang) }}');
+    }
+    
+    return false;
+}
 
 // ========================================
 // ✨ АВТООТКРЫТИЕ НОВОГО ДОКУМЕНТА
