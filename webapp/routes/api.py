@@ -5,6 +5,8 @@
 import os
 import sys
 import tempfile
+import uuid
+from datetime import datetime
 from fastapi import APIRouter, Request, Depends, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -300,6 +302,316 @@ async def chat_message(
             }
         )
 
+# ==========================================
+# 🔒 ПРОВЕРКА ЛИМИТОВ ДЛЯ ФОТО
+# ==========================================
+
+@router.get("/check-photo-limits")
+async def check_photo_limits(
+    request: Request,
+    user_id: int = Depends(get_current_user)
+):
+    """
+    Проверяет есть ли у пользователя доступ к анализу фото
+    (нужны лимиты GPT-4o для детальных консультаций)
+    """
+    try:
+        lang = await get_user_language(user_id)
+        
+        if not LIMITS_AVAILABLE:
+            return JSONResponse(content={
+                'success': False,
+                'has_limits': False,
+                'message': 'Функция временно недоступна'
+            })
+        
+        # Проверяем лимиты GPT-4o
+        has_limits = await check_gpt4o_limit(user_id)
+        
+        from db_postgresql import t
+        
+        return JSONResponse(content={
+            'success': True,
+            'has_limits': has_limits,
+            'message': t('photo_requires_premium', lang) if not has_limits else ''
+        })
+        
+    except Exception as e:
+        print(f"❌ Ошибка проверки лимитов: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                'success': False,
+                'has_limits': False,
+                'message': 'Ошибка проверки лимитов'
+            }
+        )
+
+
+# ==========================================
+# 📸 ЗАГРУЗКА И АНАЛИЗ ФОТО (один endpoint)
+# ==========================================
+
+# Создаем промпт прямо здесь (без зависимости от photo_analyzer)
+def create_photo_analysis_prompt(user_question: str, context: str, lang: str) -> str:
+    """Создает промпт для анализа фото"""
+    
+    lang_names = {
+        'ru': 'Russian',
+        'en': 'English', 
+        'uk': 'Ukrainian',
+        'de': 'German'
+    }
+    response_language = lang_names.get(lang, 'English')
+    
+    return f"""You are a medical AI assistant analyzing a medical image.
+
+USER QUESTION: "{user_question}"
+
+USER CONTEXT:
+{context}
+
+INSTRUCTIONS:
+1. Analyze the image in the context of the user's specific question
+2. Consider the provided user information when giving recommendations  
+3. Give a comprehensive but understandable answer
+4. If this appears to be a medical condition, suggest whether medical consultation is needed
+5. Be supportive and informative, but avoid definitive diagnoses
+6. Always respond in {response_language} language
+
+Focus your analysis specifically on answering the user's question while considering their medical context."""
+
+@router.post("/analyze-photo")
+async def analyze_photo_with_question(
+    request: Request,
+    file: UploadFile = File(...),
+    question: str = Form(...),
+    user_id: int = Depends(get_current_user)
+):
+    """
+    📸 Загрузка фото + анализ с вопросом пользователя
+    
+    Объединяем загрузку и анализ в один endpoint для простоты
+    
+    Процесс (как в телеграм-боте):
+    1. Валидация файла (размер, тип)
+    2. Проверка лимитов GPT-4o
+    3. Сохранение файла временно
+    4. Сбор контекста пользователя
+    5. Отправка в Gemini Vision API
+    6. Списание лимита
+    7. Возврат результата
+    """
+    
+    photo_path = None
+    
+    try:
+        lang = await get_user_language(user_id)
+        
+        # ==========================================
+        # ВАЛИДАЦИЯ ФАЙЛА
+        # ==========================================
+        
+        if not file.content_type or not file.content_type.startswith('image/'):
+            return JSONResponse(
+                status_code=400,
+                content={
+                    'success': False,
+                    'error': 'Пожалуйста, загрузите изображение (PNG, JPG, JPEG, GIF, WEBP)'
+                }
+            )
+        
+        # Проверяем вопрос
+        user_question = question.strip()
+        if not user_question:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    'success': False,
+                    'error': 'Пожалуйста, задайте вопрос к изображению'
+                }
+            )
+        
+        print(f"📸 [WEB] Загрузка фото от user_id={user_id}")
+        print(f"❓ Вопрос: {user_question}")
+        
+        # ==========================================
+        # ПРОВЕРКА ЛИМИТОВ GPT-4o
+        # ==========================================
+        
+        if LIMITS_AVAILABLE:
+            has_premium_limits = await check_gpt4o_limit(user_id)
+            
+            if not has_premium_limits:
+                from db_postgresql import t
+                return JSONResponse(
+                    status_code=403,
+                    content={
+                        'success': False,
+                        'error': t('gpt4o_limit_exceeded', lang),
+                        'show_subscription': True
+                    }
+                )
+        
+        # ==========================================
+        # СОХРАНЕНИЕ ФАЙЛА ВРЕМЕННО
+        # ==========================================
+        
+        from file_utils import create_simple_file_path, validate_file_size
+        
+        try:
+            # Создаем временный путь
+            photo_path = create_simple_file_path(user_id, f"temp_photo_{uuid.uuid4().hex[:8]}.jpg")
+        except ValueError as e:
+            return JSONResponse(
+                status_code=400,
+                content={'success': False, 'error': str(e)}
+            )
+        
+        # Сохраняем файл
+        with open(photo_path, 'wb') as f:
+            content = await file.read()
+            f.write(content)
+        
+        # Проверяем размер (максимум 5 МБ)
+        if not validate_file_size(photo_path):
+            os.remove(photo_path)
+            from db_postgresql import t
+            return JSONResponse(
+                status_code=400,
+                content={
+                    'success': False,
+                    'error': t('photo_too_large', lang)
+                }
+            )
+        
+        print(f"✅ Фото сохранено: {photo_path}")
+        
+        # ==========================================
+        # СОХРАНЯЕМ ВОПРОС В ИСТОРИЮ
+        # ==========================================
+        
+        await save_message(user_id, 'user', f"📷 {user_question}")
+        
+        # ==========================================
+        # СОБИРАЕМ КОНТЕКСТ ПОЛЬЗОВАТЕЛЯ
+        # ==========================================
+        
+        try:
+            from save_utils import format_user_profile
+            from db_postgresql import get_last_messages
+            
+            profile_text = await format_user_profile(user_id)
+            last_messages = await get_last_messages(user_id, limit=5)
+            
+            # Формируем историю
+            history_text = ""
+            if last_messages:
+                history_text = "\n\nПоследние сообщения:\n"
+                for msg in last_messages:
+                    # msg это tuple: (role, message, timestamp)
+                    role_label = "Пользователь" if msg[0] == 'user' else "Ассистент"
+                    history_text += f"{role_label}: {msg[1][:200]}\n"
+
+            context = f"{profile_text}\n{history_text}".strip()
+            
+        except Exception as e:
+            print(f"⚠️ Ошибка сбора контекста: {e}")
+            context = ""
+        
+        # ==========================================
+        # СОЗДАЕМ ПРОМПТ ДЛЯ GEMINI
+        # ==========================================
+                
+        custom_prompt = create_photo_analysis_prompt(user_question, context, lang)
+        
+        # ==========================================
+        # ОТПРАВЛЯЕМ НА АНАЛИЗ В GEMINI VISION
+        # ==========================================
+        
+        print(f"🔬 Отправляем на анализ в Gemini Vision...")
+        
+        from gemini_analyzer import send_to_gemini_vision
+        
+        analysis_result, error_message = await send_to_gemini_vision(
+            photo_path, lang, custom_prompt
+        )
+        
+        # Удаляем временный файл
+        try:
+            if photo_path and os.path.exists(photo_path):
+                os.remove(photo_path)
+                print(f"🗑️ Временный файл удален")
+        except Exception as e:
+            print(f"⚠️ Ошибка удаления файла: {e}")
+        
+        if error_message:
+            from db_postgresql import t
+            return JSONResponse(
+                status_code=500,
+                content={
+                    'success': False,
+                    'error': f"{t('photo_analysis_error', lang)}: {error_message}"
+                }
+            )
+        
+        if not analysis_result:
+            from db_postgresql import t
+            return JSONResponse(
+                status_code=500,
+                content={
+                    'success': False,
+                    'error': t('photo_analysis_failed', lang)
+                }
+            )
+        
+        # ==========================================
+        # СПИСЫВАЕМ ЛИМИТ GPT-4o
+        # ==========================================
+        
+        if LIMITS_AVAILABLE:
+            await spend_gpt4o_limit(user_id, None, None)
+            print(f"💎 Лимит потрачен для user {user_id} (анализ фото)")
+        
+        # ==========================================
+        # СОХРАНЯЕМ ОТВЕТ В ИСТОРИЮ
+        # ==========================================
+        
+        response_text = f"📸 Анализ изображения:\n\n{analysis_result}"
+        await save_message(user_id, 'assistant', response_text)
+        
+        # ==========================================
+        # ФОРМАТИРУЕМ ДЛЯ ВЕБА
+        # ==========================================
+        
+        formatted_result = format_for_web(response_text)
+        
+        print(f"✅ Анализ фото завершен успешно")
+        
+        return JSONResponse(content={
+            'success': True,
+            'response': formatted_result
+        })
+        
+    except Exception as e:
+        # Удаляем файл в случае ошибки
+        if photo_path and os.path.exists(photo_path):
+            try:
+                os.remove(photo_path)
+            except:
+                pass
+        
+        print(f"❌ Ошибка анализа фото: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        return JSONResponse(
+            status_code=500,
+            content={
+                'success': False,
+                'error': 'Ошибка анализа изображения. Попробуйте снова.'
+            }
+        )
 
 @router.post("/upload")
 async def upload_document(

@@ -1505,6 +1505,32 @@ TRANSLATIONS = {
     'uk': 'PulseBook не замінює консультацію лікаря. Відповіді можуть містити помилки.',
     'en': 'PulseBook is not a substitute for medical advice. Responses may contain errors.',
     'de': 'PulseBook ersetzt keine ärztliche Beratung. Antworten können Fehler enthalten.'
+},
+'photo_requires_premium': {
+    'ru': 'Анализ по фото недоступен при базовых ответах',
+    'en': 'Photo analysis is not available in basic responses',
+    'uk': 'Аналіз за фото недоступний при базових відповідях',
+    'de': 'Fotoanalyse ist bei einfachen Antworten nicht verfügbar'
+},
+
+'photo_upload_button': {
+    'ru': '📷 Загрузить фото',
+    'en': '📷 Upload a photo',
+    'uk': '📷 Завантажити фото',
+    'de': '📷 Foto hochladen'
+},
+
+'photo_upload_description': {
+    'ru': 'Поддерживается: PNG, JPG, JPEG, GIF, WEBP (макс. 5 МБ)',
+    'en': 'Supported: PNG, JPG, JPEG, GIF, WEBP (max 5 MB)',
+    'uk': 'Підтримується: PNG, JPG, JPEG, GIF, WEBP (макс. 5 МБ)',
+    'de': 'Unterstützt: PNG, JPG, JPEG, GIF, WEBP (max. 5 MB)'
+},
+'btn_view_plans': {
+    'ru': 'Обновить лимиты →',
+    'en': 'Upgrade Limits →',
+    'uk': 'Оновити лiмiти →',
+    'de': 'Limits erweitern →'
 }
 }
 

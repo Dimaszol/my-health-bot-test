@@ -242,6 +242,150 @@
     .send-button:active {
         transform: translateY(0);
     }
+
+    /* ============================================
+    ➕ КНОПКА ПЛЮС И МЕНЮ ПРИКРЕПЛЕНИЯ
+    ============================================ */
+
+    .chat-input-wrapper form {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .plus-button {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid #e0e0e0;
+        background: white;
+        color: #666;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+    .plus-button:hover {
+        background: #f5f5f5;
+        border-color: #00c9a7;
+        color: #00c9a7;
+    }
+
+    .plus-button.active {
+        transform: rotate(45deg);
+        background: #00c9a7;
+        color: white;
+        border-color: #00c9a7;
+    }
+
+    /* Выпадающее меню */
+    .attachment-menu {
+        position: absolute;
+        bottom: 55px;
+        left: 0;
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        padding: 0.5rem;
+        min-width: 300px;
+        z-index: 1000;
+        animation: slideUp 0.2s ease;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .menu-item:hover {
+        background: #f5f5f5;
+    }
+
+    .menu-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+
+    .menu-text {
+        flex: 1;
+    }
+
+    .menu-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 2px;
+    }
+
+    .menu-description {
+        font-size: 0.85rem;
+        color: #999;
+    }
+
+    /* Превью фото */
+    .photo-preview {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid #00c9a7;
+        flex-shrink: 0;
+    }
+
+    .photo-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .remove-photo {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+    }
+
+    .remove-photo:hover {
+        background: rgba(0, 0, 0, 0.9);
+    }
+
+    /* Адаптируем поле ввода когда есть фото */
+    #message-input {
+        flex: 1;
+    }
     
     /* ПУСТОЕ СОСТОЯНИЕ */
     .empty-state {
@@ -411,25 +555,50 @@
     
     <!-- ФОРМА ВВОДА - фиксирована внизу -->
     <div class="chat-input-wrapper">
-    <form id="chat-form">
-        <input 
-            type="text" 
-            id="message-input" 
-            placeholder="{{ t('chat_placeholder', lang) }}"
-            autocomplete="off"
-            required
-        />
-        <button type="submit" class="send-button">
-            <span>{{ t('btn_send', lang) }}</span>
-            <span>📤</span>
-        </button>
-    </form>
-    
-    <!-- Медицинский дисклеймер -->
-    <div class="medical-disclaimer">
-        {{ t('medical_disclaimer', lang) }}
+        <form id="chat-form" enctype="multipart/form-data">
+            <!-- Кнопка "+" для меню -->
+            <button type="button" class="plus-button" id="plus-button">
+                <span>+</span>
+            </button>
+            
+            <!-- Выпадающее меню -->
+            <div class="attachment-menu" id="attachment-menu" style="display: none;">
+                <div class="menu-item" id="upload-photo-btn">
+                    <span class="menu-icon">📷</span>
+                    <div class="menu-text">
+                        <div class="menu-title">{{ t('photo_upload_button', lang) }}</div>
+                        <div class="menu-description">{{ t('photo_upload_description', lang) }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Скрытый input для файла -->
+            <input type="file" id="photo-input" accept="image/*" style="display: none;">
+            
+            <!-- Превью загруженного фото -->
+            <div class="photo-preview" id="photo-preview" style="display: none;">
+                <img id="photo-preview-img" src="" alt="Preview">
+                <button type="button" class="remove-photo" id="remove-photo">✕</button>
+            </div>
+            
+            <input 
+                type="text" 
+                id="message-input" 
+                placeholder="{{ t('chat_placeholder', lang) }}"
+                autocomplete="off"
+                required
+            />
+            <button type="submit" class="send-button">
+                <span>{{ t('btn_send', lang) }}</span>
+                <span>📤</span>
+            </button>
+        </form>
+        
+        <!-- Медицинский дисклеймер -->
+        <div class="medical-disclaimer">
+            {{ t('medical_disclaimer', lang) }}
+        </div>
     </div>
-</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -441,23 +610,239 @@ const messageInput = document.getElementById('message-input');
 const chatContainer = document.getElementById('chat-container');
 const typingIndicator = document.getElementById('typing-indicator');
 
-// 📤 ОТПРАВКА СООБЩЕНИЯ
+// Элементы для работы с фото
+const plusButton = document.getElementById('plus-button');
+const attachmentMenu = document.getElementById('attachment-menu');
+const uploadPhotoBtn = document.getElementById('upload-photo-btn');
+const photoInput = document.getElementById('photo-input');
+const photoPreview = document.getElementById('photo-preview');
+const photoPreviewImg = document.getElementById('photo-preview-img');
+const removePhotoBtn = document.getElementById('remove-photo');
+
+let selectedFile = null;
+
+// ============================================
+// ➕ ОТКРЫТИЕ/ЗАКРЫТИЕ МЕНЮ ПРИКРЕПЛЕНИЯ
+// ============================================
+
+plusButton.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    
+    const isOpen = attachmentMenu.style.display === 'block';
+    
+    if (isOpen) {
+        closeAttachmentMenu();
+    } else {
+        // Проверяем лимиты
+        const hasLimits = await checkPhotoLimits();
+        
+        // Меняем содержимое меню в зависимости от лимитов
+        updateMenuContent(hasLimits);
+        
+        // Открываем меню в любом случае
+        attachmentMenu.style.display = 'block';
+        plusButton.classList.add('active');
+    }
+});
+
+// Закрытие меню при клике вне его
+document.addEventListener('click', (e) => {
+    if (!attachmentMenu.contains(e.target) && e.target !== plusButton) {
+        closeAttachmentMenu();
+    }
+});
+
+function closeAttachmentMenu() {
+    attachmentMenu.style.display = 'none';
+    plusButton.classList.remove('active');
+}
+
+// ============================================
+// 🔍 ПРОВЕРКА ЛИМИТОВ ДЛЯ ФОТО
+// ============================================
+
+async function checkPhotoLimits() {
+    try {
+        const response = await fetch('/api/check-photo-limits');
+        const data = await response.json();
+        
+        // Всегда возвращаем true - меню откроется в любом случае
+        return data.has_limits || false;
+        
+    } catch (error) {
+        console.error('Ошибка проверки лимитов:', error);
+        return false;
+    }
+}
+
+// Обновление содержимого меню в зависимости от лимитов
+function updateMenuContent(hasLimits) {
+    const menuItem = document.getElementById('upload-photo-btn');
+    
+    if (hasLimits) {
+        // Если есть лимиты - показываем кнопку загрузки
+        menuItem.style.cursor = 'pointer';
+        menuItem.innerHTML = `
+            <span class="menu-icon">📷</span>
+            <div class="menu-text">
+                <div class="menu-title">{{ t('photo_upload_button', lang) }}</div>
+                <div class="menu-description">{{ t('photo_upload_description', lang) }}</div>
+            </div>
+        `;
+        
+        // Восстанавливаем обработчик клика
+        menuItem.onclick = () => {
+            photoInput.click();
+            closeAttachmentMenu();
+        };
+        
+    } else {
+        // Если нет лимитов - показываем уведомление
+        menuItem.style.cursor = 'pointer';
+        menuItem.innerHTML = `
+            <span class="menu-icon">⭐</span>
+            <div class="menu-text">
+                <div class="menu-title">{{ t('photo_requires_premium', lang) }}</div>
+                <div class="menu-description"><a href="/dashboard/subscription" style="color: #667eea; text-decoration: none; font-weight: 600;">{{ t('btn_view_plans', lang) }}</a></div>
+            </div>
+        `;
+        
+        // Клик ведет на страницу подписок
+        menuItem.onclick = () => {
+            window.location.href = '/dashboard/subscription';
+        };
+    }
+}
+
+// ============================================
+// 📷 ВЫБОР И ЗАГРУЗКА ФОТО
+// ============================================
+
+photoInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    
+    if (!file) return;
+    
+    // Проверяем тип файла
+    if (!file.type.startsWith('image/')) {
+        alert('Пожалуйста, выберите изображение');
+        return;
+    }
+    
+    // Проверяем размер (5 МБ максимум)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('Файл слишком большой. Максимум 5 МБ');
+        return;
+    }
+    
+    selectedFile = file;
+    
+    // Показываем превью
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        photoPreviewImg.src = e.target.result;
+        photoPreview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+    
+    // Фокус на поле ввода
+    messageInput.focus();
+    messageInput.placeholder = '{{ t("chat_placeholder", lang) }}';
+});
+
+// Удаление выбранного фото
+removePhotoBtn.addEventListener('click', () => {
+    selectedFile = null;
+    photoPreview.style.display = 'none';
+    photoInput.value = '';
+    messageInput.placeholder = '{{ t("chat_placeholder", lang) }}';
+});
+
+// ============================================
+// 📤 ОТПРАВКА СООБЩЕНИЯ (С ФОТО ИЛИ БЕЗ)
+// ============================================
+
 chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const message = messageInput.value.trim();
     if (!message) return;
     
-    // Добавляем сообщение пользователя
-    addMessage(message, 'user');
-    messageInput.value = '';
+    // Если есть выбранное фото - отправляем на анализ
+    if (selectedFile) {
+        await sendPhotoForAnalysis(selectedFile, message);
+    } else {
+        // Обычное текстовое сообщение
+        await sendTextMessage(message);
+    }
     
+});
+
+// Отправка фото на анализ
+async function sendPhotoForAnalysis(file, question) {
+    // Добавляем сообщение пользователя с индикатором фото
+    addMessage(`📷 ${question}`, 'user');
+    
+    // ✅ ОЧИЩАЕМ ФОРМУ СРАЗУ ПОСЛЕ ДОБАВЛЕНИЯ СООБЩЕНИЯ
+    messageInput.value = '';
+    selectedFile = null;
+    photoPreview.style.display = 'none';
+    photoInput.value = '';
+
     // Показываем индикатор печатания
     typingIndicator.style.display = 'block';
     scrollToBottom();
     
     try {
-        // Отправляем запрос к API
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('question', question);
+        
+        const response = await fetch('/api/analyze-photo', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        // Скрываем индикатор
+        typingIndicator.style.display = 'none';
+        
+        if (data.success) {
+            // Добавляем ответ ИИ
+            addMessage(data.response, 'ai');
+        } else {
+            // Показываем ошибку
+            addMessage(data.error || '{{ t("error_server", lang) }}', 'ai');
+            
+            // Если нужна подписка
+            if (data.show_subscription) {
+                setTimeout(() => {
+                    showLimitModal(data.error);
+                }, 500);
+            }
+        }
+        
+    } catch (error) {
+        typingIndicator.style.display = 'none';
+        addMessage('{{ t("error_server", lang) }}', 'ai');
+        console.error('Error:', error);
+    }
+}
+
+// Отправка обычного текстового сообщения
+async function sendTextMessage(message) {
+    // Добавляем сообщение пользователя
+    addMessage(message, 'user');
+    
+    // ✅ ОЧИЩАЕМ ПОЛЕ ВВОДА СРАЗУ ПОСЛЕ ДОБАВЛЕНИЯ СООБЩЕНИЯ
+    messageInput.value = '';
+
+    // Показываем индикатор печатания
+    typingIndicator.style.display = 'block';
+    scrollToBottom();
+    
+    try {
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: {
@@ -468,7 +853,7 @@ chatForm.addEventListener('submit', async (e) => {
         
         const data = await response.json();
 
-        // ✅ ПРОВЕРЯЕМ ЛИМИТЫ И ОБНОВЛЯЕМ ИНДИКАТОР
+        // Проверяем лимиты и обновляем индикатор
         if (data.had_limits === false && data.success) {
             updateModeIndicator(false);
         }
@@ -489,7 +874,7 @@ chatForm.addEventListener('submit', async (e) => {
         addMessage('{{ t("error_server", lang) }}', 'ai');
         console.error('Error:', error);
     }
-});
+}
 
 // 💬 ДОБАВЛЕНИЕ СООБЩЕНИЯ В ЧАТ
 function addMessage(text, role) {
@@ -505,10 +890,12 @@ function addMessage(text, role) {
     
     // Для AI используем innerHTML, для пользователя - textContent
     if (role === 'ai') {
-        const cleaned = text.trim().replace(/\n{3,}/g, '\n\n');
-        bubble.innerHTML = cleaned;
+        const cleanedText = text
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '');
+        bubble.innerHTML = cleanedText;
     } else {
-        bubble.textContent = text.trim();
+        bubble.textContent = text;
     }
     
     const timeDiv = document.createElement('div');
@@ -517,17 +904,13 @@ function addMessage(text, role) {
     
     messageDiv.appendChild(bubble);
     messageDiv.appendChild(timeDiv);
-    
-    // Вставляем перед индикатором печатания
     chatContainer.insertBefore(messageDiv, typingIndicator);
+    
     scrollToBottom();
 }
 
-// 📜 АВТОМАТИЧЕСКАЯ ПРОКРУТКА ВНИЗ
 function scrollToBottom() {
-    setTimeout(() => {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-    }, 100);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 // 🔄 ДИНАМИЧЕСКОЕ ОБНОВЛЕНИЕ ИНДИКАТОРА
