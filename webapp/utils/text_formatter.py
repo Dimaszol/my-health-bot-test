@@ -92,9 +92,7 @@ def format_for_web(text: str) -> str:
     text = '\n'.join(formatted_lines)
     
     # 7️⃣ Преобразуем ПЕРЕНОСЫ СТРОК
-    # Один перенос (\n) → пробел
-    # Два переноса (\n\n) → <br><br>
-    text = re.sub(r'\n\n+', '<br><br>', text)  # Множественные переносы
+    text = re.sub(r'\n\n+', '<br>', text)  # Двойной перенос → один <br>
     text = re.sub(r'\n', ' ', text)  # Одиночные переносы в пробел
     
     # 8️⃣ УБИРАЕМ лишние пробелы

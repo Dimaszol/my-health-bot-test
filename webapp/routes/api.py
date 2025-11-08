@@ -245,9 +245,11 @@ async def chat_message(
         )
         
         print(f"✅ [ШАГ 6] Ответ получен: {len(ai_response)} символов")
-        
+                
         # Форматируем для веба
         formatted_response = format_for_web(ai_response)
+        # Убираем пробелы с краев
+        formatted_response = formatted_response.strip()
         
         # ==========================================
         # ШАГ 7: СПИСЫВАЕМ ЛИМИТ
@@ -271,7 +273,7 @@ async def chat_message(
         print(f"💾 [ШАГ 8] Сохраняем ответ...")
         
         # ✅ ПРОСТО AWAIT!
-        await save_message(user_id, 'assistant', ai_response)
+        await save_message(user_id, 'assistant', formatted_response)
         
         print(f"✅ [ШАГ 8] Готово!")
         print(f"🎉 Запрос обработан успешно!")
@@ -279,7 +281,7 @@ async def chat_message(
         # Возвращаем успех
         return {
             'success': True,
-            'response': formatted_response,
+            'response': ai_response,
             'user_message': user_message,
             'model_used': model_name,
             'had_limits': has_premium_limits

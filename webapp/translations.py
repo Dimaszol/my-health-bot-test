@@ -1499,6 +1499,12 @@ TRANSLATIONS = {
     'en': 'Upgrade to detailed consultations →',
     'uk': 'Оновити до детальних консультацій →',
     'de': 'Auf detaillierte Beratungen upgraden →'
+},
+'medical_disclaimer': {
+    'ru': 'PulseBook не заменяет консультацию врача. Ответы могут содержать ошибки.',
+    'uk': 'PulseBook не замінює консультацію лікаря. Відповіді можуть містити помилки.',
+    'en': 'PulseBook is not a substitute for medical advice. Responses may contain errors.',
+    'de': 'PulseBook ersetzt keine ärztliche Beratung. Antworten können Fehler enthalten.'
 }
 }
 
