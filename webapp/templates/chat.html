@@ -13,17 +13,13 @@
     body {
         overflow: hidden;
     }
-    
-    /* ✅ НЕ ТРОГАЕМ header - пусть остаётся как на главной */
-    header {
-        /* Оставляем стили по умолчанию */
-    }
-    
+      
     main {
         height: calc(100vh - 80px); /* Вся высота минус header */
         overflow: hidden;
-        padding: 0 !important;
+        padding: 0.5rem 0 0 0 !important;
         margin: 0;
+        position: relative;
     }
     
     main > .container {
@@ -41,20 +37,31 @@
         width: 100%;
         padding: 0 2rem;
         height: 100%; /* ✅ ДОБАВИЛИ */
-        overflow: hidden;
+        overflow: hidden;        
     }
     
+    /* 🔧 Сбрасываем стандартные margin у HTML-тегов внутри ответов бота */
+    .ai-message .message-bubble p,
+    .ai-message .message-bubble h1,
+    .ai-message .message-bubble h2,
+    .ai-message .message-bubble h3,
+    .ai-message .message-bubble ul,
+    .ai-message .message-bubble ol {
+        margin-top: 0.3rem;
+        margin-bottom: 0.3rem;
+    }
+
     /* ОКНО СООБЩЕНИЙ - прокручивается */
     #chat-container {
         flex: 1;
         overflow-y: auto; /* ✅ ВОТ ЭТО ВАЖНО */
-        padding: 2rem 0;
+        padding: 0.5rem 0;
         scroll-behavior: smooth;
     }
     
     /* СТИЛИ СООБЩЕНИЙ */
     .message {
-        margin-bottom: 2rem;
+        margin-bottom: 0rem;
         display: flex;
         flex-direction: column;
         animation: messageSlide 0.3s ease;
@@ -101,7 +108,19 @@
         border-bottom-left-radius: 5px;
         white-space: pre-line; /* ✅ Сохраняет переносы строк */
     }
-    
+
+    .ai-message .message-bubble p {
+        margin: 0.4rem 0 !important;   /* мягкие абзацы */
+        line-height: 1.5;
+    }
+
+    /* делаем двойной \n из GPT визуально как абзац */
+    .ai-message .message-bubble br + br {
+        display: block;
+        margin-bottom: 0.8rem;
+        content: "";
+    }
+     
     /* Стили для HTML внутри AI сообщений */
     .ai-message .message-bubble strong {
         font-weight: 700;
@@ -247,10 +266,99 @@
             padding: 1rem 1.5rem;
         }
     }
+    /* 🎯 ИНДИКАТОР РЕЖИМА */
+    .consultation-mode-badge {
+        position: absolute;
+        top: 2rem;
+        right: 4rem;
+        z-index: 100;
+    }
+
+    .mode-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        backdrop-filter: blur(10px);
+    }
+
+    /* Детальные консультации (зеленый) */
+    .mode-indicator.detailed {
+        background: rgba(212, 244, 221, 0.9);
+        color: #00875a;
+        border: 1px solid rgba(0, 201, 167, 0.3);
+        cursor: default;
+    }
+
+    .mode-indicator.detailed .mode-icon {
+        font-size: 0.9rem;
+    }
+
+    /* Базовые ответы (желтый, кликабельный) */
+    .mode-indicator.basic {
+        background: rgba(255, 243, 205, 0.9);
+        color: #856404;
+        border: 1px solid rgba(255, 193, 7, 0.3);
+        cursor: pointer;
+    }
+
+    .mode-indicator.basic:hover {
+        background: rgba(255, 230, 156, 0.95);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+    }
+
+    .mode-indicator.basic .mode-content {
+        display: flex;
+        flex-direction: column;  /* ← ВОТ ЭТО ВАЖНО */
+        align-items: flex-start;
+        gap: 0.2rem;
+    }
+
+    .mode-icon {
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    /* Адаптив */
+    @media (max-width: 768px) {
+        .consultation-mode-badge {
+            right: 1rem;
+        }
+        
+        .mode-indicator {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.8rem;
+        }
+    }
+  
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- 🎯 ИНДИКАТОР РЕЖИМА КОНСУЛЬТАЦИЙ -->
+<div class="consultation-mode-badge">
+    {% if has_detailed_consultations %}
+    <div class="mode-indicator detailed">
+        <span class="mode-icon">✨</span>
+        <span>{{ t('mode_detailed_consultations', lang) }}</span>
+    </div>
+    {% else %}
+    <a href="/dashboard/subscription" class="mode-indicator basic">
+        <span class="mode-icon">💡</span>
+        <div class="mode-content">
+            <span class="mode-text">{{ t('mode_basic_responses', lang) }}</span>
+            <span class="mode-upgrade">{{ t('mode_upgrade_to_detailed', lang) }}</span>
+        </div>
+    </a>
+    {% endif %}
+</div>
 <div class="chat-container-wrapper">
     <!-- ОКНО СООБЩЕНИЙ -->
     <div id="chat-container">
@@ -345,6 +453,11 @@ chatForm.addEventListener('submit', async (e) => {
         });
         
         const data = await response.json();
+
+        // ✅ ПРОВЕРЯЕМ ЛИМИТЫ И ОБНОВЛЯЕМ ИНДИКАТОР
+        if (data.had_limits === false && data.success) {
+            updateModeIndicator(false);
+        }
         
         // Скрываем индикатор
         typingIndicator.style.display = 'none';
@@ -378,9 +491,9 @@ function addMessage(text, role) {
     
     // Для AI используем innerHTML, для пользователя - textContent
     if (role === 'ai') {
-        bubble.innerHTML = text;
+        bubble.textContent = text.trim();
     } else {
-        bubble.textContent = text;
+        bubble.textContent = text.trim();
     }
     
     const timeDiv = document.createElement('div');
@@ -402,6 +515,32 @@ function scrollToBottom() {
     }, 100);
 }
 
+// 🔄 ДИНАМИЧЕСКОЕ ОБНОВЛЕНИЕ ИНДИКАТОРА
+function updateModeIndicator(hasLimits) {
+    const badge = document.querySelector('.consultation-mode-badge');
+    if (!badge) return;
+    
+    if (hasLimits) {
+        // Детальные консультации
+        badge.innerHTML = `
+            <div class="mode-indicator detailed">
+                <span class="mode-icon">✨</span>
+                <span>{{ t('mode_detailed_consultations', lang) }}</span>
+            </div>
+        `;
+    } else {
+        // Базовые ответы (2 строки)
+        badge.innerHTML = `
+            <a href="/dashboard/subscription" class="mode-indicator basic">
+                <span class="mode-icon">💡</span>
+                <div class="mode-content">
+                    <span class="mode-text">{{ t('mode_basic_responses', lang) }}</span>
+                    <span class="mode-upgrade">{{ t('mode_upgrade_to_detailed', lang) }}</span>
+                </div>
+            </a>
+        `;
+    }
+}
 // Прокручиваем вниз при загрузке страницы
 window.addEventListener('load', scrollToBottom);
 

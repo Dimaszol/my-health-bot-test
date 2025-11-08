@@ -108,6 +108,7 @@ async def get_current_user(request: Request) -> int:
         # Если не авторизован - редиректим
         raise RedirectResponse(url='/login', status_code=302)
     return user_id
+    
 
 
 # ==========================================
@@ -159,6 +160,8 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
     """
     from db_postgresql import get_db_connection, release_db_connection
     from medical_timeline import get_timeline_by_document  # ✅ НОВЫЙ ИМПОРТ
+    from subscription_manager import check_document_limit
+    has_document_limits = await check_document_limit(user_id)
     
     conn = await get_db_connection()
     
@@ -209,6 +212,7 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
     # ✅ ИСПОЛЬЗУЕМ get_template_context как в старой версии!
     context = get_template_context(request)
     context['documents'] = docs_list
+    context['has_document_limits'] = has_document_limits
     
     return templates.TemplateResponse("documents.html", context)
 
@@ -217,11 +221,15 @@ async def chat(request: Request, user_id: int = Depends(get_current_user)):
     """
     Страница чата с ИИ
     
-    ✅ БЕЗ КОСТЫЛЕЙ! Просто await!
     """
+    from subscription_manager import check_gpt4o_limit  # ← НОВОЕ
+    
     # ✅ ПРОСТО AWAIT!
     messages_tuples = await get_last_messages(user_id, limit=50)
     profile = await get_user_profile(user_id)
+    
+    # ✅ ПРОВЕРЯЕМ ЛИМИТЫ НА ДЕТАЛЬНЫЕ КОНСУЛЬТАЦИИ
+    has_detailed_consultations = await check_gpt4o_limit(user_id)  # ← НОВОЕ
     
     # Преобразуем в формат для шаблона
     chat_history = [
@@ -236,7 +244,8 @@ async def chat(request: Request, user_id: int = Depends(get_current_user)):
     context = get_template_context(request)
     context.update({
         'chat_history': chat_history,
-        'user': profile
+        'user': profile,
+        'has_detailed_consultations': has_detailed_consultations  # ← НОВОЕ
     })
     
     return templates.TemplateResponse('chat.html', context)
@@ -257,24 +266,52 @@ async def profile(request: Request, user_id: int = Depends(get_current_user)):
     
     return templates.TemplateResponse('profile.html', context)
 
+@router.get("/subscription", response_class=HTMLResponse)
+async def subscription_page(request: Request, user_id: int = Depends(get_current_user)):
+    """
+    Страница подписок и тарифов
+    
+    Показывает:
+    - Доступные тарифные планы
+    - Текущую подписку пользователя
+    - Оставшиеся лимиты
+    """
+    from stripe_config import StripeConfig
+    from subscription_manager import SubscriptionManager
+    from db_postgresql import get_user_language
 
-# ==========================================
-# 📊 ИТОГО: ЧТО ИЗМЕНИЛОСЬ?
-# ==========================================
-"""
-❌ БЫЛО (Flask + psycopg2):
-- 150+ строк кода с psycopg2
-- Костыли: get_clean_database_url()
-- Костыли: cursor.execute() везде
-- Костыли: conn.commit(), cursor.close(), conn.close()
-- 4 синхронные функции-дубликаты
+    # Получаем язык пользователя
+    lang = await get_user_language(user_id)
+    
+    # Получаем текущие лимиты и подписку
+    limits = await SubscriptionManager.get_user_limits(user_id)
+    
+    # Получаем все доступные тарифы
+    packages = StripeConfig.get_all_packages()
+    
+    # Форматируем тарифы для шаблона
+    formatted_packages = []
+    for package_id, package_info in packages.items():
+        formatted_packages.append({
+            'id': package_id,
+            'name_key': package_info['user_friendly_name_key'],
+            'price': package_info['price_display'],
+            'price_cents': package_info['price_cents'],  # Добавляем для сортировки
+            'type': package_info['type'],
+            'documents': package_info['documents'],
+            'gpt4o_queries': package_info['gpt4o_queries'],
+            'features_keys': package_info['features_keys'],
+            'is_current': limits.get('subscription_type') == package_id
+        })
 
-✅ СТАЛО (FastAPI + asyncpg):
-- ~120 строк кода
-- БЕЗ psycopg2!
-- ПРОСТО await готовых функций из db_postgresql.py
-- Переиспользуем код телеграм-бота!
-- Dependency injection вместо декораторов
+    # Сортируем по цене (по возрастанию)
+    formatted_packages.sort(key=lambda x: x['price_cents'])
+    
+    # Подготавливаем контекст
+    context = get_template_context(request)
+    context['packages'] = formatted_packages
+    context['limits'] = limits
+    context['has_subscription'] = limits.get('subscription_type') is not None
+    
+    return templates.TemplateResponse("subscription.html", context)
 
-РАЗНИЦА: -30 строк, 0 костылей! 🎉
-"""

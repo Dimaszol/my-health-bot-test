@@ -572,6 +572,18 @@ TRANSLATIONS = {
     # ============================================
     # 📄 СТРАНИЦА ДОКУМЕНТОВ
     # ============================================
+    'no_document_limits_title': {
+        'ru': 'Лимит документов исчерпан',
+        'en': 'Document limit reached',
+        'uk': 'Ліміт документів вичерпано',
+        'de': 'Dokumentenlimit erreicht'
+    },
+    'no_document_limits_message': {
+        'ru': 'Вы достигли лимита по количеству документов. Оформите подписку или купите дополнительные консультации, чтобы продолжить загрузку.',
+        'en': 'You have reached your document limit. Subscribe or purchase additional consultations to continue uploading.',
+        'uk': 'Ви досягли ліміту кількості документів. Оформіть підписку або купіть додаткові консультації, щоб продовжити завантаження.',
+        'de': 'Sie haben Ihr Dokumentenlimit erreicht. Abonnieren Sie oder kaufen Sie zusätzliche Konsultationen, um weiterhin hochzuladen.'
+    },
     'page_documents_title': {
         'ru': 'Мои документы',
         'en': 'My Documents',
@@ -1292,7 +1304,204 @@ TRANSLATIONS = {
         'uk': 'Повідомлення надіслано',
         'de': 'Nachricht gesendet'
     },
+# ============================================
+# 💳 СТРАНИЦА ПОДПИСОК
+# ============================================
+
+'pricing_title': {
+    'ru': 'Тарифные планы PulseBook',
+    'en': 'PulseBook Pricing Plans',
+    'uk': 'Тарифні плани PulseBook',
+    'de': 'PulseBook Preispläne'
+},
+'pricing_subtitle': {
+    'ru': 'Для людей, использующих PulseBook для управления своим здоровьем',
+    'en': 'For individuals using PulseBook to manage their personal health',
+    'uk': 'Для людей, які використовують PulseBook для керування своїм здоров\'ям',
+    'de': 'Für Personen, die PulseBook zur Verwaltung ihrer persönlichen Gesundheit nutzen'
+},
+'most_popular': {
+    'ru': 'Самый популярный',
+    'en': 'Most Popular',
+    'uk': 'Найпопулярніший',
+    'de': 'Am beliebtesten'
+},
+'active': {
+    'ru': 'Активна',
+    'en': 'Active',
+    'uk': 'Активна',
+    'de': 'Aktiv'
+},
+'month_short': {
+    'ru': 'мес',
+    'en': 'mo',
+    'uk': 'міс',
+    'de': 'Mon'
+},
+'billed_monthly': {
+    'ru': 'Ежемесячно. Отмена в любое время.',
+    'en': 'Billed monthly. Cancel anytime.',
+    'uk': 'Щомісяця. Скасування в будь-який час.',
+    'de': 'Monatlich abgerechnet. Jederzeit kündbar.'
+},
+'one_time_payment': {
+    'ru': 'Разовый платеж',
+    'en': 'One-time payment',
+    'uk': 'Разовий платіж',
+    'de': 'Einmalige Zahlung'
+},
+'get_started': {
+    'ru': 'Начать',
+    'en': 'Get Started',
+    'uk': 'Почати',
+    'de': 'Loslegen'
+},
+'current_plan': {
+    'ru': 'Текущий план',
+    'en': 'Current Plan',
+    'uk': 'Поточний план',
+    'de': 'Aktueller Plan'
+},
+'ai_longterm_memory': {
+    'ru': 'Долгосрочная память ИИ',
+    'en': 'AI long-term memory',
+    'uk': 'Довгострокова пам\'ять ШІ',
+    'de': 'KI-Langzeitgedächtnis'
+},
+'conversation_summaries': {
+    'ru': 'Сводки разговоров',
+    'en': 'Conversation Summaries',
+    'uk': 'Зведення розмов',
+    'de': 'Gesprächszusammenfassungen'
+},
+'chat_attachments': {
+    'ru': 'Вложения в чате',
+    'en': 'Chat attachments',
+    'uk': 'Вкладення в чаті',
+    'de': 'Chat-Anhänge'
+},
+'chat_history': {
+    'ru': 'История чата',
+    'en': 'Chat history',
+    'uk': 'Історія чату',
+    'de': 'Chat-Verlauf'
+},
+'premium_support': {
+    'ru': 'Приоритетная поддержка',
+    'en': 'Premium Support',
+    'uk': 'Пріоритетна підтримка',
+    'de': 'Premium-Support'
+},
+'valid_30_days': {
+    'ru': 'Действует 30 дней',
+    'en': 'Valid for 30 days',
+    'uk': 'Діє 30 днів',
+    'de': 'Gültig für 30 Tage'
+},
+'package_extra_name': {
+    'ru': 'Дополнительный пакет',
+    'en': 'Additional package',
+    'uk': 'Додатковий пакет',
+    'de': 'Zusatzpaket'
+},
+
+'package_extra_feature_1': {
+    'ru': '3 медицинских документа',
+    'en': '3 medical documents',
+    'uk': '3 медичних документи',
+    'de': '3 medizinische Dokumente'
+},
+
+'package_extra_feature_2': {
+    'ru': '30 детальных консультаций',
+    'en': '30 detailed consultations',
+    'uk': '30 детальних консультацій',
+    'de': '30 detaillierte Beratungen'
+},
+
+'package_extra_feature_3': {
+    'ru': 'Действует 30 дней',
+    'en': 'Valid for 30 days',
+    'uk': 'Діє 30 днів',
+    'de': 'Gültig für 30 Tage'
+},
+
+'package_basic_feature_1': {
+    'ru': '5 медицинских документов в месяц',
+    'en': '5 medical documents per month',
+    'uk': '5 медичних документів на місяць',
+    'de': '5 medizinische Dokumente pro Monat'
+},
+
+'package_basic_feature_2': {
+    'ru': '100 детальных консультаций в месяц',
+    'en': '100 detailed consultations per month',
+    'uk': '100 детальних консультацій на місяць',
+    'de': '100 detaillierte Beratungen pro Monat'
+},
+
+'package_basic_feature_3': {
+    'ru': 'Повышенный лимит на базовые ответы',
+    'en': 'Increased limit for basic responses',
+    'uk': 'Підвищений ліміт на базові відповіді',
+    'de': 'Erhöhtes Limit für Basisantworten'
+},
+
+'package_premium_feature_1': {
+    'ru': '20 медицинских документов в месяц',
+    'en': '20 medical documents per month',
+    'uk': '20 медичних документів на місяць',
+    'de': '20 medizinische Dokumente pro Monat'
+},
+
+'package_premium_feature_2': {
+    'ru': '400 детальных консультаций в месяц',
+    'en': '400 detailed consultations per month',
+    'uk': '400 детальних консультацій на місяць',
+    'de': '400 detaillierte Beratungen pro Monat'
+},
+
+'package_premium_feature_3': {
+    'ru': 'Повышенный лимит на базовые ответы',
+    'en': 'Increased limit for basic responses',
+    'uk': 'Підвищений ліміт на базові відповіді',
+    'de': 'Erhöhtes Limit für Basisantworten'
+},
+'package_basic_name': {
+    'ru': 'Базовый',
+    'en': 'Basic',
+    'uk': 'Базовий',
+    'de': 'Basis'
+},
+
+'package_premium_name': {
+    'ru': 'Премиум',
+    'en': 'Premium',
+    'uk': 'Преміум',
+    'de': 'Premium'
+},
+'mode_detailed_consultations': {
+    'ru': 'Режим детальных консультаций',
+    'en': 'Detailed Consultation Mode',
+    'uk': 'Режим детальних консультацій',
+    'de': 'Detaillierter Beratungsmodus'
+},
+
+'mode_basic_responses': {
+    'ru': 'Режим базовых ответов',
+    'en': 'Basic Response Mode',
+    'uk': 'Режим базових відповідей',
+    'de': 'Basis-Antwortmodus'
+},
+
+'mode_upgrade_to_detailed': {
+    'ru': 'Обновить до детальных консультаций →',
+    'en': 'Upgrade to detailed consultations →',
+    'uk': 'Оновити до детальних консультацій →',
+    'de': 'Auf detaillierte Beratungen upgraden →'
 }
+}
+
 
 
 def t(key: str, lang: str = 'ru', **kwargs) -> str:

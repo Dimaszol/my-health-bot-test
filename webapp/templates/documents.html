@@ -124,7 +124,8 @@
 
 </style>
 
-<!-- 📤 ФОРМА ЗАГРУЗКИ -->
+<!-- 📤 ФОРМА ЗАГРУЗКИ ИЛИ СООБЩЕНИЕ О ЛИМИТАХ -->
+{% if has_document_limits %}
 <div class="card" style="margin-bottom: 2rem;" id="upload-card">
     <h3>📤 {{ t('upload_new_document', lang) }}</h3>
     
@@ -157,6 +158,17 @@
         </button>
     </form>
 </div>
+{% else %}
+<div class="card" style="margin-bottom: 2rem; border: 2px solid #f59e0b; background: #fffbeb;">
+    <h3 style="color: #f59e0b;">⚠️ {{ t('no_document_limits_title', lang) }}</h3>
+    <p style="margin: 1rem 0; color: #92400e;">
+        {{ t('no_document_limits_message', lang) }}
+    </p>
+    <a href="/dashboard/subscription" class="btn" style="background: #f59e0b; display: inline-block; margin-top: 1rem;">
+        ✨ {{ t('btn_upgrade_plan', lang) }}
+    </a>
+</div>
+{% endif %}
 
 <!-- 🔄 КАРТОЧКА ПРОГРЕССА (скрыта по умолчанию) -->
 <div id="progress-card" class="card" style="display: none; margin-bottom: 2rem;">

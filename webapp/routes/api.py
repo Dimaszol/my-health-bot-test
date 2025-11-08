@@ -62,6 +62,9 @@ class ChatMessage(BaseModel):
     """Модель для сообщения в чат"""
     message: str
 
+class CheckoutRequest(BaseModel):
+    """Модель для запроса создания Stripe Checkout"""
+    package_id: str
 
 # ==========================================
 # 🔒 DEPENDENCY: Проверка авторизации
@@ -803,4 +806,91 @@ async def download_document(
         return JSONResponse(
             status_code=500,
             content={'success': False, 'error': 'Ошибка скачивания файла'}
+        )
+    
+# ==========================================
+# 💳 STRIPE CHECKOUT - СОЗДАНИЕ СЕССИИ ОПЛАТЫ
+# ==========================================
+
+class CheckoutRequest(BaseModel):
+    """Модель для запроса создания Stripe Checkout"""
+    package_id: str
+
+@router.post("/create-checkout")
+async def create_checkout_session(
+    checkout_data: CheckoutRequest,
+    request: Request,
+    user_id: int = Depends(get_current_user)
+):
+    """
+    💳 Создание Stripe Checkout Session для оплаты подписки
+    
+    Процесс:
+    1. Проверяем существование пакета
+    2. Получаем данные пользователя
+    3. Создаём Stripe Checkout Session
+    4. Возвращаем URL для оплаты
+    """
+    try:
+        from stripe_manager import StripeManager
+        from stripe_config import StripeConfig
+        
+        package_id = checkout_data.package_id
+        
+        # Проверяем существование пакета
+        package_info = StripeConfig.get_package_info(package_id)
+        if not package_info:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    'success': False,
+                    'error': 'Неверный ID пакета'
+                }
+            )
+        
+        # Получаем данные пользователя
+        lang = await get_user_language(user_id)
+        user_profile = await get_user_profile(user_id)
+        user_name = user_profile.get('name', 'User')
+        
+        print(f"💳 Создаём Stripe Checkout для пользователя {user_id}")
+        print(f"   Пакет: {package_id}")
+        print(f"   Имя: {user_name}")
+        
+        # Создаём Checkout Session через StripeManager
+        session_url = await StripeManager.create_checkout_session(
+            user_id=user_id,
+            package_id=package_id,
+            user_name=user_name
+        )
+        
+        if not session_url:
+            raise Exception("Не удалось создать Checkout Session")
+        
+        print(f"✅ Checkout Session создана: {session_url[:50]}...")
+        
+        return {
+            'success': True,
+            'checkout_url': session_url
+        }
+        
+    except Exception as e:
+        print(f"❌ Ошибка создания Checkout Session: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Получаем язык для локализованного сообщения
+        try:
+            lang = await get_user_language(user_id)
+            from db_postgresql import t
+            error_message = t('stripe_session_creation_error', lang)
+        except:
+            error_message = 'Ошибка создания сессии оплаты'
+        
+        return JSONResponse(
+            status_code=500,
+            content={
+                'success': False,
+                'error': error_message
+            }
         )
