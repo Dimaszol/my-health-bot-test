@@ -425,6 +425,7 @@
         cursor: pointer;
         transition: all 0.3s ease;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        scroll-margin-top: 100px;
     }
     
     .document-card:hover {
@@ -652,11 +653,8 @@
 // 🔄 ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 // ========================================
 
-let currentOpenDocId = null; // ID текущего открытого документа (аккордеон)
+let currentOpenDocId = null;
 
-// ==========================================
-// 🌍 ПЕРЕВОДЫ ДЛЯ ПРОГРЕССА ЗАГРУЗКИ
-// ==========================================
 const progressTranslations = {
     upload: "{{ t('progress_upload', lang) }}",
     extract: "{{ t('progress_extract', lang) }}",
@@ -666,89 +664,110 @@ const progressTranslations = {
 };
 
 // ========================================
-// 🔘 ОБРАБОТЧИК КНОПОК TOGGLE
+// 📄 ФУНКЦИЯ TOGGLE ДОКУМЕНТА
 // ========================================
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Добавляем обработчики на все кнопки toggle
-    const toggleButtons = document.querySelectorAll('.btn-toggle');
+function toggleDocument(docId) {
+    console.log('🔍 toggleDocument вызван для docId:', docId, 'тип:', typeof docId);
     
-    toggleButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.stopPropagation(); // Останавливаем всплытие события
-            const docId = parseInt(this.getAttribute('data-doc-id'));
-            toggleDocument(docId);
-        });
-    });
-});
-
-// ========================================
-// 📤 ЗАГРУЗКА ДОКУМЕНТА
-// ========================================
-
-const uploadForm = document.getElementById('upload-form');
-const uploadCard = document.getElementById('upload-card');
-const progressCard = document.getElementById('progress-card');
-const documentsList = document.getElementById('documents-list');
-
-uploadForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+    const card = document.querySelector(`.document-card[data-doc-id="${docId}"]`);
     
-    const fileInput = document.getElementById('doc-file');
-    const titleInput = document.getElementById('doc-title');
-    
-    if (!fileInput.files[0]) {
-        alert('{{ t("please_select_file", lang) }}');
+    if (!card) {
+        console.error('❌ Карточка не найдена! docId:', docId);
+        console.log('🔍 Доступные карточки:', 
+            Array.from(document.querySelectorAll('.document-card')).map(c => c.getAttribute('data-doc-id'))
+        );
         return;
     }
     
-    // Создаём FormData
-    const formData = new FormData();
-    formData.append('file', fileInput.files[0]);
-    formData.append('title', titleInput.value || '');
+    const body = card.querySelector('.document-body-wrapper');
     
-    // Скрываем форму, показываем прогресс
-    uploadCard.style.display = 'none';
-    progressCard.style.display = 'block';
+    if (!body) {
+        console.error('❌ .document-body-wrapper не найден!');
+        return;
+    }
     
-    // Запускаем симуляцию этапов
-    simulateProgressSteps();
+    const toggleText = card.querySelector('.toggle-text');
+    const isExpanded = card.classList.contains('expanded');
+    
+    // Закрываем предыдущий документ
+    if (currentOpenDocId && currentOpenDocId !== docId) {
+        const prevCard = document.querySelector(`.document-card[data-doc-id="${currentOpenDocId}"]`);
+        if (prevCard) {
+            prevCard.classList.remove('expanded');
+            const prevBody = prevCard.querySelector('.document-body-wrapper');
+            if (prevBody) prevBody.style.display = 'none';
+            const prevText = prevCard.querySelector('.toggle-text');
+            if (prevText) prevText.textContent = '{{ t("btn_show", lang) }}';
+        }
+    }
+    
+    // Переключаем текущий документ
+    if (isExpanded) {
+        // Закрываем
+        card.classList.remove('expanded');
+        body.style.display = 'none';
+        if (toggleText) toggleText.textContent = '{{ t("btn_show", lang) }}';
+        currentOpenDocId = null;
+    } else {
+        // Открываем
+        card.classList.add('expanded');
+        body.style.display = 'block';
+        if (toggleText) toggleText.textContent = '{{ t("btn_hide", lang) }}';
+        currentOpenDocId = docId;
+        card.classList.remove('new');
+        
+        // ✨ НОВОЕ: Плавная прокрутка к началу карточки после раскрытия
+        setTimeout(() => {
+            card.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start',
+                inline: 'nearest'
+            });
+        }, 100); // Небольшая задержка чтобы контент успел раскрыться
+    }
+}
+
+// ========================================
+// 🗑️ ФУНКЦИЯ УДАЛЕНИЯ ДОКУМЕНТА
+// ========================================
+
+async function deleteDocument(docId) {
+    console.log('🗑️ deleteDocument вызван для docId:', docId);
+    
+    if (!confirm('{{ t("confirm_delete_document", lang) }}')) {
+        console.log('❌ Отменено пользователем');
+        return false;
+    }
     
     try {
-        const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData
+        console.log('📤 Отправка запроса...');
+        const response = await fetch('/api/delete-document/' + docId, {
+            method: 'DELETE'
         });
         
         const data = await response.json();
+        console.log('📥 Ответ:', data);
         
         if (data.success) {
-            // Показываем финальный этап
-            updateProgressStep('save', 'completed', '✓');
-            updateProgressTitle(progressTranslations.completed);
-            
-            // Через секунду перезагружаем с параметром нового документа
-            setTimeout(() => {
-                window.location.href = window.location.pathname + '?new_doc_id=' + data.document_id;
-            }, 1500);
+            alert('✅ {{ t("document_deleted", lang) }}');
+            window.location.reload();
         } else {
             alert('❌ {{ t("error", lang) }}: ' + data.error);
-            resetUploadForm();
         }
-        
     } catch (error) {
+        console.error('❌ Ошибка:', error);
         alert('❌ {{ t("error_server", lang) }}');
-        console.error('Error:', error);
-        resetUploadForm();
     }
-});
+    
+    return false;
+}
 
 // ========================================
-// 🔄 СИМУЛЯЦИЯ ЭТАПОВ ОБРАБОТКИ
+// 📤 ФУНКЦИИ ЗАГРУЗКИ (если есть форма)
 // ========================================
 
 function simulateProgressSteps() {
-    // Этапы с переводами и оптимизированным временем
     const steps = [
         { name: 'upload', icon: '⏳', key: 'upload', delay: 500 },
         { name: 'extract', icon: '⏳', key: 'extract', delay: 4000 },
@@ -758,12 +777,9 @@ function simulateProgressSteps() {
     
     steps.forEach((step, index) => {
         setTimeout(() => {
-            // Предыдущий этап завершён
             if (index > 0) {
                 updateProgressStep(steps[index - 1].name, 'completed', '✓');
             }
-            
-            // Текущий этап активен
             updateProgressStep(step.name, 'active', step.icon);
             updateProgressTitle(progressTranslations[step.key]);
         }, step.delay);
@@ -779,125 +795,22 @@ function updateProgressStep(stepName, status, icon) {
 }
 
 function updateProgressTitle(text) {
-    document.getElementById('progress-title').textContent = text;
+    const elem = document.getElementById('progress-title');
+    if (elem) elem.textContent = text;
 }
 
 function resetUploadForm() {
-    progressCard.style.display = 'none';
-    uploadCard.style.display = 'block';
+    const progressCard = document.getElementById('progress-card');
+    const uploadCard = document.getElementById('upload-card');
     
-    // Сбрасываем все этапы
+    if (progressCard) progressCard.style.display = 'none';
+    if (uploadCard) uploadCard.style.display = 'block';
+    
     document.querySelectorAll('.progress-step').forEach(step => {
         step.className = 'progress-step';
         step.querySelector('.step-icon').textContent = '○';
     });
 }
-
-// ========================================
-// 📄 АККОРДЕОН ДОКУМЕНТОВ
-// ========================================
-
-function toggleDocument(docId) {
-    const card = document.querySelector(`.document-card[data-doc-id="${docId}"]`);
-    const body = card.querySelector('.document-body-wrapper');
-    const toggleText = card.querySelector('.toggle-text');
-    const toggleIcon = card.querySelector('.toggle-icon');
-    const isExpanded = card.classList.contains('expanded');
-    
-    // Закрываем ранее открытый документ (аккордеон)
-    if (currentOpenDocId && currentOpenDocId !== docId) {
-        const prevCard = document.querySelector(`.document-card[data-doc-id="${currentOpenDocId}"]`);
-        if (prevCard) {
-            prevCard.classList.remove('expanded');
-            prevCard.querySelector('.document-body-wrapper').style.display = 'none';
-            const prevToggleText = prevCard.querySelector('.toggle-text');
-            if (prevToggleText) {
-                prevToggleText.textContent = '{{ t("btn_show", lang) }}';
-            }
-        }
-    }
-    
-    // Переключаем текущий документ
-    if (isExpanded) {
-        // Закрываем
-        card.classList.remove('expanded');
-        body.style.display = 'none';
-        toggleText.textContent = '{{ t("btn_show", lang) }}';
-        currentOpenDocId = null;
-    } else {
-        // Открываем
-        card.classList.add('expanded');
-        body.style.display = 'block';
-        toggleText.textContent = '{{ t("btn_hide", lang) }}';
-        currentOpenDocId = docId;
-        
-        // Убираем badge "НОВЫЙ" при первом клике
-        card.classList.remove('new');
-    }
-}
-
-// ========================================
-// 🗑️ УДАЛЕНИЕ ДОКУМЕНТА
-// ========================================
-
-async function deleteDocument(docId) {
-    console.log('Удаление документа:', docId);
-    
-    if (!confirm('{{ t("confirm_delete_document", lang) }}')) {
-        console.log('Отменено пользователем');
-        return false;
-    }
-    
-    try {
-        console.log('Отправка запроса...');
-        const response = await fetch('/api/delete-document/' + docId, {
-            method: 'DELETE'
-        });
-        
-        const data = await response.json();
-        console.log('Ответ:', data);
-        
-        if (data.success) {
-            alert('✅ {{ t("document_deleted", lang) }}');
-            window.location.reload();
-        } else {
-            alert('❌ {{ t("error", lang) }}: ' + data.error);
-        }
-    } catch (error) {
-        console.error('Ошибка:', error);
-        alert('❌ {{ t("error_server", lang) }}');
-    }
-    
-    return false;
-}
-
-// ========================================
-// ✨ АВТООТКРЫТИЕ НОВОГО ДОКУМЕНТА
-// ========================================
-
-// После загрузки страницы проверяем есть ли новый документ
-document.addEventListener('DOMContentLoaded', function() {
-    // Если в URL есть параметр ?new_doc_id=X, открываем этот документ
-    const urlParams = new URLSearchParams(window.location.search);
-    const newDocId = urlParams.get('new_doc_id');
-    
-    if (newDocId) {
-        const newCard = document.querySelector(`.document-card[data-doc-id="${newDocId}"]`);
-        if (newCard) {
-            // Добавляем классы для анимации и badge
-            newCard.classList.add('new', 'new-animated');
-            
-            // Автоматически раскрываем
-            toggleDocument(parseInt(newDocId));
-            
-            // Прокручиваем к документу
-            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // Удаляем параметр из URL (чтобы при обновлении не показывался badge)
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-    }
-});
 
 function convertToLocalTime() {
     const timeElements = document.querySelectorAll('.local-time');
@@ -908,7 +821,6 @@ function convertToLocalTime() {
         if (utcTime) {
             try {
                 const date = new Date(utcTime);
-                
                 const day = String(date.getDate()).padStart(2, '0');
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const year = date.getFullYear();
@@ -916,14 +828,139 @@ function convertToLocalTime() {
                 const minutes = String(date.getMinutes()).padStart(2, '0');
                 
                 element.textContent = `${day}.${month}.${year} ${hours}:${minutes}`;
-                
             } catch (e) {
-                console.error('Ошибка конвертации:', e);
+                console.error('Ошибка конвертации времени:', e);
             }
         }
     });
 }
-// Запуск при загрузке
-document.addEventListener('DOMContentLoaded', convertToLocalTime);
+
+// ========================================
+// 🎯 ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ
+// ========================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Инициализация страницы документов...');
+    
+    // 1️⃣ Кнопки Toggle
+    const toggleButtons = document.querySelectorAll('.btn-toggle');
+    console.log('✅ Найдено кнопок toggle:', toggleButtons.length);
+    
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const docId = this.getAttribute('data-doc-id');
+            console.log('🔘 Клик на toggle, docId из атрибута:', docId);
+            toggleDocument(docId); // НЕ parseInt! Оставляем строкой
+        });
+    });
+    
+    // 2️⃣ Автооткрытие нового документа
+    const urlParams = new URLSearchParams(window.location.search);
+    const newDocId = urlParams.get('new_doc_id');
+    
+    if (newDocId) {
+        const newCard = document.querySelector(`.document-card[data-doc-id="${newDocId}"]`);
+        if (newCard) {
+            newCard.classList.add('new', 'new-animated');
+            toggleDocument(newDocId);
+            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
+    
+    // 3️⃣ Делегирование для кнопок удаления
+    const documentsContainer = document.getElementById('documents-list');
+    
+    if (documentsContainer) {
+        documentsContainer.addEventListener('click', async function(e) {
+            const deleteBtn = e.target.closest('.delete-btn');
+            
+            if (deleteBtn) {
+                e.stopPropagation();
+                e.preventDefault();
+                
+                const docId = deleteBtn.getAttribute('data-doc-id');
+                console.log('🗑️ Клик по удалению, docId:', docId);
+                
+                await deleteDocument(docId);
+            }
+        });
+        console.log('✅ Делегирование настроено!');
+    }
+    
+    // ========================================
+    // 4️⃣ ФОРМА ЗАГРУЗКИ ДОКУМЕНТА
+    // ========================================
+    
+    const uploadForm = document.getElementById('upload-form');
+    
+    if (uploadForm) {
+        const uploadCard = document.getElementById('upload-card');
+        const progressCard = document.getElementById('progress-card');
+        
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('doc-file');
+            const titleInput = document.getElementById('doc-title');
+            
+            if (!fileInput.files[0]) {
+                alert('{{ t("please_select_file", lang) }}');
+                return;
+            }
+            
+            // Создаём FormData
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('title', titleInput.value || '');
+            
+            // Скрываем форму, показываем прогресс
+            uploadCard.style.display = 'none';
+            progressCard.style.display = 'block';
+            
+            // Запускаем симуляцию этапов
+            simulateProgressSteps();
+            
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Показываем финальный этап
+                    updateProgressStep('save', 'completed', '✓');
+                    updateProgressTitle(progressTranslations.completed);
+                    
+                    // Через секунду перезагружаем с параметром нового документа
+                    setTimeout(() => {
+                        window.location.href = window.location.pathname + '?new_doc_id=' + data.document_id;
+                    }, 1500);
+                } else {
+                    alert('❌ {{ t("error", lang) }}: ' + data.error);
+                    resetUploadForm();
+                }
+                
+            } catch (error) {
+                alert('❌ {{ t("error_server", lang) }}');
+                console.error('Error:', error);
+                resetUploadForm();
+            }
+        });
+        
+        console.log('✅ Форма загрузки инициализирована');
+    } else {
+        console.log('ℹ️ Форма загрузки не найдена (лимит исчерпан)');
+    }
+    
+    // 5️⃣ Конвертация времени
+    convertToLocalTime();
+    
+    console.log('✅ Инициализация завершена!');
+});
+
 </script>
 {% endblock %}

@@ -941,16 +941,19 @@ async def delete_document(
     user_id: int = Depends(get_current_user)
 ):
     """
-    Удаление документа
+    🗑️ Удаление документа
     
-    ✅ БЕЗ КОСТЫЛЕЙ! Просто await!
+    Удаляет документ из ВСЕХ связанных таблиц:
+    - documents
+    - document_vectors (векторная БД)
+    - medical_timeline (медицинская карта)
+    - файл с диска
     """
     try:
-        # ✅ ПРОСТО AWAIT!
         conn = await get_db_connection()
         
         try:
-            # Проверяем что документ принадлежит пользователю
+            # 1️⃣ Проверяем что документ принадлежит пользователю
             doc = await conn.fetchrow(
                 "SELECT * FROM documents WHERE id = $1 AND user_id = $2",
                 document_id, user_id
@@ -962,17 +965,44 @@ async def delete_document(
                     content={'success': False, 'error': 'Документ не найден'}
                 )
             
-            # Удаляем файл с диска
-            if doc['file_path'] and os.path.exists(doc['file_path']):
-                os.remove(doc['file_path'])
+            print(f"🗑️ Начинаем удаление документа document_id={document_id}")
             
-            # Удаляем из БД
+            # 2️⃣ Удаляем из векторной базы
+            try:
+                from vector_db_postgresql import delete_chunks_by_document
+                await delete_chunks_by_document(document_id)
+                print(f"✅ Удалено из векторной БД")
+            except Exception as e:
+                print(f"⚠️ Ошибка удаления из векторной БД: {e}")
+            
+            # 3️⃣ Удаляем из medical_timeline
+            try:
+                deleted_timeline = await conn.execute(
+                    "DELETE FROM medical_timeline WHERE source_document_id = $1",
+                    document_id
+                )
+                print(f"✅ Удалено из medical_timeline: {deleted_timeline}")
+            except Exception as e:
+                print(f"⚠️ Ошибка удаления из medical_timeline: {e}")
+            
+            # 4️⃣ Удаляем файл с диска
+            if doc['file_path']:
+                try:
+                    from supabase_storage import get_file_storage
+                    storage = get_file_storage()
+                    storage.delete_file(doc['file_path'])
+                    print(f"✅ Файл удалён с диска")
+                except Exception as e:
+                    print(f"⚠️ Ошибка удаления файла: {e}")
+            
+            # 5️⃣ Удаляем из основной таблицы documents
             await conn.execute("DELETE FROM documents WHERE id = $1", document_id)
+            print(f"✅ Удалено из таблицы documents")
             
         finally:
             await release_db_connection(conn)
         
-        print(f"🗑️ Документ удалён: document_id={document_id}")
+        print(f"🎉 Документ полностью удалён: document_id={document_id}")
         
         return {
             'success': True,
@@ -980,7 +1010,10 @@ async def delete_document(
         }
         
     except Exception as e:
-        print(f"❌ Ошибка удаления: {e}")
+        print(f"❌ Ошибка удаления документа: {e}")
+        import traceback
+        traceback.print_exc()
+        
         return JSONResponse(
             status_code=500,
             content={'success': False, 'error': 'Ошибка удаления'}
