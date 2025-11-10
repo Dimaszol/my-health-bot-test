@@ -55,7 +55,7 @@ google = oauth.register(
 # 🔧 ASYNC ФУНКЦИЯ: Найти или создать пользователя
 # ==========================================
 
-async def find_or_create_web_user(google_id: str, email: str, name: str) -> dict:
+async def find_or_create_web_user(google_id: str, email: str, name: str, session_language: str = 'en') -> dict:
     """
     Находит существующего пользователя или создаёт нового
     
@@ -85,12 +85,12 @@ async def find_or_create_web_user(google_id: str, email: str, name: str) -> dict
         # Генерируем ID
         temp_user_id = await conn.fetchval("SELECT generate_temp_web_user_id()")
         
-        # Создаём пользователя
+        # Создаём пользователя с языком из сессии
         await conn.execute("""
-            INSERT INTO users (user_id, name, google_id, email, registration_source, created_at)
-            VALUES ($1, $2, $3, $4, 'web', NOW())
+            INSERT INTO users (user_id, name, google_id, email, registration_source, language, created_at)
+            VALUES ($1, $2, $3, $4, 'web', $5, NOW())
             ON CONFLICT (user_id) DO NOTHING
-        """, temp_user_id, name, google_id, email)
+        """, temp_user_id, name, google_id, email, session_language)
         
         # Создаём лимиты
         await conn.execute("""
@@ -167,7 +167,11 @@ async def google_callback(request: Request):
         print(f"✅ Пользователь вошёл через Google: {email}")
         
         # ✅ AWAIT! Создаём/находим пользователя
-        user = await find_or_create_web_user(google_id, email, name)
+        # Получаем текущий язык из сессии (тот что выбрал пользователь до входа)
+        current_session_lang = request.session.get('language', 'en')
+
+        # Создаём/находим пользователя, передаем текущий язык
+        user = await find_or_create_web_user(google_id, email, name, current_session_lang)
         
         if user:
             # Сохраняем данные в сессии
@@ -188,19 +192,21 @@ async def google_callback(request: Request):
                     
                     if result and result['language']:
                         user_language = result['language']
+                        # ✅ Загружаем язык из БД только если он там есть
                         request.session['language'] = user_language
                         print(f"✅ Язык загружен из БД: {user_language}")
                     else:
-                        # Если язык не установлен - ставим русский
-                        request.session['language'] = 'ru'
-                        print(f"⚠️ Язык не найден в БД, используем русский")
+                        # ⚠️ Если язык не найден в БД - оставляем тот что был в сессии
+                        # (для новых пользователей это язык который они выбрали до входа)
+                        print(f"⚠️ Язык не найден в БД, оставляем текущий из сессии: {request.session.get('language', 'en')}")
                         
                 finally:
                     await release_db_connection(conn)
                     
             except Exception as e:
                 print(f"⚠️ Ошибка загрузки языка: {e}")
-                request.session['language'] = 'ru'  # По умолчанию русский
+                if 'language' not in request.session:
+                    request.session['language'] = 'en'
             
             print(f"✅ Пользователь авторизован: user_id={user['user_id']}")
             

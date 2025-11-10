@@ -842,6 +842,18 @@ TRANSLATIONS = {
         'uk': 'Приховати',
         'de': 'Ausblenden'
     },
+    'document_confirmed_enabled': {
+        'ru': 'Документ учитывается в ответах ИИ',
+        'en': 'Document is included in AI responses',
+        'uk': 'Документ враховується у відповідях ШІ',
+        'de': 'Dokument wird in KI-Antworten berücksichtigt'
+    },
+    'document_confirmed_disabled': {
+        'ru': 'Документ НЕ учитывается в ответах ИИ',
+        'en': 'Document is NOT included in AI responses',
+        'uk': 'Документ НЕ враховується у відповідях ШІ',
+        'de': 'Dokument wird NICHT in KI-Antworten berücksichtigt'
+    },
     
     # ============================================
     # 💬 СТРАНИЦА ЧАТА
@@ -1839,7 +1851,7 @@ def t(key: str, lang: str = 'ru', **kwargs) -> str:
     """
     # Проверяем что язык поддерживается
     if lang not in ['ru', 'en', 'uk', 'de']:
-        lang = 'ru'  # По умолчанию русский
+        lang = 'en'  # По умолчанию английский
     
     # Получаем перевод
     translation = TRANSLATIONS.get(key, {})
@@ -1859,10 +1871,10 @@ def t(key: str, lang: str = 'ru', **kwargs) -> str:
 def get_supported_languages():
     """Получить список поддерживаемых языков с флагами"""
     return [
-        {'code': 'ru', 'name': 'Русский', 'flag': '🇷🇺'},
-        {'code': 'uk', 'name': 'Українська', 'flag': '🇺🇦'},
         {'code': 'en', 'name': 'English', 'flag': '🇬🇧'},
-        {'code': 'de', 'name': 'Deutsch', 'flag': '🇩🇪'}
+        {'code': 'de', 'name': 'Deutsch', 'flag': '🇩🇪'},
+        {'code': 'uk', 'name': 'Українська', 'flag': '🇺🇦'},
+        {'code': 'ru', 'name': 'Русский', 'flag': '🇷🇺'}
     ]
 
 
@@ -1876,7 +1888,7 @@ def get_current_language(session):
     Returns:
         Код языка ('ru', 'en', 'uk', 'de')
     """
-    return session.get('language', 'ru')
+    return session.get('language', 'en')
 
 
 def set_language(session, lang_code: str):

@@ -12,6 +12,128 @@
     </p>
 </div>
 <style>
+/* Контейнер для верхнего ряда кнопок */
+.button-row-top {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Левая кнопка (Скачать) занимает всё доступное место */
+.button-left {
+    flex: 1;
+}
+
+/* Правая часть (Тумблер) фиксированная ширина */
+.button-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Кнопка "Показать" на всю ширину */
+.button-row-bottom {
+    width: 100%;
+}
+/* ========================================
+   👁️ МИНИМАЛИСТИЧНАЯ КНОПКА "ПОКАЗАТЬ"
+   ======================================== */
+
+.btn-show-minimal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.6rem 1rem;
+    background: transparent;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #6b7280;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.btn-show-minimal:hover {
+    background: #f9fafb;
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.btn-show-minimal:active {
+    transform: scale(0.98);
+}
+
+.show-icon {
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+/* Анимация иконки при раскрытии */
+.document-card.expanded .show-icon {
+    transform: rotate(90deg);
+}
+
+.show-text {
+    font-size: 0.9rem;
+}
+
+/* ========================================
+   🎚️ КОМПАКТНЫЙ ТУМБЛЕР
+   ======================================== */
+
+.toggle-switch-compact {
+    position: relative;
+    display: inline-block;
+    width: 42px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.toggle-switch-compact input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider-compact {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #d1d5db;
+    transition: 0.3s;
+    border-radius: 22px;
+}
+
+.toggle-slider-compact:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+input:checked + .toggle-slider-compact {
+    background-color: #00C9A7;
+}
+
+input:checked + .toggle-slider-compact:before {
+    transform: translateX(20px);
+}
+
+.toggle-slider-compact:hover {
+    opacity: 0.9;
+}
 /* ========================================
    🎨 ЕДИНЫЙ СТИЛЬ ДЛЯ ВСЕХ КНОПОК ДЕЙСТВИЙ
    ======================================== */
@@ -231,7 +353,7 @@
     {% for doc in documents %}
     <div class="card document-card" data-doc-id="{{ doc.id }}">
         <!-- Заголовок карточки (всегда видимый) -->
-        <div class="document-header">
+        <div class="document-header" style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 1rem;">
         <div class="document-header-left">
             <!-- Название + Тип документа рядом -->
             <h3 class="document-title">
@@ -278,25 +400,45 @@
         </div>
         
         <!-- Кнопки справа -->
-        <div style="display: flex; flex-direction: column; gap: 0.6rem; min-width: 140px;">
-            <!-- Кнопка Скачать -->
-            <a href="/api/download-document/{{ doc.id }}" 
-            class="btn-action btn-download" 
-            download>
-                <span class="btn-icon">📥</span>
-                <span>{{ t('btn_download', lang) }}</span>
-            </a>
+        <div style="display: flex; flex-direction: column; justify-content: space-between; align-self: stretch; min-width: 150px;">
             
-            <!-- Кнопка Показать/Скрыть -->
+            <!-- Верхний ряд: Скачать + Тумблер -->
+            <div style="display: flex; justify-content: center; align-items: center; gap: 3rem;">
+                
+                <!-- Кнопка Скачать слева -->
+                <a href="/api/download-document/{{ doc.id }}" 
+                   class="btn-download-minimal" 
+                   download
+                   title="{{ t('btn_download', lang) }}"
+                   style="display: flex; align-items: center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </a>
+                
+                <!-- Компактный тумблер справа -->
+                <label class="toggle-switch-compact">
+                    <input type="checkbox" 
+                        {{ 'checked' if doc.confirmed else '' }}
+                        onchange="toggleDocumentConfirmed('{{ doc.id }}', this.checked)"
+                        data-doc-id="{{ doc.id }}">
+                    <span class="toggle-slider-compact"></span>
+                </label>
+            </div>
+                    
+            <!-- Кнопка Показать внизу -->
             <button 
-                class="btn-action btn-toggle"
+                class="btn-show-minimal"
                 onclick="toggleDocument('{{ doc.id }}')"
+                id="toggle-btn-{{ doc.id }}"
             >
-                <span class="btn-icon toggle-icon">▶</span>
-                <span class="toggle-text">{{ t('btn_show', lang) }}</span>
+                <span class="show-icon">▶</span>
+                <span class="show-text">{{ t('btn_show', lang) }}</span>
             </button>
         </div>
-    </div>
+        </div>
         
         <!-- Раскрывающееся содержимое -->
         <div class="document-body-wrapper" style="display: none;">
@@ -350,7 +492,7 @@
 
 {% block extra_styles %}
 <style>
-    /* ========================================
+      /* ========================================
        🔄 SPINNER И ПРОГРЕСС
        ======================================== */
     
@@ -419,7 +561,7 @@
         background: white;
         border: 1px solid #e5e7eb;
         border-radius: 12px;
-        padding: 1rem;  /* было 1.5rem */
+        padding: 1rem;  
         margin-bottom: 0.8rem;  /* было 1rem */
         cursor: pointer;
         transition: all 0.3s ease;
@@ -686,7 +828,7 @@ function toggleDocument(docId) {
         return;
     }
     
-    const toggleText = card.querySelector('.toggle-text');
+    const toggleText = card.querySelector('.show-text');
     const isExpanded = card.classList.contains('expanded');
     
     // Закрываем предыдущий документ
@@ -696,7 +838,7 @@ function toggleDocument(docId) {
             prevCard.classList.remove('expanded');
             const prevBody = prevCard.querySelector('.document-body-wrapper');
             if (prevBody) prevBody.style.display = 'none';
-            const prevText = prevCard.querySelector('.toggle-text');
+            const prevText = prevCard.querySelector('.show-text');
             if (prevText) prevText.textContent = '{{ t("btn_show", lang) }}';
         }
     }
@@ -961,5 +1103,94 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Инициализация завершена!');
 });
 
+// ========================================
+// 🎚️ ПЕРЕКЛЮЧЕНИЕ СТАТУСА ДОКУМЕНТА
+// ========================================
+
+async function toggleDocumentConfirmed(docId, isConfirmed) {
+    try {
+        const response = await fetch(`/api/toggle-document-confirmed/${docId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ confirmed: isConfirmed })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Показываем уведомление
+            showFlashMessage(data.message, 'success');
+        } else {
+            // Ошибка - возвращаем тумблер назад
+            showFlashMessage('{{ t("error_occurred", lang) }}', 'error');
+            const checkbox = document.querySelector(`input[data-doc-id="${docId}"]`);
+            if (checkbox) {
+                checkbox.checked = !isConfirmed;
+            }
+        }
+    } catch (error) {
+        console.error('Error toggling document:', error);
+        showFlashMessage('{{ t("error_occurred", lang) }}', 'error');
+        
+        // Возвращаем тумблер назад
+        const checkbox = document.querySelector(`input[data-doc-id="${docId}"]`);
+        if (checkbox) {
+            checkbox.checked = !isConfirmed;
+        }
+    }
+}
+
+// Функция для показа flash-уведомлений
+function showFlashMessage(message, type) {
+    const flashContainer = document.getElementById('flash-messages');
+    if (!flashContainer) {
+        // Создаем контейнер если его нет
+        const container = document.createElement('div');
+        container.id = 'flash-messages';
+        container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
+        document.body.appendChild(container);
+    }
+    
+    const flash = document.createElement('div');
+    flash.className = `flash-message flash-${type}`;
+    flash.style.cssText = `
+        background: ${type === 'success' ? '#00C9A7' : '#ef4444'};
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideIn 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    `;
+    flash.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${message}</span>`;
+    
+    const container = document.getElementById('flash-messages');
+    container.appendChild(flash);
+    
+    // Удаляем через 3 секунды
+    setTimeout(() => {
+        flash.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => flash.remove(), 300);
+    }, 3000);
+}
+
+// CSS анимация (добавь в <style>)
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
 </script>
 {% endblock %}

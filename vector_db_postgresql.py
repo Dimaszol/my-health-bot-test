@@ -173,7 +173,7 @@ class PostgreSQLVectorDB:
                         LENGTH(dv.chunk_text) as chunk_length
                     FROM document_vectors dv
                     JOIN documents d ON d.id = dv.document_id
-                    WHERE dv.user_id = $2
+                    WHERE dv.user_id = $2 AND d.confirmed = true
                     ORDER BY dv.embedding <=> $1::vector
                     LIMIT $3
                 )
@@ -275,6 +275,7 @@ class PostgreSQLVectorDB:
                     FROM document_vectors dv
                     JOIN documents d ON d.id = dv.document_id
                     WHERE dv.user_id = $1
+                    AND d.confirmed = true
                     AND ({where_clause})
                 ),
                 scored_chunks AS (
@@ -456,7 +457,7 @@ class PostgreSQLVectorDB:
                     d.uploaded_at
                 FROM document_vectors dv
                 JOIN documents d ON d.id = dv.document_id
-                WHERE dv.user_id = $1
+                WHERE dv.user_id = $1 AND d.confirmed = true
                 ORDER BY d.uploaded_at DESC, dv.id DESC
                 LIMIT $2
             """, user_id, limit)

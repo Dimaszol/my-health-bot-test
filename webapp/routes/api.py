@@ -11,6 +11,7 @@ from fastapi import APIRouter, Request, Depends, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from webapp.translations import t
+from error_handler import log_error_with_context
 
 
 # Добавляем корневую папку в путь
@@ -1220,6 +1221,62 @@ async def download_document(
             content={'success': False, 'error': 'Ошибка скачивания файла'}
         )
 
+@router.post("/toggle-document-confirmed/{document_id}")
+async def toggle_document_confirmed(
+    document_id: int,
+    request: Request,
+    user_id: int = Depends(get_current_user)
+):
+    """
+    Переключает статус confirmed для документа
+    """
+    from db_postgresql import get_document_by_id, update_document_confirmed, get_user_language
+    from error_handler import log_error_with_context
+    
+    try:
+        # Получаем язык пользователя
+        lang = await get_user_language(user_id)
+        
+        # Проверяем что документ принадлежит пользователю
+        document = await get_document_by_id(document_id)
+        
+        if not document or document['user_id'] != user_id:
+            return JSONResponse(
+                status_code=403,
+                content={"success": False, "message": "Access denied"}
+            )
+        
+        # Получаем новое значение из тела запроса
+        body = await request.json()
+        new_confirmed = body.get("confirmed", True)
+        
+        # Обновляем статус в БД
+        success = await update_document_confirmed(document_id, new_confirmed)
+        
+        if success:
+            # Определяем сообщение в зависимости от статуса
+            if new_confirmed:
+                message = t("document_confirmed_enabled", lang)
+            else:
+                message = t("document_confirmed_disabled", lang)
+            
+            return JSONResponse(content={
+                "success": True,
+                "message": message,
+                "confirmed": new_confirmed
+            })
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "message": "Database error"}
+            )
+            
+    except Exception as e:
+        log_error_with_context(e, {"function": "toggle_document_confirmed", "document_id": document_id})
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
 # ==========================================
 # 💳 РЕДАКТИРОВАНИЕ ПРОФАЙЛА
 # ==========================================
@@ -1254,7 +1311,7 @@ async def update_profile(request: Request):
             )
         
         # Импортируем функцию обновления
-        from db_postgresql import update_user_profile
+        from db_postgresql import update_user_profile_dict
         
         # Подготавливаем данные для обновления в зависимости от секции
         update_data = {}
@@ -1294,7 +1351,7 @@ async def update_profile(request: Request):
             )
         
         # Обновляем данные в базе
-        success = await update_user_profile(user_id, update_data)
+        success = await update_user_profile_dict(user_id, update_data)
         
         if success:
             return JSONResponse(

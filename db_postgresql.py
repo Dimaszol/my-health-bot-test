@@ -1487,7 +1487,7 @@ async def get_last_message_id(user_id: int) -> int:
         await release_db_connection(conn)
 
 # ФУНКЦИЯ ДЛЯ ВЕБСЕРВИСА ОБНОВЛЕНИЕ ПРОФАЙЛА
-async def update_user_profile(user_id: int, update_data: dict) -> bool:
+async def update_user_profile_dict(user_id: int, update_data: dict) -> bool:
     """
     Обновление профиля пользователя
     

@@ -186,9 +186,10 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
                 title, 
                 file_path, 
                 file_type, 
-                raw_text,      -- ✅ ОБЯЗАТЕЛЬНО!
-                summary,       -- ✅ ОБЯЗАТЕЛЬНО!
-                uploaded_at
+                raw_text,
+                summary,
+                uploaded_at,
+                confirmed
             FROM documents
             WHERE user_id = $1
             ORDER BY uploaded_at DESC
