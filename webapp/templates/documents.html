@@ -149,10 +149,9 @@
 
 <!-- 📤 ФОРМА ЗАГРУЗКИ ИЛИ СООБЩЕНИЕ О ЛИМИТАХ -->
 {% if has_document_limits %}
-<div class="card" style="margin-bottom: 2rem;" id="upload-card">
-    <h3>📤 {{ t('upload_new_document', lang) }}</h3>
-    
-    <form id="upload-form" style="margin-top: 1.5rem;">
+<div class="card" style="margin-bottom: 1rem;" id="upload-card">
+        
+    <form id="upload-form">
         <div class="form-group">
             <label>{{ t('document_title_optional', lang) }}</label>
             <input 

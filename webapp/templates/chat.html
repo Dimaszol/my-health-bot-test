@@ -506,12 +506,10 @@
 <div class="consultation-mode-badge">
     {% if has_detailed_consultations %}
     <div class="mode-indicator detailed">
-        <span class="mode-icon">✨</span>
         <span>{{ t('mode_detailed_consultations', lang) }}</span>
     </div>
     {% else %}
     <a href="/dashboard/subscription" class="mode-indicator basic">
-        <span class="mode-icon">💡</span>
         <div class="mode-content">
             <span class="mode-text">{{ t('mode_basic_responses', lang) }}</span>
             <span class="mode-upgrade">{{ t('mode_upgrade_to_detailed', lang) }}</span>
@@ -581,16 +579,16 @@
                 <button type="button" class="remove-photo" id="remove-photo">✕</button>
             </div>
             
-            <textarea 
+            <input 
+                type="text" 
                 id="message-input" 
                 placeholder="{{ t('chat_placeholder', lang) }}"
                 autocomplete="off"
                 required
-                rows="1"
-            ></textarea>
-
+            />
             <button type="submit" class="send-button">
                 <span>{{ t('btn_send', lang) }}</span>
+                <span>📤</span>
             </button>
         </form>
         
@@ -633,13 +631,13 @@ plusButton.addEventListener('click', async (e) => {
     if (isOpen) {
         closeAttachmentMenu();
     } else {
-        // Проверяем лимиты
+        // Проверяем лимиты перед открытием
         const hasLimits = await checkPhotoLimits();
         
-        // Меняем содержимое меню в зависимости от лимитов
-        updateMenuContent(hasLimits);
+        if (!hasLimits) {
+            return; // Если нет лимитов, показываем уведомление и не открываем меню
+        }
         
-        // Открываем меню в любом случае
         attachmentMenu.style.display = 'block';
         plusButton.classList.add('active');
     }
@@ -666,8 +664,13 @@ async function checkPhotoLimits() {
         const response = await fetch('/api/check-photo-limits');
         const data = await response.json();
         
-        // Всегда возвращаем true - меню откроется в любом случае
-        return data.has_limits || false;
+        if (data.success && !data.has_limits) {
+            // Показываем уведомление о необходимости подписки
+            showLimitModal(data.message);
+            return false;
+        }
+        
+        return data.has_limits;
         
     } catch (error) {
         console.error('Ошибка проверки лимитов:', error);
@@ -675,48 +678,77 @@ async function checkPhotoLimits() {
     }
 }
 
-// Обновление содержимого меню в зависимости от лимитов
-function updateMenuContent(hasLimits) {
-    const menuItem = document.getElementById('upload-photo-btn');
+// Показываем модальное окно с уведомлением
+function showLimitModal(message) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        animation: fadeIn 0.2s;
+    `;
     
-    if (hasLimits) {
-        // Если есть лимиты - показываем кнопку загрузки
-        menuItem.style.cursor = 'pointer';
-        menuItem.innerHTML = `
-            <span class="menu-icon">📷</span>
-            <div class="menu-text">
-                <div class="menu-title">{{ t('photo_upload_button', lang) }}</div>
-                <div class="menu-description">{{ t('photo_upload_description', lang) }}</div>
-            </div>
-        `;
-        
-        // Восстанавливаем обработчик клика
-        menuItem.onclick = () => {
-            photoInput.click();
-            closeAttachmentMenu();
-        };
-        
-    } else {
-        // Если нет лимитов - показываем уведомление
-        menuItem.style.cursor = 'pointer';
-        menuItem.innerHTML = `
-            <span class="menu-icon">⭐</span>
-            <div class="menu-text">
-                <div class="menu-title">{{ t('photo_requires_premium', lang) }}</div>
-                <div class="menu-description"><a href="/dashboard/subscription" style="color: #667eea; text-decoration: none; font-weight: 600;">{{ t('btn_view_plans', lang) }}</a></div>
-            </div>
-        `;
-        
-        // Клик ведет на страницу подписок
-        menuItem.onclick = () => {
-            window.location.href = '/dashboard/subscription';
-        };
-    }
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        max-width: 400px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    `;
+    
+    modalContent.innerHTML = `
+        <div style="font-size: 48px; margin-bottom: 1rem;">⭐</div>
+        <h3 style="margin-bottom: 1rem; color: #333;">Требуется подписка</h3>
+        <p style="color: #666; margin-bottom: 1.5rem;">${message || 'Анализ фото доступен только с подпиской на детальные консультации'}</p>
+        <button onclick="window.location.href='/dashboard/subscription'" style="
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+        ">Посмотреть планы</button>
+        <button onclick="this.closest('div[style*=fixed]').remove()" style="
+            background: #f5f5f5;
+            color: #666;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        ">Закрыть</button>
+    `;
+    
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+    
+    // Закрытие по клику на фон
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
 }
 
 // ============================================
 // 📷 ВЫБОР И ЗАГРУЗКА ФОТО
 // ============================================
+
+uploadPhotoBtn.addEventListener('click', () => {
+    photoInput.click();
+    closeAttachmentMenu();
+});
 
 photoInput.addEventListener('change', (e) => {
     const file = e.target.files[0];

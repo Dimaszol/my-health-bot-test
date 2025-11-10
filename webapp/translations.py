@@ -38,6 +38,36 @@ TRANSLATIONS = {
         'uk': 'Завантажуйте медичні документи, спілкуйтеся з AI-помічником та зберігайте всю вашу медичну історію в одному місці',
         'de': 'Laden Sie medizinische Dokumente hoch, chatten Sie mit dem KI-Assistenten und speichern Sie Ihre gesamte Krankengeschichte an einem Ort'
     },
+    'stats_detailed_consultations': {
+        'ru': 'Детальных консультаций',
+        'uk': 'Детальних консультацій',
+        'en': 'Detailed consultations',
+        'de': 'Detaillierte Konsultationen'
+    },
+    'stats_basic_answers': {
+        'ru': 'Базовые ответы - безлимитно в рамках тарифа',
+        'uk': 'Базові відповіді - безліміт в рамках тарифу',
+        'en': 'Basic answers - unlimited within the plan',
+        'de': 'Grundlegende Antworten - unbegrenzt im Rahmen des Tarifs'
+    },
+    'additional_actions': {
+        'ru': 'Дополнительные действия',
+        'uk': 'Додаткові дії',
+        'en': 'Additional Actions',
+        'de': 'Zusätzliche Aktionen'
+    },
+    'action_connect_telegram': {
+        'ru': 'Подключить Telegram',
+        'uk': 'Підключити Telegram',
+        'en': 'Connect Telegram',
+        'de': 'Telegram verbinden'
+    },
+    'action_connect_telegram_desc': {
+        'ru': 'Синхронизация данных с ботом',
+        'uk': 'Синхронізація даних з ботом',
+        'en': 'Sync data with the bot',
+        'de': 'Daten mit dem Bot synchronisieren'
+    },  
     'hero_main_title_part1': {
         'ru': 'Ваша',
         'en': 'Your',
@@ -579,10 +609,10 @@ TRANSLATIONS = {
         'de': 'Dokumentenlimit erreicht'
     },
     'no_document_limits_message': {
-        'ru': 'Вы достигли лимита по количеству документов. Оформите подписку или купите дополнительный пакет, чтобы продолжить загрузку.',
-        'en': 'You have reached your document limit. Subscribe or purchase an additional package to continue uploading.',
-        'uk': 'Ви досягли ліміту кількості документів. Оформіть підписку або купіть додатковий пакет, щоб продовжити завантаження.',
-        'de': 'Sie haben Ihr Dokumentenlimit erreicht. Abonnieren Sie oder kaufen Sie ein zusätzliches Paket, um weiterhin hochzuladen.'
+        'ru': 'Вы достигли лимита по количеству документов. Оформите подписку или купите дополнительные консультации, чтобы продолжить загрузку.',
+        'en': 'You have reached your document limit. Subscribe or purchase additional consultations to continue uploading.',
+        'uk': 'Ви досягли ліміту кількості документів. Оформіть підписку або купіть додаткові консультації, щоб продовжити завантаження.',
+        'de': 'Sie haben Ihr Dokumentenlimit erreicht. Abonnieren Sie oder kaufen Sie zusätzliche Konsultationen, um weiterhin hochzuladen.'
     },
     'page_documents_title': {
         'ru': 'Мои документы',
@@ -591,17 +621,12 @@ TRANSLATIONS = {
         'de': 'Meine Dokumente'
     },
     'page_documents_subtitle': {
-        'ru': 'Управляйте вашими медицинскими файлами',
-        'en': 'Manage your medical files',
-        'uk': 'Керуйте вашими медичними файлами',
-        'de': 'Verwalten Sie Ihre medizinischen Dateien'
+        'ru': 'Загрузите медицинские файлы, чтобы PulseBook знал ваш контекст и отвечал точнее',
+        'en': 'Upload your medical files so PulseBook can understand your context and respond more accurately',
+        'uk': 'Завантажте медичні файли, щоб PulseBook розумів ваш контекст і відповідав точніше',
+        'de': 'Laden Sie Ihre medizinischen Dateien hoch, damit PulseBook Ihren Kontext versteht und genauer antwortet'
     },
-    'upload_new_document': {
-        'ru': 'Загрузить новый документ',
-        'en': 'Upload new document',
-        'uk': 'Завантажити новий документ',
-        'de': 'Neues Dokument hochladen'
-    },
+    
     'document_title_optional': {
         'ru': 'Название документа (необязательно)',
         'en': 'Document title (optional)',
@@ -699,21 +724,6 @@ TRANSLATIONS = {
         'de': 'Dokument gelöscht'
     },
 
-    'ai_disclaimer': {
-        'ru': 'Этот AI-анализ носит информационный характер и может содержать ошибки. Не является диагнозом или назначением. Перед принятием решений проконсультируйтесь с врачом.',
-        'en': 'This AI-generated analysis is for informational purposes only and may contain errors. It is not a diagnosis or prescription. Please consult a doctor before making any decisions.',
-        'uk': 'Цей AI-аналіз носить інформаційний характер і може містити помилки. Не є діагнозом або призначенням. Перед прийняттям рішень проконсультуйтеся з лікарем.',
-        'de': 'Diese KI-Analyse dient nur zu Informationszwecken und kann Fehler enthalten. Es ist keine Diagnose oder Verschreibung. Bitte konsultieren Sie einen Arzt, bevor Sie Entscheidungen treffen.'
-    },
-  
-
-    'btn_delete_document': {
-        'ru': 'Удалить',
-        'en': 'Delete',
-        'uk': 'Видалити',
-        'de': 'Löschen'
-    },
-
     # ============================================
     # 📤 ЗАГРУЗКА ДОКУМЕНТОВ - API сообщения
     # ============================================
@@ -809,13 +819,6 @@ TRANSLATIONS = {
         'de': 'Normal'
     },
 
-    'btn_hide': {
-        'ru': 'Скрыть',
-        'en': 'Hide',
-        'uk': 'Сховати',
-        'de': 'Verbergen'
-    },
-
     # ============================================
     # 🔽 КНОПКИ ДОКУМЕНТОВ
     # ============================================
@@ -831,6 +834,13 @@ TRANSLATIONS = {
         'uk': 'Показати',
         'en': 'Show',
         'de': 'Anzeigen'
+    },
+
+    'btn_hide': {
+        'ru': 'Скрыть',
+        'en': 'Hide',
+        'uk': 'Приховати',
+        'de': 'Ausblenden'
     },
     
     # ============================================
@@ -1021,17 +1031,21 @@ TRANSLATIONS = {
         'de': 'Körperliche Aktivität'
     },
     'profile_how_to_fill': {
-        'ru': 'Как заполнить анкету?',
-        'en': 'How to fill out the form?',
-        'uk': 'Як заповнити анкету?',
-        'de': 'Wie fülle ich das Formular aus?'
+        'ru': 'Зачем заполнять анкету?',
+        'en': 'Why fill out the form?',
+        'uk': 'Навіщо заповнювати анкету?',
+        'de': 'Warum sollte ich das Formular ausfüllen?'
     },
+    
     'profile_fill_instruction': {
-        'ru': 'Если вы зарегистрировались через веб-сайт, анкета пока пустая. Вы можете заполнить её через Telegram-бота или мы добавим форму редактирования позже.',
-        'en': 'If you registered through the website, the form is still empty. You can fill it out via the Telegram bot or we will add an editing form later.',
-        'uk': 'Якщо ви зареєструвалися через веб-сайт, анкета поки порожня. Ви можете заповнити її через Telegram-бота або ми додамо форму редагування пізніше.',
-        'de': 'Wenn Sie sich über die Website registriert haben, ist das Formular noch leer. Sie können es über den Telegram-Bot ausfüllen oder wir werden später ein Bearbeitungsformular hinzufügen.'
+        'ru': 'Данные из анкеты используются ИИ наряду с вашими документами. Это позволяет анализировать ответы в контексте именно вашей ситуации и давать более персональные рекомендации.',
+        'en': 'The data from your form is used by the AI alongside your documents. This helps analyze responses in the context of your situation and provide more personalized recommendations.',
+        'uk': 'Дані з анкети використовуються ШІ разом із вашими документами. Це допомагає аналізувати відповіді у контексті саме вашої ситуації та надавати більш персональні рекомендації.',
+        'de': 'Die Daten aus Ihrem Formular werden zusammen mit Ihren Dokumenten von der KI verwendet. Dadurch können Antworten im Kontext Ihrer Situation analysiert und persönlichere Empfehlungen gegeben werden.'
     },
+    # ============================================
+    # 🗑️ МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ АККАУНТА
+    # ============================================
     'profile_danger_zone': {
         'ru': 'Опасная зона',
         'en': 'Danger zone',
@@ -1049,6 +1063,66 @@ TRANSLATIONS = {
         'en': 'Delete my account',
         'uk': 'Видалити мій акаунт',
         'de': 'Mein Konto löschen'
+    },
+    'profile_delete_account_confirm_title': {
+        'ru': 'Внимание!',
+        'en': 'Warning!',
+        'uk': 'Увага!',
+        'de': 'Achtung!'
+    },
+    'profile_delete_account_confirm_message': {
+        'ru': 'Вы уверены что хотите удалить ваш аккаунт?',
+        'en': 'Are you sure you want to delete your account?',
+        'uk': 'Ви впевнені, що хочете видалити ваш акаунт?',
+        'de': 'Sind Sie sicher, dass Sie Ihr Konto löschen möchten?'
+    },
+    'profile_will_be_deleted': {
+        'ru': 'Будет удалено:',
+        'en': 'Will be deleted:',
+        'uk': 'Буде видалено:',
+        'de': 'Wird gelöscht:'
+    },
+    'profile_delete_documents': {
+        'ru': 'Все ваши документы',
+        'en': 'All your documents',
+        'uk': 'Всі ваші документи',
+        'de': 'Alle Ihre Dokumente'
+    },
+    'profile_delete_chat_history': {
+        'ru': 'История чата',
+        'en': 'Chat history',
+        'uk': 'Історія чату',
+        'de': 'Chat-Verlauf'
+    },
+    'profile_delete_medical_questionnaire': {
+        'ru': 'Медицинская анкета',
+        'en': 'Medical questionnaire',
+        'uk': 'Медична анкета',
+        'de': 'Medizinischer Fragebogen'
+    },
+    'profile_delete_profile': {
+        'ru': 'Профиль',
+        'en': 'Profile',
+        'uk': 'Профіль',
+        'de': 'Profil'
+    },
+    'profile_action_irreversible': {
+        'ru': 'Это действие НЕОБРАТИМО!',
+        'en': 'This action is IRREVERSIBLE!',
+        'uk': 'Ця дія НЕЗВОРОТНА!',
+        'de': 'Diese Aktion ist UNWIDERRUFLICH!'
+    },
+    'common_cancel': {
+        'ru': 'Отмена',
+        'en': 'Cancel',
+        'uk': 'Скасувати',
+        'de': 'Abbrechen'
+    },
+    'common_delete': {
+        'ru': 'Удалить',
+        'en': 'Delete',
+        'uk': 'Видалити',
+        'de': 'Löschen'
     },
     'profile_not_specified': {
         'ru': 'Не указано',
@@ -1120,11 +1194,29 @@ TRANSLATIONS = {
         'uk': 'Ви ТОЧНО впевнені? Цю дію не можна скасувати!',
         'de': 'Sind Sie ABSOLUT sicher? Dies kann nicht rückgängig gemacht werden!'
     },
-    'delete_feature_coming_soon': {
-        'ru': 'Функция удаления аккаунта будет добавлена позже',
-        'en': 'Account deletion feature will be added later',
-        'uk': 'Функція видалення акаунту буде додана пізніше',
-        'de': 'Kontolöschfunktion wird später hinzugefügt'
+    'subscriptions_and_payments': {
+        'ru': 'Подписки и платежи',
+        'en': 'Subscriptions and payments',
+        'uk': 'Підписки та платежі',
+        'de': 'Abonnements und Zahlungen'
+    },
+    'deleting': {
+        'ru': 'Удаление',
+        'en': 'Deleting',
+        'uk': 'Видалення',
+        'de': 'Löschen'
+    },
+    'account_deleted_success': {
+        'ru': 'Ваш аккаунт успешно удалён. Все данные стерты.',
+        'en': 'Your account has been successfully deleted. All data has been erased.',
+        'uk': 'Ваш акаунт успішно видалено. Всі дані стерто.',
+        'de': 'Ihr Konto wurde erfolgreich gelöscht. Alle Daten wurden gelöscht.'
+    },
+    'account_deletion_error': {
+        'ru': 'Ошибка при удалении аккаунта. Попробуйте позже.',
+        'en': 'Error deleting account. Please try later.',
+        'uk': 'Помилка при видаленні акаунту. Спробуйте пізніше.',
+        'de': 'Fehler beim Löschen des Kontos. Bitte versuchen Sie es später.'
     },
     
     # ============================================
@@ -1529,12 +1621,23 @@ TRANSLATIONS = {
     'de': 'PulseBook ersetzt keine ärztliche Beratung. Antworten können Fehler enthalten.'
 },
 'photo_requires_premium': {
-    'ru': 'Анализ по фото недоступен при базовых ответах',
-    'en': 'Photo analysis is not available in basic responses',
-    'uk': 'Аналіз за фото недоступний при базових відповідях',
-    'de': 'Fotoanalyse ist bei einfachen Antworten nicht verfügbar'
+    'ru': '⭐ Анализ фото доступен только с подпиской на детальные консультации',
+    'en': '⭐ Photo analysis is available only with detailed consultations subscription',
+    'uk': '⭐ Аналіз фото доступний тільки з підпискою на детальні консультації',
+    'de': '⭐ Fotoanalyse ist nur mit einem Abonnement für detaillierte Beratungen verfügbar'
 },
-
+'ai_disclaimer': {
+    'ru': 'Этот AI-анализ носит информационный характер и может содержать ошибки. Не является диагнозом или назначением. Перед принятием решений проконсультируйтесь с врачом.',
+    'en': 'This AI-generated analysis is for informational purposes only and may contain errors. It is not a diagnosis or prescription. Please consult a doctor before making any decisions.',
+    'uk': 'Цей AI-аналіз носить інформаційний характер і може містити помилки. Не є діагнозом або призначенням. Перед прийняттям рішень проконсультуйтеся з лікарем.',
+    'de': 'Diese KI-Analyse dient nur zu Informationszwecken und kann Fehler enthalten. Es ist keine Diagnose oder Verschreibung. Bitte konsultieren Sie einen Arzt, bevor Sie Entscheidungen treffen.'
+},
+'btn_delete_document': {
+    'ru': 'Удалить',
+    'en': 'Delete',
+    'uk': 'Видалити',
+    'de': 'Löschen'
+},
 'photo_upload_button': {
     'ru': '📷 Загрузить фото',
     'en': '📷 Upload a photo',
@@ -1548,12 +1651,168 @@ TRANSLATIONS = {
     'uk': 'Підтримується: PNG, JPG, JPEG, GIF, WEBP (макс. 5 МБ)',
     'de': 'Unterstützt: PNG, JPG, JPEG, GIF, WEBP (max. 5 MB)'
 },
-'btn_view_plans': {
-    'ru': 'Обновить лимиты →',
-    'en': 'Upgrade Limits →',
-    'uk': 'Оновити лiмiти →',
-    'de': 'Limits erweitern →'
-}
+'edit': {
+    'ru': 'Редактировать',
+    'en': 'Edit',
+    'uk': 'Редагувати',
+    'de': 'Bearbeiten'
+},
+'save': {
+    'ru': 'Сохранить',
+    'en': 'Save',
+    'uk': 'Зберегти',
+    'de': 'Speichern'
+},
+'cancel': {
+    'ru': 'Отмена',
+    'en': 'Cancel',
+    'uk': 'Скасувати',
+    'de': 'Abbrechen'
+},
+'smoking_yes': {
+    'ru': 'Да',
+    'en': 'Yes',
+    'uk': 'Так',
+    'de': 'Ja'
+},
+'smoking_no': {
+    'ru': 'Нет',
+    'en': 'No',
+    'uk': 'Ні',
+    'de': 'Nein'
+},
+'smoking_vape': {
+    'ru': 'Vape',
+    'en': 'Vape',
+    'uk': 'Vape',
+    'de': 'Vape'
+},
+'alcohol_never': {
+    'ru': 'Не употребляю',
+    'en': 'Never',
+    'uk': 'Не вживаю',
+    'de': 'Nie'
+},
+'alcohol_sometimes': {
+    'ru': 'Иногда',
+    'en': 'Sometimes',
+    'uk': 'Іноді',
+    'de': 'Manchmal'
+},
+'alcohol_sometimes_hint': {
+    'ru': 'Иногда (по праздникам или 1-2 раза в месяц)',
+    'en': 'Sometimes (holidays or 1-2 times per month)',
+    'uk': 'Іноді (по святах або 1-2 рази на місяць)',
+    'de': 'Manchmal (an Feiertagen oder 1-2 Mal im Monat)'
+},
+'alcohol_often': {
+    'ru': 'Часто',
+    'en': 'Often',
+    'uk': 'Часто',
+    'de': 'Oft'
+},
+'alcohol_often_hint': {
+    'ru': 'Часто (еженедельно или чаще)',
+    'en': 'Often (weekly or more)',
+    'uk': 'Часто (щотижня або частіше)',
+    'de': 'Oft (wöchentlich oder öfter)'
+},
+'activity_none': {
+    'ru': 'Нет активности',
+    'en': 'No activity',
+    'uk': 'Немає активності',
+    'de': 'Keine Aktivität'
+},
+'activity_none_hint': {
+    'ru': '❌ Нет активности (сидячий образ жизни)',
+    'en': '❌ No activity (sedentary lifestyle)',
+    'uk': '❌ Немає активності (сидячий спосіб життя)',
+    'de': '❌ Keine Aktivität (sitzender Lebensstil)'
+},
+'activity_low': {
+    'ru': 'Низкая',
+    'en': 'Low',
+    'uk': 'Низька',
+    'de': 'Niedrig'
+},
+'activity_low_hint': {
+    'ru': '🚶 Низкая (редкие прогулки)',
+    'en': '🚶 Low (occasional walks)',
+    'uk': '🚶 Низька (рідкісні прогулянки)',
+    'de': '🚶 Niedrig (gelegentliche Spaziergänge)'
+},
+'activity_medium': {
+    'ru': 'Средняя',
+    'en': 'Medium',
+    'uk': 'Середня',
+    'de': 'Mittel'
+},
+'activity_medium_hint': {
+    'ru': '🏃 Средняя (регулярные прогулки)',
+    'en': '🏃 Medium (regular walks)',
+    'uk': '🏃 Середня (регулярні прогулянки)',
+    'de': '🏃 Mittel (regelmäßige Spaziergänge)'
+},
+'activity_high': {
+    'ru': 'Высокая',
+    'en': 'High',
+    'uk': 'Висока',
+    'de': 'Hoch'
+},
+'activity_high_hint': {
+    'ru': '💪 Высокая (тренировки 3-5 раз в неделю)',
+    'en': '💪 High (workouts 3-5 times per week)',
+    'uk': '💪 Висока (тренування 3-5 разів на тиждень)',
+    'de': '💪 Hoch (Training 3-5 Mal pro Woche)'
+},
+'activity_pro': {
+    'ru': 'Профессиональная',
+    'en': 'Professional',
+    'uk': 'Професійна',
+    'de': 'Professionell'
+},
+'activity_pro_hint': {
+    'ru': '🏆 Профессиональная (ежедневные тренировки)',
+    'en': '🏆 Professional (daily workouts)',
+    'uk': '🏆 Професійна (щоденні тренування)',
+    'de': '🏆 Professionell (tägliches Training)'
+},
+'profile_updated': {
+    'ru': '✅ Профиль успешно обновлен',
+    'en': '✅ Profile updated successfully',
+    'uk': '✅ Профіль успішно оновлено',
+    'de': '✅ Profil erfolgreich aktualisiert'
+},
+'error_updating': {
+    'ru': '❌ Ошибка при обновлении профиля',
+    'en': '❌ Error updating profile',
+    'uk': '❌ Помилка при оновленні профілю',
+    'de': '❌ Fehler beim Aktualisieren des Profils'
+},
+'name_required': {
+    'ru': '❌ Имя обязательно для заполнения',
+    'en': '❌ Name is required',
+    'uk': '❌ Ім\'я обов\'язкове для заповнення',
+    'de': '❌ Name ist erforderlich'
+},
+'gender_male': {
+    'ru': 'Мужской',
+    'en': 'Male',
+    'uk': 'Чоловічий',
+    'de': 'Männlich'
+},
+'gender_female': {
+    'ru': 'Женский',
+    'en': 'Female',
+    'uk': 'Жіночий',
+    'de': 'Weiblich'
+},
+'gender_other': {
+    'ru': 'Другое',
+    'en': 'Other',
+    'uk': 'Інше',
+    'de': 'Andere'
+},
 }
 
 

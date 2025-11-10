@@ -1485,3 +1485,47 @@ async def get_last_message_id(user_id: int) -> int:
         return 0
     finally:
         await release_db_connection(conn)
+
+# ФУНКЦИЯ ДЛЯ ВЕБСЕРВИСА ОБНОВЛЕНИЕ ПРОФАЙЛА
+async def update_user_profile(user_id: int, update_data: dict) -> bool:
+    """
+    Обновление профиля пользователя
+    
+    Args:
+        user_id: ID пользователя
+        update_data: Словарь с полями для обновления
+    
+    Returns:
+        bool: True если успешно, False если ошибка
+    """
+    try:
+        # Формируем SQL запрос динамически на основе переданных полей
+        fields = []
+        values = []
+        param_count = 1
+        
+        for key, value in update_data.items():
+            fields.append(f"{key} = ${param_count}")
+            values.append(value)
+            param_count += 1
+        
+        if not fields:
+            return True  # Нечего обновлять
+        
+        # Добавляем user_id в конец
+        values.append(user_id)
+        
+        query = f"""
+            UPDATE users 
+            SET {', '.join(fields)}
+            WHERE user_id = ${param_count}
+        """
+        
+        async with db_pool.acquire() as conn:
+            await conn.execute(query, *values)
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Ошибка обновления профиля пользователя {user_id}: {e}")
+        return False

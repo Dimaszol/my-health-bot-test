@@ -10,6 +10,8 @@ from datetime import datetime
 from fastapi import APIRouter, Request, Depends, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from webapp.translations import t
+
 
 # Добавляем корневую папку в путь
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -1018,7 +1020,70 @@ async def delete_document(
             status_code=500,
             content={'success': False, 'error': 'Ошибка удаления'}
         )
+
+# ==========================================
+# 🗑️ УДАЛЕНИЕ АККАУНТА (GDPR)
+# ==========================================
+
+@router.post("/delete-account")
+async def delete_account_route(
+    request: Request,
+    user_id: int = Depends(get_current_user)
+):
+    """
+    🗑️ Полное удаление аккаунта пользователя (GDPR-compliant)
     
+    Удаляет:
+    - Все документы и файлы
+    - Подписки Stripe
+    - Историю чата
+    - Медицинские данные
+    - Garmin данные
+    - Векторы
+    - Профиль пользователя
+    """
+    try:
+        lang = request.session.get('lang', 'ru')
+        
+        print(f"🗑️ Начинаем удаление аккаунта user_id={user_id}")
+        
+        # Вызываем функцию полного удаления из db_postgresql.py
+        from db_postgresql import delete_user_gdpr_compliant
+        success = await delete_user_gdpr_compliant(user_id)
+        
+        if not success:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    'success': False,
+                    'error': t('account_deletion_error', lang)
+                }
+            )
+        
+        print(f"✅ Аккаунт успешно удалён: user_id={user_id}")
+        
+        # Очищаем сессию
+        request.session.clear()
+        
+        return {
+            'success': True,
+            'message': t('account_deleted_success', lang),
+            'redirect': '/'
+        }
+        
+    except Exception as e:
+        print(f"❌ Ошибка удаления аккаунта: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        return JSONResponse(
+            status_code=500,
+            content={
+                'success': False,
+                'error': t('account_deletion_error', lang) if 'lang' in locals() else 'Error deleting account'
+            }
+        )
+        
 # ==========================================
 # 🗑️ СКАЧИВАНИЕ ДОКУМЕНТА
 # ==========================================
@@ -1154,7 +1219,100 @@ async def download_document(
             status_code=500,
             content={'success': False, 'error': 'Ошибка скачивания файла'}
         )
+
+# ==========================================
+# 💳 РЕДАКТИРОВАНИЕ ПРОФАЙЛА
+# ==========================================
+
+@router.post("/profile/update")
+async def update_profile(request: Request):
+    """
+    API для обновления профиля пользователя
     
+    Принимает JSON с полем 'section' и соответствующими данными:
+    - basic: name
+    - medical: birth_year, gender, height_cm, weight_kg, chronic_conditions, allergies, medications
+    - lifestyle: smoking, alcohol, physical_activity
+    """
+    try:
+        # Проверяем авторизацию
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return JSONResponse(
+                status_code=401,
+                content={"success": False, "message": "Не авторизован"}
+            )
+        
+        # Получаем данные из запроса
+        data = await request.json()
+        section = data.get('section')
+        
+        if not section:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "message": "Не указана секция"}
+            )
+        
+        # Импортируем функцию обновления
+        from db_postgresql import update_user_profile
+        
+        # Подготавливаем данные для обновления в зависимости от секции
+        update_data = {}
+        
+        if section == 'basic':
+            if 'name' in data:
+                update_data['name'] = data['name']
+        
+        elif section == 'medical':
+            if 'birth_year' in data and data['birth_year']:
+                update_data['birth_year'] = int(data['birth_year'])
+            if 'gender' in data:
+                update_data['gender'] = data['gender'] if data['gender'] else None
+            if 'height_cm' in data and data['height_cm']:
+                update_data['height_cm'] = int(data['height_cm'])
+            if 'weight_kg' in data and data['weight_kg']:
+                update_data['weight_kg'] = float(data['weight_kg'])
+            if 'chronic_conditions' in data:
+                update_data['chronic_conditions'] = data['chronic_conditions'] if data['chronic_conditions'] else None
+            if 'allergies' in data:
+                update_data['allergies'] = data['allergies'] if data['allergies'] else None
+            if 'medications' in data:
+                update_data['medications'] = data['medications'] if data['medications'] else None
+        
+        elif section == 'lifestyle':
+            if 'smoking' in data:
+                update_data['smoking'] = data['smoking'] if data['smoking'] else None
+            if 'alcohol' in data:
+                update_data['alcohol'] = data['alcohol'] if data['alcohol'] else None
+            if 'physical_activity' in data:
+                update_data['physical_activity'] = data['physical_activity'] if data['physical_activity'] else None
+        
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "message": "Неизвестная секция"}
+            )
+        
+        # Обновляем данные в базе
+        success = await update_user_profile(user_id, update_data)
+        
+        if success:
+            return JSONResponse(
+                content={"success": True, "message": "Профиль обновлен"}
+            )
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "message": "Ошибка обновления"}
+            )
+    
+    except Exception as e:
+        print(f"❌ Ошибка обновления профиля: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": "Внутренняя ошибка сервера"}
+        )
+
 # ==========================================
 # 💳 STRIPE CHECKOUT - СОЗДАНИЕ СЕССИИ ОПЛАТЫ
 # ==========================================

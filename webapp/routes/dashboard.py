@@ -59,7 +59,7 @@ async def get_user_stats(user_id: int) -> dict:
         
         # Количество сообщений
         total_messages = await conn.fetchval(
-            "SELECT COUNT(*) FROM chat_history WHERE user_id = $1", 
+            "SELECT COUNT(*) FROM chat_history WHERE user_id = $1 AND role = 'user'", 
             user_id
         )
         
@@ -139,13 +139,26 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
     
     stats = await get_user_stats(user_id)
     
+    # Проверяем источник регистрации
+    from db_postgresql import get_db_connection, release_db_connection
+    conn = await get_db_connection()
+    try:
+        user_info = await conn.fetchrow(
+            "SELECT registration_source FROM users WHERE user_id = $1",
+            user_id
+        )
+        show_telegram_connect = user_info['registration_source'] == 'web' if user_info else False
+    finally:
+        await release_db_connection(conn)
+
     # Формируем контекст
     context = get_template_context(request)
     context.update({
         'user': profile,
         'documents': documents,
         'chat_history': chat_history,
-        'stats': stats
+        'stats': stats,
+        'show_telegram_connect': show_telegram_connect
     })
     
     return templates.TemplateResponse('dashboard.html', context)
