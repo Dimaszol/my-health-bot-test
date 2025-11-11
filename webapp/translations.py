@@ -1477,9 +1477,9 @@ TRANSLATIONS = {
     'de': 'Einmalige Zahlung'
 },
 'get_started': {
-    'ru': 'Начать',
-    'en': 'Get Started',
-    'uk': 'Почати',
+    'ru': 'Оформить',
+    'en': 'Get started',
+    'uk': 'Оформити',
     'de': 'Loslegen'
 },
 'current_plan': {
@@ -1594,17 +1594,38 @@ TRANSLATIONS = {
     'de': 'Erhöhtes Limit für Basisantworten'
 },
 'package_basic_name': {
-    'ru': 'Базовый',
-    'en': 'Basic',
-    'uk': 'Базовий',
-    'de': 'Basis'
+    'ru': 'Lite',
+    'en': 'Lite',
+    'uk': 'Lite',
+    'de': 'Lite'
 },
 
 'package_premium_name': {
-    'ru': 'Премиум',
-    'en': 'Premium',
-    'uk': 'Преміум',
-    'de': 'Premium'
+    'ru': 'Pro',
+    'en': 'Pro',
+    'uk': 'Pro',
+    'de': 'Pro'
+},
+# 💎 Названия тарифов для отображения
+'plan_free': {
+    'ru': 'Бесплатный',
+    'en': 'Free',
+    'uk': 'Безкоштовний',
+    'de': 'Kostenlos'
+},
+
+'plan_lite': {
+    'ru': 'Lite',
+    'en': 'Lite',
+    'uk': 'Lite',
+    'de': 'Lite'
+},
+
+'plan_pro': {
+    'ru': 'Pro',
+    'en': 'Pro',
+    'uk': 'Pro',
+    'de': 'Pro'
 },
 'mode_detailed_consultations': {
     'ru': 'Режим детальных консультаций',

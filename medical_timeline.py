@@ -17,10 +17,11 @@ async def get_latest_medical_timeline(user_id: int, limit: int = 10) -> List[Dic
     conn = await get_db_connection()
     try:
         query = """
-        SELECT id, event_date, category, importance, description, source_document_id
-        FROM medical_timeline 
-        WHERE user_id = $1 
-        ORDER BY event_date DESC, created_at DESC 
+        SELECT mt.id, mt.event_date, mt.category, mt.importance, mt.description, mt.source_document_id
+        FROM medical_timeline mt
+        INNER JOIN documents d ON mt.source_document_id = d.id
+        WHERE mt.user_id = $1 AND d.confirmed = true
+        ORDER BY mt.event_date DESC, mt.created_at DESC 
         LIMIT $2
         """
         

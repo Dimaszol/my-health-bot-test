@@ -225,16 +225,19 @@ main {
     color: white;
 }
 
+/* 🚫 НЕАКТИВНАЯ КНОПКА (текущий тариф) */
 .plan-button.disabled {
-    background: #e2e8f0;
-    color: #a0aec0;
-    cursor: not-allowed;
-    border-color: #e2e8f0;
+    background: #e2e8f0 !important;
+    color: #a0aec0 !important;
+    border-color: #e2e8f0 !important;
+    cursor: not-allowed !important;
 }
 
 .plan-button.disabled:hover {
-    transform: none;
-    box-shadow: none;
+    background: #e2e8f0 !important;
+    color: #a0aec0 !important;
+    transform: none !important;
+    box-shadow: none !important;
 }
 
 /* 📱 АДАПТИВНОСТЬ */
@@ -354,14 +357,13 @@ main {
             
             <!-- Кнопка -->
             {% if package.is_current %}
+                <!-- Если это текущий тариф - неактивная кнопка -->
                 <button class="plan-button disabled" disabled>
                     {{ t('current_plan', lang) }}
                 </button>
             {% else %}
-                <button 
-                    class="plan-button outline"
-                    onclick="purchasePackage('{{ package.id }}', '{{ t(package.name_key, lang) }}')"
-                >
+                <!-- Если это не текущий тариф - активная кнопка -->
+                <button class="plan-button outline" onclick="purchasePackage('{{ package.id }}', '{{ t(package.name_key, lang) }}')">
                     {{ t('get_started', lang) }}
                 </button>
             {% endif %}

@@ -354,7 +354,7 @@ input:checked + .toggle-slider-compact:before {
     <div class="card document-card" data-doc-id="{{ doc.id }}">
         <!-- Заголовок карточки (всегда видимый) -->
         <div class="document-header" style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 1rem;">
-        <div class="document-header-left">
+        <div class="document-header-left" style="display: flex; flex-direction: column; justify-content: center; flex: 1;">
             <!-- Название + Тип документа рядом -->
             <h3 class="document-title">
                 {{ doc.title }}
@@ -373,25 +373,23 @@ input:checked + .toggle-slider-compact:before {
                 </span>
             </h3>
             
-            <!-- Дата загрузки -->
-            <p class="document-date">
-                📅 <span class="local-time" data-utc="{{ doc.uploaded_at.isoformat() if doc.uploaded_at else '' }}">
-                    {{ doc.uploaded_at.strftime('%d.%m.%Y %H:%M') if doc.uploaded_at else t('unknown', lang) }}
-                </span>
-            </p>
-            
             <!-- Medical timeline записи (без изменений) -->
             {% if doc.timeline_entries and doc.timeline_entries|length > 0 %}
             <div style="margin-top: 0.8rem;">
-                <ul style="margin: 0; padding-left: 1.2rem; color: #666; list-style-type: disc;">
+                <ul style="margin: 0; padding-left: 0; color: #666; list-style-type: none;">
                     {% for entry in doc.timeline_entries %}
-                    <li style="margin-bottom: 0.4rem; line-height: 1.6;">
-                        <span style="color: #444;">{{ entry.description }}</span>
+                    <li style="margin-bottom: 0.4rem; line-height: 1.6; display: flex; align-items: flex-start; gap: 0.5rem;">
+                        <!-- Эмодзи важности вместо маркера списка -->
                         {% if entry.importance == 'critical' %}
-                        <span style="color: #dc3545; margin-left: 0.3rem;" title="{{ t('importance_critical', lang) }}">🔴</span>
+                        <span style="color: #dc3545; flex-shrink: 0; font-size: 0.9rem;" title="{{ t('importance_critical', lang) }}">🔴</span>
                         {% elif entry.importance == 'important' %}
-                        <span style="color: #ffc107; margin-left: 0.3rem;" title="{{ t('importance_important', lang) }}">🟡</span>
+                        <span style="color: #ffc107; flex-shrink: 0; font-size: 0.9rem;" title="{{ t('importance_important', lang) }}">🟡</span>
+                        {% else %}
+                        <span style="color: #999; flex-shrink: 0; font-size: 0.9rem;">⚪</span>
                         {% endif %}
+                        
+                        <!-- Текст описания -->
+                        <span style="color: #444; flex: 1;">{{ entry.description }}</span>
                     </li>
                     {% endfor %}
                 </ul>
@@ -400,17 +398,24 @@ input:checked + .toggle-slider-compact:before {
         </div>
         
         <!-- Кнопки справа -->
-        <div style="display: flex; flex-direction: column; justify-content: space-between; align-self: stretch; min-width: 150px;">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; align-self: stretch; min-width: 150px; gap: 0.8rem;">
+            
+            <!-- Дата загрузки (вверху справа) -->
+            <p style="margin: 0; color: #999; font-size: 0.85rem; text-align: center;">
+                <span class="local-time" data-utc="{{ doc.uploaded_at.isoformat() if doc.uploaded_at else '' }}">
+                    {{ doc.uploaded_at.strftime('%d.%m.%Y %H:%M') if doc.uploaded_at else t('unknown', lang) }}
+                </span>
+            </p>
             
             <!-- Верхний ряд: Скачать + Тумблер -->
             <div style="display: flex; justify-content: center; align-items: center; gap: 3rem;">
                 
                 <!-- Кнопка Скачать слева -->
                 <a href="/api/download-document/{{ doc.id }}" 
-                   class="btn-download-minimal" 
-                   download
-                   title="{{ t('btn_download', lang) }}"
-                   style="display: flex; align-items: center;">
+                class="btn-download-minimal" 
+                download
+                title="{{ t('btn_download', lang) }}"
+                style="display: flex; align-items: center;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>

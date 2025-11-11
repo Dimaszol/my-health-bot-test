@@ -18,8 +18,12 @@
     <meta name="keywords" content="медицина, AI, здоровье, телемедицина, консультация">
     <meta name="author" content="Medical Assistant">
     
-    <!-- 🎯 FAVICON -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
+    <!-- Фавиконы -->
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="/static/favicon-96x96.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="manifest" href="/static/site.webmanifest">
     
     {% block extra_styles %}{% endblock %}
 </head>
@@ -30,7 +34,7 @@
             <div class="header-content">
                 <!-- Логотип -->
                 <a href="/" class="logo">
-                    <span class="logo-icon">🏥</span>
+                    <img src="/static/favicon.svg" alt="Logo" class="logo-icon" style="width: 32px; height: 32px;">
                     <span>PulseBook</span>
                 </a>
                 

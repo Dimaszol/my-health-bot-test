@@ -1420,20 +1420,24 @@ async def create_checkout_session(
         print(f"   Имя: {user_name}")
         
         # Создаём Checkout Session через StripeManager
-        session_url = await StripeManager.create_checkout_session(
+        result = await StripeManager.create_checkout_session(
             user_id=user_id,
             package_id=package_id,
-            user_name=user_name
+            user_name=user_name,
+            source="web"  # ← Указываем что это веб-версия
         )
-        
-        if not session_url:
-            raise Exception("Не удалось создать Checkout Session")
-        
-        print(f"✅ Checkout Session создана: {session_url[:50]}...")
-        
+
+        # StripeManager возвращает tuple: (success, url_or_error)
+        success, url_or_error = result
+
+        if not success:
+            raise Exception(url_or_error)
+
+        print(f"✅ Checkout Session создана: {url_or_error[:50]}...")
+
         return {
             'success': True,
-            'checkout_url': session_url
+            'checkout_url': url_or_error
         }
         
     except Exception as e:

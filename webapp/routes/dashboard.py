@@ -41,6 +41,19 @@ router = APIRouter()
 # 📁 НАСТРОЙКА ШАБЛОНОВ
 # templates = Jinja2Templates(directory="webapp/templates")
 
+def get_plan_display_name(subscription_type: str, lang: str = 'ru') -> str:
+    """
+    Конвертирует внутренние названия тарифов в ключи переводов
+    """
+    plan_mapping = {
+        'basic_sub': 'plan_lite',
+        'premium_sub': 'plan_pro',
+        None: 'plan_free'
+    }
+    
+    plan_key = plan_mapping.get(subscription_type, 'plan_free')
+    return t(plan_key, lang)
+
 async def get_user_stats(user_id: int) -> dict:
     """
     Получить статистику пользователя
@@ -151,6 +164,16 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
     finally:
         await release_db_connection(conn)
 
+    from db_postgresql import get_user_language
+    # Получаем язык пользователя
+    lang = await get_user_language(user_id)
+
+    # Получаем красивое название тарифа
+    current_plan_name = get_plan_display_name(
+        subscription_type=stats.get('subscription_type'),
+        lang=lang
+    )
+
     # Формируем контекст
     context = get_template_context(request)
     context.update({
@@ -158,7 +181,8 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
         'documents': documents,
         'chat_history': chat_history,
         'stats': stats,
-        'show_telegram_connect': show_telegram_connect
+        'show_telegram_connect': show_telegram_connect,
+        'current_plan_name': current_plan_name  # ← ДОБАВИЛИ
     })
     
     return templates.TemplateResponse('dashboard.html', context)

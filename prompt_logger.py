@@ -116,10 +116,11 @@ async def get_medical_timeline_simple(user_id: int, limit: int = 6) -> str:
         
         # Получаем последние записи
         rows = await conn.fetch("""
-            SELECT event_date, description, importance
-            FROM medical_timeline 
-            WHERE user_id = $1 
-            ORDER BY event_date DESC, created_at DESC
+            SELECT mt.event_date, mt.description, mt.importance
+            FROM medical_timeline mt
+            INNER JOIN documents d ON mt.source_document_id = d.id
+            WHERE mt.user_id = $1 AND d.confirmed = true
+            ORDER BY mt.event_date DESC, mt.created_at DESC
             LIMIT $2
         """, user_id, limit)
         
@@ -186,7 +187,7 @@ async def get_all_user_chunks(user_id: int, limit: int = 4) -> List[Dict]:
                     d.uploaded_at
                 FROM document_vectors dv
                 JOIN documents d ON d.id = dv.document_id
-                WHERE dv.user_id = $1
+                WHERE dv.user_id = $1 AND d.confirmed = true
                 ORDER BY d.uploaded_at DESC
                 LIMIT $2
             """, user_id, limit)

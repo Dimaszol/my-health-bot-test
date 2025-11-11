@@ -14,7 +14,7 @@ class StripeManager:
     """Менеджер для работы с платежами Stripe"""
     
     @staticmethod
-    async def create_checkout_session(user_id: int, package_id: str, user_name: str = "User"):
+    async def create_checkout_session(user_id: int, package_id: str, user_name: str = "User", source: str = "telegram"):
         """Создает сессию оплаты с правильным типом"""
         try:
             package_info = StripeConfig.get_package_info(package_id)
@@ -38,8 +38,8 @@ class StripeManager:
                         'quantity': 1,
                     }],
                     mode='subscription',  # ✅ ПОДПИСКА
-                    success_url=StripeConfig.SUCCESS_URL + f"?session_id={{CHECKOUT_SESSION_ID}}",
-                    cancel_url=StripeConfig.CANCEL_URL,
+                    success_url=(StripeConfig.WEB_SUCCESS_URL if source == "web" else StripeConfig.TELEGRAM_SUCCESS_URL) + f"?session_id={{CHECKOUT_SESSION_ID}}",
+                    cancel_url=StripeConfig.WEB_CANCEL_URL if source == "web" else StripeConfig.TELEGRAM_CANCEL_URL,
                     allow_promotion_codes=True,
                     subscription_data={
                         'metadata': {

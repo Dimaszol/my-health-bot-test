@@ -79,6 +79,7 @@
     }
     
     .user-message {
+        text-align: left;
         align-items: flex-end;
         padding-right: 1rem;
     }
@@ -186,61 +187,82 @@
     
     /* ФОРМА ВВОДА - фиксирована внизу */
     .chat-input-wrapper {
-        padding: 1.5rem 0 0.5rem 0;  /* Уменьшили padding снизу */
-        background: #f8f9fa;
+        padding: 0.5rem 0 0.5rem 0;  /* Уменьшили padding снизу */
+        background: white;
         border-top: 1px solid #e0e0e0;
         flex-shrink: 0;
     }
     
     #chat-form {
-        display: flex;
-        gap: 1rem;
-        align-items: center;
+        position: relative;
     }
+
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        background: white;
+        border: 2px solid #00c9a7;
+        border-radius: 30px;
+        padding: 0.3rem 0.5rem;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .input-wrapper:focus-within {
+        box-shadow: 0 0 0 3px rgba(0, 201, 167, 0.1);
+    }
+
     
     #message-input {
         flex: 1;
-        padding: 1rem 1.5rem;
-        border: 2px solid #e0e0e0;
-        border-radius: 20px;
+        padding: 0.8rem 1rem;
+        border: none;
+        background: transparent;
         font-size: 1rem;
-        background: white;
-        transition: all 0.2s;
-        resize: none; /* запретить ручное изменение размера */
-        max-height: 200px; /* максимальная высота */
+        resize: none;
+        max-height: 200px;
         overflow: hidden;
-        font-family: inherit; /* наследует шрифт */
+        font-family: inherit;
         line-height: 1.5;
+        outline: none;
     }
     
     #message-input:focus {
         outline: none;
-        border-color: #00c9a7;
-        box-shadow: 0 0 0 3px rgba(0, 201, 167, 0.1);
+        border: none;
+        box-shadow: none;
     }
     
     .send-button {
-        padding: 1rem 2rem;
+        width: 40px;
+        height: 40px;
+        padding: 0;
         background: linear-gradient(135deg, #00c9a7, #00b894);
         color: white;
         border: none;
-        border-radius: 25px;
-        font-size: 1rem;
-        font-weight: 600;
+        border-radius: 50%;
         cursor: pointer;
         transition: all 0.3s;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        justify-content: center;
+        flex-shrink: 0;
     }
-    
+
     .send-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 201, 167, 0.3);
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(0, 201, 167, 0.4);
     }
-    
+
     .send-button:active {
-        transform: translateY(0);
+        transform: scale(0.95);
+    }
+
+    .send-button svg {
+        width: 32px;
+        height: 22px;
+        transform: translateX(-3px) rotate(45deg);
     }
 
     /* ============================================
@@ -258,10 +280,10 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        border: 2px solid #e0e0e0;
-        background: white;
-        color: #666;
-        font-size: 24px;
+        border: none;
+        background: transparent;
+        color: #999;                /* ✅ СЕРЫЙ В ОБЫЧНОМ СОСТОЯНИИ */
+        font-size: 30px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -271,16 +293,15 @@
     }
 
     .plus-button:hover {
-        background: #f5f5f5;
-        border-color: #00c9a7;
-        color: #00c9a7;
+        background: rgba(0, 201, 167, 0.1);
+        color: #00c9a7;             /* ✅ БИРЮЗОВЫЙ ПРИ НАВЕДЕНИИ */
+        transform: scale(1.1);
     }
 
     .plus-button.active {
         transform: rotate(45deg);
-        background: #00c9a7;
-        color: white;
-        border-color: #00c9a7;
+        background: rgba(0, 201, 167, 0.2);
+        color: #00c9a7;             /* ✅ БИРЮЗОВЫЙ КОГДА АКТИВЕН */
     }
 
     /* Выпадающее меню */
@@ -317,6 +338,8 @@
         border-radius: 8px;
         cursor: pointer;
         transition: background 0.2s;
+        text-decoration: none; 
+        color: inherit;
     }
 
     .menu-item:hover {
@@ -381,11 +404,6 @@
     .remove-photo:hover {
         background: rgba(0, 0, 0, 0.9);
     }
-
-    /* Адаптируем поле ввода когда есть фото */
-    #message-input {
-        flex: 1;
-    }
     
     /* ПУСТОЕ СОСТОЯНИЕ */
     .empty-state {
@@ -408,11 +426,7 @@
         .message-bubble {
             max-width: 90%;
         }
-        
-        #chat-form {
-            gap: 0.5rem;
-        }
-        
+            
         .send-button {
             padding: 1rem 1.5rem;
         }
@@ -554,12 +568,7 @@
     <!-- ФОРМА ВВОДА - фиксирована внизу -->
     <div class="chat-input-wrapper">
         <form id="chat-form" enctype="multipart/form-data">
-            <!-- Кнопка "+" для меню -->
-            <button type="button" class="plus-button" id="plus-button">
-                <span>+</span>
-            </button>
-            
-            <!-- Выпадающее меню -->
+            <!-- Выпадающее меню (ОСТАЁТСЯ ВНЕ КОНТЕЙНЕРА) -->
             <div class="attachment-menu" id="attachment-menu" style="display: none;">
                 <div class="menu-item" id="upload-photo-btn">
                     <span class="menu-icon">📷</span>
@@ -579,17 +588,27 @@
                 <button type="button" class="remove-photo" id="remove-photo">✕</button>
             </div>
             
-            <input 
-                type="text" 
-                id="message-input" 
-                placeholder="{{ t('chat_placeholder', lang) }}"
-                autocomplete="off"
-                required
-            />
-            <button type="submit" class="send-button">
-                <span>{{ t('btn_send', lang) }}</span>
-                <span>📤</span>
-            </button>
+            <!-- ✅ НОВЫЙ КОНТЕЙНЕР ДЛЯ ЕДИНОГО БЛОКА -->
+            <div class="input-wrapper">
+                <button type="button" class="plus-button" id="plus-button">
+                    <span>+</span>
+                </button>
+                
+                <textarea 
+                    id="message-input" 
+                    placeholder="{{ t('chat_placeholder', lang) }}"
+                    autocomplete="off"
+                    required
+                    rows="1"
+                ></textarea>
+                
+                <button type="submit" class="send-button">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
         </form>
         
         <!-- Медицинский дисклеймер -->
@@ -634,8 +653,37 @@ plusButton.addEventListener('click', async (e) => {
         // Проверяем лимиты перед открытием
         const hasLimits = await checkPhotoLimits();
         
+        // ✅ ИЗМЕНЯЕМ СОДЕРЖИМОЕ МЕНЮ в зависимости от лимитов
         if (!hasLimits) {
-            return; // Если нет лимитов, показываем уведомление и не открываем меню
+            // Показываем меню с предложением подписки
+            attachmentMenu.innerHTML = `
+                <a href="/dashboard/subscription" class="menu-item">
+                    <div class="menu-text">
+                        <div class="menu-title">{{ t('photo_requires_premium', lang) }}</div>
+                        <div class="menu-description">{{ t('mode_upgrade_to_detailed', lang) }}</div>
+                    </div>
+                </a>
+            `;
+        } else {
+            // Показываем обычное меню загрузки фото
+            attachmentMenu.innerHTML = `
+                <div class="menu-item" id="upload-photo-btn-dynamic">
+                    <span class="menu-icon">📷</span>
+                    <div class="menu-text">
+                        <div class="menu-title">{{ t('photo_upload_button', lang) }}</div>
+                        <div class="menu-description">{{ t('photo_upload_description', lang) }}</div>
+                    </div>
+                </div>
+            `;
+            
+            // ✅ Переназначаем обработчик для динамически созданной кнопки
+            const uploadBtn = document.getElementById('upload-photo-btn-dynamic');
+            if (uploadBtn) {
+                uploadBtn.addEventListener('click', () => {
+                    photoInput.click();
+                    closeAttachmentMenu();
+                });
+            }
         }
         
         attachmentMenu.style.display = 'block';
@@ -665,8 +713,8 @@ async function checkPhotoLimits() {
         const data = await response.json();
         
         if (data.success && !data.has_limits) {
-            // Показываем уведомление о необходимости подписки
-            showLimitModal(data.message);
+            // ✅ НЕ показываем модальное окно, просто возвращаем false
+            // Меню откроется, но с другим содержимым
             return false;
         }
         
@@ -744,11 +792,6 @@ function showLimitModal(message) {
 // ============================================
 // 📷 ВЫБОР И ЗАГРУЗКА ФОТО
 // ============================================
-
-uploadPhotoBtn.addEventListener('click', () => {
-    photoInput.click();
-    closeAttachmentMenu();
-});
 
 photoInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
