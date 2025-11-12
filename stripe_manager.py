@@ -70,8 +70,8 @@ class StripeManager:
                         'quantity': 1,
                     }],
                     mode='payment',  # ✅ РАЗОВАЯ ОПЛАТА
-                    success_url=StripeConfig.SUCCESS_URL + f"?session_id={{CHECKOUT_SESSION_ID}}",
-                    cancel_url=StripeConfig.CANCEL_URL,
+                    success_url=(StripeConfig.WEB_SUCCESS_URL if source == "web" else StripeConfig.TELEGRAM_SUCCESS_URL) + f"?session_id={{CHECKOUT_SESSION_ID}}",
+                    cancel_url=StripeConfig.WEB_CANCEL_URL if source == "web" else StripeConfig.TELEGRAM_CANCEL_URL,
                     metadata={
                         'user_id': str(user_id),
                         'package_id': package_id,
@@ -343,8 +343,8 @@ class StripeManager:
                     'quantity': 1,
                 }],
                 mode='subscription',  # Подписка
-                success_url=StripeConfig.SUCCESS_URL + f"?session_id={{CHECKOUT_SESSION_ID}}",
-                cancel_url=StripeConfig.CANCEL_URL,
+                success_url=(StripeConfig.WEB_SUCCESS_URL if source == "web" else StripeConfig.TELEGRAM_SUCCESS_URL) + f"?session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=StripeConfig.WEB_CANCEL_URL if source == "web" else StripeConfig.TELEGRAM_CANCEL_URL,
                 
                 # 🎯 КЛЮЧЕВАЯ ОСОБЕННОСТЬ: Автоматически применяем промокод
                 discounts=[{
