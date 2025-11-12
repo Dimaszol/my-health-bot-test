@@ -304,7 +304,7 @@ class StripeManager:
         
     
     @staticmethod
-    async def create_promo_payment_session(user_id: int, package_id: str, promo_code: str, user_name: str = "User"):
+    async def create_promo_payment_session(user_id: int, package_id: str, promo_code: str, user_name: str = "User", source: str = "telegram"):
         """
         💰 Создает сессию оплаты с применением промокода
         
