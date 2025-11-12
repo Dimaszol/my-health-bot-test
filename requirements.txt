@@ -68,7 +68,7 @@ asyncpg==0.30.0
 markdown==3.9
 google-auth==2.37.0
 google-auth-oauthlib==1.2.1
-google-auth-httplib2==3.2.0
+google-auth-httplib2==0.2.1
 itsdangerous==2.2.0
 httpx==0.28.1
 authlib==1.4.1
