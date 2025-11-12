@@ -178,18 +178,16 @@ class StripeManager:
                 # Для подписок сохраняем Stripe subscription ID
                 subscription_id = session.subscription
                 
-                # ✅ ИСПРАВЛЕНО: PostgreSQL UPSERT вместо INSERT OR REPLACE
+                # ✅ ИСПРАВЛЕНИЕ: Сначала удаляем старую подписку
+                await execute_query("""
+                    DELETE FROM user_subscriptions WHERE user_id = ?
+                """, (user_id,))
+
+                # Затем вставляем новую
                 await execute_query("""
                     INSERT INTO user_subscriptions 
                     (user_id, stripe_subscription_id, package_id, status, created_at, cancelled_at)
                     VALUES (?, ?, ?, 'active', ?, ?)
-                    ON CONFLICT (user_id) 
-                    DO UPDATE SET 
-                        stripe_subscription_id = EXCLUDED.stripe_subscription_id,
-                        package_id = EXCLUDED.package_id,
-                        status = EXCLUDED.status,
-                        created_at = EXCLUDED.created_at,
-                        cancelled_at = EXCLUDED.cancelled_at
                 """, (user_id, subscription_id, package_id, datetime.now(), None))
                 
                 # Выдаем лимиты

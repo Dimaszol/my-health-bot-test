@@ -46,7 +46,15 @@
                             <li><a href="/dashboard">📊 {{ t('menu_dashboard', lang) }}</a></li>
                             <li><a href="/dashboard/chat">💬 {{ t('menu_chat', lang) }}</a></li>
                             <li><a href="/dashboard/documents">📄 {{ t('menu_documents', lang) }}</a></li>
-                            <li><a href="/dashboard/profile">👤 {{ t('menu_profile', lang) }}</a></li>
+                            <li>
+                                <a href="/dashboard/profile">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                    {{ t('menu_profile', lang) }}
+                                </a>
+                            </li>
                             
                             <!-- 🌍 Переключатель языка -->
                             <li class="language-selector">

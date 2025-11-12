@@ -1460,3 +1460,58 @@ async def create_checkout_session(
                 'error': error_message
             }
         )
+
+# ==========================================
+# 🚫 ОТМЕНА ПОДПИСКИ
+# ==========================================
+
+@router.post("/cancel-subscription")
+async def cancel_subscription_endpoint(
+    request: Request,
+    user_id: int = Depends(get_current_user)
+):
+    """
+    Отменяет активную подписку пользователя в Stripe
+    """
+    try:
+        from subscription_manager import SubscriptionManager
+        from db_postgresql import get_user_language, t
+        
+        # Получаем язык для локализованных сообщений
+        lang = await get_user_language(user_id)
+        
+        # Отменяем подписку через SubscriptionManager
+        success, message = await SubscriptionManager.cancel_stripe_subscription(user_id)
+        
+        if success:
+            return JSONResponse(content={
+                'success': True,
+                'message': t('cancel_success_message', lang) if not message else message
+            })
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    'success': False,
+                    'error': message or t('cancel_error_message', lang)
+                }
+            )
+        
+    except Exception as e:
+        print(f"❌ Ошибка отмены подписки: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        try:
+            lang = await get_user_language(user_id)
+            error_message = t('cancel_error_message', lang)
+        except:
+            error_message = 'Ошибка отмены подписки'
+        
+        return JSONResponse(
+            status_code=500,
+            content={
+                'success': False,
+                'error': error_message
+            }
+        )

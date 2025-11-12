@@ -277,6 +277,196 @@ main {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* 🚫 БЛОК ОТМЕНЫ ПОДПИСКИ */
+.cancel-subscription-block {
+    margin-top: 1.5rem;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+    border: 2px solid #feb2b2;
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+}
+
+.cancel-content {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.cancel-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.cancel-text {
+    flex: 1;
+}
+
+.cancel-text h3 {
+    font-size: 1.1rem;
+    color: #c53030;
+    margin: 0 0 0.3rem 0;
+}
+
+.cancel-text p {
+    font-size: 0.85rem;
+    color: #742a2a;
+    margin: 0;
+}
+
+.cancel-button {
+    padding: 0.7rem 1.5rem;
+    background: white;
+    color: #c53030;
+    border: 2px solid #c53030;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.cancel-button:hover {
+    background: #c53030;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(197, 48, 48, 0.3);
+}
+
+/* 💬 МОДАЛЬНОЕ ОКНО */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: #1a202c;
+    font-size: 1.3rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-warning {
+    background: #fff5f5;
+    border-left: 4px solid #c53030;
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+    color: #742a2a;
+    font-weight: 600;
+}
+
+.modal-info {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.modal-info li {
+    padding: 0.6rem 0;
+    color: #4a5568;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.modal-info li:before {
+    content: "•";
+    color: #00C9A7;
+    font-weight: bold;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.modal-button {
+    padding: 0.7rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+}
+
+.modal-button.cancel {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.modal-button.cancel:hover {
+    background: #cbd5e0;
+}
+
+.modal-button.confirm {
+    background: #c53030;
+    color: white;
+}
+
+.modal-button.confirm:hover {
+    background: #9b2c2c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(197, 48, 48, 0.3);
+}
+
+/* 📱 Адаптивность для блока отмены */
+@media (max-width: 768px) {
+    .cancel-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .cancel-button {
+        width: 100%;
+    }
+}
 </style>
 {% endblock %}
 
@@ -370,6 +560,48 @@ main {
         </div>
         {% endfor %}
     </div>
+    <!-- 🚫 БЛОК ОТМЕНЫ ПОДПИСКИ (показывается только если есть активная подписка) -->
+    {% if has_subscription %}
+    <div class="cancel-subscription-block">
+        <div class="cancel-content">
+            <div class="cancel-icon">⚠️</div>
+            <div class="cancel-text">
+                <h3>{{ t('cancel_subscription_title', lang) }}</h3>
+                <p>{{ t('cancel_subscription_description', lang) }}</p>
+            </div>
+            <button class="cancel-button" onclick="showCancelModal()">
+                {{ t('cancel_subscription_button', lang) }}
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+</div> <!-- конец subscription-container -->
+
+<!-- 💬 МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ -->
+<div class="modal-overlay" id="cancelModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>{{ t('cancel_modal_title', lang) }}</h2>
+        </div>
+        <div class="modal-body">
+            <p class="modal-warning">⚠️ {{ t('cancel_modal_warning', lang) }}</p>
+            <ul class="modal-info">
+                <li>{{ t('cancel_modal_info_1', lang) }}</li>
+                <li>{{ t('cancel_modal_info_2', lang) }}</li>
+                <li>{{ t('cancel_modal_info_3', lang) }}</li>
+            </ul>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-button cancel" onclick="hideCancelModal()">
+                {{ t('cancel_modal_button_back', lang) }}
+            </button>
+            <button class="modal-button confirm" onclick="confirmCancellation()">
+                {{ t('cancel_modal_button_confirm', lang) }}
+            </button>
+        </div>
+    </div>
+</div>
 </div>
 
 <!-- 💫 ЗАГРУЗКА -->
@@ -410,5 +642,51 @@ async function purchasePackage(packageId, packageName) {
         alert('{{ t("error_unexpected", lang) }}');
     }
 }
+
+function showCancelModal() {
+    document.getElementById('cancelModal').classList.add('active');
+}
+
+function hideCancelModal() {
+    document.getElementById('cancelModal').classList.remove('active');
+}
+
+async function confirmCancellation() {
+    const overlay = document.getElementById('loading-overlay');
+    overlay.classList.add('active');
+    
+    try {
+        const response = await fetch('/api/cancel-subscription', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('{{ t("cancel_success_message", lang) }}');
+            window.location.reload();
+        } else {
+            overlay.classList.remove('active');
+            alert(data.error || '{{ t("cancel_error_message", lang) }}');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        overlay.classList.remove('active');
+        alert('{{ t("error_unexpected", lang) }}');
+    } finally {
+        hideCancelModal();
+    }
+}
+
+// Закрытие модального окна по клику вне его
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('cancelModal');
+    if (event.target === modal) {
+        hideCancelModal();
+    }
+});
 </script>
 {% endblock %}

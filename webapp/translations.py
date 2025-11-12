@@ -45,10 +45,10 @@ TRANSLATIONS = {
         'de': 'Detaillierte Konsultationen'
     },
     'stats_basic_answers': {
-        'ru': 'Базовые ответы - безлимитно в рамках тарифа',
-        'uk': 'Базові відповіді - безліміт в рамках тарифу',
-        'en': 'Basic answers - unlimited within the plan',
-        'de': 'Grundlegende Antworten - unbegrenzt im Rahmen des Tarifs'
+        'ru': 'Базовые ответы - в рамках тарифа',
+        'uk': 'Базові відповіді - в рамках тарифу',
+        'en': 'Basic answers - within the plan',
+        'de': 'Grundlegende Antworten - im Rahmen des Tarifs'
     },
     'additional_actions': {
         'ru': 'Дополнительные действия',
@@ -441,10 +441,82 @@ TRANSLATIONS = {
         'de': 'Chat öffnen'
     },
     'btn_upgrade_plan': {
-        'ru': 'Улучшить план',
-        'en': 'Upgrade Plan',
-        'uk': 'Покращити план',
-        'de': 'Plan upgraden'
+        'ru': 'Обновить план',
+        'en': 'Update Plan',
+        'uk': 'Оновити план',
+        'de': 'Plan aktualisieren'
+    },
+    'cancel_subscription_title': {
+        'ru': 'Отменить подписку',
+        'en': 'Cancel Subscription',
+        'uk': 'Скасувати підписку',
+        'de': 'Abonnement kündigen'
+    },
+    'cancel_subscription_description': {
+        'ru': 'Автоматическое продление будет отключено',
+        'en': 'Auto-renewal will be disabled',
+        'uk': 'Автоматичне поновлення буде вимкнено',
+        'de': 'Automatische Verlängerung wird deaktiviert'
+    },
+    'cancel_subscription_button': {
+        'ru': 'Отменить подписку',
+        'en': 'Cancel Subscription',
+        'uk': 'Скасувати підписку',
+        'de': 'Abonnement kündigen'
+    },
+    'cancel_modal_title': {
+        'ru': 'Подтвердите отмену подписки',
+        'en': 'Confirm Subscription Cancellation',
+        'uk': 'Підтвердіть скасування підписки',
+        'de': 'Abonnementkündigung bestätigen'
+    },
+    'cancel_modal_warning': {
+        'ru': 'Внимание! Это действие нельзя отменить',
+        'en': 'Warning! This action cannot be undone',
+        'uk': 'Увага! Цю дію не можна скасувати',
+        'de': 'Achtung! Diese Aktion kann nicht rückgängig gemacht werden'
+    },
+    'cancel_modal_info_1': {
+        'ru': 'Дальнейшие оплаты производиться не будут',
+        'en': 'No further payments will be charged',
+        'uk': 'Подальші оплати проводитися не будуть',
+        'de': 'Es werden keine weiteren Zahlungen erhoben'
+    },
+    'cancel_modal_info_2': {
+        'ru': 'Текущие лимиты действуют до конца оплаченного периода',
+        'en': 'Current limits remain active until the end of paid period',
+        'uk': 'Поточні ліміти діють до кінця оплаченого періоду',
+        'de': 'Aktuelle Limits bleiben bis zum Ende des bezahlten Zeitraums aktiv'
+    },
+    'cancel_modal_info_3': {
+        'ru': 'Вы сможете оформить подписку заново в любой момент',
+        'en': 'You can subscribe again at any time',
+        'uk': 'Ви зможете оформити підписку знову в будь-який момент',
+        'de': 'Sie können jederzeit erneut abonnieren'
+    },
+    'cancel_modal_button_back': {
+        'ru': 'Назад',
+        'en': 'Back',
+        'uk': 'Назад',
+        'de': 'Zurück'
+    },
+    'cancel_modal_button_confirm': {
+        'ru': 'Подтвердить отмену',
+        'en': 'Confirm Cancellation',
+        'uk': 'Підтвердити скасування',
+        'de': 'Kündigung bestätigen'
+    },
+    'cancel_success_message': {
+        'ru': '✅ Подписка отменена. Автопродление отключено.',
+        'en': '✅ Subscription cancelled. Auto-renewal disabled.',
+        'uk': '✅ Підписку скасовано. Автопоновлення вимкнено.',
+        'de': '✅ Abonnement gekündigt. Automatische Verlängerung deaktiviert.'
+    },
+    'cancel_error_message': {
+        'ru': '❌ Ошибка отмены подписки. Попробуйте позже.',
+        'en': '❌ Error cancelling subscription. Please try again later.',
+        'uk': '❌ Помилка скасування підписки. Спробуйте пізніше.',
+        'de': '❌ Fehler beim Kündigen des Abonnements. Bitte versuchen Sie es später erneut.'
     },
     'quick_actions': {
         'ru': 'Быстрые действия',

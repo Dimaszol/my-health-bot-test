@@ -82,11 +82,23 @@ async def get_user_stats(user_id: int) -> dict:
             user_id
         )
         
+        # ✅ НОВОЕ: Получаем package_id из user_subscriptions
+        subscription = await conn.fetchrow("""
+            SELECT package_id 
+            FROM user_subscriptions 
+            WHERE user_id = $1 AND status = 'active'
+            ORDER BY created_at DESC
+            LIMIT 1
+        """, user_id)
+        
+        subscription_type = subscription['package_id'] if subscription else None
+        
         return {
             'total_documents': total_docs or 0,
             'total_messages': total_messages or 0,
             'documents_left': limits['documents_left'] if limits else 2,
-            'queries_left': limits['gpt4o_queries_left'] if limits else 10
+            'queries_left': limits['gpt4o_queries_left'] if limits else 10,
+            'subscription_type': subscription_type  # ✅ ДОБАВИЛИ
         }
         
     except Exception as e:
@@ -95,7 +107,8 @@ async def get_user_stats(user_id: int) -> dict:
             'total_documents': 0,
             'total_messages': 0,
             'documents_left': 0,
-            'queries_left': 0
+            'queries_left': 0,
+            'subscription_type': None  # ✅ ДОБАВИЛИ в fallback
         }
         
     finally:
@@ -132,10 +145,12 @@ async def get_current_user(request: Request) -> int:
 async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
     """
     Главная страница личного кабинета
-    
-    ✅ СМОТРИ КАК ЧИСТО! Просто await вместо всех костылей!
+
     """
-    # ✅ ПРОСТО AWAIT! Никаких loop.run_until_complete!
+    # ✅ НОВОЕ: Проверяем истекшие лимиты ДО отображения дашборда
+    from subscription_manager import SubscriptionManager
+    await SubscriptionManager.check_and_reset_expired_limits(user_id)
+    
     profile = await get_user_profile(user_id)
     documents = await get_documents_by_user(user_id, limit=5)
     
@@ -316,13 +331,33 @@ async def subscription_page(request: Request, user_id: int = Depends(get_current
     """
     from stripe_config import StripeConfig
     from subscription_manager import SubscriptionManager
-    from db_postgresql import get_user_language
+    from db_postgresql import get_user_language, get_db_connection, release_db_connection
 
     # Получаем язык пользователя
     lang = await get_user_language(user_id)
     
-    # Получаем текущие лимиты и подписку
+    # Получаем текущие лимиты
     limits = await SubscriptionManager.get_user_limits(user_id)
+    
+    # ✅ НОВОЕ: Проверяем активную подписку в таблице user_subscriptions
+    current_package_id = None
+    conn = await get_db_connection()
+    try:
+        subscription = await conn.fetchrow("""
+            SELECT package_id, status 
+            FROM user_subscriptions 
+            WHERE user_id = $1 AND status = 'active'
+            ORDER BY created_at DESC
+            LIMIT 1
+        """, user_id)
+        
+        if subscription:
+            current_package_id = subscription['package_id']
+            print(f"✅ Найдена активная подписка: {current_package_id}")
+        else:
+            print(f"ℹ️ У пользователя нет активной подписки")
+    finally:
+        await release_db_connection(conn)
     
     # Получаем все доступные тарифы
     packages = StripeConfig.get_all_packages()
@@ -334,22 +369,21 @@ async def subscription_page(request: Request, user_id: int = Depends(get_current
             'id': package_id,
             'name_key': package_info['user_friendly_name_key'],
             'price': package_info['price_display'],
-            'price_cents': package_info['price_cents'],  # Добавляем для сортировки
+            'price_cents': package_info['price_cents'],
             'type': package_info['type'],
             'documents': package_info['documents'],
             'gpt4o_queries': package_info['gpt4o_queries'],
             'features_keys': package_info['features_keys'],
-            'is_current': limits.get('subscription_type') == package_id
+            'is_current': package_id == current_package_id  # ✅ ИСПРАВЛЕНО
         })
 
-    # Сортируем по цене (по возрастанию)
+    # Сортируем по цене
     formatted_packages.sort(key=lambda x: x['price_cents'])
     
     # Подготавливаем контекст
     context = get_template_context(request)
     context['packages'] = formatted_packages
     context['limits'] = limits
-    context['has_subscription'] = limits.get('subscription_type') is not None
+    context['has_subscription'] = current_package_id is not None  # ✅ ИСПРАВЛЕНО
     
     return templates.TemplateResponse("subscription.html", context)
-
