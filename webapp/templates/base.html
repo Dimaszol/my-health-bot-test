@@ -6,7 +6,7 @@
     <title>{% block title %}{{ t('site_title', lang) }} - {{ t('hero_subtitle', lang) }}{% endblock %}</title>
     
     <!-- 🎨 СТИЛИ -->
-    <link rel="stylesheet" href="/static/css/style.css?v=3">
+    <link rel="stylesheet" href="/static/css/style.css?v=7">
     
     <!-- 🔤 ШРИФТЫ (Google Fonts - Inter) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -137,8 +137,13 @@
                     <h4>{{ t('menu_home', lang) }}</h4>
                     <ul>
                         <li><a href="/">{{ t('menu_home', lang) }}</a></li>
-                        <li><a href="/dashboard/chat">{{ t('menu_chat', lang) }}</a></li>
-                        <li><a href="/dashboard/documents">{{ t('menu_documents', lang) }}</a></li>
+                        {% if session.get('user_id') %}
+                            <li><a href="/dashboard/chat">{{ t('menu_chat', lang) }}</a></li>
+                            <li><a href="/dashboard/documents">{{ t('menu_documents', lang) }}</a></li>
+                        {% else %}
+                            <li><a href="/login">{{ t('menu_chat', lang) }}</a></li>
+                            <li><a href="/login">{{ t('menu_documents', lang) }}</a></li>
+                        {% endif %}
                     </ul>
                 </div>
                 
@@ -146,9 +151,13 @@
                 <div class="footer-section">
                     <h4>{{ t('menu_features', lang) }}</h4>
                     <ul>
-                        <li><a href="#">FAQ</a></li>
-                        <li><a href="#">{{ t('menu_profile', lang) }}</a></li>
-                        <li><a href="#">{{ t('menu_security', lang) }}</a></li>
+                        <li><a href="/faq">FAQ</a></li>
+                        {% if session.get('user_id') %}
+                            <li><a href="/dashboard/profile">{{ t('menu_profile', lang) }}</a></li>
+                        {% else %}
+                            <li><a href="/login">{{ t('menu_profile', lang) }}</a></li>
+                        {% endif %}
+                        <li><a href="/faq#security">{{ t('menu_security', lang) }}</a></li>
                     </ul>
                 </div>
                 

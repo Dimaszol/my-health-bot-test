@@ -23,18 +23,9 @@
                     <a href="/login" class="btn btn-large">
                         🚀 {{ t('btn_try_free', lang) }}
                     </a>
-                    <a href="#features" class="btn btn-outline btn-large">
+                    <a href="/faq" class="btn btn-outline btn-large">
                         {{ t('btn_learn_more', lang) }}
                     </a>
-                </div>
-                
-                <!-- Рейтинг Trustpilot -->
-                <div class="trust-badge">
-                    <div class="trust-stars">★★★★★</div>
-                    <div>
-                        <div class="trust-rating">{{ t('trustpilot_excellent', lang) }}</div>
-                        <div style="font-size: 0.85rem; color: #718096;">{{ t('trustpilot_rating', lang) }}</div>
-                    </div>
                 </div>
             </div>
             
@@ -106,7 +97,14 @@
         <div class="card-grid">
             <!-- Карточка 1: Загрузка документов -->
             <div class="card">
-                <div class="card-icon">📄</div>
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="9" y1="15" x2="15" y2="15"/>
+                        <line x1="12" y1="12" x2="12" y2="18"/>
+                    </svg>
+                </div>
                 <h3>{{ t('feature_upload_title', lang) }}</h3>
                 <p style="color: var(--text-secondary); line-height: 1.7;">
                     {{ t('feature_upload_text', lang) }}
@@ -115,12 +113,20 @@
                     <li>✓ {{ t('feature_upload_list1', lang) }}</li>
                     <li>✓ {{ t('feature_upload_list2', lang) }}</li>
                     <li>✓ {{ t('feature_upload_list3', lang) }}</li>
+                    <li>✓ {{ t('feature_upload_list4', lang) }}</li>
                 </ul>
             </div>
             
             <!-- Карточка 2: AI-консультант -->
             <div class="card">
-                <div class="card-icon">🤖</div>
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        <circle cx="9" cy="10" r="1"/>
+                        <circle cx="15" cy="10" r="1"/>
+                        <path d="M9 14a5 5 0 0 0 6 0"/>
+                    </svg>
+                </div>
                 <h3>{{ t('feature_ai_title_247', lang) }}</h3>
                 <p style="color: var(--text-secondary); line-height: 1.7;">
                     {{ t('feature_ai_text', lang) }}
@@ -134,7 +140,11 @@
             
             <!-- Карточка 3: История здоровья -->
             <div class="card">
-                <div class="card-icon">📊</div>
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                </div>
                 <h3>{{ t('feature_history_title', lang) }}</h3>
                 <p style="color: var(--text-secondary); line-height: 1.7;">
                     {{ t('feature_history_text', lang) }}
@@ -194,13 +204,13 @@
         <div class="card-grid">
             <div class="stat-card">
                 <div style="font-size: 3rem; margin-bottom: 0.5rem;">👥</div>
-                <div class="stat-number">10,000+</div>
+                <div class="stat-number">5,000+</div>
                 <p style="color: var(--text-secondary);">{{ t('stats_active_users', lang) }}</p>
             </div>
             
             <div class="stat-card">
                 <div style="font-size: 3rem; margin-bottom: 0.5rem;">📄</div>
-                <div class="stat-number">50,000+</div>
+                <div class="stat-number">20,000+</div>
                 <p style="color: var(--text-secondary);">{{ t('stats_documents_analyzed', lang) }}</p>
             </div>
             

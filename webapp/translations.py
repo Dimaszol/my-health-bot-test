@@ -69,28 +69,28 @@ TRANSLATIONS = {
         'de': 'Daten mit dem Bot synchronisieren'
     },  
     'hero_main_title_part1': {
-        'ru': 'Ваша',
-        'en': 'Your',
-        'uk': 'Ваша',
-        'de': 'Ihre'
+        'ru': 'Ваш умный помощник для',
+        'en': 'Your Smart Assistant for',
+        'uk': 'Ваш розумний помічник для',
+        'de': 'Ihr intelligenter Assistent für'
     },
     'hero_main_title_highlight': {
-        'ru': 'AI-платформа',
-        'en': 'AI-platform',
-        'uk': 'AI-платформа',
-        'de': 'KI-Plattform'
+        'ru': 'управления здоровьем',
+        'en': 'Health Management',
+        'uk': 'управління здоров\'ям',
+        'de': 'Gesundheitsmanagement'
     },
     'hero_main_title_part2': {
-        'ru': 'для управления здоровьем',
-        'en': 'for health management',
-        'uk': 'для управління здоров\'ям',
-        'de': 'für Gesundheitsmanagement'
+        'ru': '',
+        'en': '',
+        'uk': '',
+        'de': ''
     },
     'hero_description': {
-        'ru': 'Для пациентов, врачей и медицинских компаний: Medical Assistant предоставляет надежные AI-инструменты там, где они нужны больше всего.',
-        'en': 'For patients, doctors and medical companies: Medical Assistant provides reliable AI tools where they are needed most.',
-        'uk': 'Для пацієнтів, лікарів та медичних компаній: Medical Assistant надає надійні AI-інструменти там, де вони потрібні найбільше.',
-        'de': 'Für Patienten, Ärzte und medizinische Unternehmen: Medical Assistant bietet zuverlässige KI-Tools dort, wo sie am meisten benötigt werden.'
+        'ru': 'Храните медицинские документы в одном месте. Получайте мгновенный анализ и консультации от ИИ-ассистента. Контролируйте своё здоровье с помощью современных технологий.',
+        'en': 'Store medical documents in one place. Get instant analysis and consultations from an AI assistant. Take control of your health with modern technology.',
+        'uk': 'Зберігайте медичні документи в одному місці. Отримуйте миттєвий аналіз та консультації від ШІ-асистента. Контролюйте своє здоров\'я за допомогою сучасних технологій.',
+        'de': 'Speichern Sie medizinische Dokumente an einem Ort. Erhalten Sie sofortige Analysen und Beratung von einem KI-Assistenten. Kontrollieren Sie Ihre Gesundheit mit moderner Technologie.'
     },
     'btn_try_free': {
         'ru': 'Попробовать бесплатно',
@@ -210,9 +210,9 @@ TRANSLATIONS = {
     },
     'feature_upload_text': {
         'ru': 'Загружайте анализы, снимки, заключения врачей в форматах PDF, DOCX, изображения. AI автоматически извлечет все важные данные.',
-        'en': 'Upload tests, images, doctor reports in PDF, DOCX, image formats. AI will automatically extract all important data.',
+        'en': 'Upload tests, images, doctor reports in PDF, DOCX, image formats. AI automatically extracts all important data.',
         'uk': 'Завантажуйте аналізи, знімки, висновки лікарів у форматах PDF, DOCX, зображення. AI автоматично витягне всі важливі дані.',
-        'de': 'Laden Sie Tests, Bilder, Arztberichte in PDF-, DOCX- und Bildformaten hoch. KI extrahiert automatisch alle wichtigen Daten.'
+        'de': 'Laden Sie Tests, Bilder, Arztberichte in PDF-, DOCX-, Bildformaten hoch. KI extrahiert automatisch alle wichtigen Daten.'
     },
     'feature_upload_list1': {
         'ru': 'Результаты анализов крови, мочи',
@@ -228,9 +228,15 @@ TRANSLATIONS = {
     },
     'feature_upload_list3': {
         'ru': 'Выписки и заключения врачей',
-        'en': 'Medical reports and conclusions',
+        'en': 'Medical reports and doctor conclusions',
         'uk': 'Виписки та висновки лікарів',
         'de': 'Arztberichte und Schlussfolgerungen'
+    },
+    'feature_upload_list4': {
+        'ru': 'Подробный анализ документов',
+        'en': 'Detailed document analysis',
+        'uk': 'Детальний аналіз документів',
+        'de': 'Detaillierte Dokumentenanalyse'
     },
     'feature_ai_title': {
         'ru': 'ИИ-консультант',
@@ -245,10 +251,10 @@ TRANSLATIONS = {
         'de': 'KI-Berater 24/7'
     },
     'feature_ai_text': {
-        'ru': 'Задавайте вопросы о вашем здоровье и получайте ответы на основе ваших документов. GPT-4 анализирует вашу историю.',
-        'en': 'Ask health questions and get answers based on your documents. GPT-4 analyzes your history.',
-        'uk': 'Ставте питання про ваше здоров\'я та отримуйте відповіді на основі ваших документів. GPT-4 аналізує вашу історію.',
-        'de': 'Stellen Sie Gesundheitsfragen und erhalten Sie Antworten basierend auf Ihren Dokumenten. GPT-4 analysiert Ihre Geschichte.'
+        'ru': 'Задавайте вопросы о вашем здоровье и получайте ответы на основе ваших документов. ИИ анализирует вашу историю.',
+        'en': 'Ask questions about your health and get answers based on your documents. AI analyzes your history.',
+        'uk': 'Ставте питання про ваше здоров\'я та отримуйте відповіді на основі ваших документів. ШІ аналізує вашу історію.',
+        'de': 'Stellen Sie Fragen zu Ihrer Gesundheit und erhalten Sie Antworten basierend auf Ihren Dokumenten. KI analysiert Ihre Geschichte.'
     },
     'feature_ai_list1': {
         'ru': 'Мгновенные ответы на вопросы',
@@ -257,10 +263,10 @@ TRANSLATIONS = {
         'de': 'Sofortige Antworten auf Fragen'
     },
     'feature_ai_list2': {
-        'ru': 'Анализ на основе ваших данных',
-        'en': 'Analysis based on your data',
-        'uk': 'Аналіз на основі ваших даних',
-        'de': 'Analyse basierend auf Ihren Daten'
+        'ru': 'Персональный анализ на основе ваших данных',
+        'en': 'Personalized analysis based on your data',
+        'uk': 'Персональний аналіз на основі ваших даних',
+        'de': 'Personalisierte Analyse basierend auf Ihren Daten'
     },
     'feature_ai_list3': {
         'ru': 'Понятные объяснения терминов',
@@ -275,10 +281,10 @@ TRANSLATIONS = {
         'de': 'Krankenakte'
     },
     'feature_history_text': {
-        'ru': 'Вся ваша медицинская информация в одном месте, доступна в любое время. Отслеживайте динамику показателей.',
-        'en': 'All your medical information in one place, accessible anytime. Track metrics dynamics.',
-        'uk': 'Вся ваша медична інформація в одному місці, доступна в будь-який час. Відстежуйте динаміку показників.',
-        'de': 'Alle Ihre medizinischen Informationen an einem Ort, jederzeit zugänglich. Verfolgen Sie die Dynamik der Kennzahlen.'
+        'ru': 'Вся ваша медицинская история в одном месте, доступна в любое время. Отслеживайте динамику показателей.',
+        'en': 'All your medical history in one place, accessible anytime. Track your health metrics dynamics.',
+        'uk': 'Вся ваша медична історія в одному місці, доступна в будь-який час. Відстежуйте динаміку показників.',
+        'de': 'Ihre gesamte Krankengeschichte an einem Ort, jederzeit zugänglich. Verfolgen Sie die Dynamik Ihrer Gesundheitskennzahlen.'
     },
     'feature_history_list1': {
         'ru': 'Хронология всех документов',
@@ -287,18 +293,23 @@ TRANSLATIONS = {
         'de': 'Zeitleiste aller Dokumente'
     },
     'feature_history_list2': {
-        'ru': 'Графики изменения анализов',
-        'en': 'Test results trend charts',
-        'uk': 'Графіки зміни аналізів',
-        'de': 'Trenddiagramme der Testergebnisse'
+        'ru': 'Все загруженные данные используются ИИ для ответов',
+        'en': 'All uploaded data is used by AI for answers',
+        'uk': 'Всі завантажені дані використовуються ШІ для відповідей',
+        'de': 'Alle hochgeladenen Daten werden von der KI für Antworten verwendet'
     },
     'feature_history_list3': {
-        'ru': 'Экспорт данных для врача',
-        'en': 'Data export for doctor',
-        'uk': 'Експорт даних для лікаря',
-        'de': 'Datenexport für Arzt'
+        'ru': 'Чем больше PulseBook знает о вас, тем точнее рекомендации',
+        'en': 'The more PulseBook knows about you, the more accurate the recommendations',
+        'uk': 'Чим більше PulseBook знає про вас, тим точніші рекомендації',
+        'de': 'Je mehr PulseBook über Sie weiß, desto genauer sind die Empfehlungen'
     },
-    
+    'menu_faq': {
+        'ru': 'FAQ',
+        'en': 'FAQ',
+        'uk': 'FAQ',
+        'de': 'FAQ'
+    },
     # ============================================
     # 🔒 БЕЗОПАСНОСТЬ
     # ============================================
@@ -1917,6 +1928,333 @@ TRANSLATIONS = {
     'en': 'Other',
     'uk': 'Інше',
     'de': 'Andere'
+},
+# === HERO СЕКЦИЯ (улучшенные тексты) ===
+'hero_main_title_part1': {
+    'ru': 'Медицинская помощь',
+    'en': 'Medical assistance',
+    'uk': 'Медична допомога',
+    'de': 'Medizinische Hilfe'
+},
+
+'hero_main_title_highlight': {
+    'ru': 'на основе ИИ',
+    'en': 'powered by AI',
+    'uk': 'на основі ШІ',
+    'de': 'mit KI-Unterstützung'
+},
+
+'hero_main_title_part2': {
+    'ru': 'доступная каждому',
+    'en': 'accessible to everyone',
+    'uk': 'доступна кожному',
+    'de': 'für jeden zugänglich'
+},
+
+'hero_description': {
+    'ru': 'Храните медицинские документы в одном месте. Получайте мгновенный анализ и консультации от ИИ-ассистента. Контролируйте своё здоровье с помощью современных технологий.',
+    'en': 'Store medical documents in one place. Get instant analysis and consultations from AI assistant. Take control of your health with modern technology.',
+    'uk': 'Зберігайте медичні документи в одному місці. Отримуйте миттєвий аналіз та консультації від ШІ-асистента. Контролюйте своє здоров\'я за допомогою сучасних технологій.',
+    'de': 'Speichern Sie medizinische Dokumente an einem Ort. Erhalten Sie sofortige Analysen und Beratungen vom KI-Assistenten. Kontrollieren Sie Ihre Gesundheit mit moderner Technologie.'
+},
+
+# === КАК ЭТО РАБОТАЕТ ===
+'how_it_works_title': {
+    'ru': 'Три шага до результата',
+    'en': 'Three steps to results',
+    'uk': 'Три кроки до результату',
+    'de': 'Drei Schritte zum Ergebnis'
+},
+
+'how_it_works_subtitle': {
+    'ru': 'Простой процесс для получения медицинской информации',
+    'en': 'Simple process to get medical information',
+    'uk': 'Простий процес для отримання медичної інформації',
+    'de': 'Einfacher Prozess für medizinische Informationen'
+},
+
+'step1_title': {
+    'ru': 'Загрузка документов',
+    'en': 'Upload documents',
+    'uk': 'Завантаження документів',
+    'de': 'Dokumente hochladen'
+},
+
+'step1_text': {
+    'ru': 'Загрузите анализы, снимки или заключения врачей. Поддерживаются все популярные форматы файлов.',
+    'en': 'Upload tests, images or medical reports. All popular file formats are supported.',
+    'uk': 'Завантажте аналізи, знімки або висновки лікарів. Підтримуються всі популярні формати файлів.',
+    'de': 'Laden Sie Tests, Bilder oder Arztberichte hoch. Alle gängigen Dateiformate werden unterstützt.'
+},
+
+'step2_title': {
+    'ru': 'Автоматический анализ',
+    'en': 'Automatic analysis',
+    'uk': 'Автоматичний аналіз',
+    'de': 'Automatische Analyse'
+},
+
+'step2_text': {
+    'ru': 'ИИ обрабатывает документы и формирует структурированный медицинский профиль за секунды.',
+    'en': 'AI processes documents and creates a structured medical profile in seconds.',
+    'uk': 'ШІ обробляє документи та формує структурований медичний профіль за секунди.',
+    'de': 'KI verarbeitet Dokumente und erstellt in Sekunden ein strukturiertes Gesundheitsprofil.'
+},
+
+'step3_title': {
+    'ru': 'Персональные рекомендации',
+    'en': 'Personalized recommendations',
+    'uk': 'Персональні рекомендації',
+    'de': 'Personalisierte Empfehlungen'
+},
+
+'step3_text': {
+    'ru': 'Задавайте вопросы ИИ-ассистенту и получайте понятные объяснения в любое время.',
+    'en': 'Ask questions to AI assistant and get clear explanations anytime.',
+    'uk': 'Ставте питання ШІ-асистенту та отримуйте зрозумілі пояснення в будь-який час.',
+    'de': 'Stellen Sie dem KI-Assistenten Fragen und erhalten Sie jederzeit verständliche Erklärungen.'
+},
+
+# === ОТЗЫВЫ ===
+'testimonials_title': {
+    'ru': 'Опыт наших пользователей',
+    'en': 'User experience',
+    'uk': 'Досвід наших користувачів',
+    'de': 'Benutzererfahrung'
+},
+
+'testimonials_subtitle': {
+    'ru': 'Реальные истории людей, которые используют PulseBook',
+    'en': 'Real stories from people using PulseBook',
+    'uk': 'Реальні історії людей, які використовують PulseBook',
+    'de': 'Echte Geschichten von Menschen, die PulseBook nutzen'
+},
+
+'testimonial1_text': {
+    'ru': 'Впервые понял, что означают показатели в моих анализах. ИИ объяснил всё простым языком без медицинского жаргона.',
+    'en': 'Finally understood what the numbers in my tests mean. AI explained everything in simple terms without medical jargon.',
+    'uk': 'Вперше зрозумів, що означають показники в моїх аналізах. ШІ пояснив все простою мовою без медичного жаргону.',
+    'de': 'Endlich verstanden, was die Zahlen in meinen Tests bedeuten. KI hat alles einfach erklärt, ohne medizinisches Fachjargon.'
+},
+
+'testimonial1_author': {
+    'ru': 'Алексей Иванов',
+    'en': 'Alex Johnson',
+    'uk': 'Олексій Іванов',
+    'de': 'Alexander Schmidt'
+},
+
+'testimonial1_role': {
+    'ru': '3 месяца с PulseBook',
+    'en': '3 months with PulseBook',
+    'uk': '3 місяці з PulseBook',
+    'de': '3 Monate mit PulseBook'
+},
+
+'testimonial2_text': {
+    'ru': 'Удобно хранить всю медицинскую историю в одном месте. Больше не теряю результаты анализов перед визитом к врачу.',
+    'en': 'Convenient to keep all medical history in one place. No more losing test results before doctor visits.',
+    'uk': 'Зручно зберігати всю медичну історію в одному місці. Більше не втрачаю результати аналізів перед візитом до лікаря.',
+    'de': 'Praktisch, die gesamte Krankengeschichte an einem Ort aufzubewahren. Keine verlorenen Testergebnisse mehr vor Arztbesuchen.'
+},
+
+'testimonial2_author': {
+    'ru': 'Мария Петрова',
+    'en': 'Maria Peterson',
+    'uk': 'Марія Петрова',
+    'de': 'Maria Müller'
+},
+
+'testimonial2_role': {
+    'ru': 'Премиум подписка',
+    'en': 'Premium subscription',
+    'uk': 'Преміум підписка',
+    'de': 'Premium-Abonnement'
+},
+
+'testimonial3_text': {
+    'ru': 'Экономлю время на консультациях. Простые вопросы решаю с помощью ИИ, к врачу иду только когда действительно нужно.',
+    'en': 'Saving time on consultations. Handle simple questions with AI, visit doctors only when really needed.',
+    'uk': 'Економлю час на консультаціях. Прості питання вирішую за допомогою ШІ, до лікаря йду тільки коли дійсно потрібно.',
+    'de': 'Spare Zeit bei Konsultationen. Erledige einfache Fragen mit KI, besuche Ärzte nur bei Bedarf.'
+},
+
+'testimonial3_author': {
+    'ru': 'Дмитрий Соколов',
+    'en': 'David Miller',
+    'uk': 'Дмитро Соколов',
+    'de': 'David Weber'
+},
+
+'testimonial3_role': {
+    'ru': '6 месяцев использования',
+    'en': '6 months of use',
+    'uk': '6 місяців використання',
+    'de': '6 Monate Nutzung'
+},
+
+# === СРАВНЕНИЕ ===
+'comparison_title': {
+    'ru': 'Почему PulseBook',
+    'en': 'Why PulseBook',
+    'uk': 'Чому PulseBook',
+    'de': 'Warum PulseBook'
+},
+
+'comparison_before': {
+    'ru': 'Традиционный подход',
+    'en': 'Traditional approach',
+    'uk': 'Традиційний підхід',
+    'de': 'Traditioneller Ansatz'
+},
+
+'comparison_after': {
+    'ru': 'С PulseBook',
+    'en': 'With PulseBook',
+    'uk': 'З PulseBook',
+    'de': 'Mit PulseBook'
+},
+
+'comparison_before_1': {
+    'ru': 'Консультации от $50 за визит',
+    'en': 'Consultations from $50 per visit',
+    'uk': 'Консультації від $50 за візит',
+    'de': 'Beratungen ab $50 pro Besuch'
+},
+
+'comparison_before_2': {
+    'ru': 'Ожидание записи до 2 недель',
+    'en': 'Wait up to 2 weeks for appointment',
+    'uk': 'Очікування запису до 2 тижнів',
+    'de': 'Wartezeit bis zu 2 Wochen'
+},
+
+'comparison_before_3': {
+    'ru': 'Документы разбросаны по папкам',
+    'en': 'Documents scattered across folders',
+    'uk': 'Документи розкидані по папках',
+    'de': 'Dokumente verstreut in Ordnern'
+},
+
+'comparison_before_4': {
+    'ru': 'Сложно отследить динамику',
+    'en': 'Hard to track progress',
+    'uk': 'Важко відстежити динаміку',
+    'de': 'Schwer Fortschritte zu verfolgen'
+},
+
+'comparison_after_1': {
+    'ru': 'От $9.99/месяц с безлимитом',
+    'en': 'From $9.99/month unlimited',
+    'uk': 'Від $9.99/місяць без обмежень',
+    'de': 'Ab $9,99/Monat unbegrenzt'
+},
+
+'comparison_after_2': {
+    'ru': 'Мгновенные ответы 24/7',
+    'en': 'Instant answers 24/7',
+    'uk': 'Миттєві відповіді 24/7',
+    'de': 'Sofortige Antworten 24/7'
+},
+
+'comparison_after_3': {
+    'ru': 'Всё в одной системе с поиском',
+    'en': 'Everything in one system with search',
+    'uk': 'Все в одній системі з пошуком',
+    'de': 'Alles in einem System mit Suche'
+},
+
+'comparison_after_4': {
+    'ru': 'Автоматические графики и аналитика',
+    'en': 'Automatic charts and analytics',
+    'uk': 'Автоматичні графіки та аналітика',
+    'de': 'Automatische Diagramme und Analysen'
+},
+
+# === FAQ ===
+'faq_title': {
+    'ru': 'Ответы на вопросы',
+    'en': 'Frequently asked questions',
+    'uk': 'Відповіді на питання',
+    'de': 'Häufig gestellte Fragen'
+},
+
+'faq_q1': {
+    'ru': 'Насколько безопасны мои данные?',
+    'en': 'How secure is my data?',
+    'uk': 'Наскільки безпечні мої дані?',
+    'de': 'Wie sicher sind meine Daten?'
+},
+
+'faq_a1': {
+    'ru': 'Мы используем шифрование уровня банков и соответствуем международным стандартам HIPAA и GDPR. Данные хранятся на защищённых серверах с постоянным мониторингом.',
+    'en': 'We use bank-level encryption and comply with international HIPAA and GDPR standards. Data is stored on secure servers with constant monitoring.',
+    'uk': 'Ми використовуємо шифрування рівня банків та відповідаємо міжнародним стандартам HIPAA та GDPR. Дані зберігаються на захищених серверах з постійним моніторингом.',
+    'de': 'Wir verwenden Verschlüsselung auf Bankniveau und entsprechen internationalen HIPAA- und GDPR-Standards. Daten werden auf sicheren Servern mit ständiger Überwachung gespeichert.'
+},
+
+'faq_q2': {
+    'ru': 'Заменяет ли ИИ врача?',
+    'en': 'Does AI replace a doctor?',
+    'uk': 'Чи замінює ШІ лікаря?',
+    'de': 'Ersetzt KI einen Arzt?'
+},
+
+'faq_a2': {
+    'ru': 'Нет. PulseBook — это инструмент для информирования, а не замена профессиональной медицинской помощи. При серьёзных симптомах обязательно обращайтесь к врачу.',
+    'en': 'No. PulseBook is an information tool, not a replacement for professional medical care. Always consult a doctor for serious symptoms.',
+    'uk': 'Ні. PulseBook — це інструмент для інформування, а не заміна професійної медичної допомоги. При серйозних симптомах обов\'язково звертайтесь до лікаря.',
+    'de': 'Nein. PulseBook ist ein Informationswerkzeug, kein Ersatz für professionelle medizinische Versorgung. Konsultieren Sie bei ernsthaften Symptomen immer einen Arzt.'
+},
+
+'faq_q3': {
+    'ru': 'Какие форматы файлов поддерживаются?',
+    'en': 'What file formats are supported?',
+    'uk': 'Які формати файлів підтримуються?',
+    'de': 'Welche Dateiformate werden unterstützt?'
+},
+
+'faq_a3': {
+    'ru': 'PDF, JPG, PNG, DICOM (медицинские снимки), а также текстовые документы. Система автоматически распознаёт содержимое.',
+    'en': 'PDF, JPG, PNG, DICOM (medical images), and text documents. The system automatically recognizes content.',
+    'uk': 'PDF, JPG, PNG, DICOM (медичні знімки), а також текстові документи. Система автоматично розпізнає вміст.',
+    'de': 'PDF, JPG, PNG, DICOM (medizinische Bilder) und Textdokumente. Das System erkennt den Inhalt automatisch.'
+},
+
+'faq_q4': {
+    'ru': 'Сколько стоит использование?',
+    'en': 'How much does it cost?',
+    'uk': 'Скільки коштує використання?',
+    'de': 'Wie viel kostet die Nutzung?'
+},
+
+'faq_a4': {
+    'ru': 'Базовый тариф бесплатный с ограничениями. Премиум от $9.99/месяц — безлимитные консультации, хранилище 50 ГБ, приоритетная поддержка.',
+    'en': 'Basic plan is free with limitations. Premium from $9.99/month — unlimited consultations, 50 GB storage, priority support.',
+    'uk': 'Базовий тариф безкоштовний з обмеженнями. Преміум від $9.99/місяць — безлімітні консультації, сховище 50 ГБ, пріоритетна підтримка.',
+    'de': 'Basis-Tarif ist kostenlos mit Einschränkungen. Premium ab $9,99/Monat — unbegrenzte Beratungen, 50 GB Speicher, Priority-Support.'
+},
+
+# === ФИНАЛЬНЫЙ CTA ===
+'cta_final_title': {
+    'ru': 'Начните бесплатно',
+    'en': 'Start for free',
+    'uk': 'Почніть безкоштовно',
+    'de': 'Kostenlos starten'
+},
+
+'cta_final_button': {
+    'ru': 'Войти через Google',
+    'en': 'Sign in with Google',
+    'uk': 'Увійти через Google',
+    'de': 'Mit Google anmelden'
+},
+
+'cta_final_note': {
+    'ru': 'Без кредитной карты • Отмена в любой момент',
+    'en': 'No credit card • Cancel anytime',
+    'uk': 'Без кредитної картки • Скасування в будь-який момент',
+    'de': 'Keine Kreditkarte • Jederzeit kündbar'
 },
 }
 

@@ -152,13 +152,14 @@ templates.env.filters['markdown'] = markdown_filter
 # ==========================================
 
 try:
-    from webapp.routes import auth, dashboard, api, webhook 
+    from webapp.routes import auth, dashboard, api, webhook, faq
     
     # Регистрируем роутеры (как blueprints в Flask)
     app.include_router(auth.router, prefix="/auth", tags=["auth"])
     app.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
     app.include_router(api.router, prefix="/api", tags=["api"])
     app.include_router(webhook.router, prefix="/webhook", tags=["webhook"])
+    app.include_router(faq.router, tags=["faq"])
     
     print("✅ Все роутеры зарегистрированы")
     
