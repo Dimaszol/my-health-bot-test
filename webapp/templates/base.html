@@ -2,21 +2,23 @@
 <html lang="{{ lang }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>{% block title %}{{ t('site_title', lang) }} - {{ t('hero_subtitle', lang) }}{% endblock %}</title>
     
     <!-- 🎨 СТИЛИ -->
     <link rel="stylesheet" href="/static/css/style.css?v=7">
-    
+    <link rel="stylesheet" href="/static/css/mobile.css?v=4">
+     
     <!-- 🔤 ШРИФТЫ (Google Fonts - Inter) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- 📱 META ТЕГИ -->
+    <!-- 📱 META ТЕГИ ДЛЯ PWA -->
     <meta name="description" content="{{ t('hero_subtitle', lang) }}">
     <meta name="keywords" content="медицина, AI, здоровье, телемедицина, консультация">
     <meta name="author" content="Medical Assistant">
+    <meta name="theme-color" content="#00C9A7">
     
     <!-- Фавиконы -->
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
@@ -28,18 +30,25 @@
     {% block extra_styles %}{% endblock %}
 </head>
 <body>
-    <!-- 🎯 HEADER (Шапка сайта) -->
+    <!-- 🎯 HEADER (Адаптивный) -->
     <header>
         <div class="container">
             <div class="header-content">
-                <!-- Логотип -->
+                <!-- Логотип (слева) -->
                 <a href="/" class="logo">
                     <img src="/static/favicon.svg" alt="Logo" class="logo-icon" style="width: 32px; height: 32px;">
-                    <span>PulseBook</span>
+                    <span class="logo-text">PulseBook</span>
                 </a>
                 
-                <!-- Навигация -->
-                <nav>
+                <!-- 🍔 БУРГЕР-МЕНЮ (справа, только на мобильных) -->
+                <button id="mobile-menu-toggle" class="mobile-menu-btn" aria-label="Меню">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                
+                <!-- Навигация (только на десктопе) -->
+                <nav class="desktop-nav">
                     <ul>
                         {% if session.get('user_id') %}
                             <!-- 👤 Меню для авторизованных пользователей -->
@@ -100,7 +109,122 @@
             </div>
         </div>
     </header>
-    
+
+    <!-- 📱 МОБИЛЬНОЕ ВЫДВИЖНОЕ МЕНЮ -->
+    <div id="mobile-menu-overlay" class="mobile-menu-overlay"></div>
+    <nav id="mobile-menu" class="mobile-menu">
+        <!-- Шапка мобильного меню -->
+        <div class="mobile-menu-header">
+            <div class="mobile-menu-logo">
+                <img src="/static/favicon.svg" alt="Logo" style="width: 32px; height: 32px;">
+                <span>PulseBook</span>
+            </div>
+            <button id="mobile-menu-close" class="mobile-menu-close" aria-label="Закрыть">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Пункты меню -->
+        <ul class="mobile-menu-items">
+            {% if session.get('user_id') %}
+                <!-- 👤 Меню для авторизованных пользователей -->
+                <li>
+                    <a href="/dashboard">
+                        <span class="menu-icon">📊</span>
+                        <span>{{ t('menu_dashboard', lang) }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/dashboard/chat">
+                        <span class="menu-icon">💬</span>
+                        <span>{{ t('menu_chat', lang) }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/dashboard/documents">
+                        <span class="menu-icon">📄</span>
+                        <span>{{ t('menu_documents', lang) }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/dashboard/profile">
+                        <span class="menu-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </span>
+                        <span>{{ t('menu_profile', lang) }}</span>
+                    </a>
+                </li>
+                <li class="menu-divider"></li>
+                <li>
+                    <a href="/faq">
+                        <span class="menu-icon">❓</span>
+                        <span>FAQ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/logout" style="color: #ef4444;">
+                        <span class="menu-icon">🚪</span>
+                        <span>{{ t('btn_logout', lang) }}</span>
+                    </a>
+                </li>
+            {% else %}
+                <!-- 🌐 Меню для гостей -->
+                <li>
+                    <a href="/">
+                        <span class="menu-icon">🏠</span>
+                        <span>{{ t('menu_home', lang) }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/#features">
+                        <span class="menu-icon">✨</span>
+                        <span>{{ t('menu_features', lang) }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/#security">
+                        <span class="menu-icon">🔒</span>
+                        <span>{{ t('menu_security', lang) }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/faq">
+                        <span class="menu-icon">❓</span>
+                        <span>FAQ</span>
+                    </a>
+                </li>
+                <li class="menu-divider"></li>
+                <li>
+                    <a href="/login" class="mobile-menu-cta">
+                        <span class="menu-icon">🚀</span>
+                        <span>{{ t('btn_login_google', lang) }}</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+
+        <!-- Переключатель языка в мобильном меню -->
+        <div class="mobile-menu-footer">
+            <div class="mobile-lang-selector">
+                <span style="color: #718096; font-size: 0.85rem; margin-bottom: 0.5rem; display: block;">{{ t('language_selector', lang) }}</span>
+                <div style="display: flex; gap: 0.5rem;">
+                    {% for language in supported_languages %}
+                    <a href="/set-language/{{ language.code }}" 
+                       class="mobile-lang-btn {% if lang == language.code %}active{% endif %}">
+                        {{ language.flag }} {{ language.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
     <!-- 📄 ОСНОВНОЙ КОНТЕНТ -->
     <div class="container">
         <main>
@@ -209,6 +333,9 @@
             }
         });
     </script>
+    
+    <!-- 📜 MOBILE JAVASCRIPT -->
+    <script src="/static/js/mobile.js"></script>
     
     {% block extra_scripts %}{% endblock %}
 </body>

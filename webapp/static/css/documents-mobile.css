@@ -1,0 +1,401 @@
+/* 📄 МОБИЛЬНЫЕ СТИЛИ ДЛЯ СТРАНИЦЫ ДОКУМЕНТОВ - КОМПАКТНАЯ ВЕРСИЯ */
+
+@media (max-width: 768px) {
+    /* ========== ОБЩИЕ НАСТРОЙКИ ========== */
+    main {
+        padding: 1rem !important;
+    }
+
+    /* ========== КАРТОЧКА ЗАГРУЗКИ ========== */
+    #upload-card {
+        padding: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    #upload-card h2 {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    /* Форма загрузки */
+    .form-group {
+        margin-bottom: 0.75rem !important;
+    }
+
+    .form-group label {
+        font-size: 0.85rem !important;
+        margin-bottom: 0.4rem !important;
+    }
+
+    .form-group input,
+    .form-group select {
+        font-size: 16px !important; /* Предотвращает зум на iOS */
+        padding: 0.875rem 1rem !important;
+        border-radius: 10px !important;
+        min-height: 44px !important; /* Apple HIG */
+    }
+
+    /* Поле выбора файла */
+    input[type="file"] {
+        padding: 1rem !important;
+        font-size: 14px !important;
+        border: 2px dashed #00C9A7 !important;
+        border-radius: 10px !important;
+        cursor: pointer !important;
+    }
+
+    /* Кнопка загрузки */
+    .form-group .btn,
+    button[type="submit"] {
+        width: 100% !important;
+        padding: 1rem 1.5rem !important;
+        font-size: 1rem !important;
+        border-radius: 12px !important;
+        min-height: 48px !important;
+        font-weight: 600 !important;
+    }
+
+    /* ========== КАРТОЧКА ПРОГРЕССА ========== */
+    #progress-card {
+        padding: 1.25rem !important;
+        text-align: center;
+    }
+
+    #progress-title {
+        font-size: 1rem !important;
+        margin: 0.75rem 0 0.4rem 0 !important;
+    }
+
+    #progress-description {
+        font-size: 0.85rem !important;
+    }
+
+    /* Спиннер */
+    .spinner-container {
+        margin: 0 auto 0.75rem auto;
+    }
+
+    .spinner {
+        width: 36px !important;
+        height: 36px !important;
+    }
+
+    /* Этапы прогресса */
+    .progress-steps {
+        margin-top: 1rem !important;
+    }
+
+    .progress-step {
+        padding: 0.625rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    .step-icon {
+        font-size: 1.1rem !important;
+        width: 28px !important;
+        height: 28px !important;
+    }
+
+    /* ========== ПРЕДУПРЕЖДЕНИЕ О ЛИМИТАХ ========== */
+    .card[style*="border: 2px solid #f59e0b"] {
+        padding: 1rem !important;
+        margin-bottom: 1.25rem !important;
+    }
+
+    .card[style*="border: 2px solid #f59e0b"] h3 {
+        font-size: 1rem !important;
+    }
+
+    .card[style*="border: 2px solid #f59e0b"] p {
+        font-size: 0.875rem !important;
+        line-height: 1.4 !important;
+    }
+
+    /* ========== ЗАГОЛОВОК СПИСКА ДОКУМЕНТОВ ========== */
+    #documents-list h2 {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.875rem !important;
+        padding: 0 0.25rem;
+    }
+
+    /* ========== КАРТОЧКИ ДОКУМЕНТОВ - КОМПАКТНАЯ ВЕРСИЯ ========== */
+    .document-card {
+        padding: 0.875rem !important;
+        margin-bottom: 0.75rem !important;
+        border-radius: 10px !important;
+    }
+
+    /* Заголовок карточки */
+    .document-header {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+
+    .document-header-left {
+        width: 100% !important;
+    }
+
+    .document-title {
+        font-size: 1rem !important;
+        line-height: 1.3 !important;
+        margin-bottom: 0.25rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0 !important;
+    }
+
+    /* 🚫 СКРЫВАЕМ БЕЙДЖ ТИПА ДОКУМЕНТА НА МОБИЛЬНЫХ */
+    .doc-type-badge {
+        display: none !important;
+    }
+
+    /* Даты - компактнее */
+    .document-dates {
+        font-size: 0.75rem !important;
+        color: #718096 !important;
+        margin-top: 0.25rem !important;
+    }
+
+    /* Timeline записи - компактнее */
+    .document-card ul {
+        font-size: 0.8rem !important;
+        line-height: 1.3 !important;
+        margin-top: 0.5rem !important;
+    }
+
+    .document-card ul li {
+        margin-bottom: 0.25rem !important;
+        padding-left: 0.25rem !important;
+    }
+
+    /* ========== КНОПКИ ДЕЙСТВИЙ - КОМПАКТНО В РЯД ========== */
+    .document-actions {
+        display: flex !important;
+        flex-direction: row !important; /* В ряд, а не колонку */
+        gap: 0.5rem !important;
+        width: 100% !important;
+        margin-top: 0.5rem !important;
+    }
+
+    .btn-action {
+        flex: 1 !important; /* Кнопки равномерно */
+        padding: 0.75rem 0.5rem !important;
+        font-size: 0.85rem !important;
+        border-radius: 8px !important;
+        min-height: 40px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.25rem !important;
+        text-align: center !important;
+    }
+
+    /* Иконки в кнопках - меньше */
+    .btn-icon {
+        font-size: 1rem !important;
+    }
+
+    /* Основная кнопка */
+    .btn-action.primary {
+        background: var(--gradient-primary) !important;
+        color: white !important;
+        font-weight: 600 !important;
+    }
+
+    .btn-action.primary:active {
+        transform: scale(0.98) !important;
+        opacity: 0.9 !important;
+    }
+
+    /* Кнопка удаления */
+    .btn-action[style*="background: #ef4444"],
+    .btn-action.danger {
+        background: #ef4444 !important;
+        color: white !important;
+    }
+
+    /* Кнопка выключения (серая) */
+    .btn-action:disabled,
+    .btn-action.disabled {
+        background: #e2e8f0 !important;
+        color: #a0aec0 !important;
+        cursor: not-allowed !important;
+    }
+
+    /* ========== КОНТЕНТ ДОКУМЕНТА (раскрывающийся) ========== */
+    .document-content {
+        margin-top: 0.75rem !important;
+        padding-top: 0.75rem !important;
+        border-top: 1px solid #e2e8f0 !important;
+    }
+
+    .document-content h4 {
+        font-size: 0.95rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .document-content p {
+        font-size: 0.85rem !important;
+        line-height: 1.5 !important;
+        color: #4a5568 !important;
+    }
+
+    /* ========== МОДАЛЬНОЕ ОКНО ДЛЯ ПРОСМОТРА ========== */
+    .modal {
+        padding: 0 !important;
+    }
+
+    .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        max-height: 100vh !important;
+        overflow-y: auto !important;
+    }
+
+    .modal-header {
+        padding: 1rem !important;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .modal-header h3 {
+        font-size: 1rem !important;
+        margin: 0 !important;
+    }
+
+    .modal-close {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 1.5rem !important;
+    }
+
+    .modal-body {
+        padding: 1rem !important;
+        font-size: 0.875rem !important;
+        line-height: 1.5 !important;
+    }
+
+    /* ========== FLASH СООБЩЕНИЯ ========== */
+    #flash-messages {
+        position: fixed !important;
+        top: 70px !important; /* Под header */
+        left: 1rem !important;
+        right: 1rem !important;
+        z-index: 9999 !important;
+        max-width: calc(100vw - 2rem) !important;
+    }
+
+    #flash-messages > div {
+        padding: 0.75rem 1rem !important;
+        font-size: 0.875rem !important;
+        border-radius: 10px !important;
+        margin-bottom: 0.5rem !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    /* ========== ПУСТОЕ СОСТОЯНИЕ (нет документов) ========== */
+    .empty-documents {
+        padding: 2.5rem 1.25rem !important;
+        text-align: center;
+    }
+
+    .empty-documents-icon {
+        font-size: 3rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    .empty-documents h3 {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .empty-documents p {
+        font-size: 0.9rem !important;
+        line-height: 1.5 !important;
+    }
+
+    /* ========== ДОПОЛНИТЕЛЬНЫЕ ОПТИМИЗАЦИИ ========== */
+    
+    /* Отключаем выделение для UI элементов */
+    .btn-action,
+    .document-card,
+    input[type="file"] {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+    }
+
+    /* Активное состояние для кнопок */
+    .btn-action:active {
+        transform: scale(0.98);
+    }
+
+    /* Анимация появления карточек */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .document-card {
+        animation: fadeInUp 0.3s ease;
+    }
+
+    /* ========== LANDSCAPE РЕЖИМ ========== */
+    @media (orientation: landscape) and (max-height: 500px) {
+        .document-card {
+            padding: 0.75rem !important;
+        }
+
+        .btn-action {
+            padding: 0.625rem 0.4rem !important;
+            min-height: 36px !important;
+        }
+    }
+}
+
+/* ========== ОЧЕНЬ МАЛЕНЬКИЕ ЭКРАНЫ - ЕЩЁ КОМПАКТНЕЕ ========== */
+@media (max-width: 375px) {
+    .document-card {
+        padding: 0.75rem !important;
+    }
+
+    .document-title {
+        font-size: 0.95rem !important;
+    }
+
+    .btn-action {
+        padding: 0.625rem 0.4rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    .document-card ul {
+        font-size: 0.75rem !important;
+    }
+
+    .btn-icon {
+        font-size: 0.95rem !important;
+    }
+}
+
+/* ========== FIX ДЛЯ SAFARI НА iOS ========== */
+@supports (-webkit-touch-callout: none) {
+    /* Убираем bounce effect при прокрутке */
+    body {
+        overscroll-behavior-y: none;
+    }
+
+    /* Фикс для input file на iOS */
+    input[type="file"] {
+        cursor: pointer !important;
+    }
+}

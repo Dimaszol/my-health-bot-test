@@ -1,0 +1,464 @@
+/* 📱 МОБИЛЬНЫЕ СТИЛИ - АДАПТАЦИЯ ДЛЯ ПРИЛОЖЕНИЯ */
+
+/* ============================================
+   🍔 КНОПКА БУРГЕР-МЕНЮ
+   ============================================ */
+
+.mobile-menu-btn {
+    display: none; /* Скрыта на десктопе */
+    flex-direction: column;
+    justify-content: space-around;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    z-index: 1001;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-btn span {
+    width: 100%;
+    height: 3px;
+    background: var(--primary-color);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+/* Анимация бургера при открытии */
+.mobile-menu-btn.active span:nth-child(1) {
+    transform: rotate(45deg) translate(8px, 8px);
+}
+
+.mobile-menu-btn.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.mobile-menu-btn.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -7px);
+}
+
+/* ============================================
+   📱 ВЫДВИЖНОЕ БОКОВОЕ МЕНЮ
+   ============================================ */
+
+.mobile-menu {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 85%;
+    max-width: 320px;
+    height: 100vh;
+    height: 100dvh; /* Для новых браузеров */
+    background: white;
+    z-index: 1002;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-menu.active {
+    left: 0;
+}
+
+/* Шапка мобильного меню */
+.mobile-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--gradient-hero);
+}
+
+.mobile-menu-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.mobile-menu-close {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.mobile-menu-close:active {
+    background: rgba(0, 0, 0, 0.05);
+    transform: scale(0.95);
+}
+
+/* Пункты меню */
+.mobile-menu-items {
+    list-style: none;
+    padding: 1rem 0;
+    margin: 0;
+    flex: 1;
+}
+
+.mobile-menu-items li {
+    margin: 0;
+}
+
+.mobile-menu-items a {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.mobile-menu-items a:active {
+    background: var(--background-light);
+    border-left-color: var(--primary-color);
+}
+
+.mobile-menu-items .menu-icon {
+    font-size: 1.5rem;
+    width: 32px;
+    text-align: center;
+}
+
+/* Разделитель */
+.menu-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 0.5rem 1.5rem;
+}
+
+/* CTA кнопка в меню */
+.mobile-menu-cta {
+    background: var(--gradient-primary) !important;
+    color: white !important;
+    border-radius: 12px;
+    margin: 0.5rem 1rem;
+    font-weight: 600;
+}
+
+/* Footer мобильного меню */
+.mobile-menu-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--background-light);
+}
+
+.mobile-lang-selector {
+    display: flex;
+    flex-direction: column;
+}
+
+.mobile-lang-btn {
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.mobile-lang-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* Оверлей (затемнение фона) */
+.mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ============================================
+   📱 АДАПТИВНЫЕ МЕДИА-ЗАПРОСЫ
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* ========== HEADER ========== */
+    header {
+        padding: 0.75rem 0;
+    }
+
+    .header-content {
+        padding: 0 1rem;
+        display: flex;
+        flex-direction: row; /* ← ДОБАВЬ ЭТУ СТРОКУ! */
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: nowrap; /* ← И ЭТУ! */
+    }
+
+    /* Логотип СЛЕВА */
+    .logo {
+        font-size: 1.2rem;
+        flex-shrink: 0; /* ← И ЭТУ! */
+    }
+
+    /* Показываем бургер-меню СПРАВА */
+    .mobile-menu-btn {
+        display: flex;
+        flex-shrink: 0; /* ← И ЭТУ! */
+    }
+
+    /* Скрываем десктопную навигацию */
+    .desktop-nav {
+        display: none !important;
+    }
+
+    /* ========== MAIN КОНТЕНТ ========== */
+    main {
+        padding: 1rem !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+    }
+
+    .container {
+        padding: 0 1rem;
+    }
+
+    /* ========== HERO СЕКЦИЯ ========== */
+    .hero {
+        padding: 2rem 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .hero-content {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        text-align: center;
+    }
+
+    .hero-text h1 {
+        font-size: 1.75rem !important;
+        line-height: 1.3;
+    }
+
+    .hero-text p {
+        font-size: 1rem;
+    }
+
+    .hero-buttons {
+        flex-direction: column;
+        gap: 0.75rem;
+        justify-content: center;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 1rem !important;
+        font-size: 1rem !important;
+    }
+
+    .hero-image {
+        display: none; /* Скрываем иллюстрацию на мобильных */
+    }
+
+    /* ========== КАРТОЧКИ ========== */
+    .card-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem;
+    }
+
+    .card {
+        padding: 1.25rem !important;
+    }
+
+    .card h3 {
+        font-size: 1.25rem !important;
+    }
+
+    /* ========== СТАТИСТИКА ========== */
+    .stat-number {
+        font-size: 2rem !important;
+    }
+
+    /* ========== ФОРМЫ ========== */
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        font-size: 16px !important; /* Предотвращает зум на iOS */
+    }
+
+    /* ========== FOOTER ========== */
+    footer {
+        padding: 2rem 0;
+        border-radius: 0;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .footer-section {
+        text-align: center;
+    }
+
+    /* ========== TOUCH-FRIENDLY ЭЛЕМЕНТЫ ========== */
+    /* Увеличиваем все кликабельные элементы */
+    a, button, input[type="submit"], .btn {
+        min-height: 44px; /* Apple HIG рекомендация */
+        min-width: 44px;
+    }
+
+    /* Увеличиваем расстояния между кликабельными элементами */
+    nav ul {
+        gap: 1.5rem;
+    }
+
+    /* ========== УБИРАЕМ ЭФФЕКТЫ HOVER НА TOUCH ========== */
+    .btn:hover,
+    .card:hover {
+        transform: none;
+    }
+
+    /* Вместо hover используем active */
+    .btn:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+    }
+
+    .card:active {
+        transform: translateY(2px);
+    }
+}
+
+/* ОЧЕНЬ МАЛЕНЬКИЕ ЭКРАНЫ (до 375px) */
+@media (max-width: 375px) {
+    .hero-text h1 {
+        font-size: 1.5rem !important;
+    }
+
+    .logo-text {
+        font-size: 1rem !important;
+    }
+
+    .btn {
+        padding: 0.875rem !important;
+        font-size: 0.95rem !important;
+    }
+}
+
+/* ПЛАНШЕТЫ (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .hero-text h1 {
+        font-size: 2.25rem;
+    }
+
+    .card-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    main {
+        padding: 2rem;
+    }
+}
+
+/* ============================================
+   🚀 ДОПОЛНИТЕЛЬНЫЕ ОПТИМИЗАЦИИ
+   ============================================ */
+
+/* Отключаем выделение текста на мобильных (для UI элементов) */
+@media (max-width: 768px) {
+    .mobile-menu-btn,
+    .mobile-menu-items a,
+    .btn,
+    header {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    /* Smooth scrolling для iOS */
+    body {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Убираем отступы у body на мобильных */
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Fix для 100vh на iOS */
+    .mobile-menu {
+        height: 100vh;
+        height: -webkit-fill-available;
+    }
+}
+
+/* ============================================
+   🎨 АНИМАЦИИ ДЛЯ TOUCH
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Ripple эффект при нажатии */
+    .btn::after,
+    .mobile-menu-items a::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: width 0.4s, height 0.4s;
+    }
+
+    .btn:active::after,
+    .mobile-menu-items a:active::after {
+        width: 300px;
+        height: 300px;
+    }
+}
+
+/* ============================================
+   🔒 БЕЗОПАСНОСТЬ - СКРЫТИЕ ЧУВСТВИТЕЛЬНОЙ ИНФЫ
+   ============================================ */
+
+/* При скриншоте или записи экрана на iOS */
+@media (max-width: 768px) {
+    /* Можно добавить blur для конфиденциальных данных */
+    .sensitive-data {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+}
