@@ -7,7 +7,7 @@
     
     <!-- 🎨 СТИЛИ -->
     <link rel="stylesheet" href="/static/css/style.css?v=7">
-    <link rel="stylesheet" href="/static/css/mobile.css?v=4">
+    <link rel="stylesheet" href="/static/css/mobile.css?v=5">
      
     <!-- 🔤 ШРИФТЫ (Google Fonts - Inter) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -216,8 +216,8 @@
                 <div style="display: flex; gap: 0.5rem;">
                     {% for language in supported_languages %}
                     <a href="/set-language/{{ language.code }}" 
-                       class="mobile-lang-btn {% if lang == language.code %}active{% endif %}">
-                        {{ language.flag }} {{ language.name }}
+                    class="mobile-lang-btn {% if lang == language.code %}active{% endif %}">
+                        <span class="lang-code">{{ language.code|upper }}</span>
                     </a>
                     {% endfor %}
                 </div>

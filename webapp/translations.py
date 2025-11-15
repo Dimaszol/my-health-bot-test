@@ -1523,12 +1523,6 @@ TRANSLATIONS = {
     'uk': 'Тарифні плани PulseBook',
     'de': 'PulseBook Preispläne'
 },
-'pricing_subtitle': {
-    'ru': 'Для людей, использующих PulseBook для управления своим здоровьем',
-    'en': 'For individuals using PulseBook to manage their personal health',
-    'uk': 'Для людей, які використовують PulseBook для керування своїм здоров\'ям',
-    'de': 'Für Personen, die PulseBook zur Verwaltung ihrer persönlichen Gesundheit nutzen'
-},
 'most_popular': {
     'ru': 'Самый популярный',
     'en': 'Most Popular',
