@@ -211,13 +211,13 @@ async function checkLinkStatus() {
             statusDiv.innerHTML = `
                 <div class="alert alert-success">
                     <i class="fas fa-check-circle me-2"></i>
-                    <strong>{{ t('bot_link_success', lang) }}</strong>
+                    <strong>🎉 Аккаунты успешно объединены!</strong>
                 </div>
             `;
             
-            // Редирект на dashboard через 2 секунды
+            // ✅ ДОБАВИТЬ: Перезагрузить страницу для обновления сессии
             setTimeout(() => {
-                window.location.href = '/dashboard';
+                window.location.href = '/dashboard';  // Редирект на dashboard
             }, 2000);
         }
     } catch (error) {

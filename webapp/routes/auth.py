@@ -146,7 +146,7 @@ async def google_callback(request: Request):
     """
     Google возвращает пользователя сюда после успешного входа
     
-    ✅ БЕЗ КОСТЫЛЕЙ! Просто await!
+    ✅ ИСПРАВЛЕНО: Теперь ищет по google_id (работает после слияния аккаунтов)
     """
     try:
         # ✅ AWAIT! Получаем токен от Google
@@ -166,92 +166,76 @@ async def google_callback(request: Request):
         
         print(f"✅ Пользователь вошёл через Google: {email}")
         
-        # ✅ AWAIT! Создаём/находим пользователя
-        # Получаем текущий язык из сессии (тот что выбрал пользователь до входа)
-        current_session_lang = request.session.get('language', 'en')
-
-        # Создаём/находим пользователя, передаем текущий язык
-        user = await find_or_create_web_user(google_id, email, name, current_session_lang)
+        # ✅ НОВАЯ ЛОГИКА: Ищем пользователя по google_id
+        conn = await get_db_connection()
         
-        if user:
-            # Сохраняем данные в сессии
-            request.session['user_id'] = user['user_id']
-            request.session['email'] = email
-            request.session['name'] = name
-            request.session['google_id'] = google_id
+        try:
+            # Проверяем существует ли пользователь с таким google_id
+            user = await conn.fetchrow("""
+                SELECT user_id, name, email, registration_source
+                FROM users 
+                WHERE google_id = $1
+            """, google_id)
             
-            # ✅ AWAIT! Получаем язык пользователя из БД
-            try:
-                conn = await get_db_connection()
+            if user:
+                # ✅ Пользователь найден (может быть после слияния с telegram_id!)
+                print(f"📍 Найден пользователь: user_id={user['user_id']}")
                 
-                try:
-                    result = await conn.fetchrow(
-                        "SELECT language FROM users WHERE user_id = $1", 
-                        user['user_id']
-                    )
+                # Сохраняем данные в сессии
+                request.session['user_id'] = user['user_id']  # ← Может быть telegram_id!
+                request.session['email'] = user['email']
+                request.session['name'] = user['name']
+                request.session['google_id'] = google_id
+                
+                # Загружаем язык
+                lang_result = await conn.fetchrow(
+                    "SELECT language FROM users WHERE user_id = $1",
+                    user['user_id']
+                )
+                
+                if lang_result and lang_result['language']:
+                    request.session['language'] = lang_result['language']
+                    print(f"✅ Язык загружен: {lang_result['language']}")
+                else:
+                    # Оставляем текущий язык из сессии
+                    if 'language' not in request.session:
+                        request.session['language'] = 'en'
+                
+                print(f"✅ Пользователь авторизован: user_id={user['user_id']}")
+                
+                # Редиректим в личный кабинет
+                return RedirectResponse(url='/dashboard', status_code=302)
+            
+            else:
+                # ✅ Пользователь НЕ найден - создаём нового
+                print(f"🆕 Создаём нового пользователя: {email}")
+                
+                # Получаем язык из сессии
+                current_session_lang = request.session.get('language', 'en')
+                
+                # Создаём пользователя через старую функцию
+                new_user = await find_or_create_web_user(google_id, email, name, current_session_lang)
+                
+                if new_user:
+                    # Сохраняем в сессию
+                    request.session['user_id'] = new_user['user_id']
+                    request.session['email'] = email
+                    request.session['name'] = name
+                    request.session['google_id'] = google_id
+                    request.session['language'] = current_session_lang
                     
-                    if result and result['language']:
-                        user_language = result['language']
-                        # ✅ Загружаем язык из БД только если он там есть
-                        request.session['language'] = user_language
-                        print(f"✅ Язык загружен из БД: {user_language}")
-                    else:
-                        # ⚠️ Если язык не найден в БД - оставляем тот что был в сессии
-                        # (для новых пользователей это язык который они выбрали до входа)
-                        print(f"⚠️ Язык не найден в БД, оставляем текущий из сессии: {request.session.get('language', 'en')}")
-                        
-                finally:
-                    await release_db_connection(conn)
+                    print(f"✅ Новый пользователь создан: user_id={new_user['user_id']}")
                     
-            except Exception as e:
-                print(f"⚠️ Ошибка загрузки языка: {e}")
-                if 'language' not in request.session:
-                    request.session['language'] = 'en'
-            
-            print(f"✅ Пользователь авторизован: user_id={user['user_id']}")
-            
-            # Редиректим в личный кабинет
-            return RedirectResponse(url='/dashboard', status_code=302)
-            
-        else:
-            print("❌ Не удалось создать пользователя")
-            return RedirectResponse(url='/login', status_code=302)
+                    return RedirectResponse(url='/dashboard', status_code=302)
+                else:
+                    print("❌ Не удалось создать пользователя")
+                    return RedirectResponse(url='/login', status_code=302)
+        
+        finally:
+            await release_db_connection(conn)
             
     except Exception as e:
         print(f"❌ Ошибка при входе через Google: {e}")
         import traceback
         traceback.print_exc()
         return RedirectResponse(url='/login', status_code=302)
-
-
-# ==========================================
-# 📊 ИТОГО: ЧТО ИЗМЕНИЛОСЬ?
-# ==========================================
-"""
-❌ БЫЛО (Flask + psycopg2):
-- 200+ строк кода
-- import psycopg2 - КОСТЫЛЬ! 🔴
-- get_clean_database_url() - КОСТЫЛЬ! 🔴
-- cursor.execute() везде - КОСТЫЛЬ! 🔴
-- conn.commit(), cursor.close() - КОСТЫЛИ! 🔴
-- Синхронная функция find_or_create_web_user_sync
-
-✅ СТАЛО (FastAPI + asyncpg):
-- 150 строк кода
-- БЕЗ psycopg2! ✅
-- БЕЗ get_clean_database_url()! ✅
-- Просто await conn.fetchrow() ✅
-- Async функция find_or_create_web_user ✅
-- authlib.integrations.starlette_client вместо flask_client
-
-ГЛАВНЫЕ ИЗМЕНЕНИЯ:
-1. flask_client → starlette_client
-2. def → async def
-3. google.authorize_redirect(...) → await google.authorize_redirect(request, ...)
-4. google.authorize_access_token() → await google.authorize_access_token(request)
-5. psycopg2 → asyncpg (через готовые функции)
-6. url_for() → request.url_for()
-7. redirect() → RedirectResponse()
-
-РАЗНИЦА: -50 строк, 0 костылей, полностью async! 🎉
-"""

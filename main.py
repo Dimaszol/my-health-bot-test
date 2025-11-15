@@ -155,13 +155,39 @@ async def send_welcome(message: types.Message):
         # 5️⃣ ПРОВЕРЯЕМ РЕГИСТРАЦИЮ
         lang = await get_user_language(user_id)
         
-        if await is_fully_registered(user_id):
+        # ✅ НОВАЯ ЛОГИКА: Проверяем источник регистрации
+        registration_source = user_data.get('registration_source', 'telegram')
+
+        if registration_source in ['web', 'both']:
+            # ============================================
+            # Пользователь из ВЕБ-версии или объединил аккаунты
+            # У него УЖЕ ЕСТЬ все данные!
+            # ============================================
             name = user_data.get('name', 'Пользователь')
+            
+            print(f"✅ Пользователь из веб-версии: {name} (source: {registration_source})")
+            
+            # Приветствуем и показываем меню БЕЗ регистрации
+            await message.answer(
+                t("welcome", lang, name=name),
+                reply_markup=main_menu_keyboard(lang)
+            )
+            await message.answer(t("how_to_use_1", lang))
+            
+        elif await is_fully_registered(user_id):
+            # ============================================
+            # Обычный Telegram пользователь, уже прошёл регистрацию
+            # ============================================
+            name = user_data.get('name', 'Пользователь')
+            
             await message.answer(
                 t("welcome_back", lang, name=name), 
                 reply_markup=main_menu_keyboard(lang)
             )
         else:
+            # ============================================
+            # Новый Telegram пользователь - начинаем регистрацию
+            # ============================================
             from registration import start_registration
             await start_registration(user_id, message)
             

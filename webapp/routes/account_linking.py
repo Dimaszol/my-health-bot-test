@@ -108,9 +108,6 @@ async def show_link_telegram_page(request: Request):
 async def check_link_status(request: Request):
     """
     API для проверки статуса связывания
-    
-    ИСПОЛЬЗУЕТСЯ: JavaScript на странице link_telegram.html
-    проверяет каждые 3 секунды, был ли использован код
     """
     current_user = get_current_user(request)
     if not current_user:
@@ -145,10 +142,28 @@ async def check_link_status(request: Request):
         
         # Проверяем использован ли код
         if link_record['is_used']:
+            # ✅ ДОБАВИТЬ ЭТО!
+            telegram_id = link_record['telegram_user_id']
+            
+            # ОБНОВЛЯЕМ СЕССИЮ НА НОВЫЙ ID!
+            request.session['user_id'] = telegram_id
+            
+            # Получаем обновлённые данные пользователя
+            user_data = await conn.fetchrow(
+                "SELECT name, email, google_id FROM users WHERE user_id = $1",
+                telegram_id
+            )
+            
+            if user_data:
+                request.session['name'] = user_data['name']
+                request.session['email'] = user_data['email']
+                request.session['google_id'] = user_data['google_id']
+            
             return JSONResponse({
                 'success': True,
                 'status': 'completed',
-                'telegram_id': link_record['telegram_user_id']
+                'telegram_id': telegram_id,
+                'redirect': True  # ← Флаг для редиректа
             })
         
         # Код ещё не использован
