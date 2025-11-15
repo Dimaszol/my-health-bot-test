@@ -1,0 +1,250 @@
+<!-- webapp/templates/link_telegram.html -->
+<!-- 🔗 Страница для связывания Telegram аккаунта -->
+
+{% extends "base.html" %}
+
+{% block title %}{{ t('connect_telegram_title', lang) }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            
+            {% if already_linked %}
+            <!-- ✅ Telegram уже подключен -->
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 64px;"></i>
+                    </div>
+                    <h3 class="mb-3">{{ t('telegram_connected', lang) }}</h3>
+                    <p class="text-muted">
+                        {{ t('bot_link_success', lang) }}
+                    </p>
+                    <a href="/dashboard" class="btn btn-primary mt-3">
+                        <i class="fas fa-home me-2"></i>{{ t('back_to_dashboard', lang) }}
+                    </a>
+                </div>
+            </div>
+            
+            {% else %}
+            <!-- 📱 Процесс подключения Telegram -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fab fa-telegram me-2"></i>{{ t('connect_telegram_title', lang) }}
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <!-- ⚠️ Предупреждение -->
+                    <div class="alert alert-warning mb-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>{{ t('connect_instructions_warning', lang) }}</strong>
+                    </div>
+                    
+                    <!-- 📋 Инструкции -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">{{ t('connect_instructions_title', lang) }}</h5>
+                        <ol class="ps-3">
+                            <li class="mb-2">{{ t('connect_instructions_step1', lang) }}</li>
+                            <li class="mb-2">{{ t('connect_instructions_step2', lang) }}</li>
+                            <li class="mb-2">{{ t('connect_instructions_step3', lang) }}</li>
+                        </ol>
+                    </div>
+                    
+                    <!-- 🔢 Код связывания -->
+                    <div class="text-center mb-4">
+                        <label class="form-label fw-bold">{{ t('your_link_code', lang) }}</label>
+                        <div class="input-group input-group-lg mb-2">
+                            <input 
+                                type="text" 
+                                class="form-control text-center fw-bold" 
+                                id="linkCode" 
+                                value="{{ link_code }}" 
+                                readonly 
+                                style="font-size: 32px; letter-spacing: 8px;"
+                            >
+                            <button 
+                                class="btn btn-outline-secondary" 
+                                type="button" 
+                                id="copyCodeBtn"
+                                onclick="copyCode()"
+                            >
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            {{ t('code_expires_in', lang, minutes=code_expires_minutes) }}
+                        </small>
+                    </div>
+                    
+                    <!-- 🚀 Кнопка открыть Telegram -->
+                    <div class="d-grid gap-2 mb-4">
+                        <a 
+                            href="{{ telegram_link }}" 
+                            class="btn btn-primary btn-lg"
+                            target="_blank"
+                        >
+                            <i class="fab fa-telegram me-2"></i>
+                            {{ t('open_telegram_bot', lang) }}
+                        </a>
+                        
+                        <button 
+                            class="btn btn-outline-secondary" 
+                            onclick="refreshCode()"
+                            id="refreshCodeBtn"
+                        >
+                            <i class="fas fa-sync-alt me-2"></i>
+                            Обновить код
+                        </button>
+                    </div>
+                    
+                    <!-- 💡 Преимущества -->
+                    <div class="bg-light p-3 rounded">
+                        <h6 class="mb-2">{{ t('link_benefits_title', lang) }}</h6>
+                        <ul class="small mb-0">
+                            <li>{{ t('link_benefit_1', lang) }}</li>
+                            <li>{{ t('link_benefit_2', lang) }}</li>
+                            <li>{{ t('link_benefit_3', lang) }}</li>
+                            <li>{{ t('link_benefit_4', lang) }}</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 📊 Статус связывания (динамически обновляется) -->
+                    <div id="linkingStatus" class="mt-4 text-center" style="display: none;">
+                        <div class="spinner-border text-primary mb-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted">
+                            <i class="fas fa-sync-alt fa-spin me-2"></i>
+                            Ожидание подключения...
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ⬅️ Назад -->
+            <div class="mt-3 text-center">
+                <a href="/dashboard" class="text-muted">
+                    <i class="fas fa-arrow-left me-2"></i>{{ t('back_to_dashboard', lang) }}
+                </a>
+            </div>
+            {% endif %}
+            
+        </div>
+    </div>
+</div>
+
+<script>
+// 📋 Копирование кода
+function copyCode() {
+    const codeInput = document.getElementById('linkCode');
+    codeInput.select();
+    codeInput.setSelectionRange(0, 99999); // Для мобильных
+    
+    document.execCommand('copy');
+    
+    // Визуальная обратная связь
+    const btn = document.getElementById('copyCodeBtn');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i>';
+    btn.classList.remove('btn-outline-secondary');
+    btn.classList.add('btn-success');
+    
+    setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+
+// 🔄 Обновление кода
+async function refreshCode() {
+    const btn = document.getElementById('refreshCodeBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-sync-alt fa-spin me-2"></i>Обновление...';
+    
+    try {
+        const response = await fetch('/api/refresh-link-code');
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('linkCode').value = data.code;
+            currentCode = data.code;
+            
+            // Перезапускаем проверку статуса
+            startStatusCheck();
+        }
+    } catch (error) {
+        console.error('Ошибка обновления кода:', error);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Обновить код';
+    }
+}
+
+// 🔍 Проверка статуса связывания (каждые 3 секунды)
+let statusCheckInterval = null;
+let currentCode = '{{ link_code }}';
+
+async function checkLinkStatus() {
+    try {
+        const response = await fetch('/api/check-link-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ code: currentCode })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.status === 'completed') {
+            // ✅ Связывание завершено!
+            clearInterval(statusCheckInterval);
+            
+            // Показываем сообщение об успехе
+            const statusDiv = document.getElementById('linkingStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>{{ t('bot_link_success', lang) }}</strong>
+                </div>
+            `;
+            
+            // Редирект на dashboard через 2 секунды
+            setTimeout(() => {
+                window.location.href = '/dashboard';
+            }, 2000);
+        }
+    } catch (error) {
+        console.error('Ошибка проверки статуса:', error);
+    }
+}
+
+function startStatusCheck() {
+    // Останавливаем предыдущую проверку если есть
+    if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+    }
+    
+    // Показываем индикатор
+    document.getElementById('linkingStatus').style.display = 'block';
+    
+    // Запускаем новую проверку каждые 3 секунды
+    statusCheckInterval = setInterval(checkLinkStatus, 3000);
+}
+
+// Запускаем проверку при загрузке страницы
+</script>
+{% if not already_linked %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    startStatusCheck();
+});
+</script>
+{% endif %}
+{% endblock %}

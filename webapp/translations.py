@@ -2066,105 +2066,6 @@ TRANSLATIONS = {
     'de': 'Premium-Abonnement'
 },
 
-'testimonial3_text': {
-    'ru': 'Экономлю время на консультациях. Простые вопросы решаю с помощью ИИ, к врачу иду только когда действительно нужно.',
-    'en': 'Saving time on consultations. Handle simple questions with AI, visit doctors only when really needed.',
-    'uk': 'Економлю час на консультаціях. Прості питання вирішую за допомогою ШІ, до лікаря йду тільки коли дійсно потрібно.',
-    'de': 'Spare Zeit bei Konsultationen. Erledige einfache Fragen mit KI, besuche Ärzte nur bei Bedarf.'
-},
-
-'testimonial3_author': {
-    'ru': 'Дмитрий Соколов',
-    'en': 'David Miller',
-    'uk': 'Дмитро Соколов',
-    'de': 'David Weber'
-},
-
-'testimonial3_role': {
-    'ru': '6 месяцев использования',
-    'en': '6 months of use',
-    'uk': '6 місяців використання',
-    'de': '6 Monate Nutzung'
-},
-
-# === СРАВНЕНИЕ ===
-'comparison_title': {
-    'ru': 'Почему PulseBook',
-    'en': 'Why PulseBook',
-    'uk': 'Чому PulseBook',
-    'de': 'Warum PulseBook'
-},
-
-'comparison_before': {
-    'ru': 'Традиционный подход',
-    'en': 'Traditional approach',
-    'uk': 'Традиційний підхід',
-    'de': 'Traditioneller Ansatz'
-},
-
-'comparison_after': {
-    'ru': 'С PulseBook',
-    'en': 'With PulseBook',
-    'uk': 'З PulseBook',
-    'de': 'Mit PulseBook'
-},
-
-'comparison_before_1': {
-    'ru': 'Консультации от $50 за визит',
-    'en': 'Consultations from $50 per visit',
-    'uk': 'Консультації від $50 за візит',
-    'de': 'Beratungen ab $50 pro Besuch'
-},
-
-'comparison_before_2': {
-    'ru': 'Ожидание записи до 2 недель',
-    'en': 'Wait up to 2 weeks for appointment',
-    'uk': 'Очікування запису до 2 тижнів',
-    'de': 'Wartezeit bis zu 2 Wochen'
-},
-
-'comparison_before_3': {
-    'ru': 'Документы разбросаны по папкам',
-    'en': 'Documents scattered across folders',
-    'uk': 'Документи розкидані по папках',
-    'de': 'Dokumente verstreut in Ordnern'
-},
-
-'comparison_before_4': {
-    'ru': 'Сложно отследить динамику',
-    'en': 'Hard to track progress',
-    'uk': 'Важко відстежити динаміку',
-    'de': 'Schwer Fortschritte zu verfolgen'
-},
-
-'comparison_after_1': {
-    'ru': 'От $9.99/месяц с безлимитом',
-    'en': 'From $9.99/month unlimited',
-    'uk': 'Від $9.99/місяць без обмежень',
-    'de': 'Ab $9,99/Monat unbegrenzt'
-},
-
-'comparison_after_2': {
-    'ru': 'Мгновенные ответы 24/7',
-    'en': 'Instant answers 24/7',
-    'uk': 'Миттєві відповіді 24/7',
-    'de': 'Sofortige Antworten 24/7'
-},
-
-'comparison_after_3': {
-    'ru': 'Всё в одной системе с поиском',
-    'en': 'Everything in one system with search',
-    'uk': 'Все в одній системі з пошуком',
-    'de': 'Alles in einem System mit Suche'
-},
-
-'comparison_after_4': {
-    'ru': 'Автоматические графики и аналитика',
-    'en': 'Automatic charts and analytics',
-    'uk': 'Автоматичні графіки та аналітика',
-    'de': 'Automatische Diagramme und Analysen'
-},
-
 # === FAQ ===
 'faq_title': {
     'ru': 'Ответы на вопросы',
@@ -2250,7 +2151,264 @@ TRANSLATIONS = {
     'uk': 'Без кредитної картки • Скасування в будь-який момент',
     'de': 'Keine Kreditkarte • Jederzeit kündbar'
 },
+
+    # ============================================
+    # 🔗 КНОПКА "ПОДКЛЮЧИТЬ TELEGRAM"
+    # ============================================
+    'connect_telegram_btn': {
+        'ru': '🔗 Подключить Telegram',
+        'en': '🔗 Connect Telegram',
+        'uk': '🔗 Підключити Telegram',
+        'de': '🔗 Telegram verbinden'
+    },
+    
+    'telegram_connected': {
+        'ru': '✅ Telegram подключен',
+        'en': '✅ Telegram connected',
+        'uk': '✅ Telegram підключено',
+        'de': '✅ Telegram verbunden'
+    },
+    
+    'connect_telegram_title': {
+        'ru': 'Подключить Telegram бота',
+        'en': 'Connect Telegram Bot',
+        'uk': 'Підключити Telegram бота',
+        'de': 'Telegram-Bot verbinden'
+    },
+    
+    # ============================================
+    # 📱 ИНСТРУКЦИИ ПО ПОДКЛЮЧЕНИЮ
+    # ============================================
+    'connect_instructions_title': {
+        'ru': 'Как подключить Telegram?',
+        'en': 'How to connect Telegram?',
+        'uk': 'Як підключити Telegram?',
+        'de': 'Wie verbinde ich Telegram?'
+    },
+    
+    'connect_instructions_step1': {
+        'ru': '1️⃣ Откройте эту страницу на устройстве, где установлен Telegram',
+        'en': '1️⃣ Open this page on a device where Telegram is installed',
+        'uk': '1️⃣ Відкрийте цю сторінку на пристрої, де встановлено Telegram',
+        'de': '1️⃣ Öffnen Sie diese Seite auf einem Gerät, auf dem Telegram installiert ist'
+    },
+    
+    'connect_instructions_step2': {
+        'ru': '2️⃣ Нажмите кнопку ниже - откроется Telegram',
+        'en': '2️⃣ Click the button below - Telegram will open',
+        'uk': '2️⃣ Натисніть кнопку нижче - відкриється Telegram',
+        'de': '2️⃣ Klicken Sie auf die Schaltfläche unten - Telegram wird geöffnet'
+    },
+    
+    'connect_instructions_step3': {
+        'ru': '3️⃣ Отправьте боту код из этой страницы',
+        'en': '3️⃣ Send the code from this page to the bot',
+        'uk': '3️⃣ Надішліть боту код з цієї сторінки',
+        'de': '3️⃣ Senden Sie den Code von dieser Seite an den Bot'
+    },
+    
+    'connect_instructions_warning': {
+        'ru': '⚠️ Важно: Откройте страницу на устройстве с Telegram!',
+        'en': '⚠️ Important: Open the page on a device with Telegram!',
+        'uk': '⚠️ Важливо: Відкрийте сторінку на пристрої з Telegram!',
+        'de': '⚠️ Wichtig: Öffnen Sie die Seite auf einem Gerät mit Telegram!'
+    },
+    
+    # ============================================
+    # 📋 КОД СВЯЗЫВАНИЯ
+    # ============================================
+    'your_link_code': {
+        'ru': 'Ваш код связывания:',
+        'en': 'Your link code:',
+        'uk': 'Ваш код зв\'язування:',
+        'de': 'Ihr Verknüpfungscode:'
+    },
+    
+    'code_expires_in': {
+        'ru': 'Код действителен {minutes} минут',
+        'en': 'Code expires in {minutes} minutes',
+        'uk': 'Код діє {minutes} хвилин',
+        'de': 'Code läuft in {minutes} Minuten ab'
+    },
+    
+    'copy_code': {
+        'ru': 'Скопировать код',
+        'en': 'Copy code',
+        'uk': 'Скопіювати код',
+        'de': 'Code kopieren'
+    },
+    
+    'code_copied': {
+        'ru': '✅ Код скопирован!',
+        'en': '✅ Code copied!',
+        'uk': '✅ Код скопійовано!',
+        'de': '✅ Code kopiert!'
+    },
+    
+    # ============================================
+    # 🤖 КНОПКА ОТКРЫТЬ TELEGRAM
+    # ============================================
+    'open_telegram_bot': {
+        'ru': '📱 Открыть Telegram бота',
+        'en': '📱 Open Telegram Bot',
+        'uk': '📱 Відкрити Telegram бота',
+        'de': '📱 Telegram-Bot öffnen'
+    },
+    
+    # ============================================
+    # ✅ СООБЩЕНИЯ TELEGRAM БОТА
+    # ============================================
+    'bot_link_welcome': {
+        'ru': '👋 Привет! Я вижу вы хотите подключить веб-версию к Telegram.\n\n📝 Пожалуйста, отправьте мне 6-значный код с веб-страницы.',
+        'en': '👋 Hello! I see you want to connect the web version to Telegram.\n\n📝 Please send me the 6-digit code from the web page.',
+        'uk': '👋 Привіт! Я бачу ви хочете підключити веб-версію до Telegram.\n\n📝 Будь ласка, надішліть мені 6-значний код з веб-сторінки.',
+        'de': '👋 Hallo! Ich sehe, Sie möchten die Webversion mit Telegram verbinden.\n\n📝 Bitte senden Sie mir den 6-stelligen Code von der Webseite.'
+    },
+    
+    'bot_code_format_error': {
+        'ru': '❌ Неверный формат кода. Отправьте 6-значный код (только цифры).',
+        'en': '❌ Invalid code format. Send a 6-digit code (numbers only).',
+        'uk': '❌ Невірний формат коду. Надішліть 6-значний код (тільки цифри).',
+        'de': '❌ Ungültiges Code-Format. Senden Sie einen 6-stelligen Code (nur Zahlen).'
+    },
+    
+    'bot_code_not_found': {
+        'ru': '❌ Код не найден или истёк.\n\nПожалуйста, создайте новый код на веб-странице.',
+        'en': '❌ Code not found or expired.\n\nPlease create a new code on the web page.',
+        'uk': '❌ Код не знайдено або закінчився.\n\nБудь ласка, створіть новий код на веб-сторінці.',
+        'de': '❌ Code nicht gefunden oder abgelaufen.\n\nBitte erstellen Sie einen neuen Code auf der Webseite.'
+    },
+    
+    'bot_code_already_used': {
+        'ru': '❌ Этот код уже был использован.\n\nПожалуйста, создайте новый код на веб-странице.',
+        'en': '❌ This code has already been used.\n\nPlease create a new code on the web page.',
+        'uk': '❌ Цей код вже був використаний.\n\nБудь ласка, створіть новий код на веб-сторінці.',
+        'de': '❌ Dieser Code wurde bereits verwendet.\n\nBitte erstellen Sie einen neuen Code auf der Webseite.'
+    },
+    
+    # ============================================
+    # 🔄 СООБЩЕНИЯ О СЛИЯНИИ
+    # ============================================
+    'bot_accounts_will_merge': {
+        'ru': '⚠️ У вас уже есть аккаунт в Telegram!\n\n🔄 Если продолжить, ваши аккаунты будут объединены:\n\n✅ Все данные сохранятся\n✅ Подписка из веб-версии будет приоритетной\n✅ История сообщений объединится\n\nПродолжить?',
+        'en': '⚠️ You already have a Telegram account!\n\n🔄 If you continue, your accounts will be merged:\n\n✅ All data will be preserved\n✅ Web subscription will take priority\n✅ Message history will be combined\n\nContinue?',
+        'uk': '⚠️ У вас вже є акаунт в Telegram!\n\n🔄 Якщо продовжити, ваші акаунти будуть об\'єднані:\n\n✅ Всі дані збережуться\n✅ Підписка з веб-версії буде пріоритетною\n✅ Історія повідомлень об\'єднається\n\nПродовжити?',
+        'de': '⚠️ Sie haben bereits ein Telegram-Konto!\n\n🔄 Wenn Sie fortfahren, werden Ihre Konten zusammengeführt:\n\n✅ Alle Daten werden gespeichert\n✅ Web-Abonnement hat Priorität\n✅ Nachrichtenverlauf wird kombiniert\n\nFortfahren?'
+    },
+    
+    'bot_merge_confirm_yes': {
+        'ru': '✅ Да, объединить',
+        'en': '✅ Yes, merge',
+        'uk': '✅ Так, об\'єднати',
+        'de': '✅ Ja, zusammenführen'
+    },
+    
+    'bot_merge_confirm_no': {
+        'ru': '❌ Нет, отменить',
+        'en': '❌ No, cancel',
+        'uk': '❌ Ні, скасувати',
+        'de': '❌ Nein, abbrechen'
+    },
+    
+    'bot_merge_cancelled': {
+        'ru': '❌ Связывание отменено.',
+        'en': '❌ Linking cancelled.',
+        'uk': '❌ Зв\'язування скасовано.',
+        'de': '❌ Verknüpfung abgebrochen.'
+    },
+    
+    # ============================================
+    # 🎉 УСПЕШНОЕ ПОДКЛЮЧЕНИЕ
+    # ============================================
+    'bot_link_success': {
+        'ru': '🎉 Отлично!\n\n✅ Теперь вы можете пользоваться обеими платформами с одним аккаунтом:\n\n• 🌐 Веб-версия\n• 📱 Telegram бот\n\nВсе ваши данные синхронизированы!',
+        'en': '🎉 Great!\n\n✅ Now you can use both platforms with one account:\n\n• 🌐 Web version\n• 📱 Telegram bot\n\nAll your data is synchronized!',
+        'uk': '🎉 Чудово!\n\n✅ Тепер ви можете користуватися обома платформами з одним акаунтом:\n\n• 🌐 Веб-версія\n• 📱 Telegram бот\n\nВсі ваші дані синхронізовані!',
+        'de': '🎉 Großartig!\n\n✅ Jetzt können Sie beide Plattformen mit einem Konto nutzen:\n\n• 🌐 Webversion\n• 📱 Telegram-Bot\n\nAlle Ihre Daten sind synchronisiert!'
+    },
+    
+    'bot_merge_success': {
+        'ru': '🎉 Аккаунты успешно объединены!\n\n✅ Все данные сохранены:\n• История сообщений\n• Загруженные документы\n• Ваша подписка из веб-версии\n• Настройки и лекарства\n\nТеперь вы можете пользоваться обеими платформами!',
+        'en': '🎉 Accounts successfully merged!\n\n✅ All data preserved:\n• Message history\n• Uploaded documents\n• Your web subscription\n• Settings and medications\n\nNow you can use both platforms!',
+        'uk': '🎉 Акаунти успішно об\'єднано!\n\n✅ Всі дані збережено:\n• Історія повідомлень\n• Завантажені документи\n• Ваша підписка з веб-версії\n• Налаштування та ліки\n\nТепер ви можете користуватися обома платформами!',
+        'de': '🎉 Konten erfolgreich zusammengeführt!\n\n✅ Alle Daten gespeichert:\n• Nachrichtenverlauf\n• Hochgeladene Dokumente\n• Ihr Web-Abonnement\n• Einstellungen und Medikamente\n\nJetzt können Sie beide Plattformen nutzen!'
+    },
+    
+    # ============================================
+    # ❌ ОШИБКИ
+    # ============================================
+    'error_linking': {
+        'ru': '❌ Ошибка при связывании аккаунтов. Попробуйте позже.',
+        'en': '❌ Error linking accounts. Please try later.',
+        'uk': '❌ Помилка при зв\'язуванні акаунтів. Спробуйте пізніше.',
+        'de': '❌ Fehler beim Verknüpfen der Konten. Bitte versuchen Sie es später.'
+    },
+    
+    'error_generating_code': {
+        'ru': '❌ Ошибка генерации кода. Обновите страницу.',
+        'en': '❌ Error generating code. Refresh the page.',
+        'uk': '❌ Помилка генерації коду. Оновіть сторінку.',
+        'de': '❌ Fehler beim Generieren des Codes. Aktualisieren Sie die Seite.'
+    },
+    
+    # ============================================
+    # 💡 ПОДСКАЗКИ
+    # ============================================
+    'link_benefits_title': {
+        'ru': '💡 Почему стоит подключить Telegram?',
+        'en': '💡 Why connect Telegram?',
+        'uk': '💡 Чому варто підключити Telegram?',
+        'de': '💡 Warum Telegram verbinden?'
+    },
+    
+    'link_benefit_1': {
+        'ru': '📱 Быстрый доступ к боту с телефона',
+        'en': '📱 Quick bot access from phone',
+        'uk': '📱 Швидкий доступ до бота з телефону',
+        'de': '📱 Schneller Bot-Zugriff vom Telefon'
+    },
+    
+    'link_benefit_2': {
+        'ru': '🔔 Уведомления о приёме лекарств',
+        'en': '🔔 Medication reminders',
+        'uk': '🔔 Нагадування про прийом ліків',
+        'de': '🔔 Medikamentenerinnerungen'
+    },
+    
+    'link_benefit_3': {
+        'ru': '☁️ Единая история на обеих платформах',
+        'en': '☁️ Unified history across platforms',
+        'uk': '☁️ Єдина історія на обох платформах',
+        'de': '☁️ Einheitliche Historie auf beiden Plattformen'
+    },
+    
+    'link_benefit_4': {
+        'ru': '🎯 Одна подписка на все устройства',
+        'en': '🎯 One subscription for all devices',
+        'uk': '🎯 Одна підписка на всі пристрої',
+        'de': '🎯 Ein Abonnement für alle Geräte'
+    },
+    'refresh_code': {
+    'ru': '🔄 Обновить код',
+    'en': '🔄 Refresh Code',
+    'uk': '🔄 Оновити код',
+    'de': '🔄 Code aktualisieren'
+},
+
+'refreshing': {
+    'ru': 'Обновление...',
+    'en': 'Refreshing...',
+    'uk': 'Оновлення...',
+    'de': 'Aktualisierung...'
+},
+'waiting_connection': {
+    'ru': 'Ожидание подключения...',
+    'en': 'Waiting for connection...',
+    'uk': 'Очікування підключення...',
+    'de': 'Warten auf Verbindung...'
+},
 }
+
 
 
 

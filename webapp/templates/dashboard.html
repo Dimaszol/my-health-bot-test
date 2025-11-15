@@ -110,6 +110,7 @@
         
         {% if show_telegram_connect %}
         <!-- Подключить Telegram (только для веб-пользователей) -->
+        <a href="/dashboard/link_telegram" class="card" style="padding: 1.5rem; text-decoration: none; cursor: pointer; transition: all 0.3s;">
         <div class="card" style="padding: 1.5rem; opacity: 0.6; cursor: default;">
             <div style="display: flex; align-items: center; gap: 1rem;">
                 <div style="width: 40px; height: 40px;">
@@ -127,6 +128,7 @@
                 </div>
             </div>
         </div>
+        </a>
         {% endif %}
         
         <!-- Заполнить анкету -->

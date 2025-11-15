@@ -57,6 +57,8 @@ from feedback_handler import (
     send_admin_reply_to_user,
     FeedbackStates
 )
+from account_merger import AccountMerger
+from account_linking_handlers import handle_linking_code, handle_merge_confirmation
 from user_checker import full_process_debug_7374723347
 
 logging.basicConfig(
@@ -685,6 +687,13 @@ async def handle_user_message(message: types.Message):
     user_id = message.from_user.id
     lang = await get_user_language(user_id)
 
+    text = message.text.strip() if message.text else ""
+    
+    # Проверяем код связывания
+    if text.isdigit() and len(text) == 6:
+        await handle_linking_code(message, bot)  # ← Функция из другого файла!
+        return
+
     from db_postgresql import has_gdpr_consent
     if not await has_gdpr_consent(user_id):
         # Показываем GDPR дисклеймер вместо обработки сообщения
@@ -1266,7 +1275,12 @@ async def handle_user_message(message: types.Message):
     except Exception as e:
         # Ошибка промокода не должна ломать основную функциональность
         logger.error(f"❌ Ошибка проверки промокода для user {user_id}: {e}")
-    
+
+@dp.callback_query(lambda c: c.data and c.data.startswith('merge_'))
+async def process_merge_callback(callback_query: types.CallbackQuery):
+    """Обработка подтверждения слияния"""
+    await handle_merge_confirmation(callback_query, bot)  # ← Функция из другого файла!
+
 @dp.callback_query(lambda c: c.data == "cancel_feedback")
 @handle_telegram_errors
 async def handle_cancel_feedback(callback: types.CallbackQuery, state: FSMContext):
