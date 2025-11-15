@@ -188,8 +188,8 @@ class AccountMerger:
     
     @staticmethod
     async def _full_merge(conn, primary_id: int, secondary_id: int, 
-                         telegram_user: Dict, web_user: Dict,
-                         google_id: str, email: str):
+                        telegram_user: Dict, web_user: Dict,
+                        google_id: str, email: str):
         """
         Полное слияние двух существующих аккаунтов
         
@@ -201,78 +201,66 @@ class AccountMerger:
         logger.info(f"   SECONDARY (удаляется): {secondary_id}")
         
         # ====================================
-        # ШАГ 1: ОБЪЕДИНЯЕМ ТАБЛИЦУ users
+        # ШАГ 1: ПЕРЕНОСИМ ДАННЫЕ ИЗ ВСЕХ ТАБЛИЦ
         # ====================================
-        logger.info("📝 Шаг 1: Объединяем данные профиля...")
+        logger.info("📦 Шаг 1: Переносим данные из всех таблиц...")
         
-        # Собираем все поля для объединения (берём заполненные значения)
-        merged_fields = {
-            'google_id': google_id,
-            'email': email,
-            'registration_source': 'both',
-            
-            # Имя: приоритет не-NULL значениям
-            'name': telegram_user.get('name') or web_user.get('name'),
-            
-            # Данные анкеты: берём заполненное
-            'birth_year': telegram_user.get('birth_year') or web_user.get('birth_year'),
-            'gender': telegram_user.get('gender') or web_user.get('gender'),
-            'height_cm': telegram_user.get('height_cm') or web_user.get('height_cm'),
-            'weight_kg': telegram_user.get('weight_kg') or web_user.get('weight_kg'),
-            'chronic_conditions': telegram_user.get('chronic_conditions') or web_user.get('chronic_conditions'),
-            'medications': telegram_user.get('medications') or web_user.get('medications'),
-            'allergies': telegram_user.get('allergies') or web_user.get('allergies'),
-            'smoking': telegram_user.get('smoking') or web_user.get('smoking'),
-            'alcohol': telegram_user.get('alcohol') or web_user.get('alcohol'),
-            'physical_activity': telegram_user.get('physical_activity') or web_user.get('physical_activity'),
-            'family_history': telegram_user.get('family_history') or web_user.get('family_history'),
-            
-            # Язык: приоритет Telegram
-            'language': telegram_user.get('language') or web_user.get('language', 'en'),
-            
-            # GDPR: если хоть кто-то согласился
-            'gdpr_consent': telegram_user.get('gdpr_consent') or web_user.get('gdpr_consent'),
-            'gdpr_consent_time': telegram_user.get('gdpr_consent_time') or web_user.get('gdpr_consent_time'),
-            
-            # Статистика: суммируем
-            'total_messages_count': (telegram_user.get('total_messages_count', 0) + 
-                                    web_user.get('total_messages_count', 0)),
-            
-            # Username из Telegram
-            'username': telegram_user.get('username'),
-            
-            # Даты
-            'created_at': min(
-                telegram_user.get('created_at', datetime.now()),
-                web_user.get('created_at', datetime.now())
-            ),
-            'last_updated': datetime.now()
-        }
+        tables_to_transfer = [
+            'documents',
+            'document_vectors',
+            'chat_history',
+            'notification_history',
+            'transactions',
+            'medical_timeline',
+            'analytics_events',
+            'garmin_daily_data',
+            'garmin_analysis_history'
+        ]
         
-        # Формируем запрос обновления
-        update_parts = []
-        values = []
-        param_num = 1
-        
-        for field, value in merged_fields.items():
-            update_parts.append(f"{field} = ${param_num}")
-            values.append(value)
-            param_num += 1
-        
-        values.append(primary_id)  # WHERE user_id = ...
-        
-        await conn.execute(f"""
-            UPDATE users 
-            SET {', '.join(update_parts)}
-            WHERE user_id = ${param_num}
-        """, *values)
-        
-        logger.info("   ✅ Профиль объединён")
+        for table in tables_to_transfer:
+            try:
+                result = await conn.execute(
+                    f"UPDATE {table} SET user_id = $1 WHERE user_id = $2",
+                    primary_id, secondary_id
+                )
+                logger.info(f"   ✓ {table}: записи перенесены")
+            except Exception as e:
+                logger.debug(f"   ⚠ {table}: {e}")
         
         # ====================================
-        # ШАГ 2: ОБЪЕДИНЯЕМ user_limits (ПРИОРИТЕТ WEB!)
+        # ШАГ 2: ОБРАБАТЫВАЕМ ТАБЛИЦЫ С UNIQUE CONSTRAINT
         # ====================================
-        logger.info("📊 Шаг 2: Объединяем лимиты и подписку...")
+        logger.info("🔧 Шаг 2: Обрабатываем специальные таблицы...")
+        
+        # notification_settings: оставляем Telegram настройки
+        telegram_settings = await conn.fetchrow(
+            "SELECT * FROM notification_settings WHERE user_id = $1", primary_id
+        )
+        
+        if telegram_settings:
+            # Удаляем веб настройки (оставляем telegram)
+            await conn.execute(
+                "DELETE FROM notification_settings WHERE user_id = $1", secondary_id
+            )
+            logger.info("   ✓ notification_settings: оставлены настройки Telegram")
+        else:
+            # Если в Telegram нет настроек, переносим из веба
+            await conn.execute(
+                "UPDATE notification_settings SET user_id = $1 WHERE user_id = $2",
+                primary_id, secondary_id
+            )
+            logger.info("   ✓ notification_settings: перенесены из веба")
+        
+        # medications: объединяем (могут быть дубли)
+        await AccountMerger._merge_medications(conn, primary_id, secondary_id)
+        
+        # garmin_connections: оставляем одно подключение
+        await AccountMerger._merge_garmin_connection(conn, primary_id, secondary_id)
+        
+        # ====================================
+        # ШАГ 3: ОБЪЕДИНЯЕМ user_limits (ПРИОРИТЕТ WEB!)
+        # ====================================
+        logger.info("📊 Шаг 3: Объединяем лимиты и подписку...")
         
         # Получаем лимиты обоих аккаунтов
         telegram_limits = await conn.fetchrow(
@@ -320,68 +308,82 @@ class AccountMerger:
             logger.info(f"   ✅ Лимиты объединены (подписка: {subscription_type})")
         
         # ====================================
-        # ШАГ 3: ПЕРЕНОСИМ ДАННЫЕ ИЗ ВСЕХ ТАБЛИЦ
+        # ШАГ 4: УДАЛЯЕМ ВТОРИЧНЫЙ АККАУНТ (ВАЖНО - ДО ОБНОВЛЕНИЯ PRIMARY!)
         # ====================================
-        logger.info("📦 Шаг 3: Переносим данные из всех таблиц...")
-        
-        tables_to_transfer = [
-            'documents',
-            'document_vectors',
-            'chat_history',
-            'notification_history',
-            'transactions',
-            'medical_timeline',
-            'analytics_events',
-            'garmin_daily_data',
-            'garmin_analysis_history'
-        ]
-        
-        for table in tables_to_transfer:
-            try:
-                result = await conn.execute(
-                    f"UPDATE {table} SET user_id = $1 WHERE user_id = $2",
-                    primary_id, secondary_id
-                )
-                logger.info(f"   ✓ {table}: записи перенесены")
-            except Exception as e:
-                logger.debug(f"   ⚠ {table}: {e}")
-        
-        # ====================================
-        # ШАГ 4: ОБРАБАТЫВАЕМ ТАБЛИЦЫ С UNIQUE CONSTRAINT
-        # ====================================
-        logger.info("🔧 Шаг 4: Обрабатываем специальные таблицы...")
-        
-        # notification_settings: оставляем Telegram настройки
-        telegram_settings = await conn.fetchrow(
-            "SELECT * FROM notification_settings WHERE user_id = $1", primary_id
-        )
-        
-        if telegram_settings:
-            # Удаляем веб настройки (оставляем telegram)
-            await conn.execute(
-                "DELETE FROM notification_settings WHERE user_id = $1", secondary_id
-            )
-            logger.info("   ✓ notification_settings: оставлены настройки Telegram")
-        else:
-            # Если в Telegram нет настроек, переносим из веба
-            await conn.execute(
-                "UPDATE notification_settings SET user_id = $1 WHERE user_id = $2",
-                primary_id, secondary_id
-            )
-            logger.info("   ✓ notification_settings: перенесены из веба")
-        
-        # medications: объединяем (могут быть дубли)
-        await AccountMerger._merge_medications(conn, primary_id, secondary_id)
-        
-        # garmin_connections: оставляем одно подключение
-        await AccountMerger._merge_garmin_connection(conn, primary_id, secondary_id)
-        
-        # ====================================
-        # ШАГ 5: УДАЛЯЕМ ВТОРИЧНЫЙ АККАУНТ
-        # ====================================
-        logger.info("🗑️ Шаг 5: Удаляем вторичный аккаунт...")
+        logger.info("🗑️ Шаг 4: Удаляем вторичный аккаунт...")
         
         await conn.execute("DELETE FROM users WHERE user_id = $1", secondary_id)
+        
+        logger.info(f"   ✓ Вторичный аккаунт {secondary_id} удалён")
+        
+        # ====================================
+        # ШАГ 5: ОБЪЕДИНЯЕМ ТАБЛИЦУ users (ТЕПЕРЬ БЕЗОПАСНО!)
+        # ====================================
+        logger.info("📝 Шаг 5: Объединяем данные профиля...")
+        
+        # Собираем все поля для объединения (берём заполненные значения)
+        merged_fields = {
+            'google_id': google_id,  # ← Теперь безопасно! Web аккаунт удалён
+            'email': email,
+            'registration_source': 'both',
+            
+            # Имя: приоритет ЗАПОЛНЕННЫМ данным (WEB приоритетнее!)
+            'name': web_user.get('name') or telegram_user.get('name'),
+            
+            # Данные анкеты: берём заполненное (WEB приоритет!)
+            'birth_year': web_user.get('birth_year') or telegram_user.get('birth_year'),
+            'gender': web_user.get('gender') or telegram_user.get('gender'),
+            'height_cm': web_user.get('height_cm') or telegram_user.get('height_cm'),
+            'weight_kg': web_user.get('weight_kg') or telegram_user.get('weight_kg'),
+            'chronic_conditions': web_user.get('chronic_conditions') or telegram_user.get('chronic_conditions'),
+            'medications': web_user.get('medications') or telegram_user.get('medications'),
+            'allergies': web_user.get('allergies') or telegram_user.get('allergies'),
+            'smoking': web_user.get('smoking') or telegram_user.get('smoking'),
+            'alcohol': web_user.get('alcohol') or telegram_user.get('alcohol'),
+            'physical_activity': web_user.get('physical_activity') or telegram_user.get('physical_activity'),
+            'family_history': web_user.get('family_history') or telegram_user.get('family_history'),
+            
+            # Язык: приоритет Telegram
+            'language': telegram_user.get('language') or web_user.get('language', 'en'),
+            
+            # GDPR: если хоть кто-то согласился
+            'gdpr_consent': telegram_user.get('gdpr_consent') or web_user.get('gdpr_consent'),
+            'gdpr_consent_time': telegram_user.get('gdpr_consent_time') or web_user.get('gdpr_consent_time'),
+            
+            # Статистика: суммируем
+            'total_messages_count': (telegram_user.get('total_messages_count', 0) + 
+                                    web_user.get('total_messages_count', 0)),
+            
+            # Username из Telegram
+            'username': telegram_user.get('username'),
+            
+            # Даты
+            'created_at': min(
+                telegram_user.get('created_at', datetime.now()),
+                web_user.get('created_at', datetime.now())
+            ),
+            'last_updated': datetime.now()
+        }
+        
+        # Формируем запрос обновления
+        update_parts = []
+        values = []
+        param_num = 1
+        
+        for field, value in merged_fields.items():
+            update_parts.append(f"{field} = ${param_num}")
+            values.append(value)
+            param_num += 1
+        
+        values.append(primary_id)  # WHERE user_id = ...
+        
+        await conn.execute(f"""
+            UPDATE users 
+            SET {', '.join(update_parts)}
+            WHERE user_id = ${param_num}
+        """, *values)
+        
+        logger.info("   ✅ Профиль объединён")
         
         logger.info(f"✅ СЛИЯНИЕ ЗАВЕРШЕНО! Все данные под user_id = {primary_id}")
     
