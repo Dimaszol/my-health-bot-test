@@ -6,19 +6,19 @@ from account_merger import AccountMerger
 
 
 async def handle_linking_code(message: types.Message, bot: Bot):
-    """
-    Обработка 6-значного кода связывания
-    
-    КОГДА ВЫЗЫВАЕТСЯ:
-    - Пользователь отправляет 6 цифр боту
-    - После того как он получил код на веб-странице
-    
-    Args:
-        message: Сообщение от пользователя с кодом
-        bot: Экземпляр бота
-    """
     telegram_id = message.from_user.id
-    code = message.text.strip()
+    
+    # ✅ ИЗВЛЕКАЕМ КОД из текста
+    text = message.text.strip() if message.text else ""
+    
+    # Если это /start с параметром - берём параметр
+    if text.startswith('/start '):
+        code = text.split(maxsplit=1)[1].strip()
+    else:
+        # Если просто код отправлен напрямую
+        code = text
+    
+    print(f"📝 Обрабатываем код: '{code}' (длина: {len(code)})")
     
     # Получаем язык пользователя
     lang = await get_user_language(telegram_id)
