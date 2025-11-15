@@ -108,6 +108,23 @@ async def send_welcome(message: types.Message):
     
     user_id = message.from_user.id
     
+    # ========================================
+    # ✅ НОВОЕ: Проверка кода связывания
+    # ========================================
+    if message.text and ' ' in message.text:
+        parts = message.text.split(maxsplit=1)
+        if len(parts) > 1:
+            param = parts[1].strip()
+            
+            # Если это 6-значный код - обрабатываем
+            if param.isdigit() and len(param) == 6:
+                print(f"🔗 Обнаружен код связывания: {param}")
+                await handle_linking_code(message, bot)
+                return
+    
+    # ========================================
+    # Обычная логика /start (БЕЗ ИЗМЕНЕНИЙ)
+    # ========================================
     try:
         # 1️⃣ Получаем данные пользователя
         user_data = await get_user(user_id)
@@ -135,25 +152,23 @@ async def send_welcome(message: types.Message):
             await show_gdpr_welcome(user_id, message, lang)
             return
         
-        # 5️⃣ ПРОВЕРЯЕМ РЕГИСТРАЦИЮ (имя + год рождения для медицинских рекомендаций)
+        # 5️⃣ ПРОВЕРЯЕМ РЕГИСТРАЦИЮ
         lang = await get_user_language(user_id)
         
         if await is_fully_registered(user_id):
-            # ✅ У пользователя есть имя и год рождения - показываем главное меню
             name = user_data.get('name', 'Пользователь')
-            
             await message.answer(
                 t("welcome_back", lang, name=name), 
                 reply_markup=main_menu_keyboard(lang)
             )
         else:
-            
             from registration import start_registration
             await start_registration(user_id, message)
             
     except Exception as e:
         log_error_with_context(e, {"action": "start_command", "user_id": user_id})
         await message.answer(t("start_command_error", lang))
+
 
 async def start_registration_with_language_option(user_id: int, message: types.Message, lang: str):
     """Начало регистрации с возможностью смены языка"""
