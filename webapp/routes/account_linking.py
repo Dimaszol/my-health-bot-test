@@ -97,7 +97,7 @@ async def show_link_telegram_page(request: Request):
     context.update({
         'link_code': link_code,
         'bot_username': TELEGRAM_BOT_USERNAME,
-        'telegram_link': f"https://t.me/{TELEGRAM_BOT_USERNAME}",
+        'telegram_link': f"https://t.me/{TELEGRAM_BOT_USERNAME}?start={link_code}",
         'code_expires_minutes': 10
     })
     
