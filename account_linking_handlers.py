@@ -136,6 +136,7 @@ async def handle_linking_code(message: types.Message, bot: Bot):
                 # ✅ ДОБАВЛЯЕМ: Показываем приветствие и меню
                 user_data = await get_user(telegram_id)
                 name = user_data.get('name', 'Пользователь')
+                lang = await get_user_language(telegram_id)
                 
                 from keyboards import main_menu_keyboard
                 await message.answer(
@@ -212,6 +213,7 @@ async def handle_linking_code(message: types.Message, bot: Bot):
             # ✅ ДОБАВЛЯЕМ: Показываем приветствие и меню
             user_data = await get_user(telegram_id)
             name = user_data.get('name', 'Пользователь')
+            lang = await get_user_language(telegram_id)
             
             from keyboards import main_menu_keyboard
             await message.answer(
@@ -339,6 +341,7 @@ async def handle_merge_confirmation(callback_query: types.CallbackQuery, bot: Bo
                 # ✅ ДОБАВЛЯЕМ: Показываем приветствие и меню
                 user_data = await get_user(telegram_id)
                 name = user_data.get('name', 'Пользователь')
+                lang = await get_user_language(telegram_id)
                 
                 from keyboards import main_menu_keyboard
                 await bot.send_message(
