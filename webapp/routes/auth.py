@@ -87,8 +87,13 @@ async def find_or_create_web_user(google_id: str, email: str, name: str, session
         
         # Создаём пользователя с языком из сессии
         await conn.execute("""
-            INSERT INTO users (user_id, name, google_id, email, registration_source, language, created_at)
-            VALUES ($1, $2, $3, $4, 'web', $5, NOW())
+            INSERT INTO users (
+                user_id, name, google_id, email, 
+                registration_source, language, 
+                gdpr_consent, gdpr_consent_time,  -- ← ДОБАВИЛИ ЭТИ ПОЛЯ
+                created_at
+            )
+            VALUES ($1, $2, $3, $4, 'web', $5, TRUE, NOW(), NOW())
             ON CONFLICT (user_id) DO NOTHING
         """, temp_user_id, name, google_id, email, session_language)
         
