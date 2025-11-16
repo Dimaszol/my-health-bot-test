@@ -128,11 +128,7 @@ async def handle_linking_code(message: types.Message, bot: Bot):
             )
             
             if result['success']:
-                await message.answer(
-                    t('bot_link_success', lang),
-                    parse_mode='HTML'
-                )
-                
+                               
                 # ✅ ДОБАВЛЯЕМ: Показываем приветствие и меню
                 user_data = await get_user(telegram_id)
                 name = user_data.get('name', 'Пользователь')
@@ -140,10 +136,9 @@ async def handle_linking_code(message: types.Message, bot: Bot):
                 
                 from keyboards import main_menu_keyboard
                 await message.answer(
-                    t("welcome", lang, name=name),
+                    t("welcome_account_linked", lang, name=name),
                     reply_markup=main_menu_keyboard(lang)
                 )
-                await message.answer(t("how_to_use_1", lang))
             else:
                 await message.answer(
                     t('error_linking', lang),
@@ -205,11 +200,7 @@ async def handle_linking_code(message: types.Message, bot: Bot):
         )
         
         if result['success']:
-            await message.answer(
-                t('bot_link_success', lang),
-                parse_mode='HTML'
-            )
-            
+                        
             # ✅ ДОБАВЛЯЕМ: Показываем приветствие и меню
             user_data = await get_user(telegram_id)
             name = user_data.get('name', 'Пользователь')
@@ -217,10 +208,9 @@ async def handle_linking_code(message: types.Message, bot: Bot):
             
             from keyboards import main_menu_keyboard
             await message.answer(
-                t("welcome", lang, name=name),
+                t("welcome_account_linked", lang, name=name),
                 reply_markup=main_menu_keyboard(lang)
-            )
-            await message.answer(t("how_to_use_1", lang))
+            )           
         else:
             await message.answer(
                 t('error_linking', lang),
@@ -346,12 +336,8 @@ async def handle_merge_confirmation(callback_query: types.CallbackQuery, bot: Bo
                 from keyboards import main_menu_keyboard
                 await bot.send_message(
                     chat_id=telegram_id,
-                    text=t("welcome", lang, name=name),
+                    text=t("welcome_account_linked", lang, name=name),
                     reply_markup=main_menu_keyboard(lang)
-                )
-                await bot.send_message(
-                    chat_id=telegram_id,
-                    text=t("how_to_use_1", lang)
                 )
             else:
                 await callback_query.message.edit_text(
