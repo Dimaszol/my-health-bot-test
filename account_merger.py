@@ -346,9 +346,9 @@ class AccountMerger:
             # Язык: приоритет Telegram
             'language': telegram_user.get('language') or web_user.get('language', 'en'),
             
-            # GDPR: если хоть кто-то согласился
-            'gdpr_consent': telegram_user.get('gdpr_consent') or web_user.get('gdpr_consent'),
-            'gdpr_consent_time': telegram_user.get('gdpr_consent_time') or web_user.get('gdpr_consent_time'),
+            # GDPR
+            'gdpr_consent': True,
+            'gdpr_consent_time': datetime.now(),
             
             # Статистика: суммируем
             'total_messages_count': (telegram_user.get('total_messages_count', 0) + 
