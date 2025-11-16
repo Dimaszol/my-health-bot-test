@@ -157,7 +157,7 @@ async def send_welcome(message: types.Message):
         
         # ✅ НОВАЯ ЛОГИКА: Проверяем источник регистрации
         registration_source = user_data.get('registration_source', 'telegram')
-
+       
         if registration_source in ['web', 'both']:
             # ============================================
             # Пользователь из ВЕБ-версии или объединил аккаунты
@@ -730,6 +730,10 @@ async def handle_user_message(message: types.Message):
 
     text = message.text.strip() if message.text else ""
     
+    # Игнорируем команды, они обрабатываются отдельными хендлерами
+    if text.startswith('/'):
+        return
+    
     # Проверяем код связывания
     if text.isdigit() and len(text) == 6:
         await handle_linking_code(message, bot)  # ← Функция из другого файла!
@@ -1100,10 +1104,22 @@ async def handle_user_message(message: types.Message):
             await message.answer(error_msg)
             return
         try:
+            # ✅ Проверяем регистрацию с учётом источника
+            user_data = await get_user(user_id)
+            registration_source = user_data.get('registration_source', 'telegram') if user_data else 'telegram'
+
+            # ⚠️ ВАЖНО: Если пользователь из веб или объединил - пропускаем проверку
+            if registration_source not in ['web', 'both']:
+                # Только для обычных Telegram пользователей проверяем регистрацию
+                if not await is_fully_registered(user_id):
+                    from registration import start_registration
+                    await start_registration(user_id, message)
+                    return
+
+            # Получаем имя (для всех типов пользователей)
             name = await get_user_name(user_id)
             if not name:
-                await message.answer(t("not_registered", lang))
-                return
+                name = "Пользователь"  # Fallback для веб-пользователей
                 
             user_input = message.text
             await save_message(user_id, "user", user_input)
