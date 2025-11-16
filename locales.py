@@ -659,12 +659,54 @@ translations = {
         'bot_merge_confirm_yes': '✅ Да, объединить',
         'bot_merge_confirm_no': '❌ Нет, отменить',
         'bot_merge_cancelled': '❌ Связывание отменено.',
-        'bot_link_success': '🎉 Отлично!\n\n✅ Теперь вы можете пользоваться обеими платформами с одним аккаунтом:\n\n• 🌐 Веб-версия\n• 📱 Telegram бот\n\nВсе ваши данные синхронизированы!',
         'bot_merge_success': '🎉 Аккаунты успешно объединены!\n\n✅ Все данные сохранены:\n• История сообщений\n• Загруженные документы\n• Ваша подписка из веб-версии\n• Настройки и лекарства\n\nТеперь вы можете пользоваться обеими платформами!',
-        'error_linking': '❌ Ошибка при связывании аккаунтов. Попробуйте позже.'
+        'error_linking': '❌ Ошибка при связывании аккаунтов. Попробуйте позже.',
+        'welcome_account_linked': '''🎉 Отлично, {name}!
+
+✅ Аккаунты успешно объединены! Теперь вы можете пользоваться обеими платформами:
+- 🌐 Веб-версия
+- 📱 Telegram бот
+
+Все ваши данные синхронизированы!
+
+<b>Как мной пользоваться:</b>
+
+📄 <b>Загрузить документ</b> — получите профессиональную расшифровку ваших анализов, снимков и медицинских документов
+
+📝 <b>Заметка в память</b> — создавайте свою медицинскую историю. Чем больше я знаю о вас, тем точнее мои рекомендации
+
+💊 <b>Мои лекарства</b> — фиксируйте все лекарства и их режим приёма
+
+📂 <b>Мои документы</b> — управляйте своей медицинской историей'''
     },
 
-    "uk": { 
+    "uk": {
+        'bot_code_format_error': '❌ Невірний формат коду. Надішліть 6-значний код (тільки цифри).',
+'bot_code_not_found': '❌ Код не знайдено або закінчився.\n\nБудь ласка, створіть новий код на веб-сторінці.',
+'bot_code_already_used': '❌ Цей код вже було використано.\n\nБудь ласка, створіть новий код на веб-сторінці.',
+'bot_accounts_will_merge': '⚠️ У вас вже є акаунт в Telegram!\n\n🔄 Якщо продовжити, ваші акаунти будуть об\'єднані:\n\n✅ Всі дані збережуться\n✅ Підписка з веб-версії буде пріоритетною\n✅ Історія повідомлень об\'єднається\n\nПродовжити?',
+'bot_merge_confirm_yes': '✅ Так, об\'єднати',
+'bot_merge_confirm_no': '❌ Ні, скасувати',
+'bot_merge_cancelled': '❌ Зв\'язування скасовано.',
+'bot_merge_success': '🎉 Акаунти успішно об\'єднано!\n\n✅ Всі дані збережено:\n• Історія повідомлень\n• Завантажені документи\n• Ваша підписка з веб-версії\n• Налаштування та ліки\n\nТепер ви можете користуватися обома платформами!',
+'error_linking': '❌ Помилка при зв\'язуванні акаунтів. Спробуйте пізніше.',
+'welcome_account_linked': '''🎉 Відмінно, {name}!
+
+✅ Акаунти успішно об'єднано! Тепер ви можете користуватися обома платформами:
+- 🌐 Веб-версія
+- 📱 Telegram бот
+
+Всі ваші дані синхронізовані!
+
+<b>Як мною користуватися:</b>
+
+📄 <b>Завантажити документ</b> — отримайте професійну розшифровку ваших аналізів, знімків та медичних документів
+
+📝 <b>Нотатка в пам'ять</b> — створюйте свою медичну історію. Чим більше я знаю про вас, тим точніші мої рекомендації
+
+💊 <b>Мої ліки</b> — фіксуйте всі ліки та їх режим прийому
+
+📂 <b>Мої документи</b> — керуйте своєю медичною історією''',
         "garmin_email_not_found_error": "❌ Помилка: email не знайдено. Почніть налаштування заново.",
 "garmin_connection_success_auto": """✅ <b>Garmin підключено успішно!</b>
 
@@ -1951,8 +1993,60 @@ Garmin analysis requires detailed consultations.
     "photo_file_not_found": "⚠️ Photo not found. Upload photo again.",
     "cancel_analysis": "❌ Cancel"
 },
+'bot_code_format_error': '❌ Invalid code format. Send a 6-digit code (numbers only).',
+'bot_code_not_found': '❌ Code not found or expired.\n\nPlease create a new code on the web page.',
+'bot_code_already_used': '❌ This code has already been used.\n\nPlease create a new code on the web page.',
+'bot_accounts_will_merge': '⚠️ You already have a Telegram account!\n\n🔄 If you continue, your accounts will be merged:\n\n✅ All data will be preserved\n✅ Web subscription will take priority\n✅ Message history will be combined\n\nContinue?',
+'bot_merge_confirm_yes': '✅ Yes, merge',
+'bot_merge_confirm_no': '❌ No, cancel',
+'bot_merge_cancelled': '❌ Linking cancelled.',
+'bot_merge_success': '🎉 Accounts successfully merged!\n\n✅ All data preserved:\n• Message history\n• Uploaded documents\n• Your web subscription\n• Settings and medications\n\nNow you can use both platforms!',
+'error_linking': '❌ Error linking accounts. Please try later.',
+'welcome_account_linked': '''🎉 Excellent, {name}!
+
+✅ Accounts successfully linked! Now you can use both platforms:
+- 🌐 Web version
+- 📱 Telegram bot
+
+All your data is synchronized!
+
+<b>How to use me:</b>
+
+📄 <b>Upload document</b> — get professional interpretation of your tests, images and medical documents
+
+📝 <b>Memory note</b> — create your medical history. The more I know about you, the more accurate my recommendations
+
+💊 <b>My medications</b> — record all medications and their dosing schedule
+
+📂 <b>My documents</b> — manage your medical history''',
 
 "de": {   
+    'bot_code_format_error': '❌ Ungültiges Code-Format. Senden Sie einen 6-stelligen Code (nur Zahlen).',
+'bot_code_not_found': '❌ Code nicht gefunden oder abgelaufen.\n\nBitte erstellen Sie einen neuen Code auf der Webseite.',
+'bot_code_already_used': '❌ Dieser Code wurde bereits verwendet.\n\nBitte erstellen Sie einen neuen Code auf der Webseite.',
+'bot_accounts_will_merge': '⚠️ Sie haben bereits ein Telegram-Konto!\n\n🔄 Wenn Sie fortfahren, werden Ihre Konten zusammengeführt:\n\n✅ Alle Daten werden gespeichert\n✅ Web-Abonnement hat Priorität\n✅ Nachrichtenverlauf wird kombiniert\n\nFortfahren?',
+'bot_merge_confirm_yes': '✅ Ja, zusammenführen',
+'bot_merge_confirm_no': '❌ Nein, abbrechen',
+'bot_merge_cancelled': '❌ Verknüpfung abgebrochen.',
+'bot_merge_success': '🎉 Konten erfolgreich zusammengeführt!\n\n✅ Alle Daten gespeichert:\n• Nachrichtenverlauf\n• Hochgeladene Dokumente\n• Ihr Web-Abonnement\n• Einstellungen und Medikamente\n\nJetzt können Sie beide Plattformen nutzen!',
+'error_linking': '❌ Fehler beim Verknüpfen der Konten. Bitte versuchen Sie es später.',
+'welcome_account_linked': '''🎉 Ausgezeichnet, {name}!
+
+✅ Konten erfolgreich verknüpft! Jetzt können Sie beide Plattformen nutzen:
+- 🌐 Webversion
+- 📱 Telegram-Bot
+
+Alle Ihre Daten sind synchronisiert!
+
+<b>So verwenden Sie mich:</b>
+
+📄 <b>Dokument hochladen</b> — erhalten Sie professionelle Interpretation Ihrer Tests, Bilder und medizinischen Dokumente
+
+📝 <b>Gedächtnisnotiz</b> — erstellen Sie Ihre Krankengeschichte. Je mehr ich über Sie weiß, desto genauer meine Empfehlungen
+
+💊 <b>Meine Medikamente</b> — erfassen Sie alle Medikamente und deren Einnahmeplan
+
+📂 <b>Meine Dokumente</b> — verwalten Sie Ihre Krankengeschichte''',
     "garmin_email_not_found_error": "❌ Fehler: E-Mail nicht gefunden. Starten Sie die Einrichtung erneut.",
 "garmin_connection_success_auto": """✅ <b>Garmin erfolgreich verbunden!</b>
 
