@@ -105,13 +105,11 @@
 
 <!-- 🎯 ДОПОЛНИТЕЛЬНЫЕ ДЕЙСТВИЯ -->
 <div style="margin-bottom: 3rem;">
-        
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
         
         {% if show_telegram_connect %}
         <!-- Подключить Telegram (только для веб-пользователей) -->
         <a href="/dashboard/link_telegram" class="card" style="padding: 1.5rem; text-decoration: none; cursor: pointer; transition: all 0.3s;">
-        <div class="card" style="padding: 1.5rem; opacity: 0.6; cursor: default;">
             <div style="display: flex; align-items: center; gap: 1rem;">
                 <div style="width: 40px; height: 40px;">
                     <svg viewBox="0 0 24 24" fill="#0088cc" style="width: 100%; height: 100%;">
@@ -127,7 +125,6 @@
                     </p>
                 </div>
             </div>
-        </div>
         </a>
         {% endif %}
         

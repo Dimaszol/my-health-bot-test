@@ -538,7 +538,8 @@ translations = {
             "📄 <b>Загрузить документ</b> — получите профессиональную расшифровку ваших анализов, снимков и медицинских документов\n\n"
             "📝 <b>Заметка в память</b> — создавайте свою медицинскую историю. Чем больше я знаю о вас, тем точнее мои рекомендации\n\n"
             "💊 <b>Мои лекарства</b> — фиксируйте все лекарства и их режим приёма\n\n"
-            "📂 <b>Мои документы</b> — управляйте своей медицинской историей"
+            "📂 <b>Мои документы</b> — управляйте своей медицинской историей\n\n"
+            "💬 Или просто задайте мне вопрос — я всегда готов помочь с учётом вашей медицинской истории!"
         ),
         "how_to_use_1": (
             "🎁 <b>Ваши стартовые возможности:</b>\n\n"
@@ -677,7 +678,9 @@ translations = {
 
 💊 <b>Мои лекарства</b> — фиксируйте все лекарства и их режим приёма
 
-📂 <b>Мои документы</b> — управляйте своей медицинской историей'''
+📂 <b>Мои документы</b> — управляйте своей медицинской историей
+
+💬 Или просто задайте мне вопрос — я всегда готов помочь с учётом вашей медицинской истории!'''
     },
 
     "uk": {
@@ -706,7 +709,9 @@ translations = {
 
 💊 <b>Мої ліки</b> — фіксуйте всі ліки та їх режим прийому
 
-📂 <b>Мої документи</b> — керуйте своєю медичною історією''',
+📂 <b>Мої документи</b> — керуйте своєю медичною історією
+
+💬 Або просто поставте мені питання — я завжди готовий допомогти з урахуванням вашої медичної історії!''',
         "garmin_email_not_found_error": "❌ Помилка: email не знайдено. Почніть налаштування заново.",
 "garmin_connection_success_auto": """✅ <b>Garmin підключено успішно!</b>
 
@@ -1236,7 +1241,8 @@ translations = {
         "📄 <b>Завантажити документ</b> — отримайте професійну розшифровку ваших аналізів, знімків та медичних документів\n\n"
         "📝 <b>Нотатка в пам'ять</b> — створюйте свою медичну історію. Чим більше я знаю про вас, тим точніші мої рекомендації\n\n"
         "💊 <b>Мої ліки</b> — фіксуйте всі ліки та їх режим прийому\n\n"
-        "📂 <b>Мої документи</b> — керуйте своєю медичною історією"
+        "📂 <b>Мої документи</b> — керуйте своєю медичною історією\n\n"
+        "💬 Або просто поставте мені питання — я завжди готовий допомогти з урахуванням вашої медичної історії!"
     ),
     "how_to_use_1": (
         "🎁 <b>Ваші стартові можливості:</b>\n\n"
@@ -1878,7 +1884,8 @@ Garmin analysis requires detailed consultations.
         "📄 <b>Upload document</b> — get professional interpretation of your tests, images and medical documents\n\n"
         "📝 <b>Memory note</b> — create your medical history. The more I know about you, the more accurate my recommendations\n\n"
         "💊 <b>My medications</b> — record all medications and their dosing schedule\n\n"
-        "📂 <b>My documents</b> — manage your medical history"
+        "📂 <b>My documents</b> — manage your medical history\n\n"
+        "💬 Or simply ask me a question — I'm always ready to help based on your medical history!"
     ),
     "how_to_use_1": (
         "🎁 <b>Your starting capabilities:</b>\n\n"
@@ -2018,7 +2025,9 @@ All your data is synchronized!
 
 💊 <b>My medications</b> — record all medications and their dosing schedule
 
-📂 <b>My documents</b> — manage your medical history''',
+📂 <b>My documents</b> — manage your medical history
+
+💬 Or simply ask me a question — I'm always ready to help based on your medical history!''',
 
 "de": {   
     'bot_code_format_error': '❌ Ungültiges Code-Format. Senden Sie einen 6-stelligen Code (nur Zahlen).',
@@ -2046,7 +2055,9 @@ Alle Ihre Daten sind synchronisiert!
 
 💊 <b>Meine Medikamente</b> — erfassen Sie alle Medikamente und deren Einnahmeplan
 
-📂 <b>Meine Dokumente</b> — verwalten Sie Ihre Krankengeschichte''',
+📂 <b>Meine Dokumente</b> — verwalten Sie Ihre Krankengeschichte
+
+💬 Oder stellen Sie mir einfach eine Frage — ich bin immer bereit zu helfen, basierend auf Ihrer Krankengeschichte!''',
     "garmin_email_not_found_error": "❌ Fehler: E-Mail nicht gefunden. Starten Sie die Einrichtung erneut.",
 "garmin_connection_success_auto": """✅ <b>Garmin erfolgreich verbunden!</b>
 
@@ -2538,7 +2549,8 @@ Für die Garmin-Analyse sind detaillierte Beratungen erforderlich.
         "📄 <b>Dokument hochladen</b> — erhalten Sie professionelle Interpretation Ihrer Tests, Bilder und medizinischen Dokumente\n\n"
         "📝 <b>Gedächtnisnotiz</b> — erstellen Sie Ihre medizinische Geschichte. Je mehr ich über Sie weiß, desto genauer sind meine Empfehlungen\n\n"
         "💊 <b>Meine Medikamente</b> — erfassen Sie alle Medikamente und deren Dosierungsplan\n\n"
-        "📂 <b>Meine Dokumente</b> — verwalten Sie Ihre medizinische Geschichte"
+        "📂 <b>Meine Dokumente</b> — verwalten Sie Ihre medizinische Geschichte\n\n"
+        "💬 Oder stellen Sie mir einfach eine Frage — ich bin immer bereit zu helfen, basierend auf Ihrer Krankengeschichte!"
     ),
     "how_to_use_1": (
         "🎁 <b>Ihre Startmöglichkeiten:</b>\n\n"

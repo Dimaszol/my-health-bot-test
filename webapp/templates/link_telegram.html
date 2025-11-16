@@ -29,108 +29,81 @@
             
             {% else %}
             <!-- 📱 Процесс подключения Telegram -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="fab fa-telegram me-2"></i>{{ t('connect_telegram_title', lang) }}
-                    </h4>
-                </div>
+            
+            <!-- 🎯 ЗАГОЛОВОК -->
+            <div style="margin-bottom: 2rem;">
                 
-                <div class="card-body">
-                    <!-- ⚠️ Предупреждение -->
-                    <div class="alert alert-warning mb-4">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>{{ t('connect_instructions_warning', lang) }}</strong>
+                <h1 style="font-size: 2rem; font-weight: 700; color: #667eea; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="width: 40px; height: 40px;">
+                        <svg viewBox="0 0 24 24" fill="#0088cc" style="width: 100%; height: 100%;">
+                            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.008-1.252-.241-1.865-.44-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635.099-.002.321.023.465.141.121.099.155.232.171.326.016.094.037.308.02.474z"/>
+                        </svg>
                     </div>
-                    
-                    <!-- 📋 Инструкции -->
-                    <div class="mb-4">
-                        <h5 class="mb-3">{{ t('connect_instructions_title', lang) }}</h5>
-                        <ol class="ps-3">
-                            <li class="mb-2">{{ t('connect_instructions_step1', lang) }}</li>
-                            <li class="mb-2">{{ t('connect_instructions_step2', lang) }}</li>
-                            <li class="mb-2">{{ t('connect_instructions_step3', lang) }}</li>
-                        </ol>
-                    </div>
-                    
-                    <!-- 🔢 Код связывания -->
-                    <div class="text-center mb-4">
-                        <label class="form-label fw-bold">{{ t('your_link_code', lang) }}</label>
-                        <div class="input-group input-group-lg mb-2">
-                            <input 
-                                type="text" 
-                                class="form-control text-center fw-bold" 
-                                id="linkCode" 
-                                value="{{ link_code }}" 
-                                readonly 
-                                style="font-size: 32px; letter-spacing: 8px;"
-                            >
-                            <button 
-                                class="btn btn-outline-secondary" 
-                                type="button" 
-                                id="copyCodeBtn"
-                                onclick="copyCode()"
-                            >
-                                <i class="fas fa-copy"></i>
-                            </button>
+                    {{ t('connect_telegram_title', lang) }}
+                </h1>
+                <p style="color: #666; font-size: 1rem; margin-bottom: 0.5rem;">
+                    {{ t('telegram_link_description', lang) }}
+                </p>
+                <a href="/faq#telegram" style="color: #667eea; text-decoration: none; font-weight: 500;">
+                    {{ t('learn_more', lang) }} →
+                </a>
+            </div>
+            
+            <!-- ⚠️ ПРЕДУПРЕЖДЕНИЕ -->
+            <div class="card" style="margin-bottom: 2rem; border: 2px solid #f59e0b; background: #fffbeb;">
+                <div style="padding: 1rem;">
+                    <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                        <i class="fas fa-exclamation-triangle" style="color: #f59e0b; font-size: 1.25rem; margin-top: 0.15rem;"></i>
+                        <div>
+                            <strong style="color: #92400e; display: block; margin-bottom: 0.25rem;">
+                                {{ t('telegram_warning_device', lang) }}
+                            </strong>
+                            <small style="color: #92400e;">
+                                {{ t('telegram_warning_expires', lang) }}
+                            </small>
                         </div>
-                        <small class="text-muted">
-                            <i class="fas fa-clock me-1"></i>
-                            {{ t('code_expires_in', lang, minutes=code_expires_minutes) }}
-                        </small>
-                    </div>
-                    
-                    <!-- 🚀 Кнопка открыть Telegram -->
-                    <div class="d-grid gap-2 mb-4">
-                        <a 
-                            href="{{ telegram_link }}" 
-                            class="btn btn-primary btn-lg"
-                            target="_blank"
-                        >
-                            <i class="fab fa-telegram me-2"></i>
-                            {{ t('open_telegram_bot', lang) }}
-                        </a>
-                        
-                        <button 
-                            class="btn btn-outline-secondary" 
-                            onclick="refreshCode()"
-                            id="refreshCodeBtn"
-                        >
-                            <i class="fas fa-sync-alt me-2"></i>
-                            Обновить код
-                        </button>
-                    </div>
-                    
-                    <!-- 💡 Преимущества -->
-                    <div class="bg-light p-3 rounded">
-                        <h6 class="mb-2">{{ t('link_benefits_title', lang) }}</h6>
-                        <ul class="small mb-0">
-                            <li>{{ t('link_benefit_1', lang) }}</li>
-                            <li>{{ t('link_benefit_2', lang) }}</li>
-                            <li>{{ t('link_benefit_3', lang) }}</li>
-                            <li>{{ t('link_benefit_4', lang) }}</li>
-                        </ul>
-                    </div>
-                    
-                    <!-- 📊 Статус связывания (динамически обновляется) -->
-                    <div id="linkingStatus" class="mt-4 text-center" style="display: none;">
-                        <div class="spinner-border text-primary mb-2" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p class="text-muted">
-                            <i class="fas fa-sync-alt fa-spin me-2"></i>
-                            Ожидание подключения...
-                        </p>
                     </div>
                 </div>
             </div>
             
-            <!-- ⬅️ Назад -->
-            <div class="mt-3 text-center">
-                <a href="/dashboard" class="text-muted">
-                    <i class="fas fa-arrow-left me-2"></i>{{ t('back_to_dashboard', lang) }}
+            <!-- 📋 ИНСТРУКЦИИ -->
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <h3 style="color: var(--text-primary); font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">
+                    {{ t('connect_instructions_title', lang) }}
+                </h3>
+                <ol style="padding-left: 1.5rem; color: var(--text-secondary); line-height: 1.8;">
+                    <li style="margin-bottom: 0.5rem;">{{ t('telegram_step_1', lang) }}</li>
+                    <li style="margin-bottom: 0.5rem;">{{ t('telegram_step_2', lang) }}</li>
+                    <li style="margin-bottom: 0.5rem;">{{ t('telegram_step_3', lang) }}</li>
+                </ol>
+            </div>
+            
+            <!-- 🚀 КНОПКА ОТКРЫТЬ TELEGRAM -->
+            <div style="margin-bottom: 2rem;">
+                <a 
+                    href="{{ telegram_link }}" 
+                    class="btn"
+                    target="_blank"
+                    style="width: 100%; text-align: center; font-size: 1.1rem; padding: 1rem 2rem; display: block;"
+                >
+                    <i class="fab fa-telegram" style="margin-right: 0.5rem;"></i>
+                    {{ t('open_telegram_bot', lang) }}
                 </a>
             </div>
+            
+            <!-- 💡 ПРЕИМУЩЕСТВА -->
+            <div class="card" style="background: var(--background-light); border: 1px solid var(--border-color);">
+                <h3 style="color: var(--text-primary); font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">
+                    {{ t('link_benefits_title', lang) }}
+                </h3>
+                <ul style="padding-left: 1.5rem; color: var(--text-secondary); line-height: 1.8; margin: 0;">
+                    <li style="margin-bottom: 0.5rem;">{{ t('link_benefit_1', lang) }}</li>
+                    <li style="margin-bottom: 0.5rem;">{{ t('link_benefit_2', lang) }}</li>
+                    <li style="margin-bottom: 0.5rem;">{{ t('link_benefit_3', lang) }}</li>
+                    <li>{{ t('link_benefit_4', lang) }}</li>
+                </ul>
+            </div>
+                        
             {% endif %}
             
         </div>
@@ -138,53 +111,6 @@
 </div>
 
 <script>
-// 📋 Копирование кода
-function copyCode() {
-    const codeInput = document.getElementById('linkCode');
-    codeInput.select();
-    codeInput.setSelectionRange(0, 99999); // Для мобильных
-    
-    document.execCommand('copy');
-    
-    // Визуальная обратная связь
-    const btn = document.getElementById('copyCodeBtn');
-    const originalHTML = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-check"></i>';
-    btn.classList.remove('btn-outline-secondary');
-    btn.classList.add('btn-success');
-    
-    setTimeout(() => {
-        btn.innerHTML = originalHTML;
-        btn.classList.remove('btn-success');
-        btn.classList.add('btn-outline-secondary');
-    }, 2000);
-}
-
-// 🔄 Обновление кода
-async function refreshCode() {
-    const btn = document.getElementById('refreshCodeBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-sync-alt fa-spin me-2"></i>Обновление...';
-    
-    try {
-        const response = await fetch('/api/refresh-link-code');
-        const data = await response.json();
-        
-        if (data.success) {
-            document.getElementById('linkCode').value = data.code;
-            currentCode = data.code;
-            
-            // Перезапускаем проверку статуса
-            startStatusCheck();
-        }
-    } catch (error) {
-        console.error('Ошибка обновления кода:', error);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Обновить код';
-    }
-}
-
 // 🔍 Проверка статуса связывания (каждые 3 секунды)
 let statusCheckInterval = null;
 let currentCode = '{{ link_code }}';
@@ -208,17 +134,42 @@ async function checkLinkStatus() {
             // Показываем сообщение об успехе
             const statusDiv = document.getElementById('linkingStatus');
             statusDiv.style.display = 'block';
+            statusDiv.style.background = '#d1fae5';
+            statusDiv.style.border = '2px solid #10b981';
             statusDiv.innerHTML = `
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle me-2"></i>
-                    <strong>🎉 Аккаунты успешно объединены!</strong>
+                <div style="padding: 1rem;">
+                    <i class="fas fa-check-circle" style="color: #10b981; font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                    <p style="color: #065f46; margin: 0; font-weight: 600;">
+                        🎉 {{ t('bot_link_success', lang) }}
+                    </p>
                 </div>
             `;
             
-            // ✅ ДОБАВИТЬ: Перезагрузить страницу для обновления сессии
+            // Редирект на dashboard
             setTimeout(() => {
-                window.location.href = '/dashboard';  // Редирект на dashboard
+                window.location.href = '/dashboard';
             }, 2000);
+        }
+        
+        if (data.success && data.status === 'expired') {
+            // ⏱️ Код истёк
+            clearInterval(statusCheckInterval);
+            
+            const statusDiv = document.getElementById('linkingStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = '#fee2e2';
+            statusDiv.style.border = '2px solid #ef4444';
+            statusDiv.innerHTML = `
+                <div style="padding: 1rem;">
+                    <i class="fas fa-clock" style="color: #ef4444; font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                    <p style="color: #991b1b; margin: 0; font-weight: 600;">
+                        {{ t('link_expired', lang) }}
+                    </p>
+                    <small style="color: #991b1b;">
+                        {{ t('link_expired_refresh', lang) }}
+                    </small>
+                </div>
+            `;
         }
     } catch (error) {
         console.error('Ошибка проверки статуса:', error);
@@ -237,9 +188,8 @@ function startStatusCheck() {
     // Запускаем новую проверку каждые 3 секунды
     statusCheckInterval = setInterval(checkLinkStatus, 3000);
 }
-
-// Запускаем проверку при загрузке страницы
 </script>
+
 {% if not already_linked %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {

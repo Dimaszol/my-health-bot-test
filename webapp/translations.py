@@ -2407,6 +2407,80 @@ TRANSLATIONS = {
     'uk': 'Очікування підключення...',
     'de': 'Warten auf Verbindung...'
 },
+'telegram_link_description': {
+    'ru': 'Получайте уведомления о приёме лекарств и консультируйтесь с AI прямо в Telegram.',
+    'en': 'Get medication reminders and consult with AI directly in Telegram.',
+    'uk': 'Отримуйте нагадування про прийом ліків та консультуйтеся з AI прямо в Telegram.',
+    'de': 'Erhalten Sie Medikamentenerinnerungen und konsultieren Sie AI direkt in Telegram.'
+},
+
+'learn_more': {
+    'ru': 'Узнать подробнее',
+    'en': 'Learn more',
+    'uk': 'Дізнатися більше',
+    'de': 'Mehr erfahren'
+},
+
+'telegram_warning_device': {
+    'ru': 'Откройте эту страницу на устройстве, где установлен Telegram',
+    'en': 'Open this page on a device with Telegram installed',
+    'uk': 'Відкрийте цю сторінку на пристрої, де встановлено Telegram',
+    'de': 'Öffnen Sie diese Seite auf einem Gerät mit installiertem Telegram'
+},
+
+'telegram_warning_expires': {
+    'ru': 'Ссылка для связывания действительна 10 минут',
+    'en': 'Linking code is valid for 10 minutes',
+    'uk': 'Посилання для зв\'язування дійсне 10 хвилин',
+    'de': 'Verknüpfungscode ist 10 Minuten gültig'
+},
+
+'telegram_step_1': {
+    'ru': '📱 Нажмите кнопку ниже',
+    'en': '📱 Click the button below',
+    'uk': '📱 Натисніть кнопку нижче',
+    'de': '📱 Klicken Sie auf die Schaltfläche unten'
+},
+
+'telegram_step_2': {
+    'ru': '🤖 Telegram откроется автоматически',
+    'en': '🤖 Telegram will open automatically',
+    'uk': '🤖 Telegram відкриється автоматично',
+    'de': '🤖 Telegram wird automatisch geöffnet'
+},
+
+'telegram_step_3': {
+    'ru': '✅ Нажмите START в боте',
+    'en': '✅ Click START in the bot',
+    'uk': '✅ Натисніть START в боті',
+    'de': '✅ Klicken Sie auf START im Bot'
+},
+
+'link_expired': {
+    'ru': '⏱️ Ссылка истекла',
+    'en': '⏱️ Link expired',
+    'uk': '⏱️ Посилання минуло',
+    'de': '⏱️ Link abgelaufen'
+},
+
+'link_expired_refresh': {
+    'ru': 'Пожалуйста, обновите страницу',
+    'en': 'Please refresh the page',
+    'uk': 'Будь ласка, оновіть сторінку',
+    'de': 'Bitte aktualisieren Sie die Seite'
+},
+'back_to_dashboard': {
+    'ru': 'Назад в кабинет',
+    'en': 'Back to dashboard',
+    'uk': 'Назад до кабінету',
+    'de': 'Zurück zum Dashboard'
+},
+'profile_family_history': {
+    'ru': 'Семейная история болезней',
+    'en': 'Family medical history',
+    'uk': 'Сімейна історія хвороб',
+    'de': 'Familienkrankengeschichte'
+},
 }
 
 

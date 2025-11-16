@@ -182,6 +182,14 @@
                 {{ user.allergies if user and user.allergies else t('profile_not_specified', lang) }}
             </p>
         </div>
+
+        <!-- Семейная история болезней -->
+        <div style="margin-top: 1.5rem;">
+            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_family_history', lang) }}</strong>
+            <p style="color: #666; padding: 1rem; background: white; border-radius: 8px;" id="family-history-display">
+                {{ user.family_history if user and user.family_history else t('profile_not_specified', lang) }}
+            </p>
+        </div>
         
         <!-- Лекарства -->
         <div style="margin-top: 1.5rem;">
@@ -273,6 +281,17 @@
                 placeholder="{{ t('profile_not_specified', lang) }}"
                 style="width: 100%; padding: 0.8rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem; resize: vertical;"
             >{{ user.allergies if user and user.allergies else '' }}</textarea>
+        </div>
+
+        <!-- Семейная история -->
+        <div style="margin-top: 1.5rem;">
+            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_family_history', lang) }}</strong>
+            <textarea 
+                id="family-history-input"
+                rows="3"
+                placeholder="{{ t('profile_not_specified', lang) }}"
+                style="width: 100%; padding: 0.8rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem; resize: vertical;"
+            >{{ user.family_history if user and user.family_history else '' }}</textarea>
         </div>
         
         <!-- Лекарства -->
@@ -474,6 +493,7 @@ function saveOriginalValues(section) {
         originalValues[section].weight = document.getElementById('weight-input').value;
         originalValues[section].chronic = document.getElementById('chronic-input').value;
         originalValues[section].allergies = document.getElementById('allergies-input').value;
+        originalValues[section].family_history = document.getElementById('family-history-input').value;
         originalValues[section].medications = document.getElementById('medications-input').value;
     }
     else if (section === 'lifestyle') {
@@ -499,6 +519,7 @@ function restoreOriginalValues(section) {
         document.getElementById('weight-input').value = originalValues[section].weight;
         document.getElementById('chronic-input').value = originalValues[section].chronic;
         document.getElementById('allergies-input').value = originalValues[section].allergies;
+        document.getElementById('family-history-input').value = originalValues[section].family_history;
         document.getElementById('medications-input').value = originalValues[section].medications;
     }
     else if (section === 'lifestyle') {
@@ -531,6 +552,7 @@ async function saveSection(section) {
         data.weight_kg = document.getElementById('weight-input').value;
         data.chronic_conditions = document.getElementById('chronic-input').value.trim();
         data.allergies = document.getElementById('allergies-input').value.trim();
+        data.family_history = document.getElementById('family-history-input').value.trim();
         data.medications = document.getElementById('medications-input').value.trim();
     }
     else if (section === 'lifestyle') {
@@ -588,6 +610,7 @@ function updateDisplayValues(section, data) {
         
         document.getElementById('chronic-display').textContent = data.chronic_conditions || '{{ t("profile_not_specified", lang) }}';
         document.getElementById('allergies-display').textContent = data.allergies || '{{ t("profile_not_specified", lang) }}';
+        document.getElementById('family-history-display').textContent = data.family_history || '{{ t("profile_not_specified", lang) }}';
         document.getElementById('medications-display').textContent = data.medications || '{{ t("profile_not_specified", lang) }}';
     }
     else if (section === 'lifestyle') {

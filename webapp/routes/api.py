@@ -1333,6 +1333,8 @@ async def update_profile(request: Request):
                 update_data['chronic_conditions'] = data['chronic_conditions'] if data['chronic_conditions'] else None
             if 'allergies' in data:
                 update_data['allergies'] = data['allergies'] if data['allergies'] else None
+            if 'family_history' in data:  # ← ДОБАВЬ ЭТУ ПРОВЕРКУ
+                update_data['family_history'] = data['family_history'] if data['family_history'] else None
             if 'medications' in data:
                 update_data['medications'] = data['medications'] if data['medications'] else None
         
