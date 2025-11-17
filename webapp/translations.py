@@ -2574,6 +2574,55 @@ TRANSLATIONS = {
     'uk': 'Сімейна історія хвороб',
     'de': 'Familienkrankengeschichte'
 },
+'file_mime_type_mismatch': {
+    'ru': '❌ Тип файла не соответствует содержимому. Возможно, файл переименован или повреждён.',
+    'en': '❌ File type does not match content. The file may be renamed or corrupted.',
+    'uk': '❌ Тип файлу не відповідає вмісту. Можливо, файл перейменовано або пошкоджено.',
+    'de': '❌ Dateityp stimmt nicht mit Inhalt überein. Die Datei wurde möglicherweise umbenannt oder ist beschädigt.'
+},
+'file_validation_error': {
+    'ru': '❌ Ошибка при проверке файла. Попробуйте другой файл.',
+    'en': '❌ File validation error. Please try another file.',
+    'uk': '❌ Помилка перевірки файлу. Спробуйте інший файл.',
+    'de': '❌ Fehler bei der Dateivalidierung. Bitte versuchen Sie eine andere Datei.'
+},
+# ============================================
+# 🔒 API ОШИБКИ И ЛИМИТЫ
+# ============================================
+'gpt4o_limit_exceeded': {
+    'ru': '❌ Исчерпан лимит запросов к GPT-4. Пожалуйста, обновите подписку.',
+    'en': '❌ GPT-4 query limit exceeded. Please upgrade your subscription.',
+    'uk': '❌ Вичерпаноліміт запитів до GPT-4. Будь ласка, оновіть підписку.',
+    'de': '❌ GPT-4-Abfragelimit überschritten. Bitte upgraden Sie Ihr Abonnement.'
+},
+
+'photo_too_large': {
+    'ru': '❌ Фото слишком большое. Максимальный размер: 10 МБ.',
+    'en': '❌ Photo too large. Maximum size: 10 MB.',
+    'uk': '❌ Фото занадто велике. Максимальний розмір: 10 МБ.',
+    'de': '❌ Foto zu groß. Maximale Größe: 10 MB.'
+},
+
+'photo_analysis_error': {
+    'ru': '❌ Ошибка при анализе фото. Попробуйте другое изображение.',
+    'en': '❌ Photo analysis error. Please try another image.',
+    'uk': '❌ Помилка при аналізі фото. Спробуйте інше зображення.',
+    'de': '❌ Fehler bei der Fotoanalyse. Bitte versuchen Sie ein anderes Bild.'
+},
+
+'photo_analysis_failed': {
+    'ru': '❌ Не удалось проанализировать фото. Убедитесь, что изображение четкое и содержит медицинскую информацию.',
+    'en': '❌ Failed to analyze photo. Make sure the image is clear and contains medical information.',
+    'uk': '❌ Не вдалося проаналізувати фото. Переконайтеся, що зображення чітке та містить медичну інформацію.',
+    'de': '❌ Fotoanalyse fehlgeschlagen. Stellen Sie sicher, dass das Bild klar ist und medizinische Informationen enthält.'
+},
+
+'stripe_session_creation_error': {
+    'ru': '❌ Ошибка при создании платежной сессии. Попробуйте позже или обратитесь в поддержку.',
+    'en': '❌ Error creating payment session. Please try again later or contact support.',
+    'uk': '❌ Помилка при створенні платіжної сесії. Спробуйте пізніше або зверніться до підтримки.',
+    'de': '❌ Fehler beim Erstellen der Zahlungssitzung. Bitte versuchen Sie es später erneut oder kontaktieren Sie den Support.'
+},
 }
 
 

@@ -146,6 +146,35 @@ app.add_middleware(
     exempt_urls={"/webhook/stripe"}  # Можно исключить некоторые URL (например webhook от Stripe)
 )
 
+# 🛡️ ДОБАВЛЯЕМ ЗАГОЛОВКИ БЕЗОПАСНОСТИ
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware для добавления заголовков безопасности ко всем ответам
+    
+    Защищает от:
+    - XSS атак (Content-Security-Policy)
+    - Clickjacking (X-Frame-Options)
+    - MIME-type снифинга (X-Content-Type-Options)
+    """
+    
+    async def dispatch(self, request: Request, call_next):
+        response: Response = await call_next(request)
+        
+        # Добавляем все заголовки из config.py
+        for header_name, header_value in Config.SECURITY_HEADERS.items():
+            # Пропускаем пустые значения (например HSTS в development)
+            if header_value:
+                response.headers[header_name] = header_value
+        
+        return response
+
+# Применяем middleware
+app.add_middleware(SecurityHeadersMiddleware)
+
 # 📁 НАСТРОЙКА ШАБЛОНОВ И СТАТИКИ
 # Используем те же папки что были в Flask
 templates = Jinja2Templates(directory="webapp/templates")

@@ -315,9 +315,7 @@ async def check_photo_limits(
         
         # Проверяем лимиты GPT-4o
         has_limits = await check_gpt4o_limit(user_id)
-        
-        from db_postgresql import t
-        
+     
         return JSONResponse(content={
             'success': True,
             'has_limits': has_limits,
@@ -428,7 +426,6 @@ async def analyze_photo_with_question(
             has_premium_limits = await check_gpt4o_limit(user_id)
             
             if not has_premium_limits:
-                from db_postgresql import t
                 return JSONResponse(
                     status_code=403,
                     content={
@@ -461,7 +458,6 @@ async def analyze_photo_with_question(
         # Проверяем размер (максимум 5 МБ)
         if not validate_file_size(photo_path):
             os.remove(photo_path)
-            from db_postgresql import t
             return JSONResponse(
                 status_code=400,
                 content={
@@ -526,7 +522,6 @@ async def analyze_photo_with_question(
             safe_log_warning("Ошибка удаления временного файла фото", error=e)
         
         if error_message:
-            from db_postgresql import t
             return JSONResponse(
                 status_code=500,
                 content={
@@ -536,7 +531,6 @@ async def analyze_photo_with_question(
             )
         
         if not analysis_result:
-            from db_postgresql import t
             return JSONResponse(
                 status_code=500,
                 content={
@@ -619,7 +613,6 @@ async def upload_document(
         limits = await SubscriptionManager.get_user_limits(user_id)
         
         # Формируем мультиязычное сообщение
-        from db_postgresql import t
         error_message = t("document_limit_exceeded", lang,
                          documents_left=limits['documents_left'],
                          gpt4o_queries_left=limits['gpt4o_queries_left'])
@@ -634,7 +627,6 @@ async def upload_document(
 
     try:
         if not file.filename:
-            from db_postgresql import t
             return JSONResponse(
                 status_code=400,
                 content={'success': False, 'error': t('file_not_selected', lang)}
@@ -645,7 +637,6 @@ async def upload_document(
         file_ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
         
         if file_ext not in Config.ALLOWED_EXTENSIONS:
-            from db_postgresql import t
             return JSONResponse(
                 status_code=400,
                 content={
@@ -654,6 +645,47 @@ async def upload_document(
                 }
             )
         
+        # 🛡️ КРИТИЧЕСКАЯ ПРОВЕРКА: Валидация MIME-type (содержимого файла)
+        try:
+            # Читаем начало файла для определения настоящего типа
+            file_content = await file.read(2048)  # Первые 2KB достаточно
+            await file.seek(0)  # Возвращаем указатель в начало файла
+            
+            # Определяем MIME-type через python-magic
+            import magic
+            detected_mime = magic.from_buffer(file_content, mime=True)
+            
+            # Проверяем что MIME-type в списке разрешённых
+            if detected_mime not in Config.ALLOWED_MIME_TYPES:
+                safe_log_warning(
+                    f"Отклонён файл с недопустимым MIME-type",
+                    user_id=user_id,
+                    filename_length=len(filename),
+                    detected_mime=detected_mime,
+                    file_extension=file_ext
+                )
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        'success': False,
+                        'error': t('file_mime_type_mismatch', lang)
+                    }
+                )
+            
+            safe_log_warning(
+                f"Файл прошёл MIME-type валидацию",
+                user_id=user_id,
+                file_extension=file_ext,
+                detected_mime=detected_mime
+            )
+            
+        except Exception as e:
+            safe_log_error("Ошибка при проверке MIME-type файла", user_id=user_id, error=e)
+            return JSONResponse(
+                status_code=500,
+                content={'success': False, 'error': t('file_validation_error', lang)}
+            )
+                
         # Создаём временную папку для загрузок
         temp_dir = f"temp_{user_id}"
         os.makedirs(temp_dir, exist_ok=True)
@@ -1202,9 +1234,16 @@ async def toggle_document_confirmed(
             
     except Exception as e:
         log_error_with_context(e, {"function": "toggle_document_confirmed", "document_id": document_id})
+        
+        # Безопасное получение языка
+        error_lang = locals().get('lang', 'en')
+        
         return JSONResponse(
             status_code=500,
-            content={"success": False, "message": str(e)}
+            content={
+                "success": False,
+                "message": t('document_toggle_error', error_lang)
+            }
         )
 # ==========================================
 # 💳 РЕДАКТИРОВАНИЕ ПРОФАЙЛА
@@ -1371,7 +1410,6 @@ async def create_checkout_session(
         # Получаем язык для локализованного сообщения
         try:
             lang = await get_user_language(user_id)
-            from db_postgresql import t
             error_message = t('stripe_session_creation_error', lang)
         except:
             error_message = 'Ошибка создания сессии оплаты'

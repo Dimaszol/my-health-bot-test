@@ -110,9 +110,7 @@ async def find_or_create_web_user(google_id: str, email: str, name: str, session
         }
         
     except Exception as e:
-        print(f"❌ Ошибка при создании пользователя: {e}")
-        import traceback
-        traceback.print_exc()
+        safe_log_error("Ошибка при создании пользователя", error=e)
         return None
         
     finally:
@@ -178,9 +176,15 @@ async def google_callback(request: Request):
             """, google_id)
             
             if user:
-                # ✅ Пользователь найден (может быть после слияния с telegram_id!)
-                print(f"📍 Найден пользователь: user_id={user['user_id']}")
                 
+                # 🔒 ЗАЩИТА ОТ SESSION FIXATION: Пересоздаём сессию
+                old_session_data = dict(request.session)
+                request.session.clear()
+                
+                # Восстанавливаем только безопасные данные
+                if 'language' in old_session_data:
+                    request.session['language'] = old_session_data['language']
+
                 # Сохраняем данные в сессии
                 request.session['user_id'] = user['user_id']  # ← Может быть telegram_id!
                 request.session['email'] = user['email']
@@ -213,7 +217,10 @@ async def google_callback(request: Request):
                 new_user = await find_or_create_web_user(google_id, email, name, current_session_lang)
                 
                 if new_user:
-                    # Сохраняем в сессию
+                    # 🔒 ЗАЩИТА ОТ SESSION FIXATION: Пересоздаём сессию для нового пользователя
+                    request.session.clear()
+                    
+                    # Сохраняем в НОВУЮ сессию
                     request.session['user_id'] = new_user['user_id']
                     request.session['email'] = email
                     request.session['name'] = name
@@ -229,7 +236,5 @@ async def google_callback(request: Request):
             await release_db_connection(conn)
             
     except Exception as e:
-        print(f"❌ Ошибка при входе через Google: {e}")
-        import traceback
-        traceback.print_exc()
+        safe_log_error("Ошибка при входе через Google", error=e)
         return RedirectResponse(url='/login', status_code=302)
