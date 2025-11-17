@@ -6,6 +6,7 @@ import sys
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
+from webapp.utils.logger import safe_log_info, safe_log_error
 
 # Добавляем корневую папку в путь
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -72,7 +73,6 @@ async def find_or_create_web_user(google_id: str, email: str, name: str, session
         )
         
         if user:
-            print(f"📍 Найден существующий пользователь: {email}")
             return {
                 'user_id': user['user_id'],
                 'name': user['name'],
@@ -80,8 +80,7 @@ async def find_or_create_web_user(google_id: str, email: str, name: str, session
             }
         
         # 2. Создаём нового пользователя
-        print(f"🆕 Создаём нового веб-пользователя: {email}")
-        
+               
         # Генерируем ID
         temp_user_id = await conn.fetchval("SELECT generate_temp_web_user_id()")
         
@@ -103,8 +102,6 @@ async def find_or_create_web_user(google_id: str, email: str, name: str, session
             VALUES ($1, 2, 10, 'free')
             ON CONFLICT (user_id) DO NOTHING
         """, temp_user_id)
-        
-        print(f"✅ Веб-пользователь создан: user_id={temp_user_id}")
         
         return {
             'user_id': temp_user_id,
@@ -169,8 +166,6 @@ async def google_callback(request: Request):
         email = user_info.get('email')
         name = user_info.get('name', 'Пользователь')
         
-        print(f"✅ Пользователь вошёл через Google: {email}")
-        
         # ✅ НОВАЯ ЛОГИКА: Ищем пользователя по google_id
         conn = await get_db_connection()
         
@@ -200,20 +195,16 @@ async def google_callback(request: Request):
                 
                 if lang_result and lang_result['language']:
                     request.session['language'] = lang_result['language']
-                    print(f"✅ Язык загружен: {lang_result['language']}")
+
                 else:
                     # Оставляем текущий язык из сессии
                     if 'language' not in request.session:
                         request.session['language'] = 'en'
                 
-                print(f"✅ Пользователь авторизован: user_id={user['user_id']}")
-                
                 # Редиректим в личный кабинет
                 return RedirectResponse(url='/dashboard', status_code=302)
             
             else:
-                # ✅ Пользователь НЕ найден - создаём нового
-                print(f"🆕 Создаём нового пользователя: {email}")
                 
                 # Получаем язык из сессии
                 current_session_lang = request.session.get('language', 'en')
@@ -228,8 +219,6 @@ async def google_callback(request: Request):
                     request.session['name'] = name
                     request.session['google_id'] = google_id
                     request.session['language'] = current_session_lang
-                    
-                    print(f"✅ Новый пользователь создан: user_id={new_user['user_id']}")
                     
                     return RedirectResponse(url='/dashboard', status_code=302)
                 else:

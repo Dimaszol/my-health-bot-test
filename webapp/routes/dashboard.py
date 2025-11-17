@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import markdown
+from webapp.utils.logger import safe_log_error, safe_log_info
 
 # Создаём templates и регистрируем фильтр markdown
 templates = Jinja2Templates(directory="webapp/templates")
@@ -145,7 +146,7 @@ async def get_user_stats(user_id: int) -> dict:
         }
         
     except Exception as e:
-        print(f"❌ Ошибка get_user_stats: {e}")
+        safe_log_error("Ошибка получения статистики пользователя", error=e)
         return {
             'total_documents': 0,
             'total_messages': 0,
@@ -288,20 +289,7 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
             
             # Добавляем записи в документ
             doc['timeline_entries'] = timeline_entries
-        
-        # 🐛 DEBUG: Выводим в консоль для проверки
-        print(f"\n📋 Загружено документов: {len(docs_list)}")
-        for doc in docs_list:
-            print(f"  - ID: {doc['id']}, title: {doc['title']}")
-            print(f"    has raw_text: {bool(doc.get('raw_text'))}")
-            print(f"    has summary: {bool(doc.get('summary'))}")
-            if doc.get('raw_text'):
-                print(f"    raw_text length: {len(doc['raw_text'])} chars")
-            if doc.get('summary'):
-                print(f"    summary length: {len(doc['summary'])} chars")
-            # ✅ НОВЫЙ DEBUG: количество timeline записей
-            timeline_count = len(doc.get('timeline_entries', []))
-            print(f"    timeline entries: {timeline_count}")
+               
         
     finally:
         await release_db_connection(conn)
@@ -397,9 +385,9 @@ async def subscription_page(request: Request, user_id: int = Depends(get_current
         
         if subscription:
             current_package_id = subscription['package_id']
-            print(f"✅ Найдена активная подписка: {current_package_id}")
+            safe_log_info("Активная подписка найдена")
         else:
-            print(f"ℹ️ У пользователя нет активной подписки")
+            safe_log_info("Подписка не найдена")
     finally:
         await release_db_connection(conn)
     

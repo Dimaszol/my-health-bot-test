@@ -7,11 +7,12 @@ import sys
 import tempfile
 import uuid
 from datetime import datetime
-from fastapi import APIRouter, Request, Depends, UploadFile, File, Form
+from fastapi import APIRouter, Request, Depends, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from webapp.translations import t
 from error_handler import log_error_with_context
+from webapp.utils.logger import safe_log_error, safe_log_warning
 
 
 # Добавляем корневую папку в путь
@@ -50,7 +51,7 @@ try:
     print("✅ subscription_manager импортирован")
     
 except ImportError as e:
-    print(f"⚠️ Ошибка импорта: {e}")
+    safe_log_error("Ошибка импорта модулей бота", error=e)
     GPT_AVAILABLE = False
     CONTEXT_PROCESSOR_AVAILABLE = False
     LIMITS_AVAILABLE = False
@@ -80,17 +81,32 @@ async def get_current_user(request: Request) -> int:
     Проверяет авторизацию для API запросов
     (аналог @api_login_required в Flask)
     """
+    from fastapi import HTTPException
+    
     user_id = request.session.get('user_id')
     if not user_id:
-        return JSONResponse(
+        raise HTTPException(
             status_code=401,
-            content={
-                'success': False,
-                'error': 'Не авторизован. Войдите в систему.'
-            }
+            detail='Не авторизован. Войдите в систему.'
         )
+    
+    # ✅ ВАЛИДАЦИЯ: user_id должен быть положительным числом
+    try:
+        user_id = int(user_id)
+        if user_id <= 0:
+            request.session.clear()  # Очищаем испорченную сессию
+            raise HTTPException(
+                status_code=401,
+                detail='Некорректная сессия. Войдите снова.'
+            )
+    except (ValueError, TypeError):
+        request.session.clear()
+        raise HTTPException(
+            status_code=401,
+            detail='Некорректная сессия. Войдите снова.'
+        )
+    
     return user_id
-
 
 # ==========================================
 # 💬 ГЛАВНЫЙ МАРШРУТ: ЧАТ С ИИ
@@ -156,35 +172,26 @@ async def chat_message(
                 }
             )
         
-        print(f"💬 [WEB] Новое сообщение от user_id={user_id}, длина={len(user_message)} символов")
-        
         # ==========================================
         # ШАГ 2: СОХРАНЯЕМ СООБЩЕНИЕ
         # ==========================================
-        print(f"📝 [ШАГ 2] Сохраняем сообщение пользователя...")
-        
-        # ✅ ПРОСТО AWAIT! НЕТ КОСТЫЛЕЙ!
+
         await save_message(user_id, 'user', user_message)
-        
-        print(f"✅ [ШАГ 2] Сообщение сохранено")
         
         # ==========================================
         # ШАГ 3: ПРОВЕРЯЕМ ЛИМИТЫ
         # ==========================================
-        print(f"🔍 [ШАГ 3] Проверяем лимиты...")
         
         has_premium_limits = False
         if LIMITS_AVAILABLE:
             # ✅ ПРОСТО AWAIT!
             has_premium_limits = await check_gpt4o_limit(user_id)
-            print(f"✅ [ШАГ 3] Лимиты: {'ЕСТЬ' if has_premium_limits else 'НЕТ'}")
         else:
-            print(f"⚠️ [ШАГ 3] Модуль лимитов недоступен")
+            safe_log_warning("Модуль лимитов недоступен - работаем без проверки подписки")
         
         # ==========================================
         # ШАГ 4: СОБИРАЕМ КОНТЕКСТ
         # ==========================================
-        print(f"🧠 [ШАГ 4] Собираем контекст...")
         
         context_text = ""
         
@@ -198,11 +205,10 @@ async def chat_message(
             )
             
             context_text = prompt_data.get('context_text', '')
-            print(f"✅ [ШАГ 4] Контекст собран: {len(context_text)} символов")
             
         else:
             # Fallback: хотя бы профиль
-            print(f"⚠️ [ШАГ 4] Используем упрощённый контекст")
+            safe_log_warning("CONTEXT_PROCESSOR недоступен - качество ответов снижено")
             
             # ✅ ПРОСТО AWAIT!
             profile = await get_user_profile(user_id)
@@ -221,23 +227,18 @@ async def chat_message(
         # ==========================================
         # ШАГ 5: ВЫБИРАЕМ МОДЕЛЬ
         # ==========================================
-        print(f"🤖 [ШАГ 5] Выбираем модель...")
         
         if has_premium_limits:
             use_gemini = True
             model_name = "GPT-5 (детальная консультация)"
-            print(f"✅ [ШАГ 5] Модель: GPT-5")
         else:
             use_gemini = False
             model_name = "GPT-4o-mini (базовая консультация)"
-            print(f"✅ [ШАГ 5] Модель: GPT-4o-mini")
         
         # ==========================================
         # ШАГ 6: ГЕНЕРИРУЕМ ОТВЕТ
         # ==========================================
-        print(f"🧠 [ШАГ 6] Генерируем ответ...")
-        
-        # ✅ ПРОСТО AWAIT!
+
         lang = await get_user_language(user_id)
         
         # ✅ ПРОСТО AWAIT! Используем ТУ ЖЕ функцию что в боте!
@@ -248,8 +249,6 @@ async def chat_message(
             user_id=user_id,
             use_gemini=use_gemini
         )
-        
-        print(f"✅ [ШАГ 6] Ответ получен: {len(ai_response)} символов")
                 
         # Форматируем для веба
         formatted_response = format_for_web(ai_response)
@@ -260,28 +259,16 @@ async def chat_message(
         # ШАГ 7: СПИСЫВАЕМ ЛИМИТ
         # ==========================================
         if has_premium_limits and LIMITS_AVAILABLE:
-            print(f"💳 [ШАГ 7] Списываем лимит...")
             
             # ✅ ПРОСТО AWAIT!
             success = await spend_gpt4o_limit(user_id, message=None, bot=None)
-            
-            if success:
-                print(f"✅ [ШАГ 7] Лимит списан")
-            else:
-                print(f"⚠️ [ШАГ 7] Ошибка списания")
-        else:
-            print(f"⏭️ [ШАГ 7] Пропускаем")
         
         # ==========================================
         # ШАГ 8: СОХРАНЯЕМ ОТВЕТ
         # ==========================================
-        print(f"💾 [ШАГ 8] Сохраняем ответ...")
         
         # ✅ ПРОСТО AWAIT!
         await save_message(user_id, 'assistant', formatted_response)
-        
-        print(f"✅ [ШАГ 8] Готово!")
-        print(f"🎉 Запрос обработан успешно!")
         
         # Возвращаем успех
         return {
@@ -293,9 +280,7 @@ async def chat_message(
         }
         
     except Exception as e:
-        print(f"❌ Ошибка в /api/chat: {e}")
-        import traceback
-        traceback.print_exc()
+        safe_log_error("Критическая ошибка обработки сообщения в чате", error=e, user_id=user_id if 'user_id' in locals() else None)
         
         return JSONResponse(
             status_code=500,
@@ -340,7 +325,7 @@ async def check_photo_limits(
         })
         
     except Exception as e:
-        print(f"❌ Ошибка проверки лимитов: {e}")
+        safe_log_error("Ошибка проверки лимитов фото", error=e, user_id=user_id if 'user_id' in locals() else None)
         return JSONResponse(
             status_code=500,
             content={
@@ -435,9 +420,6 @@ async def analyze_photo_with_question(
                 }
             )
         
-        print(f"📸 [WEB] Загрузка фото от user_id={user_id}")
-        print(f"❓ Вопрос: {user_question}")
-        
         # ==========================================
         # ПРОВЕРКА ЛИМИТОВ GPT-4o
         # ==========================================
@@ -488,8 +470,6 @@ async def analyze_photo_with_question(
                 }
             )
         
-        print(f"✅ Фото сохранено: {photo_path}")
-        
         # ==========================================
         # СОХРАНЯЕМ ВОПРОС В ИСТОРИЮ
         # ==========================================
@@ -519,7 +499,7 @@ async def analyze_photo_with_question(
             context = f"{profile_text}\n{history_text}".strip()
             
         except Exception as e:
-            print(f"⚠️ Ошибка сбора контекста: {e}")
+            safe_log_warning("Ошибка сбора контекста для анализа фото", error=e)
             context = ""
         
         # ==========================================
@@ -532,8 +512,6 @@ async def analyze_photo_with_question(
         # ОТПРАВЛЯЕМ НА АНАЛИЗ В GEMINI VISION
         # ==========================================
         
-        print(f"🔬 Отправляем на анализ в Gemini Vision...")
-        
         from gemini_analyzer import send_to_gemini_vision
         
         analysis_result, error_message = await send_to_gemini_vision(
@@ -544,9 +522,8 @@ async def analyze_photo_with_question(
         try:
             if photo_path and os.path.exists(photo_path):
                 os.remove(photo_path)
-                print(f"🗑️ Временный файл удален")
         except Exception as e:
-            print(f"⚠️ Ошибка удаления файла: {e}")
+            safe_log_warning("Ошибка удаления временного файла фото", error=e)
         
         if error_message:
             from db_postgresql import t
@@ -574,7 +551,6 @@ async def analyze_photo_with_question(
         
         if LIMITS_AVAILABLE:
             await spend_gpt4o_limit(user_id, None, None)
-            print(f"💎 Лимит потрачен для user {user_id} (анализ фото)")
         
         # ==========================================
         # СОХРАНЯЕМ ОТВЕТ В ИСТОРИЮ
@@ -589,8 +565,6 @@ async def analyze_photo_with_question(
         
         formatted_result = format_for_web(response_text)
         
-        print(f"✅ Анализ фото завершен успешно")
-        
         return JSONResponse(content={
             'success': True,
             'response': formatted_result
@@ -604,9 +578,7 @@ async def analyze_photo_with_question(
             except:
                 pass
         
-        print(f"❌ Ошибка анализа фото: {e}")
-        import traceback
-        traceback.print_exc()
+        safe_log_error("Критическая ошибка анализа фото", error=e, user_id=user_id if 'user_id' in locals() else None)
         
         return JSONResponse(
             status_code=500,
@@ -636,15 +608,12 @@ async def upload_document(
     # 🔒 БЛОК 1: ПРОВЕРКА ОСНОВНЫХ ЛИМИТОВ
     # ==========================================
     
-    print(f"🔍 Проверяем основные лимиты документов...")
-    
     # ✅ Проверяем основные лимиты документов (documents_left)
     from subscription_manager import check_document_limit
     
     has_document_limits = await check_document_limit(user_id)
     
     if not has_document_limits:
-        print(f"❌ Лимит документов исчерпан (documents_left = 0)")
         
         # Получаем текущие лимиты для сообщения
         limits = await SubscriptionManager.get_user_limits(user_id)
@@ -662,9 +631,7 @@ async def upload_document(
                 'error': error_message
             }
         )
-    
-    print(f"✅ Лимиты проверены - можно загружать")
-    
+
     try:
         if not file.filename:
             from db_postgresql import t
@@ -687,8 +654,6 @@ async def upload_document(
                 }
             )
         
-        print(f"📤 Загрузка документа от user_id={user_id}: {filename}")
-        
         # Создаём временную папку для загрузок
         temp_dir = f"temp_{user_id}"
         os.makedirs(temp_dir, exist_ok=True)
@@ -700,9 +665,7 @@ async def upload_document(
         content = await file.read()
         with open(local_file, 'wb') as f:
             f.write(content)
-        
-        print(f"✅ Файл сохранён временно: {local_file}")
-        
+
         # ===================================================
         # 🔧 КОПИРУЕМ ЛОГИКУ ИЗ upload.py (TELEGRAM БОТА)
         # ===================================================
@@ -735,7 +698,6 @@ async def upload_document(
                 
                 # Ограничиваем до 5 страниц
                 if len(image_paths) > 5:
-                    print(f"⚠️ PDF содержит {len(image_paths)} страниц, обрабатываем первые 5")
                     image_paths = image_paths[:5]
                 
                 # Извлекаем текст с каждой страницы
@@ -745,7 +707,6 @@ async def upload_document(
                         if page_text:
                             vision_text += page_text + "\n\n"
                     except Exception as page_error:
-                        print(f"⚠️ Ошибка обработки страницы: {page_error}")
                         continue
                 
                 vision_text = vision_text.strip()
@@ -757,9 +718,7 @@ async def upload_document(
                     )
                     
             except Exception as e:
-                print(f"❌ Ошибка обработки PDF: {e}")
-                import traceback
-                traceback.print_exc()
+                safe_log_error("Ошибка обработки PDF", error=e, user_id=user_id)
                 return JSONResponse(
                     status_code=400,
                     content={'success': False, 'error': t('pdf_processing_error', lang)}
@@ -770,7 +729,7 @@ async def upload_document(
             try:
                 vision_text, _ = await send_to_gpt_vision(local_file, lang)
             except Exception as e:
-                print(f"❌ Ошибка анализа изображения: {e}")
+                safe_log_error("Ошибка анализа изображения Vision API", error=e, user_id=user_id)
                 return JSONResponse(
                     status_code=400,
                     content={'success': False, 'error': t('image_analysis_error', lang)}
@@ -786,7 +745,7 @@ async def upload_document(
                     with open(local_file, 'r', encoding='cp1251') as f:
                         vision_text = f.read()
                 except Exception as e:
-                    print(f"❌ Ошибка чтения файла: {e}")
+                    safe_log_error("Ошибка чтения текстового файла", error=e, user_id=user_id)
                     return JSONResponse(
                         status_code=400,
                         content={'success': False, 'error': t('file_read_error', lang)}
@@ -802,10 +761,8 @@ async def upload_document(
         # STEP 3: Генерируем заголовок
         if title and title.strip():
             auto_title = title.strip()
-            print(f"✅ Используем название от пользователя: {auto_title}")
         else:
             auto_title = await generate_title_from_text(text=vision_text[:1500], lang=lang)
-            print(f"🤖 Сгенерирован заголовок: {auto_title}")
         
         # STEP 4: Создаём структурированный текст и резюме
         raw_text = await ask_structured(vision_text[:8000], lang=lang)
@@ -824,9 +781,7 @@ async def upload_document(
                 status_code=500,
                 content={'success': False, 'error': t('file_storage_error', lang)}
             )
-        
-        print(f"✅ Файл сохранён постоянно: {permanent_path}")
-        
+         
         # STEP 6: Сохраняем в БД
         document_id = await save_document(
             user_id=user_id,
@@ -837,16 +792,11 @@ async def upload_document(
             summary=summary
         )
         
-        print(f"✅ Документ сохранён в БД: document_id={document_id}")
-        
         # STEP 7: Добавляем в векторную базу
         chunks = await split_into_chunks(summary, document_id, user_id)
         await add_chunks_to_vector_db(document_id, user_id, chunks)
         
-        print(f"✅ Документ добавлен в векторную базу")
-        
         # ✅ НОВОЕ: Извлекаем и сохраняем medical_timeline
-        print(f"🏥 Извлекаем medical timeline...")
         try:
             from medical_timeline import update_medical_timeline_on_document_upload
             
@@ -857,17 +807,10 @@ async def upload_document(
                 document_text=raw_text,  # Используем исходный текст
                 use_gemini=False  # По умолчанию GPT
             )
-            
-            if medical_timeline_success:
-                print(f"✅ Medical timeline обновлён успешно!")
-            else:
-                print(f"⚠️ Medical timeline не обновлён (возможно нет важных данных)")
-                
+                            
         except Exception as timeline_error:
             # Не прерываем загрузку документа если timeline не сохранился
-            print(f"⚠️ Ошибка обновления medical timeline: {timeline_error}")
-            import traceback
-            traceback.print_exc()
+            safe_log_warning("Ошибка обновления medical timeline", error=timeline_error)
 
         # STEP 8: Удаляем временные файлы
         try:
@@ -880,22 +823,15 @@ async def upload_document(
             if os.path.exists(temp_dir) and not os.listdir(temp_dir):
                 os.rmdir(temp_dir)
         except Exception as cleanup_error:
-            print(f"⚠️ Не удалось удалить временные файлы: {cleanup_error}")
-        
-        print(f"🎉 Документ успешно обработан!")
+            safe_log_warning("Ошибка удаления временных файлов при загрузке", error=cleanup_error)
         
         # ==========================================
         # 💳 БЛОК 2: СПИСАНИЕ ЛИМИТОВ
         # ==========================================
-        
-        print(f"💳 Списываем основной лимит документов...")
-        
+
         # Списываем основной лимит документов
         await SubscriptionManager.spend_limits(user_id, documents=1)
-        print(f"✅ Основной лимит документов списан")
-        
-        print(f"🎉 Лимит успешно списан!")
-        
+
         # ✅ Возвращаем успех
         return {
             'success': True,
@@ -907,9 +843,7 @@ async def upload_document(
     
     # ❌ ЕДИНСТВЕННЫЙ except для всех ошибок
     except Exception as e:
-        print(f"❌ Критическая ошибка загрузки: {e}")
-        import traceback
-        traceback.print_exc()
+        safe_log_error("Критическая ошибка загрузки документа", error=e, user_id=user_id if 'user_id' in locals() else None)
         
         # Пытаемся удалить временные файлы даже при ошибке
         try:
@@ -952,6 +886,12 @@ async def delete_document(
     - medical_timeline (медицинская карта)
     - файл с диска
     """
+    # ✅ ВАЛИДАЦИЯ: Проверяем что document_id положительный
+    if document_id <= 0:
+        return JSONResponse(
+            status_code=400,
+            content={'success': False, 'error': 'Invalid document ID'}
+        )
     try:
         conn = await get_db_connection()
         
@@ -968,15 +908,13 @@ async def delete_document(
                     content={'success': False, 'error': 'Документ не найден'}
                 )
             
-            print(f"🗑️ Начинаем удаление документа document_id={document_id}")
-            
             # 2️⃣ Удаляем из векторной базы
             try:
                 from vector_db_postgresql import delete_chunks_by_document
                 await delete_chunks_by_document(document_id)
-                print(f"✅ Удалено из векторной БД")
+    
             except Exception as e:
-                print(f"⚠️ Ошибка удаления из векторной БД: {e}")
+                safe_log_warning("Ошибка удаления из векторной БД", error=e, document_id=document_id)
             
             # 3️⃣ Удаляем из medical_timeline
             try:
@@ -984,9 +922,9 @@ async def delete_document(
                     "DELETE FROM medical_timeline WHERE source_document_id = $1",
                     document_id
                 )
-                print(f"✅ Удалено из medical_timeline: {deleted_timeline}")
+
             except Exception as e:
-                print(f"⚠️ Ошибка удаления из medical_timeline: {e}")
+                safe_log_warning("Ошибка удаления из medical_timeline", error=e, document_id=document_id)
             
             # 4️⃣ Удаляем файл с диска
             if doc['file_path']:
@@ -994,18 +932,15 @@ async def delete_document(
                     from supabase_storage import get_file_storage
                     storage = get_file_storage()
                     storage.delete_file(doc['file_path'])
-                    print(f"✅ Файл удалён с диска")
+
                 except Exception as e:
-                    print(f"⚠️ Ошибка удаления файла: {e}")
+                    safe_log_warning("Ошибка удаления файла документа", error=e, document_id=document_id)
             
             # 5️⃣ Удаляем из основной таблицы documents
             await conn.execute("DELETE FROM documents WHERE id = $1", document_id)
-            print(f"✅ Удалено из таблицы documents")
             
         finally:
             await release_db_connection(conn)
-        
-        print(f"🎉 Документ полностью удалён: document_id={document_id}")
         
         return {
             'success': True,
@@ -1013,9 +948,7 @@ async def delete_document(
         }
         
     except Exception as e:
-        print(f"❌ Ошибка удаления документа: {e}")
-        import traceback
-        traceback.print_exc()
+        safe_log_error("Ошибка удаления документа", error=e, user_id=user_id, document_id=document_id)
         
         return JSONResponse(
             status_code=500,
@@ -1046,8 +979,6 @@ async def delete_account_route(
     try:
         lang = request.session.get('lang', 'ru')
         
-        print(f"🗑️ Начинаем удаление аккаунта user_id={user_id}")
-        
         # Вызываем функцию полного удаления из db_postgresql.py
         from db_postgresql import delete_user_gdpr_compliant
         success = await delete_user_gdpr_compliant(user_id)
@@ -1060,9 +991,7 @@ async def delete_account_route(
                     'error': t('account_deletion_error', lang)
                 }
             )
-        
-        print(f"✅ Аккаунт успешно удалён: user_id={user_id}")
-        
+
         # Очищаем сессию
         request.session.clear()
         
@@ -1073,9 +1002,7 @@ async def delete_account_route(
         }
         
     except Exception as e:
-        print(f"❌ Ошибка удаления аккаунта: {e}")
-        import traceback
-        traceback.print_exc()
+        safe_log_error("Ошибка удаления аккаунта", error=e, user_id=user_id)
         
         return JSONResponse(
             status_code=500,
@@ -1102,6 +1029,13 @@ async def download_document(
     """
     from fastapi.responses import FileResponse
     import tempfile
+
+    # ✅ ВАЛИДАЦИЯ: Проверяем что document_id положительный
+    if document_id <= 0:
+        return JSONResponse(
+            status_code=400,
+            content={'success': False, 'error': 'Invalid document ID'}
+        )
     
     try:
         conn = await get_db_connection()
@@ -1132,17 +1066,13 @@ async def download_document(
             if not original_filename.endswith(('.pdf', '.docx', '.txt', '.jpg', '.jpeg', '.png')):
                 ext = os.path.splitext(file_path)[1]
                 original_filename = f"{original_filename}{ext}"
-            
-            print(f"📥 Скачивание документа: document_id={document_id}, file={original_filename}")
-            print(f"📁 Путь в БД: {file_path}")
-            
+
             # ==========================================
             # ✅ ПРОВЕРЯЕМ ТИП ХРАНИЛИЩА
             # ==========================================
             
             # Если путь начинается с "users/" - это Supabase Storage
             if file_path.startswith("users/"):
-                print(f"☁️ Файл в Supabase Storage")
                 
                 # Скачиваем из Supabase во временный файл
                 from supabase_storage import get_storage_manager
@@ -1168,9 +1098,7 @@ async def download_document(
                             status_code=404,
                             content={'success': False, 'error': 'Файл не найден в Supabase Storage'}
                         )
-                    
-                    print(f"✅ Файл скачан из Supabase во временный файл")
-                    
+
                     # Возвращаем файл и удаляем его после отправки
                     return FileResponse(
                         path=temp_path,
@@ -1183,9 +1111,7 @@ async def download_document(
                     # Удаляем временный файл при ошибке
                     if os.path.exists(temp_path):
                         os.remove(temp_path)
-                    print(f"❌ Ошибка скачивания из Supabase: {e}")
-                    import traceback
-                    traceback.print_exc()
+                    safe_log_error("Ошибка скачивания из Supabase", error=e, user_id=user_id, document_id=document_id)
                     return JSONResponse(
                         status_code=500,
                         content={'success': False, 'error': f'Ошибка скачивания из облака: {str(e)}'}
@@ -1193,8 +1119,7 @@ async def download_document(
             
             # Если путь НЕ начинается с "users/" - это локальный файл
             else:
-                print(f"💾 Файл локальный")
-                
+
                 # Проверяем что файл существует
                 if not os.path.exists(file_path):
                     return JSONResponse(
@@ -1213,9 +1138,7 @@ async def download_document(
             await release_db_connection(conn)
         
     except Exception as e:
-        print(f"❌ Ошибка скачивания: {e}")
-        import traceback
-        traceback.print_exc()
+        safe_log_error("Ошибка скачивания документа", error=e, user_id=user_id, document_id=document_id)
         return JSONResponse(
             status_code=500,
             content={'success': False, 'error': 'Ошибка скачивания файла'}
@@ -1234,6 +1157,12 @@ async def toggle_document_confirmed(
     from error_handler import log_error_with_context
     
     try:
+        # ✅ ВАЛИДАЦИЯ: Проверяем что document_id положительный
+        if document_id <= 0:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "message": "Invalid document ID"}
+            )
         # Получаем язык пользователя
         lang = await get_user_language(user_id)
         
@@ -1366,7 +1295,7 @@ async def update_profile(request: Request):
             )
     
     except Exception as e:
-        print(f"❌ Ошибка обновления профиля: {e}")
+        safe_log_error("Ошибка обновления профиля", error=e, user_id=user_id)
         return JSONResponse(
             status_code=500,
             content={"success": False, "message": "Внутренняя ошибка сервера"}
@@ -1417,10 +1346,6 @@ async def create_checkout_session(
         user_profile = await get_user_profile(user_id)
         user_name = user_profile.get('name', 'User')
         
-        print(f"💳 Создаём Stripe Checkout для пользователя {user_id}")
-        print(f"   Пакет: {package_id}")
-        print(f"   Имя: {user_name}")
-        
         # Создаём Checkout Session через StripeManager
         result = await StripeManager.create_checkout_session(
             user_id=user_id,
@@ -1435,17 +1360,13 @@ async def create_checkout_session(
         if not success:
             raise Exception(url_or_error)
 
-        print(f"✅ Checkout Session создана: {url_or_error[:50]}...")
-
         return {
             'success': True,
             'checkout_url': url_or_error
         }
         
     except Exception as e:
-        print(f"❌ Ошибка создания Checkout Session: {e}")
-        import traceback
-        traceback.print_exc()
+        safe_log_error("Ошибка создания Stripe Checkout Session", error=e, user_id=user_id, package_id=package_id if 'package_id' in locals() else None)
         
         # Получаем язык для локализованного сообщения
         try:
@@ -1500,9 +1421,7 @@ async def cancel_subscription_endpoint(
             )
         
     except Exception as e:
-        print(f"❌ Ошибка отмены подписки: {e}")
-        import traceback
-        traceback.print_exc()
+        safe_log_error("Ошибка отмены подписки", error=e, user_id=user_id)
         
         try:
             lang = await get_user_language(user_id)

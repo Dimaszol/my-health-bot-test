@@ -62,8 +62,6 @@ class AccountMerger:
             # СЦЕНАРИЙ 1: Telegram аккаунта НЕТ (новый пользователь)
             # ====================================
             if not telegram_user:
-                logger.info(f"📝 Telegram аккаунт не найден. Просто добавляем telegram_id к веб аккаунту")
-                
                 # Обновляем web аккаунт: меняем user_id на telegram_id
                 await AccountMerger._convert_web_to_telegram(
                     conn, web_user_id, telegram_id, google_id, email
@@ -80,9 +78,6 @@ class AccountMerger:
             # СЦЕНАРИЙ 2: Оба аккаунта существуют → СЛИЯНИЕ
             # ====================================
             if telegram_user and web_user:
-                logger.info(f"🔄 Найдены ОБА аккаунта. Начинаем слияние:")
-                logger.info(f"   Telegram ID: {telegram_id} (PRIMARY)")
-                logger.info(f"   Web ID: {web_user_id} (будет удалён)")
                 
                 # Выполняем полное слияние
                 await AccountMerger._full_merge(
@@ -105,8 +100,7 @@ class AccountMerger:
             # ====================================
             # СЦЕНАРИЙ 3: Есть только Telegram аккаунт
             # ====================================
-            logger.info(f"📱 Есть только Telegram аккаунт. Добавляем Google ID и email")
-            
+                        
             await conn.execute("""
                 UPDATE users 
                 SET 
@@ -125,13 +119,11 @@ class AccountMerger:
             }
             
         except Exception as e:
-            logger.error(f"❌ Ошибка при слиянии аккаунтов: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error("Ошибка при слиянии аккаунтов")
             return {
                 'success': False,
                 'action': 'error',
-                'message': str(e)
+                'message': 'Произошла ошибка при слиянии аккаунтов'
             }
         finally:
             await release_db_connection(conn)
@@ -144,8 +136,7 @@ class AccountMerger:
         Конвертирует веб аккаунт в телеграм аккаунт
         Просто меняем user_id везде на telegram_id
         """
-        logger.info(f"🔄 Конвертация: {old_web_id} → {new_telegram_id}")
-        
+               
         # 1. Обновляем все связанные таблицы (меняем user_id)
         tables_to_update = [
             'user_limits',
@@ -169,7 +160,7 @@ class AccountMerger:
                     f"UPDATE {table} SET user_id = $1 WHERE user_id = $2",
                     new_telegram_id, old_web_id
                 )
-                logger.info(f"   ✓ {table}: user_id обновлён")
+                
             except Exception as e:
                 # Таблица может не существовать - это нормально
                 logger.debug(f"   ⚠ {table}: {e}")
@@ -182,9 +173,6 @@ class AccountMerger:
                 registration_source = 'both'
             WHERE user_id = $2
         """, new_telegram_id, old_web_id)
-        
-        logger.info(f"✅ Конвертация завершена: user_id теперь = {new_telegram_id}")
-    
     
     @staticmethod
     async def _full_merge(conn, primary_id: int, secondary_id: int, 
@@ -196,15 +184,11 @@ class AccountMerger:
         PRIMARY = telegram_user (остаётся)
         SECONDARY = web_user (удаляется после переноса данных)
         """
-        logger.info(f"🔀 ПОЛНОЕ СЛИЯНИЕ:")
-        logger.info(f"   PRIMARY (остаётся): {primary_id}")
-        logger.info(f"   SECONDARY (удаляется): {secondary_id}")
-        
+                
         # ====================================
         # ШАГ 1: ПЕРЕНОСИМ ДАННЫЕ ИЗ ВСЕХ ТАБЛИЦ
         # ====================================
-        logger.info("📦 Шаг 1: Переносим данные из всех таблиц...")
-        
+                
         tables_to_transfer = [
             'documents',
             'document_vectors',
@@ -223,14 +207,13 @@ class AccountMerger:
                     f"UPDATE {table} SET user_id = $1 WHERE user_id = $2",
                     primary_id, secondary_id
                 )
-                logger.info(f"   ✓ {table}: записи перенесены")
+                
             except Exception as e:
                 logger.debug(f"   ⚠ {table}: {e}")
         
         # ====================================
         # ШАГ 2: ОБРАБАТЫВАЕМ ТАБЛИЦЫ С UNIQUE CONSTRAINT
         # ====================================
-        logger.info("🔧 Шаг 2: Обрабатываем специальные таблицы...")
         
         # notification_settings: оставляем Telegram настройки
         telegram_settings = await conn.fetchrow(
@@ -242,14 +225,13 @@ class AccountMerger:
             await conn.execute(
                 "DELETE FROM notification_settings WHERE user_id = $1", secondary_id
             )
-            logger.info("   ✓ notification_settings: оставлены настройки Telegram")
+
         else:
             # Если в Telegram нет настроек, переносим из веба
             await conn.execute(
                 "UPDATE notification_settings SET user_id = $1 WHERE user_id = $2",
                 primary_id, secondary_id
             )
-            logger.info("   ✓ notification_settings: перенесены из веба")
         
         # medications: объединяем (могут быть дубли)
         await AccountMerger._merge_medications(conn, primary_id, secondary_id)
@@ -260,7 +242,6 @@ class AccountMerger:
         # ====================================
         # ШАГ 3: ОБЪЕДИНЯЕМ user_limits (ПРИОРИТЕТ WEB!)
         # ====================================
-        logger.info("📊 Шаг 3: Объединяем лимиты и подписку...")
         
         # Получаем лимиты обоих аккаунтов
         telegram_limits = await conn.fetchrow(
@@ -304,22 +285,16 @@ class AccountMerger:
             
             # Удаляем лимиты вторичного аккаунта
             await conn.execute("DELETE FROM user_limits WHERE user_id = $1", secondary_id)
-            
-            logger.info(f"   ✅ Лимиты объединены (подписка: {subscription_type})")
         
         # ====================================
         # ШАГ 4: УДАЛЯЕМ ВТОРИЧНЫЙ АККАУНТ (ВАЖНО - ДО ОБНОВЛЕНИЯ PRIMARY!)
         # ====================================
-        logger.info("🗑️ Шаг 4: Удаляем вторичный аккаунт...")
         
         await conn.execute("DELETE FROM users WHERE user_id = $1", secondary_id)
-        
-        logger.info(f"   ✓ Вторичный аккаунт {secondary_id} удалён")
-        
+
         # ====================================
         # ШАГ 5: ОБЪЕДИНЯЕМ ТАБЛИЦУ users (ТЕПЕРЬ БЕЗОПАСНО!)
         # ====================================
-        logger.info("📝 Шаг 5: Объединяем данные профиля...")
         
         # Собираем все поля для объединения (берём заполненные значения)
         merged_fields = {
@@ -382,11 +357,6 @@ class AccountMerger:
             SET {', '.join(update_parts)}
             WHERE user_id = ${param_num}
         """, *values)
-        
-        logger.info("   ✅ Профиль объединён")
-        
-        logger.info(f"✅ СЛИЯНИЕ ЗАВЕРШЕНО! Все данные под user_id = {primary_id}")
-    
     
     @staticmethod
     async def _merge_medications(conn, primary_id: int, secondary_id: int):
@@ -423,10 +393,8 @@ class AccountMerger:
             # Удаляем лекарства вторичного аккаунта
             await conn.execute("DELETE FROM medications WHERE user_id = $1", secondary_id)
             
-            logger.info("   ✓ medications: объединены без дублей")
-            
         except Exception as e:
-            logger.error(f"   ⚠ Ошибка при объединении лекарств: {e}")
+            logger.error("Ошибка при объединении лекарств")
     
     
     @staticmethod
@@ -447,7 +415,6 @@ class AccountMerger:
                     await conn.execute(
                         "DELETE FROM garmin_connections WHERE user_id = $1", secondary_id
                     )
-                    logger.info("   ✓ garmin_connections: оставлено подключение Telegram")
                 else:
                     await conn.execute(
                         "DELETE FROM garmin_connections WHERE user_id = $1", primary_id
@@ -456,15 +423,13 @@ class AccountMerger:
                         "UPDATE garmin_connections SET user_id = $1 WHERE user_id = $2",
                         primary_id, secondary_id
                     )
-                    logger.info("   ✓ garmin_connections: оставлено подключение Web")
-            
+
             elif secondary_garmin and not primary_garmin:
                 # Переносим подключение из веба
                 await conn.execute(
                     "UPDATE garmin_connections SET user_id = $1 WHERE user_id = $2",
                     primary_id, secondary_id
                 )
-                logger.info("   ✓ garmin_connections: перенесено из веба")
             
         except Exception as e:
-            logger.error(f"   ⚠ Ошибка при объединении Garmin: {e}")
+            logger.error("Ошибка при объединении Garmin")

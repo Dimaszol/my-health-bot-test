@@ -13,6 +13,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 import markdown
 import bleach
+from starlette_csrf import CSRFMiddleware
 
 # 📁 Добавляем корневую папку в путь (чтобы импортировать db_postgresql.py)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -65,7 +66,7 @@ async def lifespan(app: FastAPI):
         await initialize_db_pool()
         print("✅ База данных подключена!")
     except Exception as e:
-        print(f"❌ Ошибка подключения к БД: {e}")
+        print("Ошибка подключения к БД")
         raise
     
     # ==========================================
@@ -82,7 +83,7 @@ async def lifespan(app: FastAPI):
         print("✅ Векторная база инициализирована!")
         
     except Exception as e:
-        print(f"❌ Ошибка инициализации векторной базы: {e}")
+        print("Ошибка инициализации векторной базы")
         print("⚠️ Веб-сервис будет работать БЕЗ векторного поиска")
     
     print(f"📊 База данных: PostgreSQL (Supabase)")
@@ -105,7 +106,7 @@ async def lifespan(app: FastAPI):
         await close_vector_db()
         print("✅ Векторная БД закрыта")
     except Exception as e:
-        print(f"⚠️ Ошибка при закрытии векторной БД: {e}")
+        print("Ошибка при закрытии векторной БД")
 
     # Закрываем основную БД с таймаутом (для разработки)
     try:
@@ -115,7 +116,7 @@ async def lifespan(app: FastAPI):
         print("⚠️ Таймаут закрытия БД — принудительно завершаем")
         # В разработке это нормально — соединения закроются автоматически
     except Exception as e:
-        print(f"⚠️ Ошибка при закрытии БД: {e}")
+        print("Ошибка при закрытии БД")
 
 # 🏗️ СОЗДАЁМ FASTAPI ПРИЛОЖЕНИЕ
 app = FastAPI(
@@ -127,6 +128,23 @@ app = FastAPI(
 
 # 🔐 ДОБАВЛЯЕМ ПОДДЕРЖКУ СЕССИЙ (как в Flask)
 app.add_middleware(SessionMiddleware, secret_key=Config.SECRET_KEY)
+
+# 🛡️ ДОБАВЛЯЕМ CSRF ЗАЩИТУ
+from starlette_csrf import CSRFMiddleware
+
+app.add_middleware(
+    CSRFMiddleware,
+    secret=Config.SECRET_KEY,  # Используем тот же ключ что и для сессий
+    cookie_name="csrf_token",
+    cookie_path="/",
+    cookie_domain=None,
+    cookie_secure=False,  # ⚠️ Поставь True когда будет HTTPS!
+    cookie_httponly=True,
+    cookie_samesite="lax",
+    header_name="X-CSRF-Token",
+    safe_methods={"GET", "HEAD", "OPTIONS", "TRACE"},  # Эти методы не проверяются
+    exempt_urls={"/webhook/stripe"}  # Можно исключить некоторые URL (например webhook от Stripe)
+)
 
 # 📁 НАСТРОЙКА ШАБЛОНОВ И СТАТИКИ
 # Используем те же папки что были в Flask
@@ -183,7 +201,7 @@ try:
     print("✅ Все роутеры зарегистрированы")
     
 except ImportError as e:
-    print(f"⚠️ Ошибка импорта роутеров: {e}")
+    print("Ошибка импорта роутеров")
 
 
 # ==========================================
@@ -238,7 +256,6 @@ async def set_language_route(request: Request, lang: str):
     """
     if lang in ['ru', 'uk', 'en', 'de']:
         request.session['language'] = lang
-        print(f"🌍 Язык изменён на: {lang}")
         
         # Если пользователь авторизован - сохраняем в БД
         user_id = request.session.get('user_id')
@@ -246,9 +263,8 @@ async def set_language_route(request: Request, lang: str):
             try:
                 # ✅ ПРОСТО AWAIT! Используем готовую функцию!
                 await update_user_profile(user_id, 'language', lang)
-                print(f"✅ Язык сохранён в БД для user_id={user_id}")
             except Exception as e:
-                print(f"⚠️ Ошибка сохранения языка: {e}")
+                print("Ошибка сохранения языка")
     
     # Редиректим обратно на предыдущую страницу
     referer = request.headers.get('referer', '/')
@@ -290,7 +306,7 @@ async def health_check():
     except Exception as e:
         return {
             "status": "unhealthy",
-            "error": str(e)
+            "error": "database_error"
         }
 
 # ==========================================

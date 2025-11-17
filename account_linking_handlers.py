@@ -3,7 +3,9 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from datetime import datetime
 from db_postgresql import get_user, get_db_connection, release_db_connection, get_user_language, t
 from account_merger import AccountMerger
+import logging
 
+logger = logging.getLogger(__name__)
 
 async def handle_linking_code(message: types.Message, bot: Bot):
     telegram_id = message.from_user.id
@@ -17,8 +19,6 @@ async def handle_linking_code(message: types.Message, bot: Bot):
     else:
         # Если просто код отправлен напрямую
         code = text
-    
-    print(f"📝 Обрабатываем код: '{code}' (длина: {len(code)})")
     
     # Получаем язык пользователя
     lang = await get_user_language(telegram_id)
@@ -73,12 +73,7 @@ async def handle_linking_code(message: types.Message, bot: Bot):
             return
         
         web_user_id = link_record['web_user_id']
-        
-        print(f"🔗 Код связывания найден:")
-        print(f"   Code: {code}")
-        print(f"   Web user_id: {web_user_id}")
-        print(f"   Telegram ID: {telegram_id}")
-        
+ 
         # ====================================
         # ШАГ 2: ПОЛУЧАЕМ ДАННЫЕ ВЕБ-ПОЛЬЗОВАТЕЛЯ
         # ====================================
@@ -108,8 +103,6 @@ async def handle_linking_code(message: types.Message, bot: Bot):
         # СЦЕНАРИЙ A: Telegram аккаунта нет - простое подключение
         # ====================================
         if not telegram_user:
-            print("📝 Telegram аккаунт не найден - просто добавляем ID")
-            
             # Помечаем код как использованный
             await conn.execute("""
                 UPDATE account_links 
@@ -151,8 +144,6 @@ async def handle_linking_code(message: types.Message, bot: Bot):
         # СЦЕНАРИЙ B: Оба аккаунта существуют - нужно подтверждение
         # ====================================
         if telegram_user and web_user:
-            print("⚠️ Оба аккаунта существуют - запрашиваем подтверждение")
-            
             # Создаём клавиатуру подтверждения
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [
@@ -180,8 +171,7 @@ async def handle_linking_code(message: types.Message, bot: Bot):
         # ====================================
         # СЦЕНАРИЙ C: Есть только Telegram аккаунт
         # ====================================
-        print("📱 Есть только Telegram - добавляем Google данные")
-        
+
         # Помечаем код как использованный
         await conn.execute("""
             UPDATE account_links 
@@ -218,9 +208,8 @@ async def handle_linking_code(message: types.Message, bot: Bot):
             )
     
     except Exception as e:
-        print(f"❌ Ошибка при обработке кода связывания: {e}")
-        import traceback
-        traceback.print_exc()
+        from error_handler import log_error_with_context
+        log_error_with_context(e, {"action": "handle_linking_code"})
         
         await message.answer(
             t('error_linking', lang),
@@ -348,9 +337,7 @@ async def handle_merge_confirmation(callback_query: types.CallbackQuery, bot: Bo
             await callback_query.answer()
         
         except Exception as e:
-            print(f"❌ Ошибка при слиянии: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error("Ошибка слияния аккаунтов")
             
             await callback_query.message.edit_text(
                 t('error_linking', lang),
