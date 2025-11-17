@@ -375,7 +375,6 @@ if __name__ == "__main__":
                 "tmp",
                 "files",
                 "uploads",
-                "user_checker.py",  # ← Ваш debug файл
                 "*_debug.py",
                 "debug_*.py"
             ],

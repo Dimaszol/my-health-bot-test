@@ -59,7 +59,6 @@ from feedback_handler import (
 )
 from account_merger import AccountMerger
 from account_linking_handlers import handle_linking_code, handle_merge_confirmation
-from user_checker import full_process_debug_7374723347
 
 logging.basicConfig(
     level=logging.INFO,
@@ -118,7 +117,6 @@ async def send_welcome(message: types.Message):
             
             # Если это 6-значный код - обрабатываем
             if param.isdigit() and len(param) == 6:
-                print(f"🔗 Обнаружен код связывания: {param}")
                 await handle_linking_code(message, bot)
                 return
     
@@ -161,8 +159,6 @@ async def send_welcome(message: types.Message):
         if registration_source in ['web', 'both']:
             # Пользователь из ВЕБ-версии или объединил аккаунты
             name = user_data.get('name', 'Пользователь')
-            
-            print(f"✅ Пользователь из веб-версии: {name} (source: {registration_source})")
             
             # Показываем только меню БЕЗ приветствий
             await message.answer(
@@ -613,7 +609,9 @@ async def handle_delete_confirmation_code(message: types.Message):
         )
 
 # 📊 КОМАНДА ДЛЯ СТАТИСТИКИ (ТОЛЬКО ДЛЯ АДМИНА)
-ADMIN_USER_ID = 993877409  # 🔥 ЗАМЕНИТЕ НА ВАШ TELEGRAM ID!
+ADMIN_USER_ID = int(os.getenv("ADMIN_USER_ID", "0"))
+if ADMIN_USER_ID == 0:
+    logger.warning("⚠️ ADMIN_USER_ID не установлен в .env файле!")
 
 @dp.message(lambda msg: msg.text == "/stats")
 @handle_telegram_errors
@@ -621,6 +619,7 @@ async def show_stats(message: types.Message):
     """Показать статистику (только для админа)"""
     user_id = message.from_user.id
     
+    # 🔒 БЕЗОПАСНАЯ ПРОВЕРКА
     if user_id != ADMIN_USER_ID:
         return  # Игнорируем, если не админ
     
@@ -631,18 +630,18 @@ async def show_stats(message: types.Message):
         report = f"""📊 <b>СТАТИСТИКА ЗА 7 ДНЕЙ</b>
 
 👥 <b>Пользователи:</b>
-• Всего активных: {stats['total_users']}
-• Новых: {stats['new_users']}
+- Всего активных: {stats['total_users']}
+- Новых: {stats['new_users']}
 
 📈 <b>Активность:</b>
-• Регистрации: {stats['registrations']}
-• Документы: {stats['documents']}
-• Вопросы: {stats['questions']}
-• Оплаты: {stats['payments']}
+- Регистрации: {stats['registrations']}
+- Документы: {stats['documents']}
+- Вопросы: {stats['questions']}
+- Оплаты: {stats['payments']}
 
 📊 <b>Конверсии:</b>
-• Регистрация: {stats['registration_rate']:.1f}%
-• Загрузка документов: {stats['document_rate']:.1f}%
+- Регистрация: {stats['registration_rate']:.1f}%
+- Загрузка документов: {stats['document_rate']:.1f}%
 
 🎯 <b>Оценка MVP:</b>"""
 
@@ -664,7 +663,7 @@ async def show_stats(message: types.Message):
         await message.answer(report, parse_mode="HTML")
         
     except Exception as e:
-        await message.answer(f"❌ Ошибка получения статистики: {e}")
+        await message.answer("Ошибка получения статистики")
 
 @dp.message(lambda msg: msg.text == "/analytics")
 @handle_telegram_errors  
@@ -1093,8 +1092,7 @@ async def handle_user_message(message: types.Message):
 
     # Основная обработка вопросов пользователя
     else:
-        if message.from_user.id == 7374723347:
-            await full_process_debug_7374723347(message.from_user.id, message.text)
+
         allowed, error_msg = await check_rate_limit(user_id, "message")
         if not allowed:
             await message.answer(error_msg)
@@ -1327,7 +1325,7 @@ async def handle_user_message(message: types.Message):
             
     except Exception as e:
         # Ошибка промокода не должна ломать основную функциональность
-        logger.error(f"❌ Ошибка проверки промокода для user {user_id}: {e}")
+        logger.error("Ошибка проверки промокода для user")
 
 @dp.callback_query(lambda c: c.data and c.data.startswith('merge_'))
 async def process_merge_callback(callback_query: types.CallbackQuery):
@@ -1619,7 +1617,7 @@ async def handle_subscription_settings(callback: types.CallbackQuery):
         await SubscriptionHandlers.show_subscription_menu(callback)
         
     except Exception as e:
-        logger.error(f"❌ Ошибка синхронизации для пользователя {user_id}: {e}")
+        logger.error("Ошибка синхронизации для пользователя")
         
         # Если синхронизация не удалась - всё равно показываем меню
         await SubscriptionHandlers.show_subscription_menu(callback)
@@ -1856,7 +1854,7 @@ async def handle_button_action(callback: types.CallbackQuery):
                     await callback.message.answer_document(types.FSInputFile(path=file_path))
                     
             except Exception as e:
-                logger.error(f"❌ Ошибка скачивания файла: {e}")
+                logger.error("Ошибка скачивания файла")
                 await callback.message.answer(t("file_not_found", lang))
           
             
@@ -1932,7 +1930,7 @@ async def main():
             await initialize_vector_db()
             print("✅ Vector database готова")
         except Exception as e:
-            print(f"❌ Ошибка pgvector: {e}")
+            print("Ошибка pgvector")
             print("⚠️ Проверьте, что расширение pgvector включено в Railway PostgreSQL")
             raise
 
@@ -1942,7 +1940,7 @@ async def main():
             await initialize_medication_notifications(bot)
             print("✅ Система уведомлений о лекарствах запущена")
         except Exception as e:
-            print(f"❌ Ошибка системы уведомлений: {e}")
+            print("Ошибка системы уведомлений")
             # НЕ поднимаем исключение - бот может работать без уведомлений
             print("⚠️ Бот продолжит работу без уведомлений о лекарствах")
 
@@ -1952,7 +1950,7 @@ async def main():
             await initialize_garmin_scheduler(bot)
             print("✅ Garmin планировщик запущен")
         except Exception as e:
-            print(f"❌ Ошибка Garmin планировщика: {e}")
+            print("Ошибка Garmin планировщика")
             # НЕ поднимаем исключение - бот может работать без Garmin
             print("⚠️ Бот продолжит работу без анализа Garmin")
         
@@ -1977,7 +1975,7 @@ async def main():
                 print(f"❌ Ошибка хранилища: {storage_info['error']}")
                 
         except Exception as e:
-            print(f"⚠️ Ошибка проверки хранилища: {e}")
+            print("Ошибка проверки хранилища")
         
         # 🤖 6. ПРОВЕРКА OPENAI
         openai_status = await check_openai_status()
@@ -2007,7 +2005,7 @@ async def main():
         print("\n🛑 Получен сигнал остановки...")
         
     except Exception as e:
-        print(f"❌ Критическая ошибка при запуске: {e}")
+        print("Критическая ошибка при запуске")
         log_error_with_context(e, {"action": "railway_startup"})
         
     finally:
@@ -2018,19 +2016,19 @@ async def main():
             await shutdown_medication_notifications()
             print("✅ Система уведомлений остановлена")
         except Exception as e:
-            print(f"⚠️ Ошибка остановки уведомлений: {e}")
+            print("Ошибка остановки уведомлений")
         
         try:
             await close_db_pool()
             print("✅ База данных закрыта")
         except Exception as e:
-            print(f"⚠️ Ошибка закрытия БД: {e}")
+            print("Ошибка закрытия БД")
 
         try:
             await shutdown_garmin_scheduler()
             print("✅ Garmin планировщик остановлен")
         except Exception as e:
-            print(f"⚠️ Ошибка остановки Garmin планировщика: {e}")
+            print("Ошибка остановки Garmin планировщика")
 
 # 🎯 ТОЧКА ВХОДА (в самом конце файла, замените существующую)
 if __name__ == "__main__":
@@ -2039,4 +2037,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n👋 Бот остановлен пользователем")
     except Exception as e:
-        print(f"💥 Фатальная ошибка: {e}")
+        print("Фатальная ошибка")

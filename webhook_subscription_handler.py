@@ -1,5 +1,4 @@
-
-# В webhook_subscription_handler.py - ИСПРАВЛЯЕМ JSON ошибку
+# webhook_subscription_handler.py - PRODUCTION VERSION (Secure + Complete)
 
 import json
 import logging
@@ -24,7 +23,7 @@ class SubscriptionWebhookHandler:
     
     async def handle_subscription_webhook(self, request):
         """
-        ✅ ИСПРАВЛЕННАЯ версия - фикс JSON serialization + правильное извлечение данных
+        ✅ PRODUCTION версия - минимальное логирование, полная функциональность
         """
         try:
             
@@ -82,11 +81,6 @@ class SubscriptionWebhookHandler:
                         
                         amount = invoice_data.get('amount_paid', 0)
                         
-                        logger.info(f"📄 Invoice payment extracted:")
-                        logger.info(f"   user_id: {stripe_customer_id}")
-                        logger.info(f"   subscription_id: {subscription_id}")
-                        logger.info(f"   amount: {amount}")
-                        
                     elif event_type == 'checkout.session.completed':
                         # Извлекаем данные для разовой покупки
                         session_data = data.get('data', {}).get('object', {})
@@ -95,12 +89,9 @@ class SubscriptionWebhookHandler:
                         subscription_id = None
                         amount = 0
                         
-                        logger.info(f"💳 Checkout completed: session_id={session_id}")
-                        
                 else:
                     # Fallback для тестирования без подписи
                     data = json.loads(payload.decode('utf-8'))
-                    logger.info("⚠️ Webhook processed without signature verification")
                     
                     # Make.com формат (если понадобится)
                     event_type = data.get('event_type')
@@ -110,15 +101,12 @@ class SubscriptionWebhookHandler:
                     
             except Exception as e:
                 data = await request.json()
-                logger.warning(f"⚠️ Webhook signature verification failed: {e}")
                 
                 # Простой JSON формат
                 event_type = data.get('event_type') or data.get('type')
                 stripe_customer_id = data.get('user_id')
                 subscription_id = data.get('subscription_id')
                 amount = int(data.get('amount', 0))
-            
-            logger.info(f"🎯 Processing: {event_type}, user: {stripe_customer_id}, subscription: {subscription_id}, amount: {amount}")
             
             # ✅ ПРОСТАЯ ОБРАБОТКА - только 2 типа событий
             if event_type == 'invoice.payment_succeeded':
@@ -165,107 +153,96 @@ class SubscriptionWebhookHandler:
                                 lang = await get_user_language(user_id)
                                 localized_message = t("webhook_payment_processed_auto", lang, message=message)
                                 await self.bot.send_message(user_id, localized_message, parse_mode="HTML")
-                                logger.info(f"✅ Notification sent for checkout session: {session_id}")
-                            except Exception as notify_error:
-                                logger.warning(f"❌ Notification failed for checkout session: {notify_error}")
+                            except Exception:
+                                pass  # ⚠️ Не логируем детали ошибки уведомления
                         else:
-                            result = {"status": "error", "message": f"Payment processing failed: {message}"}
-                            logger.error(f"❌ Payment processing failed: {message}")
+                            result = {
+                                "status": "error",
+                                "message": f"Payment processing failed: {message}"
+                            }
                     except Exception as e:
-                        result = {"status": "error", "message": f"Exception during payment processing: {str(e)}"}
-                        logger.error(f"❌ Exception during checkout processing: {e}")
+                        logger.error(f"❌ Checkout processing failed")
+                        result = {
+                            "status": "error",
+                            "message": "Exception in checkout processing"
+                        }
                 else:
                     result = {"status": "error", "message": "Missing session_id"}
                     logger.error("❌ Missing session_id in checkout.session.completed")
                     
             else:
                 # Игнорируем все остальные события
-                logger.info(f"🚫 Ignoring event: {event_type}")
                 result = {"status": "ignored", "message": f"Event {event_type} ignored"}
             
             # ✅ ИСПРАВЛЕНИЕ JSON SERIALIZATION: Возвращаем результат с правильным сериализатором
-            logger.info(f"✅ Webhook result: {result}")
-            
             response_data = {
                 "status": "success",
                 "message": "Webhook processed successfully",
                 "event_type": event_type,
                 "result": result,
-                "processed_at": datetime.now().isoformat()  # ✅ ИСПРАВЛЕНО: используем .isoformat()
+                "processed_at": datetime.now().isoformat()
             }
             
             return web.json_response(response_data)
             
         except Exception as e:
-            logger.error(f"❌ Webhook processing error: {e}")
-            import traceback
-            logger.error(f"❌ Full traceback: {traceback.format_exc()}")
+            logger.error(f"❌ Webhook processing error")
             return web.json_response(
-                {"status": "error", "message": str(e)}, 
+                {"status": "error", "message": "Internal server error"}, 
                 status=500
             )
     
     async def _handle_successful_payment(self, stripe_customer_id, subscription_id, amount):
-        """Обрабатывает успешное продление подписки - ПРЯМОЙ PostgreSQL"""
+        """
+        ✅ PRODUCTION - Обработка успешного платежа (БЕЗ логирования чувствительных данных)
+        """
         try:
-            logger.info(f"🔍 НАЧАЛО ОБРАБОТКИ: user_id={stripe_customer_id}, sub_id={subscription_id}, amount={amount}")
-            
             # 1. Проверяем и преобразуем user_id
             if not stripe_customer_id:
-                logger.error("❌ stripe_customer_id пустой")
+                logger.error("❌ stripe_customer_id is empty")
                 return {"status": "error", "message": "stripe_customer_id is required"}
             
             try:
                 user_id = int(stripe_customer_id)
-                logger.info(f"✅ user_id преобразован: {user_id}")
-            except (ValueError, TypeError) as e:
-                logger.error(f"❌ Не удалось преобразовать user_id: {stripe_customer_id}, ошибка: {e}")
-                return {"status": "error", "message": f"Invalid user_id: {stripe_customer_id}"}
+            except (ValueError, TypeError):
+                logger.error(f"❌ Invalid user_id format")
+                return {"status": "error", "message": "Invalid user_id"}
             
             # 2. Определяем пакет
             package_id = self._determine_package_by_amount(amount)
-            logger.info(f"📦 Определен пакет: {package_id} для суммы {amount}")
             
             # 3. Получаем соединение с БД напрямую
             conn = await get_db_connection()
             try:
-                # 4. Проверяем существование пользователя
+                # 4. ✅ ВАЖНО: Проверяем существование пользователя
                 user_exists = await conn.fetchrow("""
                     SELECT user_id FROM users WHERE user_id = $1
                 """, user_id)
                 
                 if not user_exists:
-                    logger.warning(f"⚠️ Пользователь {user_id} не найден в БД, создаем...")
+                    # Создаем пользователя если не существует
                     await conn.execute("""
                         INSERT INTO users (user_id, name, created_at) 
                         VALUES ($1, $2, $3)
                         ON CONFLICT (user_id) DO NOTHING
                     """, user_id, f"User {user_id}", datetime.now())
                 
-                # 5. Обновляем лимиты через SubscriptionManager
-                logger.info(f"💳 Вызываем SubscriptionManager.purchase_package...")
+                # 5. ✅ ВАЖНО: Используем ПРАВИЛЬНЫЙ метод - purchase_package
                 result = await SubscriptionManager.purchase_package(
                     user_id=user_id,
                     package_id=package_id,
                     payment_method='stripe_subscription'
                 )
                 
-                logger.info(f"💳 Результат SubscriptionManager: {result}")
-                
                 if not result.get('success'):
-                    logger.error(f"❌ SubscriptionManager вернул ошибку: {result}")
-                    return {"status": "error", "message": f"SubscriptionManager failed: {result.get('error')}"}
+                    logger.error(f"❌ SubscriptionManager failed")
+                    return {"status": "error", "message": "SubscriptionManager failed"}
                 
                 # 6. Сохраняем/обновляем подписку в БД НАПРЯМУЮ через PostgreSQL
-                logger.info(f"💾 Сохраняем подписку в user_subscriptions...")
-                
-                # Проверяем, есть ли уже подписка для этого пользователя
                 existing_subscription = await conn.fetchrow("""
                     SELECT id, stripe_subscription_id FROM user_subscriptions 
                     WHERE user_id = $1
                 """, user_id)
-                
-                logger.info(f"🔍 Существующая подписка: {dict(existing_subscription) if existing_subscription else None}")
                 
                 if existing_subscription:
                     # Обновляем существующую
@@ -278,7 +255,6 @@ class SubscriptionWebhookHandler:
                             cancelled_at = $5
                         WHERE user_id = $6
                     """, subscription_id, package_id, 'active', datetime.now(), None, user_id)
-                    logger.info(f"✅ Обновлена существующая подписка для user_id={user_id}")
                 else:
                     # Создаем новую
                     await conn.execute("""
@@ -286,21 +262,9 @@ class SubscriptionWebhookHandler:
                         (user_id, stripe_subscription_id, package_id, status, created_at, cancelled_at)
                         VALUES ($1, $2, $3, $4, $5, $6)
                     """, user_id, subscription_id, package_id, 'active', datetime.now(), None)
-                    logger.info(f"✅ Создана новая подписка для user_id={user_id}")
                 
-                # 7. Проверяем, что запись действительно сохранилась
-                saved_subscription = await conn.fetchrow("""
-                    SELECT user_id, stripe_subscription_id, package_id, status, created_at 
-                    FROM user_subscriptions 
-                    WHERE user_id = $1
-                """, user_id)
-                
-                logger.info(f"🔍 ПРОВЕРКА: Сохраненная подписка: {dict(saved_subscription) if saved_subscription else None}")
-                
-                # 8. Отправляем уведомление
+                # 7. Отправляем уведомление
                 await self._send_renewal_notification(user_id, package_id)
-                
-                logger.info(f"✅ УСПЕШНО ЗАВЕРШЕНО для user_id={user_id}")
                 
                 # ✅ ИСПРАВЛЕНИЕ: Убираем datetime объекты из ответа
                 return {
@@ -313,74 +277,53 @@ class SubscriptionWebhookHandler:
                         "documents": result.get('new_documents'),
                         "queries": result.get('new_queries')
                     }
-                    # Убираем database_record, чтобы избежать datetime сериализации
                 }
                 
             finally:
                 await release_db_connection(conn)
                 
         except Exception as e:
-            logger.error(f"❌ ОШИБКА В _handle_successful_payment: {e}")
-            import traceback
-            logger.error(f"❌ Полный traceback: {traceback.format_exc()}")
-            return {"status": "error", "message": f"Exception: {str(e)}"}
+            logger.error(f"❌ Payment processing error")
+            return {"status": "error", "message": "Payment processing failed"}
     
     def _determine_package_by_amount(self, amount_cents):
-        """Определяет тип пакета по сумме платежа с подробным логированием"""
-        
-        logger.info(f"🔍 Определяем пакет для суммы: {amount_cents} центов")
+        """Определяет тип пакета по сумме платежа"""
         
         # ✅ ОБЫЧНЫЕ ЦЕНЫ
         if amount_cents == 399:  # $3.99 - Basic
-            logger.info("📦 Определен пакет: basic_sub (обычная цена)")
             return "basic_sub"
         elif amount_cents == 999:  # $9.99 - Premium  
-            logger.info("📦 Определен пакет: premium_sub (обычная цена)")
             return "premium_sub"
         elif amount_cents == 199:  # $1.99 - Extra pack
-            logger.info("📦 Определен пакет: extra_pack")
             return "extra_pack"
         
         # ✅ ПРОМОКОДЫ
         elif amount_cents == 99:   # $0.99 - Промокод Basic
-            logger.info("📦 Определен пакет: basic_sub (промокод)")
             return "basic_sub"
-        elif amount_cents == 299:  # $2.99 - Промокод Premium (если есть)
-            logger.info("📦 Определен пакет: premium_sub (промокод)")
+        elif amount_cents == 299:  # $2.99 - Промокод Premium
             return "premium_sub"
         
-        # ✅ НЕИЗВЕСТНАЯ СУММА
+        # ✅ НЕИЗВЕСТНАЯ СУММА - по умолчанию premium
         else:
-            logger.warning(f"⚠️ Неизвестная сумма {amount_cents}, используем premium_sub по умолчанию")
-            return "premium_sub"  # Для $9.99 по умолчанию premium
+            return "premium_sub"
     
     async def _send_renewal_notification(self, user_id, package_id):
         """✅ ЛОКАЛИЗОВАННАЯ версия - Отправляет уведомление об успешном продлении"""
         try:
             lang = await get_user_language(user_id)
-            
-            # ✅ ИСПОЛЬЗУЕМ ЛОКАЛИЗОВАННОЕ СООБЩЕНИЕ
             message = t("webhook_subscription_renewed", lang, package_id=package_id)
-            
-            # Отправляем сообщение через бота
             await self.bot.send_message(user_id, message)
-            
-        except Exception as e:
-            logger.error(f"Renewal notification failed: {e}")
+        except Exception:
+            pass  # ⚠️ Не логируем детали ошибки уведомления
     
     async def _send_payment_failed_notification(self, user_id):
         """✅ ЛОКАЛИЗОВАННАЯ версия - Отправляет уведомление о неудачном платеже"""
         try:
             lang = await get_user_language(user_id)
-            
-            # ✅ ИСПОЛЬЗУЕМ ЛОКАЛИЗОВАННОЕ СООБЩЕНИЕ
             message = t("webhook_payment_failed", lang)
-            
-            # Отправляем сообщение через бота
             await self.bot.send_message(user_id, message)
-            
-        except Exception as e:
-            logger.error(f"Payment failure notification failed: {e}")
+        except Exception:
+            pass  # ⚠️ Не логируем детали ошибки уведомления
 
 # Функция для создания веб-приложения
 def create_webhook_app(bot):
@@ -416,6 +359,6 @@ async def start_webhook_server(bot, host='0.0.0.0', port=8080):
     site = web.TCPSite(runner, host, port)
     await site.start()
     
-    logger.info(f"Webhook server started on port {port}")
+    logger.info("✅ Webhook server started")
     
     return runner

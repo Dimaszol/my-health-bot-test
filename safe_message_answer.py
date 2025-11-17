@@ -29,19 +29,13 @@ async def send_safe_message(
     user_id = message.from_user.id
     
     try:
-        # 📊 ЛОГИРУЕМ ПОПЫТКУ ОТПРАВКИ
-        msg_type = "ERROR" if is_error else "RESPONSE"
-        logger.info(f"📤 [SEND-{msg_type}] Отправляем пользователю {user_id}")
-        logger.debug(f"📝 [SEND-{msg_type}] Длина: {len(text)} символов")
-        
         # 🚨 ПРОВЕРЯЕМ ДЛИНУ СООБЩЕНИЯ
         if len(text) > 4096:
-            logger.warning(f"⚠️ [SEND-{msg_type}] Длинное сообщение - разбиваем на части")
             return await _send_long_message(message, text, parse_mode, **kwargs)
         
         # 🚨 ПРОВЕРЯЕМ НА ПУСТОЕ СООБЩЕНИЕ
         if not text or text.strip() == "":
-            logger.error(f"❌ [SEND-{msg_type}] Пустое сообщение для пользователя {user_id}")
+            logger.error(f"❌ Empty message for user_id={user_id}")
             text = "❌ Произошла техническая ошибка. Попробуйте еще раз."
             parse_mode = None
         
@@ -52,33 +46,25 @@ async def send_safe_message(
             **kwargs
         )
         
-        # ✅ УСПЕХ
-        logger.info(f"✅ [SEND-{msg_type}] Отправлено пользователю {user_id}, ID: {sent_message.message_id}")
         return True
         
     except Exception as e:
-        # ❌ ДЕТАЛЬНОЕ ЛОГИРОВАНИЕ ОШИБКИ
+        # ❌ МИНИМАЛЬНОЕ ЛОГИРОВАНИЕ ОШИБКИ (БЕЗ МЕДИЦИНСКИХ ДАННЫХ)
         error_type = type(e).__name__
         error_msg = str(e)
         
-        logger.error(f"❌ [SEND-{msg_type}] Ошибка для пользователя {user_id}: {error_type}: {error_msg}")
-        logger.error(f"📋 [SEND-{msg_type}] Текст: {repr(text[:200])}")
-        logger.error(f"📋 [SEND-{msg_type}] Traceback:\n{traceback.format_exc()}")
+        logger.error(f"❌ Send failed: user_id={user_id}, error={error_type}")
         
         # 🔍 АНАЛИЗИРУЕМ ОШИБКИ TELEGRAM
         if "Forbidden" in error_msg:
-            logger.error(f"🚫 [SEND-{msg_type}] Пользователь {user_id} заблокировал бота")
+            logger.error(f"🚫 User blocked bot: user_id={user_id}")
         elif "Bad Request" in error_msg or "Entity" in error_msg:
-            logger.error(f"🔧 [SEND-{msg_type}] Проблема с HTML разметкой")
-            
             # Пробуем без разметки
             try:
-                logger.info(f"🔄 [SEND-{msg_type}] Повтор без HTML разметки...")
                 await message.answer(text=text, parse_mode=None)
-                logger.info(f"✅ [SEND-{msg_type}] Отправлено без разметки пользователю {user_id}")
                 return True
-            except Exception as e2:
-                logger.error(f"❌ [SEND-{msg_type}] Даже без разметки ошибка: {e2}")
+            except Exception:
+                pass
         
         # 🚨 ПОСЛЕДНЯЯ ПОПЫТКА - ПРОСТОЕ УВЕДОМЛЕНИЕ
         try:
@@ -86,9 +72,8 @@ async def send_safe_message(
                 text="❌ Произошла техническая ошибка. Мы работаем над исправлением.",
                 parse_mode=None
             )
-            logger.info(f"✅ [SEND-{msg_type}] Уведомление об ошибке отправлено пользователю {user_id}")
         except Exception as e3:
-            logger.error(f"💥 [SEND-{msg_type}] Критическая ошибка - не удалось отправить даже уведомление: {e3}")
+            logger.error(f"💥 Critical: Cannot send any message to user_id={user_id}")
         
         return False
 
@@ -98,8 +83,6 @@ async def _send_long_message(message, text, parse_mode=None, **kwargs):
     chunk_size = 4000
     chunks = [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
     
-    logger.info(f"📋 [SEND] Разбиваем на {len(chunks)} частей для пользователя {user_id}")
-    
     for i, chunk in enumerate(chunks):
         try:
             if i == 0:
@@ -107,14 +90,12 @@ async def _send_long_message(message, text, parse_mode=None, **kwargs):
             else:
                 await message.answer(text=chunk, parse_mode=None)
             
-            logger.info(f"✅ [SEND] Часть {i+1}/{len(chunks)} отправлена")
-            
             if i < len(chunks) - 1:
                 import asyncio
                 await asyncio.sleep(0.3)
                 
         except Exception as e:
-            logger.error(f"❌ [SEND] Ошибка части {i+1}: {e}")
+            logger.error(f"❌ Long message chunk failed: user_id={user_id}, chunk={i+1}/{len(chunks)}")
             return False
     
     return True
