@@ -130,10 +130,10 @@ FAQ_TRANSLATIONS = {
     # 2️⃣ НАЧАЛО РАБОТЫ
     # ============================================
     'faq_getting_started_title': {
-        'ru': '🚀 Начало работы',
-        'en': '🚀 Getting Started',
-        'uk': '🚀 Початок роботи',
-        'de': '🚀 Erste Schritte'
+        'ru': 'Начало работы',
+        'en': 'Getting Started',
+        'uk': 'Початок роботи',
+        'de': 'Erste Schritte'
     },
     'faq_getting_started_content': {
         'ru': '''
@@ -234,10 +234,10 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
     # 3️⃣ ПОДПИСКИ И ТАРИФЫ
     # ============================================
     'faq_subscriptions_title': {
-        'ru': '💳 Подписки и тарифы',
-        'en': '💳 Subscriptions and Plans',
-        'uk': '💳 Підписки та тарифи',
-        'de': '💳 Abonnements und Tarife'
+        'ru': 'Подписки и тарифы',
+        'en': 'Subscriptions and Plans',
+        'uk': 'Підписки та тарифи',
+        'de': 'Abonnements und Tarife'
     },
     'faq_subscriptions_content': {
         'ru': '''
@@ -470,10 +470,10 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
     # 4️⃣ ДОКУМЕНТЫ
     # ============================================
     'faq_documents_title': {
-        'ru': '📄 Документы',
-        'en': '📄 Documents',
-        'uk': '📄 Документи',
-        'de': '📄 Dokumente'
+        'ru': 'Документы',
+        'en': 'Documents',
+        'uk': 'Документи',
+        'de': 'Dokumente'
     },
     'faq_documents_content': {
         'ru': '''
@@ -670,10 +670,10 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
     # 5️⃣ ПРОФИЛЬ
     # ============================================
     'faq_profile_title': {
-        'ru': '👤 Профиль',
-        'en': '👤 Profile',
-        'uk': '👤 Профіль',
-        'de': '👤 Profil'
+        'ru': 'Профиль',
+        'en': 'Profile',
+        'uk': 'Профіль',
+        'de': 'Profil'
     },
     'faq_profile_content': {
         'ru': '''
@@ -878,10 +878,10 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
     # 6️⃣ БЕЗОПАСНОСТЬ
     # ============================================
     'faq_security_title': {
-        'ru': '🔒 Безопасность',
-        'en': '🔒 Security',
-        'uk': '🔒 Безпека',
-        'de': '🔒 Sicherheit'
+        'ru': 'Безопасность',
+        'en': 'Security',
+        'uk': 'Безпека',
+        'de': 'Sicherheit'
     },
     'faq_security_content': {
         'ru': '''
@@ -1046,10 +1046,10 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
     # 7️⃣ ПОДДЕРЖКА
     # ============================================
     'faq_support_title': {
-        'ru': '💬 Поддержка',
-        'en': '💬 Support',
-        'uk': '💬 Підтримка',
-        'de': '💬 Support'
+        'ru': 'Поддержка',
+        'en': 'Support',
+        'uk': 'Підтримка',
+        'de': 'Support'
     },
     'faq_support_content': {
         'ru': '''
@@ -1196,7 +1196,247 @@ Die meisten Fragen werden bereits in diesem Bereich behandelt — verwenden Sie 
 
 <p>Teilen Sie Ihre Erfahrungen mit PulseBook — dies hilft uns, besser und nützlicher für Sie zu werden.</p>
 '''
-    }
+    },
+'faq_telegram_title': {
+    'ru': 'Telegram бот',
+    'en': 'Telegram Bot',
+    'uk': 'Telegram бот',
+    'de': 'Telegram Bot'
+},
+
+'faq_telegram_content': {
+    'ru': '''
+<h4>Зачем подключать Telegram бота?</h4>
+
+<p>PulseBook доступен не только через веб-интерфейс, но и в Telegram. Подключение Telegram бота даёт вам доступ ко всем функциям платформы прямо из мессенджера.</p>
+
+<h4>Основные преимущества:</h4>
+
+<p><strong>📱 Быстрый доступ с мобильного устройства</strong></p>
+<ul>
+<li>Консультации с AI без необходимости открывать браузер</li>
+<li>Мгновенная отправка фотографий симптомов, травм или лекарств</li>
+<li>Удобный интерфейс для ежедневного использования</li>
+</ul>
+
+<p><strong>🔔 Система напоминаний</strong></p>
+<ul>
+<li>Уведомления о приёме лекарств по расписанию</li>
+</ul>
+
+<p><strong>☁️ Синхронизация данных</strong></p>
+<ul>
+<li>Единая медицинская история на всех платформах</li>
+<li>Все консультации, документы и записи доступны как в веб-версии, так и в Telegram</li>
+<li>Автоматическое обновление данных между устройствами</li>
+</ul>
+
+<hr>
+
+<h4>Как работает синхронизация?</h4>
+
+<p>При связывании Google аккаунта с Telegram ботом:</p>
+
+<ol>
+<li><strong>Объединение данных</strong> — вся медицинская история из веб-версии становится доступна в Telegram боте</li>
+<li><strong>Двусторонняя синхронизация</strong> — изменения в одной версии автоматически отражаются в другой</li>
+<li><strong>Единый профиль</strong> — персональные данные, медицинская анкета и список лекарств синхронизируются автоматически</li>
+<li><strong>Безопасность</strong> — связывание защищено временным кодом, действительным 10 минут</li>
+</ol>
+
+<hr>
+
+<h4>Как подключить Telegram бота?</h4>
+
+<p>Процесс подключения состоит из трёх шагов:</p>
+
+<ol>
+<li>Откройте страницу подключения на устройстве, где установлен Telegram</li>
+<li>Нажмите кнопку "Открыть Telegram бота" — приложение откроется автоматически</li>
+<li>Нажмите START в боте для завершения связывания</li>
+</ol>
+
+<p><strong>Важно:</strong> Страницу необходимо открывать на устройстве с установленным Telegram, иначе автоматический переход не сработает.</p>
+
+<hr>
+
+<p><strong>💡 Совет:</strong> Если у вас уже есть история консультаций в Telegram боте, а затем вы зарегистрировались через веб-версию — свяжите аккаунты, чтобы объединить всю медицинскую историю в единый профиль.</p>
+''',
+
+    'en': '''
+<h4>Why connect the Telegram bot?</h4>
+
+<p>PulseBook is available not only through the web interface, but also in Telegram. Connecting the Telegram bot gives you access to all platform features directly from the messenger.</p>
+
+<h4>Main advantages:</h4>
+
+<p><strong>📱 Quick mobile access</strong></p>
+<ul>
+<li>AI consultations without opening a browser</li>
+<li>Instant photo sending of symptoms, injuries or medications</li>
+<li>Convenient interface for daily use</li>
+</ul>
+
+<p><strong>🔔 Reminder system</strong></p>
+<ul>
+<li>Medication intake notifications on schedule</li>
+</ul>
+
+<p><strong>☁️ Data synchronization</strong></p>
+<ul>
+<li>Unified medical history across all platforms</li>
+<li>All consultations, documents and records available in both web version and Telegram</li>
+<li>Automatic data updates between devices</li>
+</ul>
+
+<hr>
+
+<h4>How does synchronization work?</h4>
+
+<p>When linking your Google account with Telegram bot:</p>
+
+<ol>
+<li><strong>Data merging</strong> — all medical history from web version becomes available in Telegram bot</li>
+<li><strong>Two-way synchronization</strong> — changes in one version automatically reflect in the other</li>
+<li><strong>Unified profile</strong> — personal data, medical questionnaire and medication list sync automatically</li>
+<li><strong>Security</strong> — linking is protected by a temporary code valid for 10 minutes</li>
+</ol>
+
+<hr>
+
+<h4>How to connect the Telegram bot?</h4>
+
+<p>The connection process consists of three steps:</p>
+
+<ol>
+<li>Open the connection page on a device with Telegram installed</li>
+<li>Click the "Open Telegram Bot" button — the app will open automatically</li>
+<li>Click START in the bot to complete linking</li>
+</ol>
+
+<p><strong>Important:</strong> The page must be opened on a device with Telegram installed, otherwise the automatic transition will not work.</p>
+
+<hr>
+
+<p><strong>💡 Tip:</strong> If you already have consultation history in the Telegram bot and then registered via the web version — link the accounts to merge all medical history into a single profile.</p>
+''',
+
+    'uk': '''
+<h4>Навіщо підключати Telegram бота?</h4>
+
+<p>PulseBook доступний не лише через веб-інтерфейс, а й у Telegram. Підключення Telegram бота надає вам доступ до всіх функцій платформи прямо з месенджера.</p>
+
+<h4>Основні переваги:</h4>
+
+<p><strong>📱 Швидкий доступ з мобільного пристрою</strong></p>
+<ul>
+<li>Консультації з AI без необхідності відкривати браузер</li>
+<li>Миттєве надсилання фотографій симптомів, травм або ліків</li>
+<li>Зручний інтерфейс для щоденного використання</li>
+</ul>
+
+<p><strong>🔔 Система нагадувань</strong></p>
+<ul>
+<li>Сповіщення про прийом ліків за розкладом</li>
+</ul>
+
+<p><strong>☁️ Синхронізація даних</strong></p>
+<ul>
+<li>Єдина медична історія на всіх платформах</li>
+<li>Всі консультації, документи та записи доступні як у веб-версії, так і в Telegram</li>
+<li>Автоматичне оновлення даних між пристроями</li>
+</ul>
+
+<hr>
+
+<h4>Як працює синхронізація?</h4>
+
+<p>При зв'язуванні Google акаунта з Telegram ботом:</p>
+
+<ol>
+<li><strong>Об'єднання даних</strong> — вся медична історія з веб-версії стає доступною в Telegram боті</li>
+<li><strong>Двостороння синхронізація</strong> — зміни в одній версії автоматично відображаються в іншій</li>
+<li><strong>Єдиний профіль</strong> — персональні дані, медична анкета та список ліків синхронізуються автоматично</li>
+<li><strong>Безпека</strong> — зв'язування захищене тимчасовим кодом, дійсним 10 хвилин</li>
+</ol>
+
+<hr>
+
+<h4>Як підключити Telegram бота?</h4>
+
+<p>Процес підключення складається з трьох кроків:</p>
+
+<ol>
+<li>Відкрийте сторінку підключення на пристрої, де встановлено Telegram</li>
+<li>Натисніть кнопку "Відкрити Telegram бота" — додаток відкриється автоматично</li>
+<li>Натисніть START в боті для завершення зв'язування</li>
+</ol>
+
+<p><strong>Важливо:</strong> Сторінку необхідно відкривати на пристрої зі встановленим Telegram, інакше автоматичний перехід не спрацює.</p>
+
+<hr>
+
+<p><strong>💡 Порада:</strong> Якщо у вас вже є історія консультацій у Telegram боті, а потім ви зареєструвалися через веб-версію — зв'яжіть акаунти, щоб об'єднати всю медичну історію в єдиний профіль.</p>
+''',
+
+    'de': '''
+<h4>Warum den Telegram-Bot verbinden?</h4>
+
+<p>PulseBook ist nicht nur über die Weboberfläche, sondern auch in Telegram verfügbar. Die Verbindung mit dem Telegram-Bot gibt Ihnen direkten Zugriff auf alle Plattformfunktionen aus dem Messenger.</p>
+
+<h4>Hauptvorteile:</h4>
+
+<p><strong>📱 Schneller mobiler Zugriff</strong></p>
+<ul>
+<li>AI-Konsultationen ohne Browser öffnen zu müssen</li>
+<li>Sofortiges Senden von Fotos von Symptomen, Verletzungen oder Medikamenten</li>
+<li>Bequeme Benutzeroberfläche für den täglichen Gebrauch</li>
+</ul>
+
+<p><strong>🔔 Erinnerungssystem</strong></p>
+<ul>
+<li>Benachrichtigungen über Medikamenteneinnahme nach Zeitplan</li>
+</ul>
+
+<p><strong>☁️ Datensynchronisation</strong></p>
+<ul>
+<li>Einheitliche Krankengeschichte auf allen Plattformen</li>
+<li>Alle Konsultationen, Dokumente und Aufzeichnungen sowohl in der Webversion als auch in Telegram verfügbar</li>
+<li>Automatische Datenaktualisierung zwischen Geräten</li>
+</ul>
+
+<hr>
+
+<h4>Wie funktioniert die Synchronisation?</h4>
+
+<p>Beim Verknüpfen Ihres Google-Kontos mit dem Telegram-Bot:</p>
+
+<ol>
+<li><strong>Datenzusammenführung</strong> — die gesamte Krankengeschichte aus der Webversion wird im Telegram-Bot verfügbar</li>
+<li><strong>Bidirektionale Synchronisation</strong> — Änderungen in einer Version werden automatisch in der anderen widergespiegelt</li>
+<li><strong>Einheitliches Profil</strong> — persönliche Daten, medizinischer Fragebogen und Medikamentenliste werden automatisch synchronisiert</li>
+<li><strong>Sicherheit</strong> — die Verknüpfung ist durch einen temporären Code geschützt, der 10 Minuten gültig ist</li>
+</ol>
+
+<hr>
+
+<h4>Wie verbinde ich den Telegram-Bot?</h4>
+
+<p>Der Verbindungsprozess besteht aus drei Schritten:</p>
+
+<ol>
+<li>Öffnen Sie die Verbindungsseite auf einem Gerät mit installiertem Telegram</li>
+<li>Klicken Sie auf die Schaltfläche "Telegram-Bot öffnen" — die App wird automatisch geöffnet</li>
+<li>Klicken Sie auf START im Bot, um die Verknüpfung abzuschließen</li>
+</ol>
+
+<p><strong>Wichtig:</strong> Die Seite muss auf einem Gerät mit installiertem Telegram geöffnet werden, sonst funktioniert der automatische Übergang nicht.</p>
+
+<hr>
+
+<p><strong>💡 Tipp:</strong> Wenn Sie bereits eine Konsultationshistorie im Telegram-Bot haben und sich dann über die Webversion registriert haben — verknüpfen Sie die Konten, um die gesamte Krankengeschichte in einem einzigen Profil zusammenzuführen.</p>
+'''
+},
 }
 
 

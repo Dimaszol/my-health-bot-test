@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 import markdown
+import bleach
 
 # 📁 Добавляем корневую папку в путь (чтобы импортировать db_postgresql.py)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -132,18 +133,35 @@ app.add_middleware(SessionMiddleware, secret_key=Config.SECRET_KEY)
 templates = Jinja2Templates(directory="webapp/templates")
 app.mount("/static", StaticFiles(directory="webapp/static"), name="static")
 
-# ✅ Фильтр для преобразования markdown в HTML
+# ✅ Фильтр для преобразования markdown в HTML (с защитой от XSS)
 def markdown_filter(text):
-    """Преобразует markdown в HTML"""
+    """Преобразует markdown в HTML с санитизацией"""
     if not text:
         return ""
     
+    # 1. Преобразуем markdown в HTML
     html = markdown.markdown(
         text,
         extensions=['nl2br', 'sane_lists']
     )
     
-    return html
+    # 2. ✅ ОЧИЩАЕМ HTML от опасных тегов и атрибутов
+    safe_html = bleach.clean(
+        html,
+        tags=[
+            'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+            'ul', 'ol', 'li', 'a', 'code', 'pre', 'blockquote', 'hr', 'table',
+            'thead', 'tbody', 'tr', 'th', 'td'
+        ],
+        attributes={
+            'a': ['href', 'title'],  # Только безопасные атрибуты для ссылок
+            '*': ['class']  # Разрешаем class для всех тегов (для стилей)
+        },
+        protocols=['http', 'https', 'mailto'],  # Разрешённые протоколы в ссылках
+        strip=True  # Удаляем запрещённые теги вместо экранирования
+    )
+    
+    return safe_html
 
 templates.env.filters['markdown'] = markdown_filter
 

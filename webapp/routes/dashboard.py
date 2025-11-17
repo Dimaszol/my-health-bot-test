@@ -41,6 +41,49 @@ router = APIRouter()
 # 📁 НАСТРОЙКА ШАБЛОНОВ
 # templates = Jinja2Templates(directory="webapp/templates")
 
+def calculate_profile_completion(user):
+    """Рассчитывает процент заполненности медицинской анкеты (12 полей)"""
+    if not user:
+        return 0
+    
+    # Проверяем является ли user словарём или объектом
+    if isinstance(user, dict):
+        fields = [
+            user.get('name'),                    # Имя
+            user.get('birth_year'),              # Год рождения
+            user.get('gender'),                  # Пол
+            user.get('height_cm'),               # Рост
+            user.get('weight_kg'),               # Вес
+            user.get('chronic_conditions'),      # Хронические заболевания
+            user.get('allergies'),               # Аллергии
+            user.get('family_history'),          # Семейная история
+            user.get('medications'),             # Лекарства
+            user.get('smoking'),                 # Курение
+            user.get('alcohol'),                 # Алкоголь
+            user.get('physical_activity')        # Физическая активность
+        ]
+    else:
+        # Если это объект с атрибутами
+        fields = [
+            user.name,
+            user.birth_year,
+            user.gender,
+            user.height_cm,
+            user.weight_kg,
+            user.chronic_conditions,
+            user.allergies,
+            user.family_history,
+            user.medications,
+            user.smoking,
+            user.alcohol,
+            user.physical_activity
+        ]
+    
+    filled_fields = sum(1 for field in fields if field)
+    total_fields = len(fields)
+    
+    return round((filled_fields / total_fields) * 100)
+
 def get_plan_display_name(subscription_type: str, lang: str = 'ru') -> str:
     """
     Конвертирует внутренние названия тарифов в ключи переводов
@@ -197,7 +240,8 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
         'chat_history': chat_history,
         'stats': stats,
         'show_telegram_connect': show_telegram_connect,
-        'current_plan_name': current_plan_name  # ← ДОБАВИЛИ
+        'current_plan_name': current_plan_name,
+        'profile_completion': calculate_profile_completion(profile)
     })
     
     return templates.TemplateResponse('dashboard.html', context)

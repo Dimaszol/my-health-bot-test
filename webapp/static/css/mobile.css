@@ -1,6 +1,11 @@
 /* 📱 ОПТИМИЗИРОВАННЫЕ МОБИЛЬНЫЕ СТИЛИ */
 /* Все media queries объединены для лучшей производительности */
-
+:root {
+    --safe-area-top: env(safe-area-inset-top);
+    --safe-area-bottom: env(safe-area-inset-bottom);
+    --safe-area-left: env(safe-area-inset-left);
+    --safe-area-right: env(safe-area-inset-right);
+}
 /* ============================================
    🍔 КНОПКА БУРГЕР-МЕНЮ (вне media query)
    ============================================ */
@@ -211,6 +216,14 @@
     
     header {
         padding: 0.75rem 0;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        z-index: 1000 !important;
+        background: rgba(255, 255, 255, 0.98) !important;
+        backdrop-filter: blur(10px) !important;
     }
 
     .header-content {
@@ -242,7 +255,10 @@
     
     main {
         padding: 1rem !important;
-        margin: 0 !important;
+        margin-top: 60px !important; /* Отступ от header */
+        margin-bottom: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
         border-radius: 0 !important;
     }
 

@@ -130,20 +130,35 @@
         
         <!-- Заполнить анкету -->
         <a href="/dashboard/profile" class="card" style="padding: 1.5rem; text-decoration: none; cursor: pointer; transition: all 0.3s;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <div style="width: 40px; height: 40px;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#4A5568" stroke-width="2" style="width: 100%; height: 100%;">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                    </svg>
+            <div style="display: flex; align-items: start; justify-content: space-between; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 40px; height: 40px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#4A5568" stroke-width="2" style="width: 100%; height: 100%;">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--text-primary); margin-bottom: 0.3rem; font-size: 1.1rem;">
+                            {{ t('action_profile', lang) }}
+                        </h4>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
+                            {{ t('action_profile_desc', lang) }}
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h4 style="color: var(--text-primary); margin-bottom: 0.3rem; font-size: 1.1rem;">
-                        {{ t('action_profile', lang) }}
-                    </h4>
-                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
-                        {{ t('action_profile_desc', lang) }}
-                    </p>
+                
+                <!-- Круговой индикатор процента -->
+                <div style="width: 60px; height: 60px; position: relative; flex-shrink: 0;">
+                    <svg width="60" height="60" style="transform: rotate(-90deg);">
+                        <circle cx="30" cy="30" r="25" fill="none" stroke="#e2e8f0" stroke-width="5"/>
+                        <circle cx="30" cy="30" r="25" fill="none" stroke="#48bb78" stroke-width="5" 
+                                stroke-dasharray="{{ (profile_completion / 100) * 157 }} 157" 
+                                stroke-linecap="round"/>
+                    </svg>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: #2d3748; font-size: 0.9rem;">
+                        {{ profile_completion }}%
+                    </div>
                 </div>
             </div>
         </a>

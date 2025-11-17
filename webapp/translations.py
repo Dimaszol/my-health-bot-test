@@ -18,6 +18,99 @@
 
 TRANSLATIONS = {
     # ============================================
+    # 🤖 КОНСИЛИУМ AI - компактный блок
+    # ============================================
+    'ai_consortium_title': {
+        'ru': 'PulseBook — первая платформа с консилиумом AI-моделей',
+        'en': 'PulseBook — the first platform with an AI consortium',
+        'uk': 'PulseBook — перша платформа з консиліумом AI-моделей',
+        'de': 'PulseBook — die erste Plattform mit einem KI-Konsortium'
+    },
+    'ai_consortium_subtitle': {
+        'ru': 'Система, где несколько языковых моделей работают вместе над каждым запросом.',
+        'en': 'A system where multiple language models work together on each request.',
+        'uk': 'Система, де декілька мовних моделей працюють разом над кожним запитом.',
+        'de': 'Ein System, bei dem mehrere Sprachmodelle an jeder Anfrage zusammenarbeiten.'
+    },
+    # ============================================
+    # 🎨 HERO ИЛЛЮСТРАЦИЯ (SVG карточки)
+    # ============================================
+    'hero_svg_card1_title': {
+        'ru': 'Загрузите документы',
+        'en': 'Upload documents',
+        'uk': 'Завантажте документи',
+        'de': 'Dokumente hochladen'
+    },
+    'hero_svg_card1_line1': {
+        'ru': 'PDF, фото анализов,',
+        'en': 'PDF, test photos,',
+        'uk': 'PDF, фото аналізів,',
+        'de': 'PDF, Testfotos,'
+    },
+    'hero_svg_card1_line2': {
+        'ru': 'медицинские справки',
+        'en': 'medical certificates',
+        'uk': 'медичні довідки',
+        'de': 'medizinische Bescheinigungen'
+    },
+
+    'hero_svg_card2_title': {
+        'ru': 'Получите AI-анализ',
+        'en': 'Get AI analysis',
+        'uk': 'Отримайте AI-аналіз',
+        'de': 'KI-Analyse erhalten'
+    },
+    'hero_svg_card2_line1': {
+        'ru': 'Интеллектуальный разбор',
+        'en': 'Intelligent analysis',
+        'uk': 'Інтелектуальний розбір',
+        'de': 'Intelligente Analyse'
+    },
+    'hero_svg_card2_line2': {
+        'ru': 'ваших медданных',
+        'en': 'of your medical data',
+        'uk': 'ваших медданих',
+        'de': 'Ihrer medizinischen Daten'
+    },
+
+    'hero_svg_card3_title': {
+        'ru': 'Задавайте вопросы',
+        'en': 'Ask questions',
+        'uk': 'Ставте питання',
+        'de': 'Stellen Sie Fragen'
+    },
+    'hero_svg_card3_line1': {
+        'ru': '24/7 консультации',
+        'en': '24/7 consultations',
+        'uk': '24/7 консультації',
+        'de': '24/7 Beratungen'
+    },
+    'hero_svg_card3_line2': {
+        'ru': 'с медицинским AI',
+        'en': 'with medical AI',
+        'uk': 'з медичним AI',
+        'de': 'mit medizinischer KI'
+    },
+
+    'hero_svg_card4_title': {
+        'ru': 'Храните историю',
+        'en': 'Store history',
+        'uk': 'Зберігайте історію',
+        'de': 'Historie speichern'
+    },
+    'hero_svg_card4_line1': {
+        'ru': 'Вся медицинская история',
+        'en': 'All medical history',
+        'uk': 'Вся медична історія',
+        'de': 'Gesamte Krankengeschichte'
+    },
+    'hero_svg_card4_line2': {
+        'ru': 'в одном месте',
+        'en': 'in one place',
+        'uk': 'в одному місці',
+        'de': 'an einem Ort'
+    },
+    # ============================================
     # 🏠 ГЛАВНАЯ СТРАНИЦА (index.html)
     # ============================================
     'site_title': {

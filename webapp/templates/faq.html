@@ -137,6 +137,29 @@
             </div>
         </div>
 
+        <!-- 5.1 Telegram бот -->
+        <div class="faq-item" id="telegram">
+            <div class="faq-header" onclick="toggleFaq(this)">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="faq-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 3L11 13"/>
+                            <path d="M21 3l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                    </div>
+                    <h3>{{ faq_t('faq_telegram_title', lang) }}</h3>
+                </div>
+                <svg class="faq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </div>
+            <div class="faq-content">
+                <div class="faq-text">
+                    {{ faq_t('faq_telegram_content', lang) | safe }}
+                </div>
+            </div>
+        </div>
+
         <!-- 6. Безопасность -->
         <div class="faq-item" id="security">
             <div class="faq-header" onclick="toggleFaq(this)">
@@ -355,12 +378,14 @@ function toggleFaq(header) {
 document.addEventListener('DOMContentLoaded', function() {
     const hash = window.location.hash;
     if (hash) {
-        const targetItem = document.querySelector(hash);
-        if (targetItem && targetItem.classList.contains('faq-item')) {
-            const header = targetItem.querySelector('.faq-header');
+        const targetElement = document.querySelector(hash);
+        if (targetElement && targetElement.classList.contains('faq-item')) {
+            const header = targetElement.querySelector('.faq-header');
             if (header) {
                 setTimeout(() => {
                     toggleFaq(header);
+                    // Скролл к элементу
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 300);
             }
         }

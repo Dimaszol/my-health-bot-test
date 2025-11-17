@@ -31,51 +31,225 @@
             
             <!-- Иллюстрация -->
             <div class="hero-image">
-                <svg class="hero-illustration" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Медицинская иллюстрация -->
-                    <!-- Фон с градиентом -->
+                <svg class="hero-illustration" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Анимированная демонстрация возможностей -->
+                    
+                    <!-- ОПРЕДЕЛЕНИЯ (Градиенты и анимации) -->
                     <defs>
-                        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#00C9A7;stop-opacity:0.3" />
-                            <stop offset="100%" style="stop-color:#00D4BD;stop-opacity:0.1" />
-                        </linearGradient>
-                        <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <!-- Основной градиент -->
+                        <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                             <stop offset="0%" style="stop-color:#00C9A7;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#00D4BD;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#00E5C8;stop-opacity:1" />
                         </linearGradient>
+                        
+                        <!-- Фоновый градиент -->
+                        <radialGradient id="bgGrad">
+                            <stop offset="0%" style="stop-color:#E8F9F6;stop-opacity:0.4" />
+                            <stop offset="100%" style="stop-color:#D0F4ED;stop-opacity:0" />
+                        </radialGradient>
+                        
+                        <!-- Градиент для декоративных кругов -->
+                        <radialGradient id="decorCircle">
+                            <stop offset="0%" style="stop-color:#00C9A7;stop-opacity:0.15" />
+                            <stop offset="100%" style="stop-color:#00C9A7;stop-opacity:0" />
+                        </radialGradient>
+                        
+                        <!-- Тень для карточек -->
+                        <filter id="cardShadow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+                            <feOffset dx="0" dy="4"/>
+                            <feComponentTransfer>
+                                <feFuncA type="linear" slope="0.15"/>
+                            </feComponentTransfer>
+                            <feMerge>
+                                <feMergeNode/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
                     </defs>
                     
-                    <!-- Большой круг на фоне -->
-                    <circle cx="250" cy="250" r="200" fill="url(#grad1)" />
+                    <!-- ФОНОВЫЙ КРУГ (пульсирующий) -->
+                    <circle cx="300" cy="300" r="200" fill="url(#bgGrad)">
+                        <animate attributeName="r" values="200;220;200" dur="4s" repeatCount="indefinite"/>
+                    </circle>
                     
-                    <!-- Телефон -->
-                    <rect x="180" y="100" width="140" height="280" rx="20" fill="#fff" stroke="url(#grad2)" stroke-width="4"/>
+                    <!-- ============================================
+                        ДЕКОРАТИВНЫЕ ФОНОВЫЕ КРУГИ (создают баланс)
+                        ============================================ -->
+                    <g opacity="1">
+                        <!-- Круг слева вверху -->
+                        <circle cx="130" cy="190" r="100" fill="url(#decorCircle)">
+                            <animate attributeName="r" values="100;110;100" dur="5s" repeatCount="indefinite"/>
+                        </circle>
+                        
+                        <!-- Круг справа вверху -->
+                        <circle cx="470" cy="190" r="100" fill="url(#decorCircle)">
+                            <animate attributeName="r" values="100;110;100" dur="6s" repeatCount="indefinite"/>
+                        </circle>
+                        
+                        <!-- Круг слева внизу -->
+                        <circle cx="130" cy="450" r="100" fill="url(#decorCircle)">
+                            <animate attributeName="r" values="100;110;100" dur="5.5s" repeatCount="indefinite"/>
+                        </circle>
+                        
+                        <!-- Круг справа внизу -->
+                        <circle cx="470" cy="450" r="100" fill="url(#decorCircle)">
+                            <animate attributeName="r" values="100;110;100" dur="6.5s" repeatCount="indefinite"/>
+                        </circle>
+                    </g>
                     
-                    <!-- Экран телефона -->
-                    <rect x="195" y="120" width="110" height="240" rx="10" fill="#E0F7F4"/>
+                    <!-- ЦЕНТРАЛЬНЫЙ ЭЛЕМЕНТ (Логотип - ваш значок пульса) -->
+                    <g>
+                        <!-- Белый круг фона с тенью -->
+                        <circle cx="300" cy="300" r="60" fill="#FFFFFF" filter="url(#cardShadow)"/>
+                        
+                        <!-- Внутренний круг (светлый фон) -->
+                        <circle cx="300" cy="300" r="55" fill="#F8FBFA"/>
+                        
+                        <!-- ВАША КАРТИНКА ЛОГОТИПА (уменьшенная, без анимации) -->
+                        <image 
+                            href="/static/favicon-96x96.png" 
+                            x="265" 
+                            y="265" 
+                            width="70" 
+                            height="70"
+                            preserveAspectRatio="xMidYMid meet"/>
+                    </g>                                
                     
-                    <!-- Иконки на экране -->
-                    <circle cx="250" cy="180" r="25" fill="url(#grad2)"/>
-                    <text x="250" y="195" text-anchor="middle" font-size="30">🏥</text>
+                    <!-- ============================================
+                        КАРТОЧКА 1: ЗАГРУЗКА ДОКУМЕНТОВ (слева вверху)
+                        ============================================ -->
+                    <g id="card1" opacity="0">
+                        <!-- Карточка (слева вверху) -->
+                        <g filter="url(#cardShadow)">
+                            <rect x="40" y="120" width="180" height="140" rx="20" fill="#FFFFFF"/>
+                            
+                            <!-- Иконка документа -->
+                            <circle cx="130" cy="165" r="35" fill="#FF6B6B" opacity="0.15"/>
+                            <text x="130" y="178" text-anchor="middle" font-size="40" fill="#FF6B6B">📄</text>
+                            
+                            <!-- Текст -->
+                            <text x="130" y="220" text-anchor="middle" font-size="13" font-weight="700" fill="#333">{{ t('hero_svg_card1_title', lang) }}</text>
+                            <text x="130" y="238" text-anchor="middle" font-size="10" fill="#666">{{ t('hero_svg_card1_line1', lang) }}</text>
+                            <text x="130" y="252" text-anchor="middle" font-size="10" fill="#666">{{ t('hero_svg_card1_line2', lang) }}</text>
+                        </g>
+                        
+                        <!-- Стрелка от центра к карточке -->
+                        <path d="M 260 260 Q 220 220 220 180" stroke="url(#primaryGrad)" stroke-width="2" fill="none" stroke-dasharray="5,5">
+                            <animate attributeName="stroke-dashoffset" from="0" to="-10" dur="1s" repeatCount="indefinite"/>
+                        </path>
+                        
+                        <!-- Анимация появления -->
+                        <animate attributeName="opacity" 
+                                from="0" to="1"
+                                begin="0s"
+                                dur="0.5s" 
+                                fill="freeze"/>
+                    </g>
+
+                    <!-- ============================================
+                        КАРТОЧКА 2: AI АНАЛИЗ (справа вверху)
+                        ============================================ -->
+                    <g id="card2" opacity="0">
+                        <!-- Карточка (справа вверху) -->
+                        <g filter="url(#cardShadow)">
+                            <rect x="380" y="120" width="180" height="140" rx="20" fill="#FFFFFF"/>
+                            
+                            <!-- Иконка анализа -->
+                            <circle cx="470" cy="165" r="35" fill="#00C9A7" opacity="0.15"/>
+                            <text x="470" y="178" text-anchor="middle" font-size="40" fill="#00C9A7">🔬</text>
+                            
+                            <!-- Текст -->
+                            <text x="470" y="220" text-anchor="middle" font-size="13" font-weight="700" fill="#333">{{ t('hero_svg_card2_title', lang) }}</text>
+                            <text x="470" y="238" text-anchor="middle" font-size="10" fill="#666">{{ t('hero_svg_card2_line1', lang) }}</text>
+                            <text x="470" y="252" text-anchor="middle" font-size="10" fill="#666">{{ t('hero_svg_card2_line2', lang) }}</text>
+                        </g>
+                        
+                        <!-- Стрелка -->
+                        <path d="M 340 260 Q 380 220 380 180" stroke="url(#primaryGrad)" stroke-width="2" fill="none" stroke-dasharray="5,5">
+                            <animate attributeName="stroke-dashoffset" from="0" to="-10" dur="1s" repeatCount="indefinite"/>
+                        </path>
+                        
+                        <!-- Анимация появления (через 0.8 сек) -->
+                        <animate attributeName="opacity" 
+                                from="0" to="1"
+                                begin="1.5s"
+                                dur="0.5s" 
+                                fill="freeze"/>
+                    </g>
+
+                    <!-- ============================================
+                        КАРТОЧКА 3: ЧАТ С AI (слева внизу)
+                        ============================================ -->
+                    <g id="card3" opacity="0">
+                        <!-- Карточка (слева внизу) -->
+                        <g filter="url(#cardShadow)">
+                            <rect x="40" y="380" width="180" height="140" rx="20" fill="#FFFFFF"/>
+                            
+                            <!-- Иконка чата -->
+                            <circle cx="130" cy="425" r="35" fill="#5B8DEF" opacity="0.15"/>
+                            <text x="130" y="438" text-anchor="middle" font-size="40" fill="#5B8DEF">💬</text>
+                            
+                            <!-- Текст -->
+                            <text x="130" y="480" text-anchor="middle" font-size="13" font-weight="700" fill="#333">{{ t('hero_svg_card3_title', lang) }}</text>
+                            <text x="130" y="498" text-anchor="middle" font-size="10" fill="#666">{{ t('hero_svg_card3_line1', lang) }}</text>
+                            <text x="130" y="512" text-anchor="middle" font-size="10" fill="#666">{{ t('hero_svg_card3_line2', lang) }}</text>
+                        </g>
+                        
+                        <!-- Стрелка -->
+                        <path d="M 260 340 Q 220 380 220 420" stroke="url(#primaryGrad)" stroke-width="2" fill="none" stroke-dasharray="5,5">
+                            <animate attributeName="stroke-dashoffset" from="0" to="-10" dur="1s" repeatCount="indefinite"/>
+                        </path>
+                        
+                        <!-- Анимация появления (через 1.6 сек) -->
+                        <animate attributeName="opacity" 
+                                from="0" to="1"
+                                begin="3s"
+                                dur="0.5s" 
+                                fill="freeze"/>
+                    </g>
+
+                    <!-- ============================================
+                        КАРТОЧКА 4: ХРАНЕНИЕ ИСТОРИИ (справа внизу)
+                        ============================================ -->
+                    <g id="card4" opacity="0">
+                        <!-- Карточка (справа внизу) -->
+                        <g filter="url(#cardShadow)">
+                            <rect x="380" y="380" width="180" height="140" rx="20" fill="#FFFFFF"/>
+                            
+                            <!-- Иконка хранилища -->
+                            <circle cx="470" cy="425" r="35" fill="#FFD93D" opacity="0.15"/>
+                            <text x="470" y="438" text-anchor="middle" font-size="40" fill="#FFB800">📁</text>
+                            
+                            <!-- Текст -->
+                            <text x="470" y="480" text-anchor="middle" font-size="13" font-weight="700" fill="#333">{{ t('hero_svg_card4_title', lang) }}</text>
+                            <text x="470" y="498" text-anchor="middle" font-size="10" fill="#666">{{ t('hero_svg_card4_line1', lang) }}</text>
+                            <text x="470" y="512" text-anchor="middle" font-size="10" fill="#666">{{ t('hero_svg_card4_line2', lang) }}</text>
+                        </g>
+                        
+                        <!-- Стрелка -->
+                        <path d="M 340 340 Q 380 380 380 420" stroke="url(#primaryGrad)" stroke-width="2" fill="none" stroke-dasharray="5,5">
+                            <animate attributeName="stroke-dashoffset" from="0" to="-10" dur="1s" repeatCount="indefinite"/>
+                        </path>
+                        
+                        <!-- Анимация появления (через 2.4 сек) -->
+                        <animate attributeName="opacity" 
+                                from="0" to="1"
+                                begin="4.5s"
+                                dur="0.5s" 
+                                fill="freeze"/>
+                    </g>
                     
-                    <!-- Текст на экране -->
-                    <rect x="205" y="220" width="90" height="8" rx="4" fill="#00C9A7" opacity="0.3"/>
-                    <rect x="205" y="235" width="70" height="8" rx="4" fill="#00C9A7" opacity="0.2"/>
-                    <rect x="205" y="250" width="85" height="8" rx="4" fill="#00C9A7" opacity="0.2"/>
-                    
-                    <!-- Кнопки -->
-                    <rect x="205" y="280" width="90" height="30" rx="15" fill="url(#grad2)"/>
-                    <text x="250" y="300" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">{{ t('menu_chat', lang) }}</text>
-                    
-                    <!-- Декоративные элементы -->
-                    <circle cx="380" cy="150" r="30" fill="url(#grad2)" opacity="0.2"/>
-                    <text x="380" y="165" text-anchor="middle" font-size="35">📄</text>
-                    
-                    <circle cx="120" cy="200" r="35" fill="url(#grad2)" opacity="0.2"/>
-                    <text x="120" y="220" text-anchor="middle" font-size="40">💊</text>
-                    
-                    <circle cx="380" cy="350" r="28" fill="url(#grad2)" opacity="0.2"/>
-                    <text x="380" y="368" text-anchor="middle" font-size="32">🔬</text>
+                    <!-- ДЕКОРАТИВНЫЕ ЭЛЕМЕНТЫ (постоянные, лёгкие) -->
+                    <circle cx="520" cy="80" r="4" fill="url(#primaryGrad)" opacity="0.3">
+                        <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3s" repeatCount="indefinite"/>
+                    </circle>
+                    <circle cx="80" cy="520" r="5" fill="url(#primaryGrad)" opacity="0.25">
+                        <animate attributeName="opacity" values="0.25;0.6;0.25" dur="4s" repeatCount="indefinite"/>
+                    </circle>
+                    <circle cx="560" cy="520" r="3" fill="url(#primaryGrad)" opacity="0.35">
+                        <animate attributeName="opacity" values="0.35;0.8;0.35" dur="2.5s" repeatCount="indefinite"/>
+                    </circle>
                 </svg>
             </div>
         </div>
@@ -86,11 +260,11 @@
 <section id="features" style="margin: 5rem 0;">
     <div class="container">
         <div class="text-center mb-4">
-            <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-primary);">
-                {{ t('section_features', lang) }}
+            <h2 style="font-size: 1.7rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-primary);">
+                {{ t('ai_consortium_title', lang) }}
             </h2>
-            <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 700px; margin: 0 auto;">
-                {{ t('features_subtitle', lang) }}
+            <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 900px; margin: 0 auto;">
+                {{ t('ai_consortium_subtitle', lang) }}
             </p>
         </div>
         
