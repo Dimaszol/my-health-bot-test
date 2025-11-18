@@ -1285,6 +1285,29 @@ async def toggle_document_confirmed(
             }
         )
 # ==========================================
+# 🔒 ФУНКЦИИ ВАЛИДАЦИИ (как в Telegram-боте)
+# ==========================================
+
+def validate_birth_year(year: int) -> tuple[bool, str]:
+    """Валидация года рождения (16+)"""
+    current_year = datetime.now().year - 16
+    if year < 1900 or year > current_year:
+        return False, "birth_year_invalid"
+    return True, ""
+
+def validate_height(height: int) -> tuple[bool, str]:
+    """Валидация роста (100-250 см)"""
+    if height < 100 or height > 250:
+        return False, "height_invalid"
+    return True, ""
+
+def validate_weight(weight: float) -> tuple[bool, str]:
+    """Валидация веса (30-300 кг)"""
+    if weight < 30 or weight > 300:
+        return False, "weight_invalid"
+    return True, ""
+
+# ==========================================
 # 💳 РЕДАКТИРОВАНИЕ ПРОФАЙЛА
 # ==========================================
 
@@ -1328,14 +1351,63 @@ async def update_profile(request: Request):
                 update_data['name'] = data['name']
         
         elif section == 'medical':
+            # Год рождения
             if 'birth_year' in data and data['birth_year']:
-                update_data['birth_year'] = int(data['birth_year'])
+                try:
+                    year = int(data['birth_year'])
+                    is_valid, error_key = validate_birth_year(year)
+                    if not is_valid:
+                        lang = await get_user_language(user_id)
+                        return JSONResponse(
+                            status_code=400,
+                            content={"success": False, "message": t(error_key, lang)}
+                        )
+                    update_data['birth_year'] = year
+                except (ValueError, TypeError):
+                    lang = await get_user_language(user_id)
+                    return JSONResponse(
+                        status_code=400,
+                        content={"success": False, "message": t("birth_year_invalid", lang)}
+                    )
             if 'gender' in data:
                 update_data['gender'] = data['gender'] if data['gender'] else None
+            # Рост
             if 'height_cm' in data and data['height_cm']:
-                update_data['height_cm'] = int(data['height_cm'])
+                try:
+                    height = int(data['height_cm'])
+                    is_valid, error_key = validate_height(height)
+                    if not is_valid:
+                        lang = await get_user_language(user_id)
+                        return JSONResponse(
+                            status_code=400,
+                            content={"success": False, "message": t(error_key, lang)}
+                        )
+                    update_data['height_cm'] = height
+                except (ValueError, TypeError):
+                    lang = await get_user_language(user_id)
+                    return JSONResponse(
+                        status_code=400,
+                        content={"success": False, "message": t("height_invalid", lang)}
+                    )
+            
+            # Вес
             if 'weight_kg' in data and data['weight_kg']:
-                update_data['weight_kg'] = float(data['weight_kg'])
+                try:
+                    weight = float(data['weight_kg'])
+                    is_valid, error_key = validate_weight(weight)
+                    if not is_valid:
+                        lang = await get_user_language(user_id)
+                        return JSONResponse(
+                            status_code=400,
+                            content={"success": False, "message": t(error_key, lang)}
+                        )
+                    update_data['weight_kg'] = weight
+                except (ValueError, TypeError):
+                    lang = await get_user_language(user_id)
+                    return JSONResponse(
+                        status_code=400,
+                        content={"success": False, "message": t("weight_invalid", lang)}
+                    )
             if 'chronic_conditions' in data:
                 update_data['chronic_conditions'] = data['chronic_conditions'] if data['chronic_conditions'] else None
             if 'allergies' in data:

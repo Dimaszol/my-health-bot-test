@@ -546,10 +546,42 @@ async function saveSection(section) {
         }
     }
     else if (section === 'medical') {
-        data.birth_year = document.getElementById('birth-year-input').value;
+        const birthYear = document.getElementById('birth-year-input').value;
+        const height = document.getElementById('height-input').value;
+        const weight = document.getElementById('weight-input').value;
+        
+        // Валидация года рождения
+        if (birthYear) {
+            const year = parseInt(birthYear);
+            const currentYear = new Date().getFullYear() - 16;
+            if (year < 1900 || year > currentYear) {
+                alert('{{ t("birth_year_invalid", lang) }}');
+                return;
+            }
+        }
+        
+        // Валидация роста
+        if (height) {
+            const h = parseInt(height);
+            if (h < 100 || h > 250) {
+                alert('{{ t("height_invalid", lang) }}');
+                return;
+            }
+        }
+        
+        // Валидация веса
+        if (weight) {
+            const w = parseFloat(weight);
+            if (w < 30 || w > 300) {
+                alert('{{ t("weight_invalid", lang) }}');
+                return;
+            }
+        }
+        
+        data.birth_year = birthYear;
         data.gender = document.getElementById('gender-input').value;
-        data.height_cm = document.getElementById('height-input').value;
-        data.weight_kg = document.getElementById('weight-input').value;
+        data.height_cm = height;
+        data.weight_kg = weight;
         data.chronic_conditions = document.getElementById('chronic-input').value.trim();
         data.allergies = document.getElementById('allergies-input').value.trim();
         data.family_history = document.getElementById('family-history-input').value.trim();
