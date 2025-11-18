@@ -4,6 +4,7 @@
 
 import os
 import sys
+import re
 from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
@@ -11,6 +12,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
+from middleware.rate_limit import add_rate_limit_middleware
 import markdown
 import bleach
 from starlette_csrf import CSRFMiddleware
@@ -129,6 +131,9 @@ app = FastAPI(
 # 🔐 ДОБАВЛЯЕМ ПОДДЕРЖКУ СЕССИЙ (как в Flask)
 app.add_middleware(SessionMiddleware, secret_key=Config.SECRET_KEY)
 
+# 🛡️ Rate Limiting - защита от DoS/DDoS атак
+add_rate_limit_middleware(app)
+
 # 🛡️ ДОБАВЛЯЕМ CSRF ЗАЩИТУ
 from starlette_csrf import CSRFMiddleware
 
@@ -143,7 +148,10 @@ app.add_middleware(
     cookie_samesite="lax",
     header_name="X-CSRF-Token",
     safe_methods={"GET", "HEAD", "OPTIONS", "TRACE"},  # Эти методы не проверяются
-    exempt_urls={"/webhook/stripe"}  # Можно исключить некоторые URL (например webhook от Stripe)
+    exempt_urls={
+        re.compile(r"^/api/.*"),  # Исключаем все API эндпоинты
+        re.compile(r"^/webhook/.*")  # Исключаем вебхуки
+    }
 )
 
 # 🛡️ ДОБАВЛЯЕМ ЗАГОЛОВКИ БЕЗОПАСНОСТИ
@@ -174,6 +182,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 # Применяем middleware
 app.add_middleware(SecurityHeadersMiddleware)
+
+# 🔒 HTTPS REDIRECT: Перенаправляем HTTP → HTTPS в production
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
+
+if Config.IS_PRODUCTION:
+    app.add_middleware(HTTPSRedirectMiddleware)
+    print("✅ HTTPS redirect включён (production режим)")
 
 # 📁 НАСТРОЙКА ШАБЛОНОВ И СТАТИКИ
 # Используем те же папки что были в Flask

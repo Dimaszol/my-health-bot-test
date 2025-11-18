@@ -406,7 +406,46 @@ async def analyze_photo_with_question(
                     'error': 'Пожалуйста, загрузите изображение (PNG, JPG, JPEG, GIF, WEBP)'
                 }
             )
-        
+        # 🛡️ ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: Валидация изображения через PIL
+        try:
+            from PIL import Image
+            import io
+            
+            # Читаем файл в память
+            file_content = await file.read()
+            
+            # Пытаемся открыть как изображение
+            img = Image.open(io.BytesIO(file_content))
+            img.verify()  # Проверяем что это действительно корректное изображение
+            
+            # ✅ ВАЖНО: После verify() нужно заново открыть изображение
+            img = Image.open(io.BytesIO(file_content))
+            
+            # Проверяем размер файла (максимум 10MB для изображений)
+            file_size_mb = len(file_content) / (1024 * 1024)
+            if file_size_mb > 10:
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        'success': False,
+                        'error': f'Изображение слишком большое ({file_size_mb:.1f} МБ). Максимум 10 МБ.'
+                    }
+                )
+            
+            print("Изображение прошло PIL валидацию")
+            
+            # ✅ Возвращаем указатель файла в начало для дальнейшего использования
+            await file.seek(0)
+            
+        except Exception as e:
+            safe_log_error("Файл не является корректным изображением", error=e)
+            return JSONResponse(
+                status_code=400,
+                content={
+                    'success': False,
+                    'error': 'Файл не является корректным изображением. Поддерживаются: PNG, JPG, JPEG, GIF, WEBP'
+                }
+            )
         # Проверяем вопрос
         user_question = question.strip()
         if not user_question:

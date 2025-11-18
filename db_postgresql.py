@@ -683,6 +683,21 @@ async def get_user(user_id: int) -> Optional[Dict]:
 
 async def update_user_profile(user_id: int, field: str, value: Any) -> bool:
     """Обновить поле в профиле пользователя"""
+    
+    # 🛡️ WHITELIST РАЗРЕШЁННЫХ ПОЛЕЙ
+    ALLOWED_FIELDS = {
+        'name', 'birth_year', 'gender', 'height_cm', 'weight_kg',
+        'chronic_conditions', 'medications', 'allergies', 
+        'smoking', 'alcohol', 'physical_activity', 'family_history', 'language'
+    }
+    
+    if field not in ALLOWED_FIELDS:
+        log_error_with_context(
+            ValueError(f"Field '{field}' is not allowed for update"), 
+            {"function": "update_user_profile", "user_id": user_id, "field": field}
+        )
+        return False
+    
     conn = await get_db_connection()
     try:
         query = f"UPDATE users SET {field} = $1, last_updated = CURRENT_TIMESTAMP WHERE user_id = $2"
@@ -1498,6 +1513,14 @@ async def update_user_profile_dict(user_id: int, update_data: dict) -> bool:
     Returns:
         bool: True если успешно, False если ошибка
     """
+    
+    # 🛡️ WHITELIST РАЗРЕШЁННЫХ ПОЛЕЙ
+    ALLOWED_FIELDS = {
+        'name', 'birth_year', 'gender', 'height_cm', 'weight_kg',
+        'chronic_conditions', 'medications', 'allergies', 
+        'smoking', 'alcohol', 'physical_activity', 'family_history', 'language'
+    }
+    
     try:
         # Формируем SQL запрос динамически на основе переданных полей
         fields = []
@@ -1505,6 +1528,11 @@ async def update_user_profile_dict(user_id: int, update_data: dict) -> bool:
         param_count = 1
         
         for key, value in update_data.items():
+            # ✅ ПРОВЕРЯЕМ ЧТО ПОЛЕ РАЗРЕШЕНО
+            if key not in ALLOWED_FIELDS:
+                logger.error(f"Попытка обновить недопустимое поле: {key}")
+                continue  # Пропускаем недопустимое поле
+            
             fields.append(f"{key} = ${param_count}")
             values.append(value)
             param_count += 1
@@ -1527,5 +1555,5 @@ async def update_user_profile_dict(user_id: int, update_data: dict) -> bool:
         return True
         
     except Exception as e:
-        print(f"❌ Ошибка обновления профиля пользователя {user_id}: {e}")
+        logger.error("Ошибка обновления профиля пользователя")
         return False

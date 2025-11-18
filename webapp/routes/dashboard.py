@@ -176,7 +176,7 @@ async def get_current_user(request: Request) -> int:
     user_id = request.session.get('user_id')
     if not user_id:
         # Если не авторизован - редиректим
-        raise RedirectResponse(url='/login', status_code=302)
+        return RedirectResponse(url='/login', status_code=302)
     return user_id
     
 

@@ -113,6 +113,12 @@
 
 {% block extra_scripts %}
 <script>
+// Функция для получения cookie (добавь в начало <script> блока)
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
 // 🚀 JAVASCRIPT ДЛЯ ЧАТА
 
 const chatForm = document.getElementById('chat-form');
@@ -368,6 +374,9 @@ async function sendPhotoForAnalysis(file, question) {
         
         const response = await fetch('/api/analyze-photo', {
             method: 'POST',
+            headers: {
+                'X-CSRF-Token': getCookie('csrf_token')  // ✅ Добавили CSRF токен
+            },
             body: formData
         });
         
@@ -415,6 +424,7 @@ async function sendTextMessage(message) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRF-Token': getCookie('csrf_token')
             },
             body: JSON.stringify({ message: message })
         });
