@@ -52,9 +52,13 @@ main {
 /* 📦 СЕТКА ТАРИФОВ */
 .plans-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.2rem;
-    margin-bottom: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+    justify-content: center; /* ✅ Центрируем */
+    max-width: 1200px; /* ✅ Ограничиваем ширину */
+    margin-left: auto; /* ✅ Центрируем контейнер */
+    margin-right: auto; /* ✅ Центрируем контейнер */
 }
 
 /* 🎴 КАРТОЧКА ТАРИФА */

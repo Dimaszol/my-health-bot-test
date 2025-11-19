@@ -245,6 +245,26 @@ main > .container {
     flex-shrink: 0;
 }
 
+/* 🚫 ЗАБЛОКИРОВАННАЯ КНОПКА */
+.send-button:disabled {
+    background: #cbd5e0 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    pointer-events: none !important; /* ✅ КРИТИЧНО - блокирует клики */
+}
+
+.send-button:disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.plus-button:disabled {
+    background: #e0e0e0 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    pointer-events: none !important; /* ✅ КРИТИЧНО */
+}
+
 .send-button:hover {
     transform: scale(1.1);
     box-shadow: 0 4px 12px rgba(0, 201, 167, 0.4);

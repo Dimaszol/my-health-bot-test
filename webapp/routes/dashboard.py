@@ -393,10 +393,16 @@ async def subscription_page(request: Request, user_id: int = Depends(get_current
     
     # Получаем все доступные тарифы
     packages = StripeConfig.get_all_packages()
+
+    # ✅ НОВОЕ: Проверяем есть ли активная подписка
+    has_active_subscription = current_package_id is not None and current_package_id in ['basic_sub', 'premium_sub']
     
     # Форматируем тарифы для шаблона
     formatted_packages = []
     for package_id, package_info in packages.items():
+        # ✅ ФИЛЬТР: Если нет подписки - пропускаем extra_pack
+        if not has_active_subscription and package_id == 'extra_pack':
+            continue
         formatted_packages.append({
             'id': package_id,
             'name_key': package_info['user_friendly_name_key'],

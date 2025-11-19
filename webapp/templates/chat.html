@@ -4,7 +4,7 @@
 
 {% block extra_styles %}
 <!-- 💬 СТИЛИ ЧАТА -->
-    <link rel="stylesheet" href="/static/css/chat.css?v=6">
+    <link rel="stylesheet" href="/static/css/chat.css?v=8">
 
 {% endblock %}
 
@@ -136,6 +136,7 @@ const photoPreviewImg = document.getElementById('photo-preview-img');
 const removePhotoBtn = document.getElementById('remove-photo');
 
 let selectedFile = null;
+let isProcessing = false; // ✅ ФЛАГ ОБРАБОТКИ СООБЩЕНИЙ
 
 // ============================================
 // ➕ ОТКРЫТИЕ/ЗАКРЫТИЕ МЕНЮ ПРИКРЕПЛЕНИЯ
@@ -342,6 +343,16 @@ chatForm.addEventListener('submit', async (e) => {
     const message = messageInput.value.trim();
     if (!message) return;
     
+    // ✅ ПРОВЕРЯЕМ ФЛАГ - УЖЕ ИДЁТ ОБРАБОТКА?
+    if (isProcessing) {
+        console.log('⚠️ Уже идёт обработка, пропускаем отправку формы');
+        return;
+    }
+    
+    // ✅ СТАВИМ ФЛАГ СРАЗУ ЗДЕСЬ!
+    isProcessing = true;
+    console.log('🔒 Флаг установлен в обработчике формы');
+    
     // Если есть выбранное фото - отправляем на анализ
     if (selectedFile) {
         await sendPhotoForAnalysis(selectedFile, message);
@@ -354,6 +365,14 @@ chatForm.addEventListener('submit', async (e) => {
 
 // Отправка фото на анализ
 async function sendPhotoForAnalysis(file, question) {
+    // ✅ ПОЛУЧАЕМ КНОПКИ В НАЧАЛЕ ФУНКЦИИ
+    const sendButton = document.querySelector('.send-button');
+    const plusButton = document.querySelector('.plus-button');
+    
+    // ✅ БЛОКИРУЕМ КНОПКИ СРАЗУ
+    sendButton.disabled = true;
+    plusButton.disabled = true;
+    
     // Добавляем сообщение пользователя с индикатором фото
     addMessage(`📷 ${question}`, 'user');
     
@@ -375,7 +394,7 @@ async function sendPhotoForAnalysis(file, question) {
         const response = await fetch('/api/analyze-photo', {
             method: 'POST',
             headers: {
-                'X-CSRF-Token': getCookie('csrf_token')  // ✅ Добавили CSRF токен
+                'X-CSRF-Token': getCookie('csrf_token')
             },
             body: formData
         });
@@ -404,11 +423,27 @@ async function sendPhotoForAnalysis(file, question) {
         typingIndicator.style.display = 'none';
         addMessage('{{ t("error_server", lang) }}', 'ai');
         console.error('Error:', error);
+    } finally {
+        // ✅ РАЗБЛОКИРУЕМ КНОПКИ В ЛЮБОМ СЛУЧАЕ
+        sendButton.disabled = false;
+        plusButton.disabled = false;
     }
 }
 
 // Отправка обычного текстового сообщения
 async function sendTextMessage(message) {
+    // ✅ ПОЛУЧАЕМ КНОПКИ В НАЧАЛЕ ФУНКЦИИ
+    const sendButton = document.querySelector('.send-button');
+    const plusButton = document.querySelector('.plus-button');
+    
+    // ✅ БЛОКИРУЕМ КНОПКИ СРАЗУ
+    sendButton.disabled = true;
+    plusButton.disabled = true;
+    
+    // 🔍 DEBUG - проверяем блокировку
+    console.log('Кнопка заблокирована:', sendButton.disabled);
+    console.log('Кнопка элемент:', sendButton);
+
     // Добавляем сообщение пользователя
     addMessage(message, 'user');
     
@@ -451,6 +486,13 @@ async function sendTextMessage(message) {
         typingIndicator.style.display = 'none';
         addMessage('{{ t("error_server", lang) }}', 'ai');
         console.error('Error:', error);
+    } finally {
+        // ✅ РАЗБЛОКИРУЕМ КНОПКИ В ЛЮБОМ СЛУЧАЕ (успех или ошибка)
+        sendButton.disabled = false;
+        plusButton.disabled = false;
+        // ✅ СНИМАЕМ ФЛАГ ОБРАБОТКИ
+        isProcessing = false;
+        console.log('🔓 Флаг сброшен (фото)');
     }
 }
 
@@ -528,6 +570,13 @@ messageInput.addEventListener('input', function() {
 messageInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
+        
+        // ✅ ПРОВЕРЯЕМ ФЛАГ ОБРАБОТКИ
+        if (isProcessing) {
+            console.log('⚠️ Идёт обработка, Enter игнорируется');
+            return;
+        }
+        
         chatForm.dispatchEvent(new Event('submit'));
     }
 });
