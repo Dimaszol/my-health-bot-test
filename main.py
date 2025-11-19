@@ -1990,6 +1990,16 @@ async def main():
             from webhook_subscription_handler import start_webhook_server
             webhook_runner = await start_webhook_server(bot, port=port)
             print("✅ Webhook сервер запущен")
+
+            import aiohttp
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(f'http://localhost:{port}/health') as resp:
+                        print(f"🧪 Health check: {resp.status} - {await resp.text()}")
+                    async with session.get(f'http://localhost:{port}/webhook/stripe') as resp:
+                        print(f"🧪 Webhook endpoint: {resp.status}")
+            except Exception as e:
+                print(f"🧪 Webhook test failed: {e}")
         
         print("🚦 Rate Limiter активирован")
         print("   - Сообщения: 10/мин")

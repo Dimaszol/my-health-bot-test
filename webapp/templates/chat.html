@@ -439,10 +439,6 @@ async function sendTextMessage(message) {
     // ✅ БЛОКИРУЕМ КНОПКИ СРАЗУ
     sendButton.disabled = true;
     plusButton.disabled = true;
-    
-    // 🔍 DEBUG - проверяем блокировку
-    console.log('Кнопка заблокирована:', sendButton.disabled);
-    console.log('Кнопка элемент:', sendButton);
 
     // Добавляем сообщение пользователя
     addMessage(message, 'user');
@@ -492,7 +488,6 @@ async function sendTextMessage(message) {
         plusButton.disabled = false;
         // ✅ СНИМАЕМ ФЛАГ ОБРАБОТКИ
         isProcessing = false;
-        console.log('🔓 Флаг сброшен (фото)');
     }
 }
 
