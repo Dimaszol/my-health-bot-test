@@ -127,9 +127,6 @@ async def handle_photo_question(message: types.Message, bot):
             user_states[user_id] = None
             return
         
-        print(f"\n🤔 Вопрос пользователя: {user_question}")
-        print(f"📸 Путь к фото: {photo_path}")
-        
         # ✅ ВАЖНО: Сохраняем вопрос пользователя в историю сообщений
         from db_postgresql import save_message
         await save_message(user_id, "user", user_question)
@@ -171,12 +168,9 @@ async def handle_photo_question(message: types.Message, bot):
         # Отправляем результат анализа
         await send_analysis_result(message, analysis_result, lang)
         await spend_gpt4o_limit(user_id, message, bot)
-        print(f"💎 Лимит потрачен для пользователя {user_id} (анализ фото)")
         # ✅ ВАЖНО: Сохраняем ответ бота в историю чата
         from db_postgresql import save_message
         await save_message(user_id, "assistant", f"Анализ изображения: {analysis_result[:500]}...")
-        
-        print("✅ Анализ фото завершен успешно")
         
     except Exception as e:
         logger.error(f"Ошибка при анализе фото")
@@ -307,7 +301,6 @@ async def cleanup_photo_analysis(user_id: int, photo_path: Optional[str] = None)
         # Удаляем временный файл
         if photo_path and os.path.exists(photo_path):
             os.remove(photo_path)
-            print(f"🗑️ Временный файл удален: {photo_path}")
             
     except Exception as e:
         logger.error(f"Ошибка очистки после анализа фото")

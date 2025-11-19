@@ -90,6 +90,13 @@
                     {{ t('open_telegram_bot', lang) }}
                 </a>
             </div>
+            <!-- 🔄 СТАТУС СВЯЗЫВАНИЯ -->
+            <div id="linkingStatus" style="display: none; margin-bottom: 2rem; padding: 1.5rem; border-radius: 0.5rem; text-align: center;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #667eea; margin-bottom: 0.5rem;"></i>
+                <p style="color: var(--text-secondary); margin: 0;">
+                    {{ t('waiting_for_telegram', lang) }}
+                </p>
+            </div>
             
             <!-- 💡 ПРЕИМУЩЕСТВА -->
             <div class="card" style="background: var(--background-light); border: 1px solid var(--border-color);">

@@ -87,8 +87,6 @@ async def show_link_telegram_page(request: Request):
             datetime.now() + timedelta(minutes=10)  # Код действует 10 минут
         )
         
-        print(f"✅ Создан код связывания: {link_code} для user_id={current_user['user_id']}")
-        
     finally:
         await release_db_connection(conn)
     
@@ -109,71 +107,105 @@ async def check_link_status(request: Request):
     """
     API для проверки статуса связывания
     """
-    current_user = get_current_user(request)
-    if not current_user:
-        return JSONResponse({'success': False, 'error': 'Not authenticated'}, status_code=401)
-    
-    data = await request.json()
-    link_code = data.get('code')
-    
-    if not link_code:
-        return JSONResponse({'success': False, 'error': 'No code provided'})
-    
-    conn = await get_db_connection()
     try:
-        link_record = await conn.fetchrow("""
-            SELECT is_used, telegram_user_id, expires_at
-            FROM account_links
-            WHERE link_code = $1 AND web_user_id = $2
-        """, link_code, current_user['user_id'])
+        # Проверка пользователя
+        current_user = get_current_user(request)
+        if not current_user:
+            return JSONResponse({
+                'success': False, 
+                'error': 'not_authenticated'
+            }, status_code=401)
         
-        if not link_record:
+        # Получение кода
+        try:
+            data = await request.json()
+            link_code = data.get('code')
+        except Exception:
             return JSONResponse({
                 'success': False,
-                'status': 'not_found'
-            })
+                'error': 'invalid_json'
+            }, status_code=400)
         
-        # Проверяем истёк ли код
-        if link_record['expires_at'] < datetime.now():
+        if not link_code:
             return JSONResponse({
                 'success': False,
-                'status': 'expired'
+                'error': 'no_code'
             })
         
-        # Проверяем использован ли код
-        if link_record['is_used']:
-            # ✅ ДОБАВИТЬ ЭТО!
-            telegram_id = link_record['telegram_user_id']
+        # Проверка в базе данных
+        conn = await get_db_connection()
+        try:
+            link_record = await conn.fetchrow("""
+                SELECT is_used, telegram_user_id, web_user_id, expires_at
+                FROM account_links
+                WHERE link_code = $1
+            """, link_code)
             
-            # ОБНОВЛЯЕМ СЕССИЮ НА НОВЫЙ ID!
-            request.session['user_id'] = telegram_id
+            if not link_record:
+                return JSONResponse({
+                    'success': False,
+                    'status': 'not_found'
+                })
             
-            # Получаем обновлённые данные пользователя
-            user_data = await conn.fetchrow(
-                "SELECT name, email, google_id FROM users WHERE user_id = $1",
-                telegram_id
+            # Проверка прав доступа
+            is_owner = (
+                link_record['web_user_id'] == current_user['user_id'] or 
+                (link_record['is_used'] and link_record['telegram_user_id'] == current_user['user_id'])
             )
             
-            if user_data:
-                request.session['name'] = user_data['name']
-                request.session['email'] = user_data['email']
-                request.session['google_id'] = user_data['google_id']
+            if not is_owner:
+                return JSONResponse({
+                    'success': False,
+                    'status': 'not_found'
+                })
             
+            # Проверка истёк ли код
+            if link_record['expires_at'] < datetime.now():
+                return JSONResponse({
+                    'success': False,
+                    'status': 'expired'
+                })
+            
+            # Проверка использован ли код
+            if link_record['is_used']:
+                telegram_id = link_record['telegram_user_id']
+                
+                # Обновляем сессию
+                request.session['user_id'] = telegram_id
+                
+                # Получаем данные пользователя
+                user_data = await conn.fetchrow(
+                    "SELECT name, email, google_id FROM users WHERE user_id = $1",
+                    telegram_id
+                )
+                
+                if user_data:
+                    request.session['name'] = user_data['name']
+                    request.session['email'] = user_data['email']
+                    request.session['google_id'] = user_data['google_id']
+                
+                return JSONResponse({
+                    'success': True,
+                    'status': 'completed',
+                    'telegram_id': telegram_id,
+                    'redirect': True
+                })
+            
+            # Код ещё не использован
             return JSONResponse({
                 'success': True,
-                'status': 'completed',
-                'telegram_id': telegram_id,
-                'redirect': True  # ← Флаг для редиректа
+                'status': 'waiting'
             })
-        
-        # Код ещё не использован
+            
+        finally:
+            await release_db_connection(conn)
+    
+    except Exception as e:
         return JSONResponse({
-            'success': True,
-            'status': 'waiting'
-        })
-        
-    finally:
-        await release_db_connection(conn)
+            'success': False,
+            'error': 'internal_error',
+            'message': str(e)
+        }, status_code=500)
 
 
 @router.get("/api/refresh-link-code")

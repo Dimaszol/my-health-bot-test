@@ -1051,8 +1051,8 @@ async def delete_account_route(
         lang = request.session.get('lang', 'ru')
         
         # Вызываем функцию полного удаления из db_postgresql.py
-        from db_postgresql import delete_user_gdpr_compliant
-        success = await delete_user_gdpr_compliant(user_id)
+        from db_postgresql import delete_user_completely
+        success = await delete_user_completely(user_id)
         
         if not success:
             return JSONResponse(

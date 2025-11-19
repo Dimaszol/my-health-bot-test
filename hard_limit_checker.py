@@ -73,9 +73,8 @@ async def check_100_message_hard_limit(user_id: int) -> Tuple[bool, str]:
         # Формируем сообщение на нужном языке
         lang = await get_user_language(user_id)
         
-        if lang == 'ru':
-            error_message = (
-                "🎉 <b>Вы использовали 100 бесплатных сообщений!</b>\n\n"
+        error_message = (
+                "🎉 <b>Бесплатный лимит исчерпан!</b>\n\n"
                 "💡 Чтобы продолжить пользоваться медицинским ботом, выберите один из вариантов:\n\n"
                 "💎 <b>Оформить подписку</b>\n"
                 "   • До 100 сообщений в день\n"
@@ -88,22 +87,7 @@ async def check_100_message_hard_limit(user_id: int) -> Tuple[bool, str]:
                 "   • Действует 30 дней\n\n"
                 "📲 Нажмите /subscription чтобы выбрать тариф"
             )
-        else:
-            error_message = (
-                "🎉 <b>You've used 100 free messages!</b>\n\n"
-                "💡 To continue using the medical bot, choose one of the options:\n\n"
-                "💎 <b>Get a subscription</b>\n"
-                "   • Up to 100 messages per day\n"
-                "   • Detailed medical consultations\n"
-                "   • Upload up to 40 documents per day\n"
-                "   • Priority support\n\n"
-                "🎯 <b>Buy additional consultations</b>\n"
-                "   • One-time purchase without subscription\n"
-                "   • Detailed GPT-4 responses\n"
-                "   • Valid for 30 days\n\n"
-                "📲 Press /subscription to choose a plan"
-            )
-        
+               
         return False, error_message
         
     except Exception as e:

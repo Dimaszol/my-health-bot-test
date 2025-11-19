@@ -2623,6 +2623,18 @@ TRANSLATIONS = {
     'uk': '❌ Помилка при створенні платіжної сесії. Спробуйте пізніше або зверніться до підтримки.',
     'de': '❌ Fehler beim Erstellen der Zahlungssitzung. Bitte versuchen Sie es später erneut oder kontaktieren Sie den Support.'
 },
+'document_toggle_error': {
+    'ru': '❌ Ошибка при изменении статуса документа. Попробуйте позже.',
+    'en': '❌ Error changing document status. Please try again later.',
+    'uk': '❌ Помилка при зміні статусу документа. Спробуйте пізніше.',
+    'de': '❌ Fehler beim Ändern des Dokumentstatus. Bitte versuchen Sie es später erneut.'
+},
+'waiting_for_telegram': {
+    'ru': 'Ожидание подключения Telegram...',
+    'en': 'Waiting for Telegram connection...',
+    'uk': 'Очікування підключення Telegram...',
+    'de': 'Warten auf Telegram-Verbindung...'
+},
 }
 
 
