@@ -279,6 +279,18 @@ TRANSLATIONS = {
         'uk': 'Безпека',
         'de': 'Sicherheit'
     },
+    'footer_navigation': {
+        'ru': 'Навигация',
+        'en': 'Navigation',
+        'uk': 'Навігація',
+        'de': 'Navigation'
+    },
+    'footer_information': {
+        'ru': 'Информация',
+        'en': 'Information',
+        'uk': 'Інформація',
+        'de': 'Information'
+    },
     
     # ============================================
     # ✨ СЕКЦИЯ ВОЗМОЖНОСТЕЙ
