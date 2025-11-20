@@ -33,6 +33,7 @@ from webapp.utils.flash import get_flashed_messages, flash
 
 from webapp.utils.context import get_template_context
 
+
 """
 🎯 ЧТО ДЕЛАЕТ ЭТО ПРИЛОЖЕНИЕ:
 
@@ -232,7 +233,7 @@ templates.env.filters['markdown'] = markdown_filter
 # ==========================================
 
 try:
-    from webapp.routes import auth, dashboard, api, webhook, faq, account_linking
+    from webapp.routes import auth, dashboard, api, webhook, faq, account_linking, legal
     
     # Регистрируем роутеры (как blueprints в Flask)
     app.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -241,6 +242,7 @@ try:
     app.include_router(webhook.router, prefix="/webhook", tags=["webhook"])
     app.include_router(faq.router, tags=["faq"])
     app.include_router(account_linking.router, tags=["account_linking"])
+    app.include_router(legal.router, tags=["legal"])
     
     print("✅ Все роутеры зарегистрированы")
     

@@ -1,0 +1,107 @@
+<!-- webapp/templates/legal/terms.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ legal_t('terms_title', lang) }} - PulseBook{% endblock %}
+
+{% block content %}
+<div class="legal-container" style="max-width: 900px; margin: 3rem auto; padding: 0 1.5rem;">
+    
+    <!-- Хлебные крошки -->
+    <div style="margin-bottom: 2rem;">
+        <a href="/" style="color: #0066cc; text-decoration: none;">{{ legal_t('legal_back_home', lang) }}</a>
+    </div>
+    
+    <!-- Заголовок -->
+    <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; color: #1a1a1a;">
+        {{ legal_t('terms_title', lang) }}
+    </h1>
+    
+    <p style="color: #666; margin-bottom: 2rem;">
+        {{ legal_t('legal_last_updated', lang, date='January 2025') }}
+    </p>
+    
+    <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 2rem 0;">
+    
+    <!-- Содержимое -->
+    <div class="legal-content" style="line-height: 1.8; color: #333;">
+        
+        <!-- Введение -->
+        <section style="margin-bottom: 3rem;">
+            {{ legal_t('terms_intro', lang)|safe }}
+        </section>
+        
+        <!-- Medical Disclaimer - ПЕРВЫМ для Terms! -->
+        <section style="margin-bottom: 3rem;">
+            <h2 style="font-size: 1.75rem; margin-bottom: 1rem; color: #1a1a1a;">
+                {{ legal_t('terms_h4', lang) }}
+            </h2>
+            {{ legal_t('terms_medical_disclaimer', lang)|safe }}
+        </section>
+        
+        <!-- Применимое право -->
+        <section style="margin-bottom: 3rem;">
+            <h2 style="font-size: 1.75rem; margin-bottom: 1rem; color: #1a1a1a;">
+                {{ legal_t('terms_h8', lang) }}
+            </h2>
+            {{ legal_t('terms_law', lang)|safe }}
+        </section>
+        
+        <!-- Контакты -->
+        <section style="margin-bottom: 3rem;">
+            <h2 style="font-size: 1.75rem; margin-bottom: 1rem; color: #1a1a1a;">
+                {{ legal_t('terms_h10', lang) }}
+            </h2>
+            <p>
+                <strong>Email:</strong> <a href="mailto:support@pulsebook.health">support@pulsebook.health</a><br>
+                <strong>Service Provider:</strong> PulseBook<br>
+                <strong>Location:</strong> United Kingdom
+            </p>
+        </section>
+        
+    </div>
+    
+    <!-- Кнопка назад -->
+    <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e5e5e5;">
+        <a href="/" class="btn btn-primary">{{ legal_t('legal_back_home', lang) }}</a>
+    </div>
+    
+</div>
+
+<style>
+.legal-content h3 {
+    font-size: 1.25rem;
+    margin: 1.5rem 0 0.75rem;
+    color: #2c5282;
+}
+
+.legal-content ul {
+    margin: 1rem 0;
+    padding-left: 2rem;
+}
+
+.legal-content li {
+    margin: 0.5rem 0;
+}
+
+.legal-content a {
+    color: #0066cc;
+    text-decoration: underline;
+}
+
+.legal-content a:hover {
+    color: #004499;
+}
+
+.alert {
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+}
+
+.alert-danger {
+    background-color: #fee;
+    border: 2px solid #fcc;
+    color: #c00;
+}
+</style>
+{% endblock %}

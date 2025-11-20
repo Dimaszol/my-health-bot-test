@@ -1,0 +1,141 @@
+<!-- webapp/templates/legal/privacy.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ legal_t('privacy_title', lang) }} - PulseBook{% endblock %}
+
+{% block content %}
+<div class="legal-container" style="max-width: 900px; margin: 3rem auto; padding: 0 1.5rem;">
+    
+    <!-- Хлебные крошки -->
+    <div style="margin-bottom: 2rem;">
+        <a href="/" style="color: #0066cc; text-decoration: none;">{{ legal_t('legal_back_home', lang) }}</a>
+    </div>
+    
+    <!-- Заголовок -->
+    <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; color: #1a1a1a;">
+        {{ legal_t('privacy_title', lang) }}
+    </h1>
+    
+    <p style="color: #666; margin-bottom: 2rem;">
+        {{ legal_t('legal_last_updated', lang, date='January 2025') }}
+    </p>
+    
+    <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 2rem 0;">
+    
+    <!-- Содержимое -->
+    <div class="legal-content" style="line-height: 1.8; color: #333;">
+        
+        <!-- Введение -->
+        <section style="margin-bottom: 3rem;">
+            {{ legal_t('privacy_intro', lang)|safe }}
+        </section>
+        
+        <!-- Секция 1 -->
+        <section style="margin-bottom: 3rem;">
+            <h2 style="font-size: 1.75rem; margin-bottom: 1rem; color: #1a1a1a;">
+                {{ legal_t('privacy_h1', lang) }}
+            </h2>
+            {{ legal_t('privacy_collected', lang)|safe }}
+        </section>
+        
+        <!-- Секция 2 -->
+        <section style="margin-bottom: 3rem;">
+            <h2 style="font-size: 1.75rem; margin-bottom: 1rem; color: #1a1a1a;">
+                {{ legal_t('privacy_h2', lang) }}
+            </h2>
+            {{ legal_t('privacy_usage', lang)|safe }}
+        </section>
+        
+        <!-- Секция 3 -->
+        <section style="margin-bottom: 3rem;">
+            <h2 style="font-size: 1.75rem; margin-bottom: 1rem; color: #1a1a1a;">
+                {{ legal_t('privacy_h3', lang) }}
+            </h2>
+            {{ legal_t('privacy_thirdparty', lang)|safe }}
+        </section>
+        
+        <!-- Секция 4 -->
+        <section style="margin-bottom: 3rem;">
+            <h2 style="font-size: 1.75rem; margin-bottom: 1rem; color: #1a1a1a;">
+                {{ legal_t('privacy_h4', lang) }}
+            </h2>
+            {{ legal_t('privacy_security', lang)|safe }}
+        </section>
+        
+        <!-- Секция 5 -->
+        <section style="margin-bottom: 3rem;">
+            <h2 style="font-size: 1.75rem; margin-bottom: 1rem; color: #1a1a1a;">
+                {{ legal_t('privacy_h5', lang) }}
+            </h2>
+            {{ legal_t('privacy_rights', lang)|safe }}
+        </section>
+        
+        <!-- Секция 6 - Medical Disclaimer -->
+        <section style="margin-bottom: 3rem;">
+            <h2 style="font-size: 1.75rem; margin-bottom: 1rem; color: #1a1a1a;">
+                {{ legal_t('privacy_h6', lang) }}
+            </h2>
+            {{ legal_t('privacy_medical_disclaimer', lang)|safe }}
+        </section>
+        
+        <!-- Контакты -->
+        <section style="margin-bottom: 3rem;">
+            <h2 style="font-size: 1.75rem; margin-bottom: 1rem; color: #1a1a1a;">
+                {{ legal_t('privacy_h11', lang) }}
+            </h2>
+            {{ legal_t('privacy_contact', lang)|safe }}
+        </section>
+        
+    </div>
+    
+    <!-- Кнопка назад -->
+    <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e5e5e5;">
+        <a href="/" class="btn btn-primary">{{ legal_t('legal_back_home', lang) }}</a>
+    </div>
+    
+</div>
+
+<style>
+.legal-content h3 {
+    font-size: 1.25rem;
+    margin: 1.5rem 0 0.75rem;
+    color: #2c5282;
+}
+
+.legal-content ul {
+    margin: 1rem 0;
+    padding-left: 2rem;
+}
+
+.legal-content li {
+    margin: 0.5rem 0;
+}
+
+.legal-content a {
+    color: #0066cc;
+    text-decoration: underline;
+}
+
+.legal-content a:hover {
+    color: #004499;
+}
+
+.alert {
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+}
+
+.alert-danger {
+    background-color: #fee;
+    border: 2px solid #fcc;
+    color: #c00;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border: 2px solid #ffc107;
+    color: #856404;
+}
+</style>
+{% endblock %}
