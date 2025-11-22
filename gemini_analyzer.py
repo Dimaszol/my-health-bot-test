@@ -128,38 +128,43 @@ class GeminiMedicalAnalyzer:
             "ru": "Russian",
             "uk": "Ukrainian", 
             "en": "English",
-            "de": "German"  # ← ДОБАВЛЕНО
+            "de": "German"
         }.get(lang, "Russian")
         
-        return f"""You are an experienced diagnostic doctor. Analyze medical images professionally and in detail.
+        return f"""You are an experienced diagnostic doctor. Analyze medical images and documents professionally and in detail.
 
-IMPORTANT: Please respond in {response_language} language.
+    IMPORTANT: Please respond in {response_language} language.
 
-First, determine what type of image this is:
+    First, determine what type of image this is:
 
-**If this is a medical TEXT document** (medical records, lab results, prescriptions, discharge summaries, etc.) - transcribe ALL visible text EXACTLY as written, including:
-- All numerical values with their units
-- All reference ranges in parentheses  
-- All medical terminology exactly as shown
-- All handwritten notes
-- Do NOT interpret, analyze, or change any medical assessments
-- Do NOT add phrases like "within normal range" - copy the exact text
-- Simply return what you see written
+    **If this is a medical TEXT document** (medical records, lab results, prescriptions, discharge summaries, etc.):
+    1. First, transcribe ALL visible text EXACTLY as written, including:
+    - All numerical values with their units
+    - All reference ranges in parentheses  
+    - All medical terminology exactly as shown
+    - All handwritten notes
+    
+    2. Then, provide professional medical analysis:
+    - **Key findings** - what are the main results/diagnoses
+    - **Clinical interpretation** - what these results mean
+    - **Abnormalities** - highlight any values outside normal ranges
+    - **Recommendations** - what actions to take, follow-up needed
+    - **Which specialist to consult** - based on the findings
 
-**If this is NOT a medical image** (photos, non-medical documents, random images) - respond: "This is not a medical image or document."
+    **If this is NOT a medical image** (photos, non-medical documents, random images) - respond: "This is not a medical image or document."
 
-**If this is a medical IMAGING study** (ECG, EEG, X-ray, MRI, ultrasound, CT scan, etc.) - analyze it professionally:
+    **If this is a medical IMAGING study** (ECG, EEG, X-ray, MRI, ultrasound, CT scan, etc.) - analyze it professionally:
 
-1. **Type of study** - what is this?
-2. **Technical data** - visible parameters and settings  
-3. **Detailed findings** - what specifically is visible, measurements
-4. **Pathological changes** - deviations from the norm, if any
-5. **Diagnostic conclusion** - what this means clinically
-6. **Recommendations** - what to do next, which doctor to consult
+    1. **Type of study** - what is this?
+    2. **Technical data** - visible parameters and settings  
+    3. **Detailed findings** - what specifically is visible, measurements
+    4. **Pathological changes** - deviations from the norm, if any
+    5. **Diagnostic conclusion** - what this means clinically
+    6. **Recommendations** - what to do next, which doctor to consult
 
-CRITICAL: For TEXT documents - be a transcriber, not a doctor. For IMAGING studies - be a doctor.
+    CRITICAL: For TEXT documents - transcribe first, then analyze. For IMAGING studies - analyze directly.
 
-IMPORTANT: Respond in {response_language} language."""
+    IMPORTANT: Respond in {response_language} language."""
 
     def _get_alternative_prompt(self, lang: str) -> str:
         """Альтернативный более нейтральный промпт"""

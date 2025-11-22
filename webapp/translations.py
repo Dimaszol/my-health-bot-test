@@ -734,16 +734,16 @@ TRANSLATIONS = {
         'de': '📤 Datei wird hochgeladen...'
     },
     'progress_extract': {
-        'ru': '📝 Извлекаем текст через AI...',
-        'en': '📝 Extracting text via AI...',
-        'uk': '📝 Витягуємо текст через AI...',
-        'de': '📝 Text wird per KI extrahiert...'
-    },
-    'progress_analyze': {
         'ru': '🔍 Анализируем содержимое...',
         'en': '🔍 Analyzing content...',
         'uk': '🔍 Аналізуємо вміст...',
         'de': '🔍 Inhalt wird analysiert...'
+    },
+    'progress_analyze': {
+        'ru': '🤖 Формируем медицинское заключение AI...',
+        'en': '🤖 Generating AI medical report...',
+        'uk': '🤖 Формуємо медичний висновок AI...',
+        'de': '🤖 KI-Medizinbericht wird erstellt...'
     },
     'progress_save': {
         'ru': '💾 Сохраняем в базу данных...',
@@ -764,10 +764,10 @@ TRANSLATIONS = {
         'de': 'Datei-Upload'
     },
     'progress_step_extract': {
-        'ru': 'Извлечение текста',
-        'en': 'Text extraction',
-        'uk': 'Витягування тексту',
-        'de': 'Textextraktion'
+        'ru': 'Анализ содержимого',
+        'en': 'Content analysis',
+        'uk': 'Аналіз вмісту',
+        'de': 'Inhaltsanalyse'
     },
     'progress_step_analyze': {
         'ru': 'Анализ AI',
@@ -782,10 +782,10 @@ TRANSLATIONS = {
         'de': 'Speichern'
     },
     'progress_please_wait': {
-        'ru': 'Пожалуйста, подождите...',
-        'en': 'Please wait...',
-        'uk': 'Будь ласка, зачекайте...',
-        'de': 'Bitte warten...'
+        'ru': 'Пожалуйста, подождите... Анализ занимает до 1 минуты на каждую страницу',
+        'en': 'Please wait... Analysis takes up to 1 minute per page',
+        'uk': 'Будь ласка, зачекайте... Аналіз займає до 1 хвилини на кожну сторінку',
+        'de': 'Bitte warten... Die Analyse dauert bis zu 1 Minute pro Seite'
     },
     # ============================================
     # 📄 СТРАНИЦА ДОКУМЕНТОВ

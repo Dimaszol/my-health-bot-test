@@ -930,11 +930,17 @@ async def upload_document(
         except:
             pass  # Игнорируем ошибки очистки
         
+        # Безопасное получение lang и t
+        error_message = 'Error processing document'
+        if 'lang' in locals():
+            from webapp.translations import t as translate_func
+            error_message = translate_func('document_processing_error', lang)
+        
         return JSONResponse(
             status_code=500,
             content={
                 'success': False,
-                'error': t('document_processing_error', lang) if 'lang' in locals() else 'Error processing document'
+                'error': error_message
             }
         )
 
