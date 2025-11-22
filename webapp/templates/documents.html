@@ -643,7 +643,7 @@ function showFlashMessage(message, type) {
 }
 
 // CSS анимация (добавь в <style>)
-const style = document.createElement('style');
+const flashAnimationStyle = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
         from { transform: translateX(100%); opacity: 0; }
@@ -654,6 +654,6 @@ style.textContent = `
         to { transform: translateX(100%); opacity: 0; }
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(flashAnimationStyle);
 </script>
 {% endblock %}
