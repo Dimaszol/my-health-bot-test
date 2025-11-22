@@ -320,8 +320,7 @@ photoInput.addEventListener('change', (e) => {
     };
     reader.readAsDataURL(file);
     
-    // Фокус на поле ввода
-    messageInput.focus();
+    // Фокус на поле ввода     
     messageInput.placeholder = '{{ t("chat_placeholder", lang) }}';
 });
 
@@ -561,25 +560,34 @@ messageInput.addEventListener('input', function() {
     this.style.height = (this.scrollHeight) + 'px';
 });
 
-// Shift+Enter = новая строка, Enter = отправка
+// Определяем мобильное устройство
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
+// Enter на десктопе отправляет, на мобильном - переносит строку
 messageInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        
-        // ✅ ПРОВЕРЯЕМ ФЛАГ ОБРАБОТКИ
-        if (isProcessing) {
-            console.log('⚠️ Идёт обработка, Enter игнорируется');
-            return;
+    if (e.key === 'Enter') {
+        // На мобильных: Enter всегда переносит строку
+        if (isMobile) {
+            return; // Разрешаем стандартное поведение
         }
         
-        chatForm.dispatchEvent(new Event('submit'));
+        // На десктопе: Enter отправляет, Shift+Enter переносит
+        if (!e.shiftKey) {
+            e.preventDefault();
+            
+            // ✅ ПРОВЕРЯЕМ ФЛАГ ОБРАБОТКИ
+            if (isProcessing) {
+                console.log('⚠️ Идёт обработка, Enter игнорируется');
+                return;
+            }
+            
+            chatForm.dispatchEvent(new Event('submit'));
+        }
     }
 });
 
 // Прокручиваем вниз при загрузке страницы
 window.addEventListener('load', scrollToBottom);
 
-// Фокус на поле ввода при загрузке
-messageInput.focus();
 </script>
 {% endblock %}

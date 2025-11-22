@@ -6,6 +6,11 @@
 <!-- 📄 СТИЛИ СТРАНИЦЫ ДОКУМЕНТОВ -->
 <link rel="stylesheet" href="/static/css/documents.css?v=1">
 <link rel="stylesheet" href="/static/css/documents-mobile.css?v=1">
+<style>
+footer {
+    display: none !important;
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -235,7 +240,7 @@
     {% endfor %}
 </div>
 {% else %}
-<div class="alert alert-info" style="text-align: center;">
+<div class="empty-state-card" style="text-align: center; background: #f0f9ff; border: 2px dashed #60a5fa; border-radius: 12px; padding: 2rem;">
     <div style="font-size: 4rem; margin-bottom: 1rem;">📂</div>
     <h3>{{ t('no_documents_yet', lang) }}</h3>
     <p>{{ t('no_documents_action', lang) }}</p>

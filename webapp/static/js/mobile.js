@@ -63,7 +63,47 @@ document.addEventListener('DOMContentLoaded', function() {
             closeMobileMenu();
         }
     });
-    
+
+    // ============================================
+    // 👆 СВАЙПЫ ДЛЯ ОТКРЫТИЯ/ЗАКРЫТИЯ МЕНЮ
+    // ============================================
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+    let touchStartY = 0;
+
+    // Обработчики свайпа для всего документа
+    document.addEventListener('touchstart', function(e) {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', function(e) {
+        touchEndX = e.changedTouches[0].screenX;
+        const touchEndY = e.changedTouches[0].screenY;
+        
+        // Проверяем что свайп горизонтальный (не вертикальный скролл)
+        const verticalDiff = Math.abs(touchEndY - touchStartY);
+        const horizontalDiff = Math.abs(touchEndX - touchStartX);
+        
+        if (horizontalDiff > verticalDiff && horizontalDiff > 50) {
+            handleSwipe();
+        }
+    }, { passive: true });
+
+    function handleSwipe() {
+        const swipeDistance = touchEndX - touchStartX;
+        
+        // Свайп вправо (открытие меню)
+        if (swipeDistance > 100 && touchStartX < 50 && !mobileMenu.classList.contains('active')) {
+            openMobileMenu();
+        }
+        
+        // Свайп влево (закрытие меню)
+        if (swipeDistance < -100 && mobileMenu.classList.contains('active')) {
+            closeMobileMenu();
+        }
+    }
  
     // ============================================
     // 🎯 АКТИВНАЯ СТРАНИЦА В МЕНЮ
@@ -93,14 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setVH();
     window.addEventListener('resize', setVH);
     window.addEventListener('orientationchange', setVH);
-    
-    // ============================================
-    // 🔄 PULL TO REFRESH (опционально)
-    // ============================================
-    
-    // Отключаем pull-to-refresh для PWA
-    let touchStartY = 0;
-        
+   
     // ============================================
     // 📊 VIBRATION FEEDBACK (для поддерживающих устройств)
     // ============================================

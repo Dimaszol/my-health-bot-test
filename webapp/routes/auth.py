@@ -162,7 +162,7 @@ async def google_callback(request: Request):
         # Извлекаем данные
         google_id = user_info.get('sub')
         email = user_info.get('email')
-        name = user_info.get('name', 'Пользователь')
+        name = user_info.get('given_name', user_info.get('name', 'Пользователь'))
         
         # ✅ НОВАЯ ЛОГИКА: Ищем пользователя по google_id
         conn = await get_db_connection()

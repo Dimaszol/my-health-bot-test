@@ -2,6 +2,14 @@
 
 {% block title %}{{ t('page_profile_title', lang) }} - {{ t('site_title', lang) }}{% endblock %}
 
+{% block extra_styles %}
+<style>
+footer {
+    display: none !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- 👤 СТРАНИЦА ПРОФИЛЯ -->
 
