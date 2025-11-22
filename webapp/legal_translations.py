@@ -2006,6 +2006,7 @@ LEGAL_TRANSLATIONS = {
     <li><strong>For users from EU/UK:</strong> We fully comply with GDPR (General Data Protection Regulation) and UK Data Protection Act 2018.</li>
 </ul>
 
+<p>For Google OAuth users: We only request basic profile information (name, email) for account authentication. We do not access any other Google account data.</p>
 <p>By using our Services, you agree to the terms of this Privacy Policy and our Terms of Use.</p>
 
 <h2>2. Who We Are</h2>

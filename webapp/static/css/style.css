@@ -775,6 +775,11 @@ footer {
     .message-bubble {
         max-width: 85%;
     }
+
+    .lang-dropdown {
+        right: auto;
+        left: 0;
+    }
 }
 
 /* ============================================
@@ -925,106 +930,4 @@ footer {
     background: var(--gradient-hero);
     color: var(--primary-color);
     font-weight: 600;
-}
-
-/* Адаптация для мобильных */
-@media (max-width: 768px) {
-    .lang-dropdown {
-        right: auto;
-        left: 0;
-    }
-
-/* ========================================
-   🌐 ГОСТЕВАЯ ПАНЕЛЬ В HEADER (десктоп)
-   ======================================== */
-
-.guest-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.guest-lang-btn {
-    position: relative;
-    background: transparent;
-    border: 2px solid var(--primary-color);
-    color: var(--primary-color);
-    padding: 0.6rem 1rem;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s ease;
-}
-
-.guest-lang-btn:hover {
-    background: rgba(0, 201, 167, 0.1);
-}
-
-.guest-lang-dropdown {
-    position: absolute;
-    top: calc(100% + 0.75rem);
-    left: 50%;  /* ← по центру */
-    transform: translateX(-50%) translateY(-10px);  /* ← центрируем */
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    padding: 0.5rem;
-    min-width: 180px;
-    display: none;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-    z-index: 1100;
-}
-
-.guest-lang-dropdown.show {
-    display: block;
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);  /* ← центрируем при показе */
-}
-
-.guest-lang-option {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    color: var(--text-primary);
-    text-decoration: none;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.guest-lang-option:hover {
-    background: var(--background-light);
-}
-
-.guest-lang-option.active {
-    background: var(--gradient-primary);
-    color: white;
-}
-
-.btn-guest-login {
-    background: var(--gradient-primary);
-    color: white;
-    padding: 0.6rem 1.5rem;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    text-decoration: none;
-    display: inline-block;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 15px rgba(0, 201, 167, 0.3);
-}
-
-.btn-guest-login:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 201, 167, 0.4);
-}
 }
