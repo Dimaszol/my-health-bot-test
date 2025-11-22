@@ -9,8 +9,8 @@ from pathlib import Path
 # Добавляем webapp директорию в Python path
 sys.path.insert(0, str(Path(__file__).parent))
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, HTTPException, JSONResponse
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
