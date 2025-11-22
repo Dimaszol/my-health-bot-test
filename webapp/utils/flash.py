@@ -4,6 +4,7 @@ Flash-сообщения для FastAPI (аналог Flask flash)
 """
 from typing import List, Tuple
 from fastapi import Request
+from fastapi.responses import RedirectResponse
 
 def flash(request: Request, message: str, category: str = 'info'):
     """
@@ -41,3 +42,16 @@ def get_flashed_messages(request: Request, with_categories: bool = False) -> Lis
         return flashes
     else:
         return [message for category, message in flashes]
+    
+def redirect_with_flash(request: Request, url: str, message_key: str, category: str = "info"):
+    """
+    Редирект с flash-сообщением
+    
+    Args:
+        request: FastAPI Request объект
+        url: URL для редиректа
+        message_key: Ключ сообщения для перевода
+        category: Категория (info, success, warning, error)
+    """
+    flash(request, message_key, category)
+    return RedirectResponse(url=url, status_code=302)

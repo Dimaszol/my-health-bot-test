@@ -64,20 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // ============================================
-    // 📱 TOUCH ОПТИМИЗАЦИИ
-    // ============================================
-    
-    // Предотвращаем двойное нажатие (double-tap zoom) на кнопках
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', function(event) {
-        const now = Date.now();
-        if (now - lastTouchEnd <= 300) {
-            event.preventDefault();
-        }
-        lastTouchEnd = now;
-    }, false);
-    
+ 
     // ============================================
     // 🎯 АКТИВНАЯ СТРАНИЦА В МЕНЮ
     // ============================================
@@ -113,20 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Отключаем pull-to-refresh для PWA
     let touchStartY = 0;
-    document.addEventListener('touchstart', function(e) {
-        touchStartY = e.touches[0].clientY;
-    }, { passive: true });
-    
-    document.addEventListener('touchmove', function(e) {
-        const touchY = e.touches[0].clientY;
-        const touchDiff = touchY - touchStartY;
         
-        // Если скроллим вверх от самого верха, блокируем pull-to-refresh
-        if (touchDiff > 0 && window.scrollY === 0) {
-            e.preventDefault();
-        }
-    }, { passive: false });
-    
     // ============================================
     // 📊 VIBRATION FEEDBACK (для поддерживающих устройств)
     // ============================================

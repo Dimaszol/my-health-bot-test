@@ -254,7 +254,7 @@
        ======================================== */
     
     main {
-        padding: 1rem !important;
+        padding: 0rem !important;
         margin-top: 60px !important; /* Отступ от header */
         margin-bottom: 0 !important;
         margin-left: 0 !important;
@@ -263,7 +263,7 @@
     }
 
     .container {
-        padding: 0 1rem;
+        padding: 0 0.5rem;
     }
 
     /* ========================================
@@ -893,4 +893,102 @@
     .mobile-menu-overlay {
         background: rgba(0, 0, 0, 0.7);
     }
+
+    /* ========================================
+   🌐 ГОСТЕВАЯ ПАНЕЛЬ В HEADER (язык + войти)
+   ======================================== */
+
+.guest-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.guest-lang-btn {
+    position: relative;
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 0.4rem 0.6rem;  /* ← меньше padding */
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;  /* ← меньше gap */
+    transition: all 0.2s ease;
+    min-width: 50px;  /* ← уменьшил */
+    justify-content: center;
+}
+
+.guest-lang-btn:active {
+    transform: scale(0.95);
+    background: rgba(0, 201, 167, 0.1);
+}
+
+.guest-lang-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 50%;  /* ← по центру */
+    transform: translateX(-50%) translateY(-10px);  /* ← центрируем */
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    padding: 0.5rem;
+    min-width: 160px;
+    display: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1100;
+}
+
+.guest-lang-dropdown.show {
+    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);  /* ← центрируем при показе */
+}
+
+.guest-lang-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.guest-lang-option:active {
+    background: var(--background-light);
+}
+
+.guest-lang-option.active {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.btn-guest-login {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 201, 167, 0.3);
+}
+
+.btn-guest-login:active {
+    transform: scale(0.95);
+    box-shadow: 0 1px 4px rgba(0, 201, 167, 0.4);
+}
 }

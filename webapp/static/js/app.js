@@ -64,19 +64,35 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const chatContainer = document.getElementById('chat-container');
     if (chatContainer) {
-        // Прокручиваем вниз при загрузке
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-        
-        // Плавная прокрутка при добавлении новых сообщений
-        const observer = new MutationObserver(() => {
-            chatContainer.scrollTo({
-                top: chatContainer.scrollHeight,
-                behavior: 'smooth'
-            });
-        });
-        
-        observer.observe(chatContainer, { childList: true, subtree: true });
-    }
+        // Функция прокрутки - выбирает метод в зависимости от размера экрана
+        function scrollToBottom() {
+            if (window.innerWidth <= 768) {
+                // Мобильная версия - прокручиваем до конца с задержкой
+                setTimeout(() => {
+                    window.scrollTo({
+                        top: document.documentElement.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }, 100); // небольшая задержка чтобы DOM обновился
+            } else {
+                // Десктоп - прокручиваем контейнер
+                chatContainer.scrollTo({
+                    top: chatContainer.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }
+        }
+    
+    // Прокручиваем вниз при загрузке
+    scrollToBottom();
+    
+    // Плавная прокрутка при добавлении новых сообщений
+    const observer = new MutationObserver(() => {
+        scrollToBottom();
+    });
+    
+    observer.observe(chatContainer, { childList: true, subtree: true });
+}
     
     // ============================================
     // 📝 ЧАТ: Отправка сообщений

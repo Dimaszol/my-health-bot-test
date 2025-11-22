@@ -385,7 +385,7 @@ async def version():
 async def http_exception_handler(request: Request, exc: HTTPException):
     """Обработчик HTTP исключений"""
     if exc.status_code == 401:
-        return redirect_with_flash(request, "/", "auth_required", "error")
+        return RedirectResponse(url="/", status_code=302)
     
     # Для остальных ошибок - стандартная обработка
     return JSONResponse(

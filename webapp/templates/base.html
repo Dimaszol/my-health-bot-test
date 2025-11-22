@@ -12,8 +12,8 @@
     <title>{% block title %}{{ t('site_title', lang) }} - {{ t('hero_subtitle', lang) }}{% endblock %}</title>
     
     <!-- 🎨 СТИЛИ -->
-    <link rel="stylesheet" href="/static/css/style.css?v=8">
-    <link rel="stylesheet" href="/static/css/mobile.css?v=8">
+    <link rel="stylesheet" href="/static/css/style.css?v=12">
+    <link rel="stylesheet" href="/static/css/mobile.css?v=13">
      
     <!-- 🔤 ШРИФТЫ (Google Fonts - Inter) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,12 +46,36 @@
                     <span class="logo-text">PulseBook</span>
                 </a>
                 
-                <!-- 🍔 БУРГЕР-МЕНЮ (справа, только на мобильных) -->
+                {% if session.get('user_id') %}
+                <!-- 🍔 БУРГЕР-МЕНЮ (для авторизованных) -->
                 <button id="mobile-menu-toggle" class="mobile-menu-btn" aria-label="Меню">
                     <span></span>
                     <span></span>
                     <span></span>
                 </button>
+            {% else %}
+                <!-- 🌐 ПАНЕЛЬ ДЛЯ ГОСТЕЙ: Язык + Войти -->
+                <div class="guest-header-actions">
+                    <!-- Селектор языка -->
+                    <button class="guest-lang-btn" onclick="toggleGuestLangDropdown()" type="button">
+                        {{ lang|upper }}
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="guest-lang-dropdown" id="guestLangDropdown">
+                        {% for language in supported_languages %}
+                        <a href="/set-language/{{ language.code }}" 
+                        class="guest-lang-option {% if lang == language.code %}active{% endif %}">
+                            {{ language.flag }} {{ language.name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Кнопка Войти -->
+                    <a href="/auth/google" class="btn-guest-login">{{ t('btn_login', lang) }}</a>
+                </div>
+            {% endif %}
                 
                 <!-- Навигация (только на десктопе) -->
                 <nav class="desktop-nav">
@@ -308,19 +332,32 @@
     
     <!-- 🎯 JAVASCRIPT для переключателя языка -->
     <script>
-        // Показать/скрыть выпадающее меню языков
+        // Показать/скрыть выпадающее меню языков (для авторизованных)
         function toggleLangDropdown() {
             const dropdown = document.getElementById('langDropdown');
+            dropdown.classList.toggle('show');
+        }
+        
+        // Показать/скрыть выпадающее меню языков (для гостей)
+        function toggleGuestLangDropdown() {
+            const dropdown = document.getElementById('guestLangDropdown');
             dropdown.classList.toggle('show');
         }
         
         // Закрыть меню при клике вне его
         window.addEventListener('click', function(event) {
             // Проверяем, что клик был НЕ по кнопке языка
-            if (!event.target.matches('.lang-btn') && !event.target.closest('.lang-btn')) {
+            if (!event.target.matches('.lang-btn') && !event.target.closest('.lang-btn') &&
+                !event.target.matches('.guest-lang-btn') && !event.target.closest('.guest-lang-btn')) {
+                
                 const dropdown = document.getElementById('langDropdown');
+                const guestDropdown = document.getElementById('guestLangDropdown');
+                
                 if (dropdown && dropdown.classList.contains('show')) {
                     dropdown.classList.remove('show');
+                }
+                if (guestDropdown && guestDropdown.classList.contains('show')) {
+                    guestDropdown.classList.remove('show');
                 }
             }
         });
@@ -329,8 +366,13 @@
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 const dropdown = document.getElementById('langDropdown');
+                const guestDropdown = document.getElementById('guestLangDropdown');
+                
                 if (dropdown && dropdown.classList.contains('show')) {
                     dropdown.classList.remove('show');
+                }
+                if (guestDropdown && guestDropdown.classList.contains('show')) {
+                    guestDropdown.classList.remove('show');
                 }
             }
         });
@@ -341,6 +383,9 @@
     
     <!-- 🛡️ CSRF ЗАЩИТА (загружается первым!) -->
     <script src="/static/js/csrf.js"></script>
+
+    <!-- 💬 ОСНОВНОЙ JAVASCRIPT -->
+    <script src="/static/js/app.js?v=2"></script>
     
     {% block extra_scripts %}{% endblock %}
 </body>
