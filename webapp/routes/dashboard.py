@@ -3,7 +3,7 @@
 
 import sys
 import os
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import markdown
@@ -170,13 +170,13 @@ async def get_current_user(request: Request) -> int:
     
     Что делает:
     - Проверяет есть ли user_id в сессии
-    - Если НЕТ → редирект на /login
+    - Если НЕТ → HTTPException (FastAPI сам сделает редирект через exception handler)
     - Если ДА → возвращает user_id
     """
     user_id = request.session.get('user_id')
     if not user_id:
-        # Если не авторизован - редиректим
-        return RedirectResponse(url='/login', status_code=302)
+        # Выбрасываем исключение вместо редиректа
+        raise HTTPException(status_code=401, detail="auth_required")
     return user_id
     
 

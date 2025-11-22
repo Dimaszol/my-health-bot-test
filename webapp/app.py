@@ -9,7 +9,7 @@ from pathlib import Path
 # Добавляем webapp директорию в Python path
 sys.path.insert(0, str(Path(__file__).parent))
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException, JSONResponse
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -31,7 +31,7 @@ from translations import t, get_current_language, set_language, get_supported_la
 # 🗄️ Импортируем функции базы данных
 from db_postgresql import initialize_db_pool, close_db_pool, update_user_profile
 
-from utils.flash import get_flashed_messages, flash
+from utils.flash import get_flashed_messages, flash, redirect_with_flash
 
 from utils.context import get_template_context
 
@@ -380,6 +380,18 @@ async def version():
     return {
         "version": "1.0.1"        
     }
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Обработчик HTTP исключений"""
+    if exc.status_code == 401:
+        return redirect_with_flash(request, "/", "auth_required", "error")
+    
+    # Для остальных ошибок - стандартная обработка
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail}
+    )
 
 # ==========================================
 # 🚀 ЗАПУСК (для локальной разработки)

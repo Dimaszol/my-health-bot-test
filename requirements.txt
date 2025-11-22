@@ -70,7 +70,8 @@ google-auth-oauthlib==1.2.1
 itsdangerous==2.2.0
 authlib==1.4.1
 httpx==0.27.2  # 👈 СОВМЕСТИМАЯ ВЕРСИЯ с supabase
-python-magic-bin==0.4.14
+python-magic==0.4.27
+libmagic==1.0
 
 # Уязвимости
 starlette-csrf>=2.0.0
