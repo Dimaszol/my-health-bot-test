@@ -19,7 +19,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="webapp/templates")
 
 # Имя вашего Telegram бота (ЗАМЕНИТЕ НА СВОЕ!)
-TELEGRAM_BOT_USERNAME = "DrZolinBot"  # ⚠️ БЕЗ @
+TELEGRAM_BOT_USERNAME = "PulsebookBot"  # ⚠️ БЕЗ @
 
 
 def get_current_user(request: Request) -> dict:

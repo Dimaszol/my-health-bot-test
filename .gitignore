@@ -118,7 +118,7 @@ clear_vector_db.py
 *.bak
 
 # 🔐 ДОПОЛНИТЕЛЬНАЯ БЕЗОПАСНОСТЬ
-config.py
+
 secrets.json
 *.key
 *.pem
@@ -170,3 +170,6 @@ dmypy.json
 yarn-error.log
 package-lock.json
 pnpm-debug.log*
+
+# Flask сессии
+flask_session/

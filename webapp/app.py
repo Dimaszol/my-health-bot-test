@@ -6,6 +6,8 @@ import os
 import sys
 import re
 from pathlib import Path
+# Добавляем webapp директорию в Python path
+sys.path.insert(0, str(Path(__file__).parent))
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -18,20 +20,20 @@ import bleach
 from starlette_csrf import CSRFMiddleware
 
 # 📁 Добавляем корневую папку в путь (чтобы импортировать db_postgresql.py)
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # 🔧 Импортируем настройки
-from webapp.config import Config, validate_config
+from config import Config, validate_config
 
 # 🌍 Импортируем функции локализации
-from webapp.translations import t, get_current_language, set_language, get_supported_languages
+from translations import t, get_current_language, set_language, get_supported_languages
 
 # 🗄️ Импортируем функции базы данных
 from db_postgresql import initialize_db_pool, close_db_pool, update_user_profile
 
-from webapp.utils.flash import get_flashed_messages, flash
+from utils.flash import get_flashed_messages, flash
 
-from webapp.utils.context import get_template_context
+from utils.context import get_template_context
 
 
 """
@@ -185,11 +187,26 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app.add_middleware(SecurityHeadersMiddleware)
 
 # 🔒 HTTPS REDIRECT: Перенаправляем HTTP → HTTPS в production
-from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
+from starlette.responses import RedirectResponse
 
 if Config.IS_PRODUCTION:
-    app.add_middleware(HTTPSRedirectMiddleware)
-    print("✅ HTTPS redirect включён (production режим)")
+    @app.middleware("http")
+    async def https_redirect_except_health(request: Request, call_next):
+        # Пропускаем /health без редиректа
+        if request.url.path == "/health":
+            return await call_next(request)
+        
+        # Railway использует X-Forwarded-Proto заголовок
+        forwarded_proto = request.headers.get("x-forwarded-proto", "")
+        
+        # Редиректим только если реально пришёл по HTTP (не через Railway proxy)
+        if forwarded_proto == "http":
+            url = request.url.replace(scheme="https")
+            return RedirectResponse(url, status_code=307)
+        
+        return await call_next(request)
+    
+    print("✅ HTTPS redirect включён (production режим, исключая /health)")
 
 # 📁 НАСТРОЙКА ШАБЛОНОВ И СТАТИКИ
 # Используем те же папки что были в Flask
@@ -233,7 +250,7 @@ templates.env.filters['markdown'] = markdown_filter
 # ==========================================
 
 try:
-    from webapp.routes import auth, dashboard, api, webhook, faq, account_linking, legal
+    from routes import auth, dashboard, api, webhook, faq, account_linking, legal
     
     # Регистрируем роутеры (как blueprints в Flask)
     app.include_router(auth.router, prefix="/auth", tags=["auth"])

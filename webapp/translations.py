@@ -1621,7 +1621,12 @@ TRANSLATIONS = {
 # ============================================
 # 💳 СТРАНИЦА ПОДПИСОК
 # ============================================
-
+'page_subscription_title': {
+    'ru': 'Подписка',
+    'en': 'Subscription',
+    'uk': 'Підписка',
+    'de': 'Abonnement'
+},
 'pricing_title': {
     'ru': 'Тарифные планы PulseBook',
     'en': 'PulseBook Pricing Plans',

@@ -131,7 +131,7 @@ async def google_login(request: Request):
     - Добавляем await к authorize_redirect
     """
     # Генерируем URL для callback
-    redirect_uri = request.url_for('google_callback')
+    redirect_uri = Config.GOOGLE_REDIRECT_URI
     
     # ✅ AWAIT! В Flask не было await
     return await google.authorize_redirect(request, redirect_uri)
