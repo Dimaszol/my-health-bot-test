@@ -308,6 +308,10 @@ async def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url='/', status_code=302)
 
+@app.get("/googlebb589ce9e5007262.html")
+async def google_verification():
+    """Google Search Console verification"""
+    return "google-site-verification: googlebb589ce9e5007262.html"
 
 @app.get("/set-language/{lang}")
 async def set_language_route(request: Request, lang: str):

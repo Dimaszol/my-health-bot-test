@@ -684,17 +684,15 @@ async def upload_document(
                 }
             )
         
-        # 🛡️ КРИТИЧЕСКАЯ ПРОВЕРКА: Валидация MIME-type (содержимого файла)
+        # 🛡️ ПРОВЕРКА MIME-type через filetype (без системных зависимостей)
         try:
-            # Читаем начало файла для определения настоящего типа
-            file_content = await file.read(2048)  # Первые 2KB достаточно
-            await file.seek(0)  # Возвращаем указатель в начало файла
+            file_content = await file.read(2048)
+            await file.seek(0)
             
-            # Определяем MIME-type через python-magic
-            import magic
-            detected_mime = magic.from_buffer(file_content, mime=True)
+            import filetype
+            kind = filetype.guess(file_content)
+            detected_mime = kind.mime if kind else 'application/octet-stream'
             
-            # Проверяем что MIME-type в списке разрешённых
             if detected_mime not in Config.ALLOWED_MIME_TYPES:
                 safe_log_warning(
                     f"Отклонён файл с недопустимым MIME-type",
@@ -712,7 +710,6 @@ async def upload_document(
                 )
             
             safe_log_warning(
-                f"Файл прошёл MIME-type валидацию",
                 user_id=user_id,
                 file_extension=file_ext,
                 detected_mime=detected_mime
@@ -749,7 +746,7 @@ async def upload_document(
             generate_medical_summary, 
             generate_title_from_text
         )
-        from db_postgresql import save_document, t
+        from db_postgresql import save_document
         from vector_db_postgresql import split_into_chunks, add_chunks_to_vector_db
         from file_storage import get_file_storage
         

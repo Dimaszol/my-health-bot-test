@@ -437,10 +437,10 @@ TRANSLATIONS = {
         'de': 'Datenschutzhinweis'
     },
     'security_note_text': {
-        'ru': 'Ваши данные конфиденциальны и защищены стандартами SOC 2, HIPAA и GDPR.',
-        'en': 'Your data is confidential and protected by SOC 2, HIPAA and GDPR standards.',
-        'uk': 'Ваші дані конфіденційні та захищені стандартами SOC 2, HIPAA і GDPR.',
-        'de': 'Ihre Daten sind vertraulich und durch SOC 2-, HIPAA- und GDPR-Standards geschützt.'
+        'ru': 'Ваши данные защищены шифрованием и соответствуют стандартам GDPR.',
+        'en': 'Your data is protected by encryption and complies with GDPR standards.',
+        'uk': 'Ваші дані захищені шифруванням та відповідають стандартам GDPR.',
+        'de': 'Ihre Daten sind durch Verschlüsselung geschützt und entsprechen den GDPR-Standards.'
     },
     
     # ============================================
