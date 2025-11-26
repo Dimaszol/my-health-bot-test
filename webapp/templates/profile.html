@@ -14,7 +14,13 @@ footer {
 <!-- 👤 СТРАНИЦА ПРОФИЛЯ -->
 
 <div style="margin-bottom: 2rem;">
-    <h1 style="color: #667eea;">👤 {{ t('page_profile_title', lang) }}</h1>
+    <h1 style="color: #667eea; display: flex; align-items: center; gap: 0.5rem;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+        </svg>
+        {{ t('page_profile_title', lang) }}
+    </h1>
     <p style="color: #666;">
         {{ t('page_profile_subtitle', lang) }}
     </p>
@@ -31,7 +37,7 @@ footer {
             <button 
                 id="basic-edit-btn"
                 onclick="editSection('basic')"
-                style="padding: 0.5rem 1.2rem; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
+                style="padding: 0.5rem 1.2rem; background: #00c9a7; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
             >
                 ✏️ {{ t('edit', lang) }}
             </button>
@@ -108,7 +114,7 @@ footer {
             <button 
                 id="medical-edit-btn"
                 onclick="editSection('medical')"
-                style="padding: 0.5rem 1.2rem; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
+                style="padding: 0.5rem 1.2rem; background: #00c9a7; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
             >
                 ✏️ {{ t('edit', lang) }}
             </button>
@@ -326,7 +332,7 @@ footer {
             <button 
                 id="lifestyle-edit-btn"
                 onclick="editSection('lifestyle')"
-                style="padding: 0.5rem 1.2rem; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
+                style="padding: 0.5rem 1.2rem; background: #00c9a7; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
             >
                 ✏️ {{ t('edit', lang) }}
             </button>
@@ -425,7 +431,7 @@ footer {
 </div>
 
 <!-- ℹ️ ИНФОРМАЦИЯ -->
-<div class="alert alert-info">
+<div class="info-block" style="background: #e0f7fa; border-left: 4px solid #00bcd4; padding: 1rem 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
     <strong>💡 {{ t('profile_how_to_fill', lang) }}</strong><br>
     {{ t('profile_fill_instruction', lang) }}
 </div>

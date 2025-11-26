@@ -56,7 +56,7 @@
     max-width: 320px;
     height: 100vh;
     height: 100dvh;
-    background: white;
+    background: white !important;
     z-index: 1002;
     transition: left 0.3s ease;
     overflow-y: auto;
@@ -500,6 +500,34 @@
     }
 
     /* ========================================
+    ОТСТУПЫ ДЛЯ КОНТЕНТА
+    ======================================== */
+
+    main {
+        padding: 0.5rem !important;
+        padding-top: 20px !important; /* Отступ от шапки - уменьшил */
+    }
+
+    .container {
+        padding: 0.5rem !important;
+    }
+
+    .card {
+        padding: 1rem !important;
+        margin-bottom: 1.5rem !important; /* Увеличил отступ между карточками */
+    }
+
+    /* Убираем большой отступ у первого элемента */
+    main > div:first-child {
+        margin-top: 0 !important;
+    }
+
+    /* Отступы между всеми карточками на странице профиля */
+    .card + .card {
+        margin-top: 0.5rem !important;
+    }
+
+    /* ========================================
        КАРТОЧКИ
        ======================================== */
     
@@ -520,6 +548,54 @@
     .card p {
         font-size: 0.95rem !important;
         line-height: 1.6 !important;
+    }
+
+    /* ========================================
+    КНОПКИ РЕДАКТИРОВАНИЯ - ТОЛЬКО ИКОНКА
+    ======================================== */
+
+    /* Базовые стили для всех кнопок редактирования */
+    .card button[id$="-edit-btn"],
+    .card button[id$="-save-btn"],
+    .card button[id$="-cancel-btn"] {
+        padding: 0.6rem !important;
+        min-width: 44px !important;
+        width: 44px !important;
+        height: 44px !important;
+        line-height: 1 !important;
+    }
+
+    /* Кнопка редактирования */
+    .card button[id$="-edit-btn"] {
+        font-size: 0 !important;
+        background: #00c9a7 !important;
+    }
+
+    .card button[id$="-edit-btn"]::before {
+        content: "✏️";
+        font-size: 1rem;
+    }
+
+    /* Кнопка сохранения */
+    .card button[id$="-save-btn"] {
+        font-size: 0 !important;
+        background: #00c9a7 !important;
+    }
+
+    .card button[id$="-save-btn"]::before {
+        content: "✅";
+        font-size: 1rem;
+    }
+
+    /* Кнопка отмены */
+    .card button[id$="-cancel-btn"] {
+        font-size: 0 !important;
+        background: #e2e8f0 !important;
+    }
+
+    .card button[id$="-cancel-btn"]::before {
+        content: "❌";
+        font-size: 1rem;
     }
 
     /* ========================================
@@ -764,6 +840,23 @@
 
     * {
         -webkit-overflow-scrolling: touch;
+    }
+
+    /* ========================================
+       ПРИНУДИТЕЛЬНАЯ СВЕТЛАЯ ТЕМА ДЛЯ МЕНЮ
+       ======================================== */
+    
+    .mobile-menu,
+    .mobile-menu * {
+        color: #1a202c !important;
+    }
+
+    .mobile-menu-header {
+        background: linear-gradient(135deg, #e0f7f4 0%, #e8f4f8 100%) !important;
+    }
+
+    .mobile-menu-items a {
+        color: #2d3748 !important;
     }
 
     /* Отключаем анимации при системных настройках */

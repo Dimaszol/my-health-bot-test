@@ -515,22 +515,22 @@ TRANSLATIONS = {
         'de': 'Ihr persönliches medizinisches Dashboard'
     },
     'stats_documents_uploaded': {
-        'ru': 'Загружено документов',
-        'en': 'Documents Uploaded',
-        'uk': 'Завантажено документів',
-        'de': 'Hochgeladene Dokumente'
+        'ru': 'Моя медкарта',
+        'en': 'My Medical Records',
+        'uk': 'Моя медкарта',
+        'de': 'Meine Krankenakte'
     },
     'stats_documents_left': {
-        'ru': 'Осталось',
-        'en': 'Remaining',
-        'uk': 'Залишилось',
-        'de': 'Verbleibend'
+        'ru': 'Доступно загрузок',
+        'en': 'Uploads available',
+        'uk': 'Доступно завантажень',
+        'de': 'Uploads verfügbar'
     },
     'stats_messages': {
-        'ru': 'Сообщений с AI',
-        'en': 'AI Messages',
-        'uk': 'Повідомлень з AI',
-        'de': 'KI-Nachrichten'
+        'ru': 'AI-Консультации',
+        'en': 'AI Consultations',
+        'uk': 'AI-Консультації',
+        'de': 'KI-Beratungen'
     },
     'stats_queries_left': {
         'ru': 'Осталось запросов',
@@ -803,10 +803,10 @@ TRANSLATIONS = {
         'de': 'Sie haben Ihr Dokumentenlimit erreicht. Abonnieren Sie oder kaufen Sie zusätzliche Konsultationen, um weiterhin hochzuladen.'
     },
     'page_documents_title': {
-        'ru': 'Мои документы',
-        'en': 'My Documents',
-        'uk': 'Мої документи',
-        'de': 'Meine Dokumente'
+        'ru': 'Моя медкарта',
+        'en': 'My Medical Records',
+        'uk': 'Моя медкарта',
+        'de': 'Meine Krankenakte'
     },
     'page_documents_subtitle': {
         'ru': 'Загрузите медицинские файлы, чтобы PulseBook знал ваш контекст и отвечал точнее',
