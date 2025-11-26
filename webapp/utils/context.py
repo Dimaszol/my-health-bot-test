@@ -12,7 +12,7 @@ def get_template_context(request: Request) -> dict:
     Возвращает базовый контекст для всех шаблонов
     (аналог context_processor в Flask)
     """
-    lang = request.session.get('language', 'ru')
+    lang = request.session.get('language', 'en')
     
     # ✅ ПРАВИЛЬНАЯ РЕАЛИЗАЦИЯ get_flashed_messages
     def _get_flashed_messages(**kwargs):

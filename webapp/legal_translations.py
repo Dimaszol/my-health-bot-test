@@ -67,7 +67,8 @@ LEGAL_TRANSLATIONS = {
 <li><strong>Basic profile information:</strong> your name and profile picture</li>
 <li><strong>Account verification:</strong> to confirm that you are a real user</li>
 </ul>
-
+<p>By signing in with Google OAuth, you authorize PulseBook to receive your basic profile information (name, email and profile picture) for the purpose of account creation and authentication. PulseBook uses Google OAuth only for secure authentication and does not request access to other Google services (Gmail, Drive, etc.).
+</p>
 <p>We <strong>DO NOT have access</strong> to:</p>
 <ul>
 <li>Your Google password</li>
@@ -559,6 +560,9 @@ LEGAL_TRANSLATIONS = {
 <li><strong>Grundlegende Profilinformationen:</strong> Ihr Name und Profilbild</li>
 <li><strong>Kontoverifizierung:</strong> um zu bestätigen, dass Sie ein echter Benutzer sind</li>
 </ul>
+<p>
+Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre grundlegenden Profilinformationen (Name, E-Mail und Profilbild) zum Zweck der Kontoerstellung und -authentifizierung zu erhalten. PulseBook verwendet Google OAuth nur zur sicheren Authentifizierung und fordert keinen Zugriff auf andere Google-Dienste (Gmail, Drive usw.).
+</p>
 
 <p>Wir haben <strong>KEINEN Zugriff</strong> auf:</p>
 <ul>
@@ -1051,7 +1055,9 @@ LEGAL_TRANSLATIONS = {
 <li><strong>Базова інформація профілю:</strong> ваше ім'я та фотографія профілю</li>
 <li><strong>Верифікація облікового запису:</strong> для підтвердження, що ви справжній користувач</li>
 </ul>
-
+<p>
+При вході через Google OAuth ви дозволяєте PulseBook отримувати базову інформацію профілю (ім'я, email та фото) для створення та аутентифікації акаунту. PulseBook використовує Google OAuth лише для безпечної авторизації та не запитує доступ до інших сервісів Google (Gmail, Drive тощо).
+</p>
 <p>Ми <strong>НЕ маємо доступу</strong> до:</p>
 <ul>
 <li>Вашого пароля Google</li>
@@ -1542,7 +1548,9 @@ LEGAL_TRANSLATIONS = {
 <li><strong>Базовая информация профиля:</strong> ваше имя и фотография профиля</li>
 <li><strong>Верификация аккаунта:</strong> для подтверждения, что вы реальный пользователь</li>
 </ul>
-
+<p>
+При входе через Google OAuth вы разрешаете PulseBook получать базовую информацию профиля (имя, email и фото) для создания и аутентификации аккаунта. PulseBook использует Google OAuth только для безопасной авторизации и не запрашивает доступ к другим сервисам Google (Gmail, Drive и т.д.).
+</p>
 <p>Мы <strong>НЕ имеем доступа</strong> к:</p>
 <ul>
 <li>Вашему паролю Google</li>
@@ -2051,6 +2059,12 @@ LEGAL_TRANSLATIONS = {
     <li>All payment information is processed directly through Stripe (PCI DSS compliant)</li>
     <li>We only receive payment confirmation and subscription status</li>
 </ul>
+
+<h3>3.5. Google OAuth Authorization</h3>
+<p><strong>Required disclosure for Google OAuth users:</strong></p>
+<p>
+PulseBook uses Google OAuth only for secure authentication. We request only your basic profile information (name, email, Google User ID). We do NOT access any other Google services such as Gmail, Google Drive or Calendar. You may revoke our access to your Google account at any time via your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">Google Account settings</a>. This information is used exclusively for account creation, login and security purposes.
+</p>
 
 <h2>4. How We Use Your Information</h2>
 <p>We use collected information for the following purposes:</p>
@@ -2612,6 +2626,11 @@ LEGAL_TRANSLATIONS = {
     <li>Alle Zahlungsinformationen werden direkt über Stripe verarbeitet (PCI DSS-konform)</li>
     <li>Wir erhalten nur Zahlungsbestätigung und Abonnementstatus</li>
 </ul>
+<h3>3.5. Google OAuth-Autorisierung</h3>
+<p><strong>Erforderliche Offenlegung für Google OAuth-Benutzer:</strong></p>
+<p>
+PulseBook verwendet Google OAuth nur zur sicheren Authentifizierung. Wir fordern nur Ihre grundlegenden Profilinformationen an (Name, E-Mail, Google User ID). Wir greifen NICHT auf andere Google-Dienste wie Gmail, Google Drive oder Calendar zu. Sie können unseren Zugriff auf Ihr Google-Konto jederzeit über Ihre <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">Google-Kontoeinstellungen</a> widerrufen. Diese Informationen werden ausschließlich für die Kontoerstellung, Anmeldung und Sicherheitszwecke verwendet.
+</p>
 
 <h2>4. Wie wir Ihre Informationen verwenden</h2>
 <p>Wir verwenden gesammelte Informationen für folgende Zwecke:</p>
@@ -3173,7 +3192,11 @@ LEGAL_TRANSLATIONS = {
     <li>Вся платіжна інформація обробляється напряму через Stripe (PCI DSS compliant)</li>
     <li>Ми отримуємо лише підтвердження платежу та статус підписки</li>
 </ul>
-
+<h3>3.5. Авторизація через Google OAuth</h3>
+<p><strong>Обов'язкове розкриття для користувачів Google OAuth:</strong></p>
+<p>
+PulseBook використовує Google OAuth лише для безпечної аутентифікації. Ми запитуємо лише вашу базову інформацію профілю (ім'я, email, Google User ID). Ми НЕ отримуємо доступ до інших сервісів Google, таких як Gmail, Google Drive або Calendar. Ви можете відкликати наш доступ до вашого акаунту Google в будь-який час через <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">налаштування Google акаунту</a>. Ця інформація використовується виключно для створення акаунту, входу та цілей безпеки.
+</p>
 <h2>4. Як ми використовуємо вашу інформацію</h2>
 <p>Ми використовуємо зібрану інформацію для наступних цілей:</p>
 
@@ -3734,7 +3757,11 @@ LEGAL_TRANSLATIONS = {
     <li>Вся платежная информация обрабатывается напрямую через Stripe (PCI DSS compliant)</li>
     <li>Мы получаем только подтверждение платежа и статус подписки</li>
 </ul>
-
+<h3>3.5. Авторизация через Google OAuth</h3>
+<p><strong>Обязательное раскрытие для пользователей Google OAuth:</strong></p>
+<p>
+PulseBook использует Google OAuth только для безопасной аутентификации. Мы запрашиваем только вашу базовую информацию профиля (имя, email, Google User ID). Мы НЕ получаем доступ к другим сервисам Google, таким как Gmail, Google Drive или Calendar. Вы можете отозвать наш доступ к вашему аккаунту Google в любое время через <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">настройки Google аккаунта</a>. Эта информация используется исключительно для создания аккаунта, входа и целей безопасности.
+</p>
 <h2>4. Как мы используем вашу информацию</h2>
 <p>Мы используем собранную информацию для следующих целей:</p>
 
