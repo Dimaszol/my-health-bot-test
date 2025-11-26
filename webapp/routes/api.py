@@ -24,13 +24,13 @@ from webapp.config import Config
 # ✅ ИМПОРТЫ ИЗ БД (async функции!)
 # ==========================================
 from db_postgresql import (
-    save_message,           # ✅ async
-    get_user_language,      # ✅ async
-    get_user_profile,       # ✅ async
-    get_db_connection,      # ✅ async
-    release_db_connection   # ✅ async
+    save_message,  
+    get_user_language,    
+    get_user_profile,     
+    get_db_connection,    
+    release_db_connection
 )
-
+from rate_limiter import check_rate_limit, record_user_action
 # ✅ Импорт форматирования для веба
 from webapp.utils.text_formatter import format_for_web
 
@@ -269,7 +269,23 @@ async def chat_message(
         
         # ✅ ПРОСТО AWAIT!
         await save_message(user_id, 'assistant', formatted_response)
+
+        # ==========================================
+        # ШАГ 9: ОБНОВЛЯЕМ СВОДКУ (каждые 7 сообщений)
+        # ==========================================
         
+        try:
+            from save_utils import maybe_update_summary            
+            
+            summary_allowed, _ = await check_rate_limit(user_id, "summary")
+            if summary_allowed:
+                summary_was_updated = await maybe_update_summary(user_id)
+                if summary_was_updated:
+                    await record_user_action(user_id, "summary")
+        except Exception as e:
+            # Ошибка сводки не должна ломать основной функционал
+            safe_log_warning("Ошибка обновления сводки")
+                
         # Возвращаем успех
         return {
             'success': True,

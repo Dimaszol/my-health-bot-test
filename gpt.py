@@ -632,23 +632,8 @@ async def ask_doctor(context_text: str, user_question: str,
             "If information is missing, offer a preliminary suggestion and explain what's lacking."
         )
 
-    full_prompt = f"{instruction_prompt}\n\n{context_text}"
-
-    # ✅ ЛОГИРОВАНИЕ
-    try:
-        import datetime
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        with open("prompts_log.txt", "a", encoding="utf-8") as f:
-            f.write(f"\n{'='*80}\n")
-            f.write(f"🕐 {timestamp} | User {user_id} | {model_info}\n")
-            f.write(f"🌐 Язык: {lang} | Взаимодействие: {'Продолжение' if recent_interaction and not is_greeting else 'Новое/Приветствие'}\n")
-            f.write(f"❓ Вопрос: {user_question}\n")
-            f.write(f"📊 Модель: {model} | Длина system: {len(system_prompt)} симв. | user: {len(full_prompt)} симв.\n")
-            f.write(f"{'='*80}\n\n")
-    except Exception as e:
-        pass
-
+    enhanced_system_prompt = f"{system_prompt}\n\n{instruction_prompt}"    
+       
     # ✅ ЕДИНЫЙ ВЫЗОВ API
     try:
         # GPT-5 использует особые параметры
@@ -656,8 +641,10 @@ async def ask_doctor(context_text: str, user_question: str,
             response = await client.chat.completions.create(
                 model=model,
                 messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": full_prompt}
+                    {"role": "system", "content": enhanced_system_prompt},
+                    {"role": "user", "content": context_text},  # ← Контекст пациента
+                    {"role": "assistant", "content": "I have reviewed the patient's medical information and am ready to answer the question."},
+                    {"role": "user", "content": f"Patient's question: {user_question}"}
                 ],
                 max_tokens=3000,  # ← Обычный параметр
                 temperature=0.6,
@@ -668,8 +655,10 @@ async def ask_doctor(context_text: str, user_question: str,
             response = await client.chat.completions.create(
                 model=model,
                 messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": full_prompt}
+                    {"role": "system", "content": enhanced_system_prompt},
+                    {"role": "user", "content": context_text},  # ← Контекст пациента
+                    {"role": "assistant", "content": "I have reviewed the patient's medical information and am ready to answer the question."},
+                    {"role": "user", "content": f"Patient's question: {user_question}"}
                 ],
                 max_tokens=2500,
                 temperature=0.5,
@@ -688,8 +677,10 @@ async def ask_doctor(context_text: str, user_question: str,
                 response = await client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=[
-                        {"role": "system", "content": base_system_prompt},
-                        {"role": "user", "content": full_prompt}
+                        {"role": "system", "content": enhanced_system_prompt},
+                        {"role": "user", "content": context_text},  # ← Контекст пациента
+                        {"role": "assistant", "content": "I have reviewed the patient's medical information and am ready to answer the question."},
+                        {"role": "user", "content": f"Patient's question: {user_question}"}
                     ],
                     max_tokens=2500,
                     temperature=0.5

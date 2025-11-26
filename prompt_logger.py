@@ -354,8 +354,7 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
             f"🔎 Related historical data:\n{chunks_text or 'Релевантная информация не найдена'}",
             "",
             f"💬 Recent messages (last 3 pairs):\n{recent_messages_text}",
-            "",
-            f"Patient: {user_input}"
+            ""
         ]
         
         final_user_prompt = "\n".join(user_prompt_parts)
