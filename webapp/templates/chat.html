@@ -377,6 +377,7 @@ async function sendPhotoForAnalysis(file, question) {
     
     // ✅ ОЧИЩАЕМ ФОРМУ СРАЗУ ПОСЛЕ ДОБАВЛЕНИЯ СООБЩЕНИЯ
     messageInput.value = '';
+    messageInput.style.height = 'auto';
     selectedFile = null;
     photoPreview.style.display = 'none';
     photoInput.value = '';
@@ -444,7 +445,8 @@ async function sendTextMessage(message) {
     
     // ✅ ОЧИЩАЕМ ПОЛЕ ВВОДА СРАЗУ ПОСЛЕ ДОБАВЛЕНИЯ СООБЩЕНИЯ
     messageInput.value = '';
-
+    messageInput.style.height = 'auto';
+    
     // Показываем индикатор печатания
     typingIndicator.style.display = 'block';
     scrollToBottom();
@@ -557,7 +559,14 @@ function updateModeIndicator(hasLimits) {
 // Авто-растягивание textarea при наборе текста
 messageInput.addEventListener('input', function() {
     this.style.height = 'auto';
-    this.style.height = (this.scrollHeight) + 'px';
+    const newHeight = this.scrollHeight;
+    
+    // Если текста нет или одна строка - сбрасываем на минимальную высоту
+    if (this.value.trim() === '' || newHeight <= 50) {
+        this.style.height = 'auto';
+    } else {
+        this.style.height = newHeight + 'px';
+    }
 });
 
 // Определяем мобильное устройство
