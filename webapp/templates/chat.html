@@ -4,7 +4,7 @@
 
 {% block extra_styles %}
 <!-- 💬 СТИЛИ ЧАТА -->
-    <link rel="stylesheet" href="/static/css/chat.css?v=22">
+    <link rel="stylesheet" href="/static/css/chat.css?v=27">
 
 {% endblock %}
 
@@ -40,9 +40,16 @@
         {% else %}
             <!-- Пустое состояние -->
             <div class="empty-state">
-                <div class="empty-state-icon">🤖</div>
+                <div class="empty-state-icon">
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="1.5">
+                        <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"></path>
+                        <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"></path>
+                        <circle cx="20" cy="10" r="2"></circle>
+                    </svg>
+                </div>
                 <h2 style="margin-bottom: 0.5rem; color: #333;">{{ t('chat_greeting', lang) }}</h2>
-                <p>{{ t('chat_start_conversation', lang) }}</p>
+                <p>{{ t('chat_start_conversation_line1', lang) }}</p>
+                <p>{{ t('chat_start_conversation_line2', lang) }}</p>
             </div>
         {% endif %}
         
@@ -210,6 +217,11 @@ function closeAttachmentMenu() {
 async function checkPhotoLimits() {
     try {
         const response = await fetch('/api/check-photo-limits');
+        // ✅ ПРОВЕРКА АУТЕНТИФИКАЦИИ
+        if (response.status === 401) {
+            window.location.href = '/auth/login';
+            return false;
+        }
         const data = await response.json();
         
         if (data.success && !data.has_limits) {
@@ -398,6 +410,12 @@ async function sendPhotoForAnalysis(file, question) {
             },
             body: formData
         });
+
+        // ✅ ПРОВЕРКА АУТЕНТИФИКАЦИИ
+        if (response.status === 401) {
+            window.location.href = '/auth/login';
+            return;
+        }
         
         const data = await response.json();
         
@@ -460,6 +478,12 @@ async function sendTextMessage(message) {
             },
             body: JSON.stringify({ message: message })
         });
+
+        // ✅ ПРОВЕРКА АУТЕНТИФИКАЦИИ
+        if (response.status === 401) {
+            window.location.href = '/auth/login';
+            return;
+        }
         
         const data = await response.json();
 

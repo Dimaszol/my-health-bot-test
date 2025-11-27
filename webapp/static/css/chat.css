@@ -726,14 +726,14 @@ main > .container {
     /* ========== ИНДИКАТОР РЕЖИМА КОНСУЛЬТАЦИИ ========== */
     .consultation-mode-badge {
         position: fixed !important;
-        top: 65px !important; /* Под header */
+        top: 62px !important; /* Сразу под header */
         left: 50% !important;
         transform: translateX(-50%) !important;
         right: auto !important;
-        z-index: 99;
-        width: auto !important; /* ✅ Подстраивается под содержимое */
-        max-width: calc(100% - 2rem); /* Но не больше ширины экрана */
-        padding: 0 0.5rem; /* Небольшие отступы по бокам */
+        z-index: 998; /* ← ИЗМЕНЕНО: ниже header (1000), но выше контента */
+        width: auto !important;
+        max-width: calc(100% - 2rem);
+        padding: 0 0.5rem;
         white-space: nowrap !important; 
     }
 

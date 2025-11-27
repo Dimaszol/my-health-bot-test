@@ -27,9 +27,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 # ✅ ИМПОРТИРУЕМ ГОТОВЫЕ ASYNC ФУНКЦИИ из db_postgresql.py
 # БЕЗ psycopg2! БЕЗ костылей!
 from db_postgresql import (
-    get_user_profile,           # ✅ async функция
-    get_documents_by_user,      # ✅ async функция
-    get_last_messages           # ✅ async функция (возвращает list of tuples)
+    get_user_profile,
+    get_documents_by_user,
+    get_last_messages,
+    get_db_connection,
+    release_db_connection 
 )
 
 # Импортируем функции локализации
@@ -164,19 +166,35 @@ async def get_user_stats(user_id: int) -> dict:
 # ==========================================
 
 async def get_current_user(request: Request) -> int:
-    """
-    Dependency для проверки авторизации
-    (аналог декоратора @login_required в Flask)
     
-    Что делает:
-    - Проверяет есть ли user_id в сессии
-    - Если НЕТ → HTTPException (FastAPI сам сделает редирект через exception handler)
-    - Если ДА → возвращает user_id
-    """
     user_id = request.session.get('user_id')
     if not user_id:
-        # Выбрасываем исключение вместо редиректа
         raise HTTPException(status_code=401, detail="auth_required")
+    
+    # ✅ ВАЛИДАЦИЯ user_id
+    try:
+        user_id = int(user_id)
+        if user_id <= 0:
+            request.session.clear()
+            raise HTTPException(status_code=401, detail="auth_required")
+    except (ValueError, TypeError):
+        request.session.clear()
+        raise HTTPException(status_code=401, detail="auth_required")
+    
+    # ✅ ПРОВЕРКА существования в БД
+    conn = await get_db_connection()
+    try:
+        user_exists = await conn.fetchval(
+            "SELECT EXISTS(SELECT 1 FROM users WHERE user_id = $1)",
+            user_id
+        )
+        
+        if not user_exists:
+            request.session.clear()
+            raise HTTPException(status_code=401, detail="auth_required")
+    finally:
+        await release_db_connection(conn)
+        
     return user_id
     
 

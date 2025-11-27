@@ -249,10 +249,16 @@ footer {
     {% endfor %}
 </div>
 {% else %}
-<div class="empty-state-card" style="text-align: center; background: #f0f9ff; border: 2px dashed #60a5fa; border-radius: 12px; padding: 2rem;">
-    <div style="font-size: 4rem; margin-bottom: 1rem;">📂</div>
-    <h3>{{ t('no_documents_yet', lang) }}</h3>
-    <p>{{ t('no_documents_action', lang) }}</p>
+<div class="empty-state-card" style="text-align: center; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid var(--primary-color); border-radius: 16px; padding: 3rem 2rem; box-shadow: 0 4px 12px rgba(0, 201, 167, 0.1);">
+    <!-- SVG иконка папки -->
+    <div style="margin-bottom: 1.5rem;">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.5" style="margin: 0 auto; display: block;">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+    </div>    
+    <p style="font-size: 1.15rem; line-height: 1.7; color: #1e40af; margin: 0;">
+        {{ t('no_documents_action', lang) }}
+    </p>
 </div>
 {% endif %}
 

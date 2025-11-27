@@ -94,12 +94,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleSwipe() {
         const swipeDistance = touchEndX - touchStartX;
         
-        // Свайп вправо (открытие меню)
-        if (swipeDistance > 100 && touchStartX < 50 && !mobileMenu.classList.contains('active')) {
+        // Свайп вправо (открытие меню) - увеличиваем зону
+        if (swipeDistance > 100 && touchStartX < 100 && !mobileMenu.classList.contains('active')) {
             openMobileMenu();
         }
         
-        // Свайп влево (закрытие меню)
+        // Свайп влево (закрытие меню) - работает из любого места
         if (swipeDistance < -100 && mobileMenu.classList.contains('active')) {
             closeMobileMenu();
         }

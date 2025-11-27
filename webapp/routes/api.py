@@ -94,7 +94,7 @@ async def get_current_user(request: Request) -> int:
     try:
         user_id = int(user_id)
         if user_id <= 0:
-            request.session.clear()  # Очищаем испорченную сессию
+            request.session.clear()
             raise HTTPException(
                 status_code=401,
                 detail='Некорректная сессия. Войдите снова.'
@@ -105,6 +105,23 @@ async def get_current_user(request: Request) -> int:
             status_code=401,
             detail='Некорректная сессия. Войдите снова.'
         )
+    
+    # ✅ НОВОЕ: Проверяем существование пользователя в БД
+    conn = await get_db_connection()
+    try:
+        user_exists = await conn.fetchval(
+            "SELECT EXISTS(SELECT 1 FROM users WHERE user_id = $1)",
+            user_id
+        )
+        
+        if not user_exists:
+            request.session.clear()
+            raise HTTPException(
+                status_code=401,
+                detail='Пользователь не найден. Войдите снова.'
+            )
+    finally:
+        await release_db_connection(conn)
     
     return user_id
 
@@ -305,6 +322,20 @@ async def chat_message(
                 'error': 'Произошла ошибка при обработке сообщения'
             }
         )
+
+@router.get("/check-auth")
+async def check_auth_status(request: Request):
+    """
+    Проверка статуса аутентификации для PWA
+    """
+    user_id = request.session.get('user_id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    return JSONResponse(content={
+        "authenticated": True,
+        "user_id": user_id
+    })
 
 # ==========================================
 # 🔒 ПРОВЕРКА ЛИМИТОВ ДЛЯ ФОТО

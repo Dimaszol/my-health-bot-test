@@ -874,18 +874,12 @@ TRANSLATIONS = {
         'en': 'Delete',
         'uk': 'Видалити',
         'de': 'Löschen'
-    },
-    'no_documents_yet': {
-        'ru': 'У вас пока нет документов',
-        'en': 'You have no documents yet',
-        'uk': 'У вас поки немає документів',
-        'de': 'Sie haben noch keine Dokumente'
-    },
+    },    
     'no_documents_action': {
-        'ru': 'Загрузите ваш первый медицинский документ используя форму выше',
-        'en': 'Upload your first medical document using the form above',
-        'uk': 'Завантажте ваш перший медичний документ, використовуючи форму вище',
-        'de': 'Laden Sie Ihr erstes medizinisches Dokument mit dem obigen Formular hoch'
+        'ru': 'Загрузите первый медицинский документ — и PulseBook проведёт комплексный анализ с помощью консилиума AI-моделей. Вы получите ясные объяснения, персональные рекомендации и всю историю здоровья в одном месте.',
+        'en': 'Upload your first medical document — and PulseBook will conduct a comprehensive analysis using a consortium of AI models. You will receive clear explanations, personalized recommendations, and all your health history in one place.',
+        'uk': 'Завантажте перший медичний документ — і PulseBook проведе комплексний аналіз за допомогою консиліуму AI-моделей. Ви отримаєте зрозумілі пояснення, персональні рекомендації та всю історію здоров\'я в одному місці.',
+        'de': 'Laden Sie Ihr erstes medizinisches Dokument hoch — und PulseBook führt eine umfassende Analyse mit einem Konsortium von KI-Modellen durch. Sie erhalten klare Erklärungen, personalisierte Empfehlungen und Ihre gesamte Gesundheitsgeschichte an einem Ort.'
     },
     'unknown': {
         'ru': 'Неизвестно',
@@ -1064,11 +1058,17 @@ TRANSLATIONS = {
         'uk': 'Привіт! Я ваш персональний медичний асистент.',
         'de': 'Hallo! Ich bin Ihr persönlicher medizinischer Assistent.'
     },
-    'chat_start_conversation': {
-        'ru': 'Начните разговор — задайте мне любой вопрос о вашем здоровье',
-        'en': 'Start a conversation — ask me any question about your health',
-        'uk': 'Почніть розмову — поставте мені будь-яке питання про ваше здоров\'я',
-        'de': 'Starten Sie ein Gespräch — stellen Sie mir eine Frage zu Ihrer Gesundheit'
+    'chat_start_conversation_line1': {
+        'ru': 'Я анализирую ваши документы, историю и симптомы.',
+        'en': 'I analyze your documents, history, and symptoms.',
+        'uk': 'Я аналізую ваші документи, історію та симптоми.',
+        'de': 'Ich analysiere Ihre Dokumente, Krankengeschichte und Symptome.'
+    },
+    'chat_start_conversation_line2': {
+        'ru': 'Задайте любой вопрос о здоровье — получите персональные рекомендации на основе всех ваших данных.',
+        'en': 'Ask any health question — get personalized recommendations based on all your data.',
+        'uk': 'Поставте будь-яке питання про здоров\'я — отримайте персональні рекомендації на основі всіх ваших даних.',
+        'de': 'Stellen Sie eine Frage zu Ihrer Gesundheit — erhalten Sie personalisierte Empfehlungen basierend auf all Ihren Daten.'
     },
     'chat_placeholder': {
         'ru': 'Напишите ваш вопрос...',
