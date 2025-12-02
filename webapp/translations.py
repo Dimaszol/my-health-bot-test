@@ -162,40 +162,49 @@ TRANSLATIONS = {
         'de': 'Daten mit dem Bot synchronisieren'
     },  
     'hero_main_title_part1': {
-        'ru': 'Ваш умный помощник для',
-        'en': 'Your Smart Assistant for',
-        'uk': 'Ваш розумний помічник для',
-        'de': 'Ihr intelligenter Assistent für'
+        'ru': 'Загрузите анализ —',
+        'en': 'Upload test results —',
+        'uk': 'Завантажте аналіз —',
+        'de': 'Testergebnisse hochladen —'
     },
+
     'hero_main_title_highlight': {
-        'ru': 'управления здоровьем',
-        'en': 'Health Management',
-        'uk': 'управління здоров\'ям',
-        'de': 'Gesundheitsmanagement'
+        'ru': 'получите итоговое AI-заключение',
+        'en': 'get AI-reviewed conclusion',
+        'uk': 'отримайте підсумковий AI-висновок',
+        'de': 'erhalten Sie eine KI-geprüfte Schlussfolgerung'
     },
     'hero_main_title_part2': {
         'ru': '',
-        'en': '',
+        'en': '', 
         'uk': '',
         'de': ''
     },
+
     'hero_description': {
-        'ru': 'Храните медицинские документы в одном месте. Получайте мгновенный анализ и консультации от ИИ-ассистента. Контролируйте своё здоровье с помощью современных технологий.',
-        'en': 'Store medical documents in one place. Get instant analysis and consultations from an AI assistant. Take control of your health with modern technology.',
-        'uk': 'Зберігайте медичні документи в одному місці. Отримуйте миттєвий аналіз та консультації від ШІ-асистента. Контролюйте своє здоров\'я за допомогою сучасних технологій.',
-        'de': 'Speichern Sie medizinische Dokumente an einem Ort. Erhalten Sie sofortige Analysen und Beratung von einem KI-Assistenten. Kontrollieren Sie Ihre Gesundheit mit moderner Technologie.'
+        'ru': 'Несколько AI-моделей анализируют документ вместе и формируют единое заключение. Также можете задать любые вопросы о здоровье 24/7.',
+        'en': 'Multiple AI models analyze your document together and produce one consolidated result. You can also ask anything about your health 24/7.',
+        'uk': 'Декілька AI-моделей аналізують документ разом та формують єдиний висновок. Також можете поставити будь-які питання про здоров\'я 24/7.',
+        'de': 'Mehrere KI-Modelle analysieren Ihr Dokument gemeinsam und erstellen ein einheitliches Ergebnis. Sie können auch jederzeit Fragen zu Ihrer Gesundheit stellen 24/7.'
     },
     'btn_try_free': {
-        'ru': 'Попробовать бесплатно',
-        'en': 'Try for free',
-        'uk': 'Спробувати безкоштовно',
-        'de': 'Kostenlos testen'
+        'ru': 'Войти через Google',
+        'en': 'Login with Google',
+        'uk': 'Увійти через Google',
+        'de': 'Mit Google anmelden'
     },
+
     'btn_learn_more': {
-        'ru': 'Узнать больше',
-        'en': 'Learn more',
-        'uk': 'Дізнатися більше',
-        'de': 'Mehr erfahren'
+        'ru': 'Как это работает',
+        'en': 'How it works',
+        'uk': 'Як це працює',
+        'de': 'Wie funktioniert es'
+    },
+    'btn_google_subtitle': {
+        'ru': 'Быстро • Без регистрации • Бесплатно',
+        'en': 'Fast • No registration • Free',
+        'uk': 'Швидко • Без реєстрації • Безкоштовно',
+        'de': 'Schnell • Keine Registrierung • Kostenlos'
     },
     'trustpilot_excellent': {
         'ru': 'Отлично',
@@ -234,6 +243,77 @@ TRANSLATIONS = {
         'de': 'Abmelden'
     },
     
+    # Секция "Как это работает" (улучшенная версия)
+    'how_it_works_title': {
+        'ru': 'Как работает PulseBook',
+        'en': 'How PulseBook works',
+        'uk': 'Як працює PulseBook',
+        'de': 'Wie PulseBook funktioniert'
+    },
+
+    'how_it_works_subtitle': {
+        'ru': 'От загрузки документа до итогового AI-разбора — всего 3 шага',
+        'en': 'From document upload to final AI analysis — just 3 steps',
+        'uk': 'Від завантаження документа до підсумкового AI-розбору — всього 3 кроки',
+        'de': 'Vom Dokumenten-Upload bis zur finalen KI-Analyse — nur 3 Schritte'
+    },
+
+    'how_step1_title': {
+        'ru': 'Загрузите документ',
+        'en': 'Upload document',
+        'uk': 'Завантажте документ',
+        'de': 'Dokument hochladen'
+    },
+
+    'how_step1_text': {
+        'ru': 'PDF, фото анализа или медсправку — любой формат принимается системой',
+        'en': 'PDF, test photo or medical certificate — any format is accepted',
+        'uk': 'PDF, фото аналізу або медичну довідку — будь-який формат приймається',
+        'de': 'PDF, Testfoto oder medizinisches Zertifikat — jedes Format wird akzeptiert'
+    },
+
+    'how_step2_title': {
+        'ru': 'Консилиум AI работает',
+        'en': 'AI consortium works',
+        'uk': 'Консиліум AI працює',
+        'de': 'KI-Konsortium arbeitet'
+    },
+
+    'how_step2_text': {
+        'ru': 'Несколько AI-моделей анализируют документ и сверяют выводы',
+        'en': 'Multiple AI models analyze the document and compare conclusions',
+        'uk': 'Декілька AI-моделей аналізують документ та звіряють висновки',
+        'de': 'Mehrere KI-Modelle analysieren das Dokument und vergleichen Schlussfolgerungen'
+    },
+
+    'how_step3_title': {
+        'ru': 'Получите результат',
+        'en': 'Get the result',
+        'uk': 'Отримайте результат',
+        'de': 'Ergebnis erhalten'
+    },
+
+    'how_step3_text': {
+        'ru': 'Единое итоговое заключение с объяснениями терминов простым языком',
+        'en': 'Single consolidated conclusion with terms explained in simple language',
+        'uk': 'Єдиний підсумковий висновок з поясненнями термінів простою мовою',
+        'de': 'Einheitliche konsolidierte Schlussfolgerung mit Begriffen in einfacher Sprache erklärt'
+    },
+
+    'features_title': {
+        'ru': 'Что ещё умеет PulseBook',
+        'en': 'What else PulseBook can do',
+        'uk': 'Що ще вміє PulseBook',
+        'de': 'Was PulseBook noch kann'
+    },
+
+    'features_subtitle': {
+        'ru': 'PulseBook помогает хранить историю, анализировать документы и получать ответы AI 24/7',
+        'en': 'PulseBook helps store history, analyze documents and get AI answers 24/7',
+        'uk': 'PulseBook допомагає зберігати історію, аналізувати документи та отримувати відповіді AI 24/7',
+        'de': 'PulseBook hilft, Verlauf zu speichern, Dokumente zu analysieren und KI-Antworten 24/7 zu erhalten'
+    },
+
     # ============================================
     # 📊 МЕНЮ НАВИГАЦИИ
     # ============================================
@@ -292,123 +372,123 @@ TRANSLATIONS = {
         'de': 'Information'
     },
     
-    # ============================================
-    # ✨ СЕКЦИЯ ВОЗМОЖНОСТЕЙ
-    # ============================================
-    'section_features': {
-        'ru': 'Что вы можете делать',
-        'en': 'What you can do',
-        'uk': 'Що ви можете робити',
-        'de': 'Was Sie tun können'
-    },
-    'features_subtitle': {
-        'ru': 'Мощные AI-инструменты для управления вашим здоровьем',
-        'en': 'Powerful AI tools for managing your health',
-        'uk': 'Потужні AI-інструменти для управління вашим здоров\'ям',
-        'de': 'Leistungsstarke KI-Tools zur Verwaltung Ihrer Gesundheit'
-    },
+    # === БЛОК ВОЗМОЖНОСТИ (обновленные тексты от GPT) ===
+
+    # Карточка 1: Анализ документов
     'feature_upload_title': {
         'ru': 'Анализ документов',
         'en': 'Document Analysis',
         'uk': 'Аналіз документів',
         'de': 'Dokumentenanalyse'
     },
+
     'feature_upload_text': {
-        'ru': 'Загружайте анализы, снимки, заключения врачей в форматах PDF, DOCX, изображения. AI автоматически извлечет все важные данные.',
-        'en': 'Upload tests, images, doctor reports in PDF, DOCX, image formats. AI automatically extracts all important data.',
-        'uk': 'Завантажуйте аналізи, знімки, висновки лікарів у форматах PDF, DOCX, зображення. AI автоматично витягне всі важливі дані.',
-        'de': 'Laden Sie Tests, Bilder, Arztberichte in PDF-, DOCX-, Bildformaten hoch. KI extrahiert automatisch alle wichtigen Daten.'
+        'ru': 'Загружайте анализы, снимки или заключения врачей — AI извлекает из них всю важную информацию.',
+        'en': 'Upload tests, images or doctor reports — AI extracts all important information.',
+        'uk': 'Завантажуйте аналізи, знімки або висновки лікарів — AI витягує всю важливу інформацію.',
+        'de': 'Laden Sie Tests, Bilder oder Arztberichte hoch — KI extrahiert alle wichtigen Informationen.'
     },
+
     'feature_upload_list1': {
-        'ru': 'Результаты анализов крови, мочи',
-        'en': 'Blood and urine test results',
-        'uk': 'Результати аналізів крові, сечі',
-        'de': 'Blut- und Urintestergebnisse'
+        'ru': 'Читать PDF, фото, выписки, изображения',
+        'en': 'Read PDF, photos, reports, images',
+        'uk': 'Читати PDF, фото, виписки, зображення',
+        'de': 'PDF, Fotos, Berichte, Bilder lesen'
     },
+
     'feature_upload_list2': {
-        'ru': 'Рентген, МРТ, УЗИ снимки',
-        'en': 'X-ray, MRI, ultrasound images',
-        'uk': 'Рентген, МРТ, УЗД знімки',
-        'de': 'Röntgen-, MRT-, Ultraschallbilder'
+        'ru': 'Выделять ключевые показатели (кровь, моча и т.д.)',
+        'en': 'Highlight key indicators (blood, urine, etc.)',
+        'uk': 'Виділяти ключові показники (кров, сеча тощо)',
+        'de': 'Wichtige Indikatoren hervorheben (Blut, Urin usw.)'
     },
+
     'feature_upload_list3': {
-        'ru': 'Выписки и заключения врачей',
-        'en': 'Medical reports and doctor conclusions',
-        'uk': 'Виписки та висновки лікарів',
-        'de': 'Arztberichte und Schlussfolgerungen'
+        'ru': 'Анализировать снимки (рентген, МРТ, УЗИ)',
+        'en': 'Analyze images (X-ray, MRI, ultrasound)',
+        'uk': 'Аналізувати знімки (рентген, МРТ, УЗД)',
+        'de': 'Bilder analysieren (Röntgen, MRT, Ultraschall)'
     },
+
     'feature_upload_list4': {
-        'ru': 'Подробный анализ документов',
-        'en': 'Detailed document analysis',
-        'uk': 'Детальний аналіз документів',
-        'de': 'Detaillierte Dokumentenanalyse'
+        'ru': 'Формировать понятное объяснение результата',
+        'en': 'Generate clear explanation of results',
+        'uk': 'Формувати зрозуміле пояснення результату',
+        'de': 'Klare Erklärung der Ergebnisse generieren'
     },
-    'feature_ai_title': {
-        'ru': 'ИИ-консультант',
-        'en': 'AI Consultant',
-        'uk': 'AI-консультант',
-        'de': 'KI-Berater'
-    },
+
+    # Карточка 2: AI-консультант 24/7
     'feature_ai_title_247': {
         'ru': 'AI-консультант 24/7',
         'en': 'AI Consultant 24/7',
         'uk': 'AI-консультант 24/7',
         'de': 'KI-Berater 24/7'
     },
+
     'feature_ai_text': {
-        'ru': 'Задавайте вопросы о вашем здоровье и получайте ответы на основе ваших документов. ИИ анализирует вашу историю.',
-        'en': 'Ask questions about your health and get answers based on your documents. AI analyzes your history.',
-        'uk': 'Ставте питання про ваше здоров\'я та отримуйте відповіді на основі ваших документів. ШІ аналізує вашу історію.',
-        'de': 'Stellen Sie Fragen zu Ihrer Gesundheit und erhalten Sie Antworten basierend auf Ihren Dokumenten. KI analysiert Ihre Geschichte.'
+        'ru': 'Задавайте вопросы о здоровье — AI отвечает, учитывая вашу медицинскую историю.',
+        'en': 'Ask health questions — AI answers considering your medical history.',
+        'uk': 'Ставте питання про здоров\'я — AI відповідає, враховуючи вашу медичну історію.',
+        'de': 'Stellen Sie Gesundheitsfragen — KI antwortet unter Berücksichtigung Ihrer Krankengeschichte.'
     },
+
     'feature_ai_list1': {
-        'ru': 'Мгновенные ответы на вопросы',
-        'en': 'Instant answers to questions',
-        'uk': 'Миттєві відповіді на питання',
-        'de': 'Sofortige Antworten auf Fragen'
+        'ru': 'Учитывает вашу историю при формировании ответа',
+        'en': 'Considers your history when forming answers',
+        'uk': 'Враховує вашу історію при формуванні відповіді',
+        'de': 'Berücksichtigt Ihre Geschichte bei der Antwortbildung'
     },
+
     'feature_ai_list2': {
-        'ru': 'Персональный анализ на основе ваших данных',
-        'en': 'Personalized analysis based on your data',
-        'uk': 'Персональний аналіз на основі ваших даних',
-        'de': 'Personalisierte Analyse basierend auf Ihren Daten'
+        'ru': 'Даёт персональный контекстный ответ',
+        'en': 'Provides personalized contextual answers',
+        'uk': 'Дає персональну контекстну відповідь',
+        'de': 'Bietet personalisierte kontextbezogene Antworten'
     },
+
     'feature_ai_list3': {
-        'ru': 'Понятные объяснения терминов',
-        'en': 'Clear explanations of terms',
-        'uk': 'Зрозумілі пояснення термінів',
-        'de': 'Klare Erklärungen von Begriffen'
+        'ru': 'Поясняет медицинские термины простым языком',
+        'en': 'Explains medical terms in simple language',
+        'uk': 'Пояснює медичні терміни простою мовою',
+        'de': 'Erklärt medizinische Begriffe in einfacher Sprache'
     },
+
+    # Карточка 3: Медицинская карта
     'feature_history_title': {
         'ru': 'Медицинская карта',
         'en': 'Medical Record',
         'uk': 'Медична карта',
-        'de': 'Krankenakte'
+        'de': 'Medizinische Akte'
     },
+
     'feature_history_text': {
-        'ru': 'Вся ваша медицинская история в одном месте, доступна в любое время. Отслеживайте динамику показателей.',
-        'en': 'All your medical history in one place, accessible anytime. Track your health metrics dynamics.',
-        'uk': 'Вся ваша медична історія в одному місці, доступна в будь-який час. Відстежуйте динаміку показників.',
-        'de': 'Ihre gesamte Krankengeschichte an einem Ort, jederzeit zugänglich. Verfolgen Sie die Dynamik Ihrer Gesundheitskennzahlen.'
+        'ru': 'Вся ваша медистория всегда под рукой — документы не теряются и автоматически превращаются в краткие записи.',
+        'en': 'Your entire medical history always at hand — documents never get lost and are automatically converted to brief notes.',
+        'uk': 'Вся ваша медісторія завжди під рукою — документи не губляться та автоматично перетворюються на короткі записи.',
+        'de': 'Ihre gesamte Krankengeschichte immer zur Hand — Dokumente gehen nie verloren und werden automatisch in Kurznotizen umgewandelt.'
     },
+
     'feature_history_list1': {
-        'ru': 'Хронология всех документов',
-        'en': 'Timeline of all documents',
-        'uk': 'Хронологія всіх документів',
-        'de': 'Zeitleiste aller Dokumente'
+        'ru': 'Автоматические краткие выдержки под каждым документом',
+        'en': 'Automatic brief summaries under each document',
+        'uk': 'Автоматичні короткі витяги під кожним документом',
+        'de': 'Automatische Kurzzusammenfassungen unter jedem Dokument'
     },
+
     'feature_history_list2': {
-        'ru': 'Все загруженные данные используются ИИ для ответов',
-        'en': 'All uploaded data is used by AI for answers',
-        'uk': 'Всі завантажені дані використовуються ШІ для відповідей',
-        'de': 'Alle hochgeladenen Daten werden von der KI für Antworten verwendet'
+        'ru': 'Возможность скачивать файлы в любой момент',
+        'en': 'Download files anytime',
+        'uk': 'Можливість завантажувати файли в будь-який момент',
+        'de': 'Dateien jederzeit herunterladen'
     },
+
     'feature_history_list3': {
-        'ru': 'Чем больше PulseBook знает о вас, тем точнее рекомендации',
-        'en': 'The more PulseBook knows about you, the more accurate the recommendations',
-        'uk': 'Чим більше PulseBook знає про вас, тим точніші рекомендації',
-        'de': 'Je mehr PulseBook über Sie weiß, desto genauer sind die Empfehlungen'
+        'ru': 'AI использует ваши данные для точных рекомендаций',
+        'en': 'AI uses your data for accurate recommendations',
+        'uk': 'AI використовує ваші дані для точних рекомендацій',
+        'de': 'KI verwendet Ihre Daten für genaue Empfehlungen'
     },
+   
     'menu_faq': {
         'ru': 'FAQ',
         'en': 'FAQ',
@@ -485,18 +565,6 @@ TRANSLATIONS = {
         'en': 'Join thousands of users who are already managing their health with AI',
         'uk': 'Приєднуйтесь до тисяч користувачів, які вже керують своїм здоров\'ям за допомогою AI',
         'de': 'Schließen Sie sich Tausenden von Benutzern an, die ihre Gesundheit bereits mit KI verwalten'
-    },
-    'cta_button': {
-        'ru': 'Начать бесплатно 🚀',
-        'en': 'Start for free 🚀',
-        'uk': 'Почати безкоштовно 🚀',
-        'de': 'Kostenlos starten 🚀'
-    },
-    'cta_note': {
-        'ru': 'Регистрация занимает всего 30 секунд • Не требуется кредитная карта',
-        'en': 'Registration takes only 30 seconds • No credit card required',
-        'uk': 'Реєстрація займає всього 30 секунд • Не потрібна кредитна картка',
-        'de': 'Registrierung dauert nur 30 Sekunden • Keine Kreditkarte erforderlich'
     },
     
     # ============================================
@@ -2032,91 +2100,6 @@ TRANSLATIONS = {
     'en': 'Other',
     'uk': 'Інше',
     'de': 'Andere'
-},
-# === HERO СЕКЦИЯ (улучшенные тексты) ===
-'hero_main_title_part1': {
-    'ru': 'Медицинская помощь',
-    'en': 'Medical assistance',
-    'uk': 'Медична допомога',
-    'de': 'Medizinische Hilfe'
-},
-
-'hero_main_title_highlight': {
-    'ru': 'на основе ИИ',
-    'en': 'powered by AI',
-    'uk': 'на основі ШІ',
-    'de': 'mit KI-Unterstützung'
-},
-
-'hero_main_title_part2': {
-    'ru': 'доступная каждому',
-    'en': 'accessible to everyone',
-    'uk': 'доступна кожному',
-    'de': 'für jeden zugänglich'
-},
-
-'hero_description': {
-    'ru': 'Храните медицинские документы в одном месте. Получайте мгновенный анализ и консультации от ИИ-ассистента. Контролируйте своё здоровье с помощью современных технологий.',
-    'en': 'Store medical documents in one place. Get instant analysis and consultations from AI assistant. Take control of your health with modern technology.',
-    'uk': 'Зберігайте медичні документи в одному місці. Отримуйте миттєвий аналіз та консультації від ШІ-асистента. Контролюйте своє здоров\'я за допомогою сучасних технологій.',
-    'de': 'Speichern Sie medizinische Dokumente an einem Ort. Erhalten Sie sofortige Analysen und Beratungen vom KI-Assistenten. Kontrollieren Sie Ihre Gesundheit mit moderner Technologie.'
-},
-
-# === КАК ЭТО РАБОТАЕТ ===
-'how_it_works_title': {
-    'ru': 'Три шага до результата',
-    'en': 'Three steps to results',
-    'uk': 'Три кроки до результату',
-    'de': 'Drei Schritte zum Ergebnis'
-},
-
-'how_it_works_subtitle': {
-    'ru': 'Простой процесс для получения медицинской информации',
-    'en': 'Simple process to get medical information',
-    'uk': 'Простий процес для отримання медичної інформації',
-    'de': 'Einfacher Prozess für medizinische Informationen'
-},
-
-'step1_title': {
-    'ru': 'Загрузка документов',
-    'en': 'Upload documents',
-    'uk': 'Завантаження документів',
-    'de': 'Dokumente hochladen'
-},
-
-'step1_text': {
-    'ru': 'Загрузите анализы, снимки или заключения врачей. Поддерживаются все популярные форматы файлов.',
-    'en': 'Upload tests, images or medical reports. All popular file formats are supported.',
-    'uk': 'Завантажте аналізи, знімки або висновки лікарів. Підтримуються всі популярні формати файлів.',
-    'de': 'Laden Sie Tests, Bilder oder Arztberichte hoch. Alle gängigen Dateiformate werden unterstützt.'
-},
-
-'step2_title': {
-    'ru': 'Автоматический анализ',
-    'en': 'Automatic analysis',
-    'uk': 'Автоматичний аналіз',
-    'de': 'Automatische Analyse'
-},
-
-'step2_text': {
-    'ru': 'ИИ обрабатывает документы и формирует структурированный медицинский профиль за секунды.',
-    'en': 'AI processes documents and creates a structured medical profile in seconds.',
-    'uk': 'ШІ обробляє документи та формує структурований медичний профіль за секунди.',
-    'de': 'KI verarbeitet Dokumente und erstellt in Sekunden ein strukturiertes Gesundheitsprofil.'
-},
-
-'step3_title': {
-    'ru': 'Персональные рекомендации',
-    'en': 'Personalized recommendations',
-    'uk': 'Персональні рекомендації',
-    'de': 'Personalisierte Empfehlungen'
-},
-
-'step3_text': {
-    'ru': 'Задавайте вопросы ИИ-ассистенту и получайте понятные объяснения в любое время.',
-    'en': 'Ask questions to AI assistant and get clear explanations anytime.',
-    'uk': 'Ставте питання ШІ-асистенту та отримуйте зрозумілі пояснення в будь-який час.',
-    'de': 'Stellen Sie dem KI-Assistenten Fragen und erhalten Sie jederzeit verständliche Erklärungen.'
 },
 
 # === ОТЗЫВЫ ===

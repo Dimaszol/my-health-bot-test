@@ -20,10 +20,21 @@
                 </p>
                 
                 <div class="hero-buttons">
-                    <a href="/login" class="btn btn-large">
-                        🚀 {{ t('btn_try_free', lang) }}
-                    </a>
-                    <a href="/faq" class="btn btn-outline btn-large">
+                    <div style="display: inline-flex; flex-direction: column; gap: 0.5rem;">
+                        <a href="/login" class="btn btn-large" style="display: inline-flex; align-items: center; gap: 8px;">
+                            <svg width="18" height="18" viewBox="0 0 18 18">
+                                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                                <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+                                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+                            </svg>
+                            {{ t('btn_try_free', lang) }}
+                        </a>
+                        <p style="font-size: 0.85rem; color: #6c757d; margin: 0; text-align: center;">
+                            {{ t('btn_google_subtitle', lang) }}
+                        </p>
+                    </div>
+                    <a href="#features" class="btn btn-outline btn-large" style="display: flex; align-items: center; justify-content: center;">
                         {{ t('btn_learn_more', lang) }}
                     </a>
                 </div>
@@ -252,6 +263,113 @@
                     </circle>
                 </svg>
             </div>
+        </div>        
+    </div>
+    <div class="text-center mb-4">
+            <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">
+                {{ t('ai_consortium_title', lang) }}
+            </h2>
+            <p style="font-size: 1.0rem; color: var(--text-secondary); max-width: 900px; margin: 0 auto;">
+                {{ t('ai_consortium_subtitle', lang) }}
+            </p>
+        </div>
+</section>
+
+<!-- 🔍 КАК ЭТО РАБОТАЕТ -->
+<section id="how-it-works" style="margin: 4rem 0;">
+    <div class="container">
+        <div class="text-center" style="margin-bottom: 3rem;">
+            <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem;">
+                {{ t('how_it_works_title', lang) }}
+            </h2>
+            <p style="font-size: 1.1rem; color: var(--text-secondary); max-width: 700px; margin: 0 auto;">
+                {{ t('how_it_works_subtitle', lang) }}
+            </p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+            <!-- Шаг 1: Загрузка -->
+            <div class="card" style="text-align: center; padding: 2.5rem 2rem; position: relative; border: 2px solid #e8f4f2;">
+                <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 1.5rem;">
+                    <!-- Цифра на фоне -->
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #00C9A7 0%, #00E5C8 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; opacity: 0.1; font-size: 3rem; font-weight: 900; color: #00C9A7;">
+                        1
+                    </div>
+                    <!-- Иконка поверх -->
+                    <div style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#00C9A7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                            <polyline points="13 2 13 9 20 9"></polyline>
+                            <path d="M12 18v-6"></path>
+                            <path d="M9 15h6"></path>
+                        </svg>
+                    </div>
+                    <!-- Цифра в углу -->
+                    <div style="position: absolute; top: -10px; right: -10px; width: 32px; height: 32px; background: #00C9A7; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 12px rgba(0, 201, 167, 0.3);">
+                        1
+                    </div>
+                </div>
+                <h3 style="font-size: 1.4rem; margin-bottom: 1rem; color: var(--text-primary); font-weight: 700;">
+                    {{ t('how_step1_title', lang) }}
+                </h3>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.95rem;">
+                    {{ t('how_step1_text', lang) }}
+                </p>
+            </div>
+            
+            <!-- Шаг 2: Консилиум AI -->
+            <div class="card" style="text-align: center; padding: 2.5rem 2rem; position: relative; border: 2px solid #e8f4f2;">
+                <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 1.5rem;">
+                    <!-- Цифра на фоне -->
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #00C9A7 0%, #00E5C8 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; opacity: 0.1; font-size: 3rem; font-weight: 900; color: #00C9A7;">
+                        2
+                    </div>
+                    <!-- Иконка поверх -->
+                    <div style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#00C9A7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </div>
+                    <!-- Цифра в углу -->
+                    <div style="position: absolute; top: -10px; right: -10px; width: 32px; height: 32px; background: #00C9A7; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 12px rgba(0, 201, 167, 0.3);">
+                        2
+                    </div>
+                </div>
+                <h3 style="font-size: 1.4rem; margin-bottom: 1rem; color: var(--text-primary); font-weight: 700;">
+                    {{ t('how_step2_title', lang) }}
+                </h3>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.95rem;">
+                    {{ t('how_step2_text', lang) }}
+                </p>
+            </div>
+            
+            <!-- Шаг 3: Результат -->
+            <div class="card" style="text-align: center; padding: 2.5rem 2rem; position: relative; border: 2px solid #e8f4f2;">
+                <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 1.5rem;">
+                    <!-- Цифра на фоне -->
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #00C9A7 0%, #00E5C8 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; opacity: 0.1; font-size: 3rem; font-weight: 900; color: #00C9A7;">
+                        3
+                    </div>
+                    <!-- Иконка поверх -->
+                    <div style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#00C9A7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+                    <!-- Цифра в углу -->
+                    <div style="position: absolute; top: -10px; right: -10px; width: 32px; height: 32px; background: #00C9A7; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 12px rgba(0, 201, 167, 0.3);">
+                        3
+                    </div>
+                </div>
+                <h3 style="font-size: 1.4rem; margin-bottom: 1rem; color: var(--text-primary); font-weight: 700;">
+                    {{ t('how_step3_title', lang) }}
+                </h3>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.95rem;">
+                    {{ t('how_step3_text', lang) }}
+                </p>
+            </div>
         </div>
     </div>
 </section>
@@ -259,17 +377,17 @@
 <!-- ✨ ВОЗМОЖНОСТИ -->
 <section id="features" style="margin: 5rem 0;">
     <div class="container">
-        <div class="text-center mb-4">
-            <h2 style="font-size: 1.7rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-primary);">
-                {{ t('ai_consortium_title', lang) }}
+        <div class="text-center" style="margin-bottom: 3rem;">
+            <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem;">
+                {{ t('features_title', lang) }}
             </h2>
-            <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 900px; margin: 0 auto;">
-                {{ t('ai_consortium_subtitle', lang) }}
+            <p style="font-size: 1.1rem; color: var(--text-secondary); max-width: 700px; margin: 0 auto;">
+                {{ t('features_subtitle', lang) }}
             </p>
         </div>
         
         <div class="card-grid">
-            <!-- Карточка 1: Загрузка документов -->
+            <!-- Карточка 1: Анализ документов -->
             <div class="card">
                 <div class="card-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -280,10 +398,10 @@
                     </svg>
                 </div>
                 <h3>{{ t('feature_upload_title', lang) }}</h3>
-                <p style="color: var(--text-secondary); line-height: 1.7;">
+                <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 1rem;">
                     {{ t('feature_upload_text', lang) }}
-                </p>
-                <ul style="margin-top: 1rem; color: var(--text-secondary);">
+                </p>                
+                <ul style="margin-top: 0.5rem; color: var(--text-secondary); line-height: 1.8;">
                     <li>✓ {{ t('feature_upload_list1', lang) }}</li>
                     <li>✓ {{ t('feature_upload_list2', lang) }}</li>
                     <li>✓ {{ t('feature_upload_list3', lang) }}</li>
@@ -291,7 +409,7 @@
                 </ul>
             </div>
             
-            <!-- Карточка 2: AI-консультант -->
+            <!-- Карточка 2: AI-консультант 24/7 -->
             <div class="card">
                 <div class="card-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -302,17 +420,17 @@
                     </svg>
                 </div>
                 <h3>{{ t('feature_ai_title_247', lang) }}</h3>
-                <p style="color: var(--text-secondary); line-height: 1.7;">
+                <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 1rem;">
                     {{ t('feature_ai_text', lang) }}
-                </p>
-                <ul style="margin-top: 1rem; color: var(--text-secondary);">
+                </p>                
+                <ul style="margin-top: 0.5rem; color: var(--text-secondary); line-height: 1.8;">
                     <li>✓ {{ t('feature_ai_list1', lang) }}</li>
                     <li>✓ {{ t('feature_ai_list2', lang) }}</li>
                     <li>✓ {{ t('feature_ai_list3', lang) }}</li>
                 </ul>
             </div>
             
-            <!-- Карточка 3: История здоровья -->
+            <!-- Карточка 3: Медицинская карта -->
             <div class="card">
                 <div class="card-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -320,10 +438,10 @@
                     </svg>
                 </div>
                 <h3>{{ t('feature_history_title', lang) }}</h3>
-                <p style="color: var(--text-secondary); line-height: 1.7;">
+                <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 1rem;">
                     {{ t('feature_history_text', lang) }}
-                </p>
-                <ul style="margin-top: 1rem; color: var(--text-secondary);">
+                </p>                
+                <ul style="margin-top: 0.5rem; color: var(--text-secondary); line-height: 1.8;">
                     <li>✓ {{ t('feature_history_list1', lang) }}</li>
                     <li>✓ {{ t('feature_history_list2', lang) }}</li>
                     <li>✓ {{ t('feature_history_list3', lang) }}</li>
@@ -392,12 +510,17 @@
             {{ t('cta_description', lang) }}
         </p>
         
-        <a href="/login" class="btn btn-large glow">
-            {{ t('cta_button', lang) }}
+        <a href="/login" class="btn btn-large" style="display: inline-flex; align-items: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 18 18">
+                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+            </svg>
+            {{ t('btn_try_free', lang) }}
         </a>
-        
-        <p style="margin-top: 1rem; color: var(--text-light); font-size: 0.9rem;">
-            {{ t('cta_note', lang) }}
+        <p style="font-size: 0.85rem; color: #6c757d; margin: 0; text-align: center;">
+            {{ t('btn_google_subtitle', lang) }}
         </p>
     </div>
 </section>
