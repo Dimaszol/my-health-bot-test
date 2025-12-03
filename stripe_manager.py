@@ -109,7 +109,7 @@ class StripeManager:
             await execute_query("""
                 INSERT INTO transactions 
                 (user_id, stripe_session_id, package_id, amount_usd, package_type, status, payment_method, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             """, (
                 user_id,
                 session_id, 
@@ -158,7 +158,7 @@ class StripeManager:
             # Проверяем дубликаты
             existing_transaction = await fetch_one("""
                 SELECT id FROM transactions 
-                WHERE stripe_session_id = ?
+                WHERE stripe_session_id = $1
                 AND status = 'completed'
             """, (session_id,))
             
@@ -180,14 +180,14 @@ class StripeManager:
                 
                 # ✅ ИСПРАВЛЕНИЕ: Сначала удаляем старую подписку
                 await execute_query("""
-                    DELETE FROM user_subscriptions WHERE user_id = ?
+                    DELETE FROM user_subscriptions WHERE user_id = $1
                 """, (user_id,))
 
                 # Затем вставляем новую
                 await execute_query("""
                     INSERT INTO user_subscriptions 
                     (user_id, stripe_subscription_id, package_id, status, created_at, cancelled_at)
-                    VALUES (?, ?, ?, 'active', ?, ?)
+                    VALUES ($1, $2, $3, 'active', $4, $5)
                 """, (user_id, subscription_id, package_id, datetime.now(), None))
                 
                 # Выдаем лимиты
@@ -222,10 +222,10 @@ class StripeManager:
             await execute_query("""
                 UPDATE transactions SET 
                     status = 'completed',
-                    completed_at = ?,
-                    documents_granted = ?,
-                    queries_granted = ?
-                WHERE stripe_session_id = ?
+                    completed_at = $1,
+                    documents_granted = $2,
+                    queries_granted = $3
+                WHERE stripe_session_id = $4
             """, (
                 datetime.now(),
                 package_info['documents'],
@@ -258,7 +258,7 @@ class StripeManager:
             await execute_query("""
                 UPDATE transactions SET 
                     status = 'failed'
-                WHERE stripe_session_id = ?
+                WHERE stripe_session_id = $1
             """, (session_id,))
             
             logger.warning(f"Неуспешный платеж")
@@ -267,12 +267,12 @@ class StripeManager:
         except Exception as e:
             logger.error(f"Ошибка обработки неуспешного платежа")
             return False
-    
+
     @staticmethod
     async def cancel_user_subscription(user_id: int) -> Tuple[bool, str]:
         """Отменяет активную подписку пользователя"""
         return await SubscriptionManager.cancel_stripe_subscription(user_id)
-    
+
     @staticmethod
     async def get_user_payment_history(user_id: int, limit: int = 10) -> list:
         """Получает историю платежей пользователя"""
@@ -282,9 +282,9 @@ class StripeManager:
             transactions = await fetch_all("""
                 SELECT package_type, amount_usd, status, created_at, completed_at
                 FROM transactions 
-                WHERE user_id = ? AND status != 'pending'
+                WHERE user_id = $1 AND status != 'pending'
                 ORDER BY created_at DESC 
-                LIMIT ?
+                LIMIT $2
             """, (user_id, limit))
             
             return [
@@ -406,7 +406,7 @@ class StripeManager:
             await execute_query("""
                 INSERT INTO transactions 
                 (user_id, stripe_session_id, package_id, amount_usd, package_type, status, payment_method, promo_code, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             """, (
                 user_id,
                 session_id, 
@@ -418,11 +418,11 @@ class StripeManager:
                 promo_code,      # Сохраняем использованный промокод
                 datetime.now()
             ))
-           
+        
             
         except Exception as e:
             logger.error(f"Ошибка сохранения промо-сессии в БД")
-    
+
     @staticmethod
     async def get_promo_usage_stats(promo_code: str) -> Dict[str, Any]:
         """
@@ -435,14 +435,14 @@ class StripeManager:
             # Общее количество использований
             total_uses_result = await fetch_one("""
                 SELECT COUNT(*) as total FROM transactions 
-                WHERE promo_code = ?
+                WHERE promo_code = $1
             """, (promo_code,))
             
             # Успешные платежи
             successful_result = await fetch_one("""
                 SELECT COUNT(*) as successful, COALESCE(SUM(amount_usd), 0) as revenue
                 FROM transactions 
-                WHERE promo_code = ? AND status = 'completed'
+                WHERE promo_code = $1 AND status = 'completed'
             """, (promo_code,))
             
             return {
