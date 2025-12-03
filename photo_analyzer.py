@@ -170,7 +170,7 @@ async def handle_photo_question(message: types.Message, bot):
         await spend_gpt4o_limit(user_id, message, bot)
         # ✅ ВАЖНО: Сохраняем ответ бота в историю чата
         from db_postgresql import save_message
-        await save_message(user_id, "assistant", f"Анализ изображения: {analysis_result[:500]}...")
+        await save_message(user_id, "assistant", f"Image analysis: {analysis_result[:500]}...")
         
     except Exception as e:
         logger.error(f"Ошибка при анализе фото")

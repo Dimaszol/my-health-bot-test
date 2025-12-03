@@ -527,6 +527,35 @@ class SubscriptionManager:
             await SubscriptionManager._reset_to_zero(user_id)
     
     @staticmethod
+    async def handle_subscription_renewal(customer_id: str, subscription_id: str) -> bool:
+        """
+        Обрабатывает webhook от Stripe при автопродлении подписки
+        """
+        try:
+            # Находим user_id по stripe_subscription_id
+            result = await fetch_one("""
+                SELECT user_id FROM user_subscriptions 
+                WHERE stripe_subscription_id = $1 
+                ORDER BY created_at DESC LIMIT 1
+            """, (subscription_id,))
+            
+            if not result:
+                logger.error(f"❌ User not found for subscription {subscription_id}")
+                return False
+            
+            user_id = result[0]
+            
+            # Вызываем существующую логику автопродления
+            await SubscriptionManager._auto_renew_subscription(user_id)
+            
+            logger.info(f"✅ Subscription auto-renewed for user {user_id}")
+            return True
+                
+        except Exception as e:
+            logger.error(f"❌ Subscription renewal error: {e}")
+            return False
+
+    @staticmethod
     async def _reset_to_zero(user_id: int):
         """✅ PostgreSQL синтаксис"""
         try:

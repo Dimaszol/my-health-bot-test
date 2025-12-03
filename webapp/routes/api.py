@@ -636,7 +636,7 @@ async def analyze_photo_with_question(
         # СОХРАНЯЕМ ОТВЕТ В ИСТОРИЮ
         # ==========================================
         
-        response_text = f"📸 Анализ изображения:\n\n{analysis_result}"
+        response_text = f"Image analysis:\n\n{analysis_result}"
         await save_message(user_id, 'assistant', response_text)
         
         # ==========================================

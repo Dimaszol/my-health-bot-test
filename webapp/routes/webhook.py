@@ -46,7 +46,30 @@ async def stripe_webhook(request: Request):
             else:
                 logger.error(f"❌ Ошибка обработки: {message}")
                 return JSONResponse(content={"status": "error", "message": message})
-        
+
+        elif event['type'] == 'invoice.payment_succeeded':
+            # Автопродление подписки
+            from subscription_manager import SubscriptionManager
+            
+            invoice = event['data']['object']
+            subscription_id = invoice.get('subscription')
+            customer_id = invoice.get('customer')
+            
+            if subscription_id and customer_id:
+                success = await SubscriptionManager.handle_subscription_renewal(
+                    customer_id=customer_id,
+                    subscription_id=subscription_id
+                )
+                
+                if success:
+                    logger.info(f"✅ Подписка продлена для customer {customer_id}")
+                    return JSONResponse(content={"status": "success"})
+                else:
+                    logger.error(f"❌ Ошибка продления подписки")
+                    return JSONResponse(content={"status": "error"})
+            
+            return JSONResponse(content={"status": "ignored", "reason": "No subscription_id"})
+
         # Игнорируем другие события
         return JSONResponse(content={"status": "ignored"})
         
