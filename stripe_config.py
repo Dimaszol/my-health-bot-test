@@ -22,12 +22,12 @@ class StripeConfig:
     
     # URL для возврата после оплаты
     # Telegram URLs
-    TELEGRAM_SUCCESS_URL = "https://t.me/PulsebookBot"
-    TELEGRAM_CANCEL_URL = "https://t.me/PulsebookBot"
+    TELEGRAM_SUCCESS_URL = os.getenv("TELEGRAM_SUCCESS_URL", "https://t.me/PulsebookBot")
+    TELEGRAM_CANCEL_URL = os.getenv("TELEGRAM_CANCEL_URL", "https://t.me/PulsebookBot")
 
-    # Web URLs (поменяй на свой домен когда будет)
-    WEB_SUCCESS_URL = "http://localhost:5000/dashboard/subscription?payment=success"
-    WEB_CANCEL_URL = "http://localhost:5000/dashboard/subscription?payment=cancelled"
+    # Web URLs - fallback на продакшн
+    WEB_SUCCESS_URL = os.getenv("WEB_SUCCESS_URL", "https://pulsebook.health/dashboard?payment_success=true")
+    WEB_CANCEL_URL = os.getenv("WEB_CANCEL_URL", "https://pulsebook.health/dashboard?payment_cancelled=true")
     
     # ✅ ИСПРАВЛЕННЫЕ пакеты подписок с правильной локализацией
     SUBSCRIPTION_PACKAGES = {

@@ -494,47 +494,65 @@ class SubscriptionManager:
     
     @staticmethod
     async def _auto_renew_subscription(user_id: int):
-        """✅ PostgreSQL синтаксис"""
+        """✅ ИСПРАВЛЕННАЯ версия - ищет в user_subscriptions и обновляет subscription_type"""
         try:
-            transaction = await fetch_one("""
-                SELECT package_id, documents_granted, queries_granted
-                FROM transactions 
-                WHERE user_id = $1 AND status = 'completed' AND package_id LIKE '%_sub'
-                ORDER BY completed_at DESC LIMIT 1
+            # Ищем активную подписку в user_subscriptions
+            subscription_data = await fetch_one("""
+                SELECT package_id, stripe_subscription_id
+                FROM user_subscriptions 
+                WHERE user_id = $1 AND status = 'active' AND stripe_subscription_id IS NOT NULL
+                ORDER BY created_at DESC LIMIT 1
             """, (user_id,))
             
-            if not transaction:
+            if not subscription_data:
                 logger.warning("Не найдена активная подписка")
                 await SubscriptionManager._reset_to_zero(user_id)
                 return
             
-            package_id, docs, queries = transaction
+            package_id, stripe_sub_id = subscription_data
+            
+            # Получаем параметры пакета из subscription_packages
+            package = await fetch_one("""
+                SELECT documents_included, gpt4o_queries_included
+                FROM subscription_packages 
+                WHERE id = $1 AND is_active = TRUE
+            """, (package_id,))
+            
+            if not package:
+                logger.error(f"Пакет {package_id} не найден или неактивен")
+                await SubscriptionManager._reset_to_zero(user_id)
+                return
+            
+            docs, queries = package
             new_expiry = datetime.now() + timedelta(days=30)
             
+            # ✅ ВАЖНО: Обновляем subscription_type на 'subscription'
             await execute_query("""
                 UPDATE user_limits SET 
                     documents_left = $1,
                     gpt4o_queries_left = $2,
                     subscription_expires_at = $3,
+                    subscription_type = 'subscription',
                     updated_at = CURRENT_TIMESTAMP
                 WHERE user_id = $4
             """, (docs, queries, new_expiry, user_id))
             
-            logger.info(f"Подписка автопродлена до {new_expiry.date()}")
+            logger.info(f"✅ Подписка автопродлена до {new_expiry.date()}")
             
         except Exception as e:
-            logger.error("Ошибка автопродления подписки")
+            logger.error(f"❌ Ошибка автопродления подписки: {e}")
             await SubscriptionManager._reset_to_zero(user_id)
     
     @staticmethod
     async def handle_subscription_renewal(customer_id: str, subscription_id: str) -> bool:
         """
         Обрабатывает webhook от Stripe при автопродлении подписки
+        ✅ С защитой от дублирования первого invoice
         """
         try:
-            # Находим user_id по stripe_subscription_id
+            # Находим user_id и дату создания подписки
             result = await fetch_one("""
-                SELECT user_id FROM user_subscriptions 
+                SELECT user_id, created_at FROM user_subscriptions 
                 WHERE stripe_subscription_id = $1 
                 ORDER BY created_at DESC LIMIT 1
             """, (subscription_id,))
@@ -543,7 +561,18 @@ class SubscriptionManager:
                 logger.error(f"❌ User not found for subscription {subscription_id}")
                 return False
             
-            user_id = result[0]
+            user_id, created_at = result
+            
+            # ✅ ЗАЩИТА ОТ ДУБЛИРОВАНИЯ: Игнорируем первый invoice
+            from datetime import datetime, timedelta
+            if isinstance(created_at, str):
+                created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+            
+            # Если подписка создана менее 5 минут назад - это первый invoice, игнорируем
+            time_since_creation = datetime.now() - created_at
+            if time_since_creation < timedelta(minutes=5):
+                logger.info(f"⏭️ Ignoring first invoice for new subscription (created {time_since_creation.seconds}s ago)")
+                return True  # Возвращаем success, но не продлеваем
             
             # Вызываем существующую логику автопродления
             await SubscriptionManager._auto_renew_subscription(user_id)

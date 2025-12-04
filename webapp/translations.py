@@ -566,7 +566,42 @@ TRANSLATIONS = {
         'uk': 'Приєднуйтесь до тисяч користувачів, які вже керують своїм здоров\'ям за допомогою AI',
         'de': 'Schließen Sie sich Tausenden von Benutzern an, die ihre Gesundheit bereits mit KI verwalten'
     },
-    
+    'payment_success_heading': {
+        'ru': 'Оплата прошла успешно!',
+        'en': 'Payment Successful!',
+        'uk': 'Оплата пройшла успішно!',
+        'de': 'Zahlung erfolgreich!'
+    },
+    'payment_success_message': {
+        'ru': 'Спасибо за покупку! Ваши лимиты обновлены.',
+        'en': 'Thank you for your purchase! Your limits have been updated.',
+        'uk': 'Дякуємо за покупку! Ваші ліміти оновлено.',
+        'de': 'Vielen Dank für Ihren Kauf! Ihre Limits wurden aktualisiert.'
+    },
+    'go_to_dashboard': {
+        'ru': 'Перейти в кабинет',
+        'en': 'Go to Dashboard',
+        'uk': 'Перейти в кабінет',
+        'de': 'Zum Dashboard'
+    },
+    'auto_redirect_message': {
+        'ru': 'Автоматический переход через',
+        'en': 'Auto redirect in',
+        'uk': 'Автоматичний перехід через',
+        'de': 'Automatische Weiterleitung in'
+    },
+    'subscription_documents': {
+        'ru': 'Документы',
+        'en': 'Documents',
+        'uk': 'Документи',
+        'de': 'Dokumente'
+    },
+    'subscription_queries': {
+        'ru': 'Детальные консультации',
+        'en': 'Detailed consultations',
+        'uk': 'Детальні консультації',
+        'de': 'Detaillierte Beratungen'
+    },
     # ============================================
     # 🏥 DASHBOARD (Личный кабинет)
     # ============================================

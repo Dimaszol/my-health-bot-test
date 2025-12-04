@@ -757,6 +757,7 @@ async def upload_document(
                 )
             
             safe_log_warning(
+                "Файл прошёл проверку MIME-type",
                 user_id=user_id,
                 file_extension=file_ext,
                 detected_mime=detected_mime
@@ -1132,7 +1133,73 @@ async def delete_account_route(
                 'error': t('account_deletion_error', lang) if 'lang' in locals() else 'Error deleting account'
             }
         )
+
+# ==========================================
+# Оплата подписки
+# ==========================================
+
+@router.get("/payment/details")
+async def get_payment_details(
+    request: Request,
+    session_id: str,
+    user_id: int = Depends(get_current_user)
+):
+    """
+    Получает детали успешного платежа для модального окна
+    """
+    try:
+        import stripe
+        from stripe_config import StripeConfig
+        from webapp.translations import t
+        from db_postgresql import get_user_language
         
+        # Получаем данные сессии из Stripe
+        session = stripe.checkout.Session.retrieve(session_id)
+        
+        # Проверяем что сессия принадлежит этому пользователю
+        if int(session.metadata.get('user_id', 0)) != user_id:
+            return JSONResponse(
+                status_code=403,
+                content={'success': False, 'error': 'Forbidden'}
+            )
+        
+        # Получаем язык пользователя
+        lang = await get_user_language(user_id)
+        
+        # Получаем данные о пакете
+        package_id = session.metadata.get('package_id', 'unknown')
+        package_info = StripeConfig.get_package_info(package_id)
+        
+        if package_info:
+            package_name = t(package_info.get('user_friendly_name_key', 'package_basic_name'), lang)
+            documents = package_info.get('documents', 0)
+            queries = package_info.get('gpt4o_queries', 0)
+        else:
+            package_name = "Package"
+            documents = 0
+            queries = 0
+        
+        return {
+            'success': True,
+            'package_name': package_name,
+            'documents': documents,
+            'queries': queries,
+            'is_subscription': session.mode == 'subscription'
+        }
+        
+    except stripe.StripeError as e:
+        safe_log_error("Stripe error getting payment details", error=e, user_id=user_id, session_id=session_id)
+        return JSONResponse(
+            status_code=400,
+            content={'success': False, 'error': 'Invalid session'}
+        )
+    except Exception as e:
+        safe_log_error("Error getting payment details", error=e, user_id=user_id, session_id=session_id)
+        return JSONResponse(
+            status_code=500,
+            content={'success': False, 'error': 'Internal error'}
+        )
+
 # ==========================================
 # 🗑️ СКАЧИВАНИЕ ДОКУМЕНТА
 # ==========================================

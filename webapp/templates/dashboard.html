@@ -170,6 +170,75 @@
     </div>
 </div>
 
+<!-- 🎉 МОДАЛЬНОЕ ОКНО УСПЕШНОЙ ОПЛАТЫ -->
+<div id="paymentSuccessModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 20px; padding: 40px; max-width: 500px; width: 90%; text-align: center; animation: slideIn 0.4s ease-out;">
+        
+        <!-- Иконка успеха -->
+        <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; animation: scaleIn 0.5s ease-out;">
+            <svg viewBox="0 0 52 52" style="width: 50px; height: 50px; stroke: white; stroke-width: 4; fill: none;">
+                <path d="M14 27l10 10 20-20" stroke-dasharray="100" stroke-dashoffset="100" style="animation: drawCheck 0.6s ease-out 0.3s forwards;"/>
+            </svg>
+        </div>
+        
+        <!-- Заголовок -->
+        <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 10px; color: var(--text-primary);">
+            🎉 {{ t('payment_success_heading', lang) }}
+        </h2>
+        <p style="color: var(--text-secondary); margin-bottom: 30px;">
+            {{ t('payment_success_message', lang) }}
+        </p>
+        
+        <!-- Детали пакета -->
+        <div style="background: linear-gradient(135deg, #e0f7f4 0%, #e8f4f8 100%); border-radius: 15px; padding: 20px; margin-bottom: 25px; text-align: left;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                    Pro
+                </span>
+                <span id="packageName" style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);"></span>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 15px; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="width: 24px; height: 24px;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                </div>
+                <div style="flex: 1;">
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">{{ t('subscription_documents', lang) }}</p>
+                </div>
+                <div>
+                    <strong id="documentsCount" style="font-size: 1.3rem; color: var(--primary-color);">0</strong>
+                </div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 15px; padding: 12px 0;">
+                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="width: 24px; height: 24px;">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <div style="flex: 1;">
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">{{ t('subscription_queries', lang) }}</p>
+                </div>
+                <div>
+                    <strong id="queriesCount" style="font-size: 1.3rem; color: var(--primary-color);">0</strong>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Кнопка -->
+        <button onclick="closePaymentModal()" class="btn" style="width: 100%; padding: 12px; font-size: 1rem;">
+            🏠 {{ t('go_to_dashboard', lang) }}
+        </button>
+        
+        <p style="color: var(--text-light); margin-top: 15px; font-size: 0.85rem;">
+            {{ t('auto_redirect_message', lang) }} <span id="countdown">5</span>s
+        </p>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_styles %}
@@ -202,5 +271,90 @@
             transform: translateY(0);
         }
     }
+    
+    /* Анимации для модального окна оплаты */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes scaleIn {
+        from {
+            transform: scale(0);
+        }
+        to {
+            transform: scale(1);
+        }
+    }
+    
+    @keyframes drawCheck {
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
 </style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Проверка успешной оплаты при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentSuccess = urlParams.get('payment_success');
+    const sessionId = urlParams.get('session_id');
+    
+    if (paymentSuccess === 'true' && sessionId) {
+        showPaymentSuccessModal(sessionId);
+    }
+});
+
+async function showPaymentSuccessModal(sessionId) {
+    try {
+        // Получаем данные о покупке через API
+        const response = await fetch(`/api/payment/details?session_id=${sessionId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            // Заполняем модальное окно данными
+            document.getElementById('packageName').textContent = data.package_name;
+            document.getElementById('documentsCount').textContent = data.documents;
+            document.getElementById('queriesCount').textContent = data.queries;
+            
+            // Показываем модальное окно
+            const modal = document.getElementById('paymentSuccessModal');
+            modal.style.display = 'flex';
+            
+            // Автоматическое закрытие через 5 секунд
+            let seconds = 5;
+            const countdownElement = document.getElementById('countdown');
+            
+            const timer = setInterval(() => {
+                seconds--;
+                countdownElement.textContent = seconds;
+                
+                if (seconds <= 0) {
+                    clearInterval(timer);
+                    closePaymentModal();
+                }
+            }, 1000);
+        }
+    } catch (error) {
+        console.error('Error loading payment details:', error);
+    }
+}
+
+function closePaymentModal() {
+    document.getElementById('paymentSuccessModal').style.display = 'none';
+    // Убираем параметры из URL
+    window.history.replaceState({}, document.title, '/dashboard');
+    // Перезагружаем страницу чтобы обновить статистику
+    window.location.reload();
+}
+</script>
 {% endblock %}
