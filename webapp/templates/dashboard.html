@@ -121,7 +121,29 @@
             </div>
         </a>
         {% endif %}
-        
+        <!-- Установить PWA (только для мобильных и если не установлено) -->
+        <div id="pwa-install-card" class="card" style="display: none; padding: 1.5rem; text-decoration: none; cursor: pointer; transition: all 0.3s;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="width: 40px; height: 40px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#00C9A7" stroke-width="2" style="width: 100%; height: 100%;">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <polyline points="7.5 4.21 12 6.81 16.5 4.21"/>
+                        <polyline points="7.5 19.79 7.5 14.6 3 12"/>
+                        <polyline points="21 12 16.5 14.6 16.5 19.79"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                </div>
+                <div>
+                    <h4 style="color: var(--text-primary); margin-bottom: 0.3rem; font-size: 1.1rem;">
+                        {{ t('action_install_app', lang) }}
+                    </h4>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
+                        {{ t('action_install_app_desc', lang) }}
+                    </p>
+                </div>
+            </div>
+        </div>
         <!-- Заполнить анкету -->
         <a href="/dashboard/profile" class="card" style="padding: 1.5rem; text-decoration: none; cursor: pointer; transition: all 0.3s;">
             <div style="display: flex; align-items: start; justify-content: space-between; gap: 1rem;">
@@ -161,13 +183,13 @@
 </div>
 
 <!-- 💡 ПОДСКАЗКИ -->
-<div style="margin-top: 3rem;">
-    <div class="alert alert-warning">
-        <h4 style="margin-bottom: 0.5rem;">💡 {{ t('tip_of_day', lang) }}</h4>
-        <p>
-            {{ t('tip_upload_docs', lang) }}
-        </p>
-    </div>
+<div class="tip-box" style="background: linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%); border-left: 4px solid #f59e0b; border-radius: 12px; padding: 1.5rem; margin-top: 3rem;">
+    <h4 style="margin-bottom: 0.5rem; color: #92400e; display: flex; align-items: center; gap: 0.5rem;">
+        💡 {{ t('tip_of_day', lang) }}
+    </h4>
+    <p style="margin: 0; color: #78350f; line-height: 1.6;">
+        {{ random_tip }}
+    </p>
 </div>
 
 <!-- 🎉 МОДАЛЬНОЕ ОКНО УСПЕШНОЙ ОПЛАТЫ -->
@@ -183,54 +205,21 @@
         
         <!-- Заголовок -->
         <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 10px; color: var(--text-primary);">
-            🎉 {{ t('payment_success_heading', lang) }}
+            {{ t('payment_success_heading', lang) }}
         </h2>
-        <p style="color: var(--text-secondary); margin-bottom: 30px;">
+        <p style="color: var(--text-secondary); margin-bottom: 30px; font-size: 1.1rem;">
             {{ t('payment_success_message', lang) }}
         </p>
         
-        <!-- Детали пакета -->
-        <div style="background: linear-gradient(135deg, #e0f7f4 0%, #e8f4f8 100%); border-radius: 15px; padding: 20px; margin-bottom: 25px; text-align: left;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                    Pro
-                </span>
-                <span id="packageName" style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);"></span>
-            </div>
-            
-            <div style="display: flex; align-items: center; gap: 15px; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
-                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="width: 24px; height: 24px;">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                </div>
-                <div style="flex: 1;">
-                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">{{ t('subscription_documents', lang) }}</p>
-                </div>
-                <div>
-                    <strong id="documentsCount" style="font-size: 1.3rem; color: var(--primary-color);">0</strong>
-                </div>
-            </div>
-            
-            <div style="display: flex; align-items: center; gap: 15px; padding: 12px 0;">
-                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="width: 24px; height: 24px;">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                    </svg>
-                </div>
-                <div style="flex: 1;">
-                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">{{ t('subscription_queries', lang) }}</p>
-                </div>
-                <div>
-                    <strong id="queriesCount" style="font-size: 1.3rem; color: var(--primary-color);">0</strong>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Кнопка -->
-        <button onclick="closePaymentModal()" class="btn" style="width: 100%; padding: 12px; font-size: 1rem;">
-            🏠 {{ t('go_to_dashboard', lang) }}
+        <!-- Кнопка с SVG иконкой -->
+        <button onclick="closePaymentModal()" class="btn" style="width: 100%; padding: 12px; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            {{ t('go_to_dashboard', lang) }}
         </button>
         
         <p style="color: var(--text-light); margin-top: 15px; font-size: 0.85rem;">
@@ -310,43 +299,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const sessionId = urlParams.get('session_id');
     
     if (paymentSuccess === 'true' && sessionId) {
-        showPaymentSuccessModal(sessionId);
+        showPaymentSuccessModal();
     }
 });
 
-async function showPaymentSuccessModal(sessionId) {
-    try {
-        // Получаем данные о покупке через API
-        const response = await fetch(`/api/payment/details?session_id=${sessionId}`);
-        const data = await response.json();
+function showPaymentSuccessModal() {
+    // Показываем модальное окно
+    const modal = document.getElementById('paymentSuccessModal');
+    modal.style.display = 'flex';
+    
+    // Автоматическое закрытие через 5 секунд
+    let seconds = 5;
+    const countdownElement = document.getElementById('countdown');
+    
+    const timer = setInterval(() => {
+        seconds--;
+        countdownElement.textContent = seconds;
         
-        if (data.success) {
-            // Заполняем модальное окно данными
-            document.getElementById('packageName').textContent = data.package_name;
-            document.getElementById('documentsCount').textContent = data.documents;
-            document.getElementById('queriesCount').textContent = data.queries;
-            
-            // Показываем модальное окно
-            const modal = document.getElementById('paymentSuccessModal');
-            modal.style.display = 'flex';
-            
-            // Автоматическое закрытие через 5 секунд
-            let seconds = 5;
-            const countdownElement = document.getElementById('countdown');
-            
-            const timer = setInterval(() => {
-                seconds--;
-                countdownElement.textContent = seconds;
-                
-                if (seconds <= 0) {
-                    clearInterval(timer);
-                    closePaymentModal();
-                }
-            }, 1000);
+        if (seconds <= 0) {
+            clearInterval(timer);
+            closePaymentModal();
         }
-    } catch (error) {
-        console.error('Error loading payment details:', error);
-    }
+    }, 1000);
 }
 
 function closePaymentModal() {
@@ -356,5 +330,90 @@ function closePaymentModal() {
     // Перезагружаем страницу чтобы обновить статистику
     window.location.reload();
 }
+
+// PWA Installation Logic
+(function() {
+    const pwaCard = document.getElementById('pwa-install-card');
+    let deferredPrompt;
+    
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isInstalled = window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone === true;
+    
+    if (!isMobile || isInstalled) {
+        return;
+    }
+    
+    if (isIOS) {
+        pwaCard.style.display = 'block';
+        pwaCard.style.cursor = 'pointer';
+        pwaCard.onclick = function() {
+            showIOSInstallInstructions();
+        };
+    } else {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            pwaCard.style.display = 'block';
+            
+            pwaCard.onclick = async function() {
+                if (!deferredPrompt) return;
+                
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                
+                if (outcome === 'accepted') {
+                    pwaCard.style.display = 'none';
+                }
+                
+                deferredPrompt = null;
+            };
+        });
+    }
+    
+    function showIOSInstallInstructions() {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        `;
+        
+        modal.innerHTML = `
+            <div style="
+                background: white;
+                border-radius: 20px;
+                padding: 30px;
+                max-width: 400px;
+                width: 100%;
+                text-align: center;
+            ">
+                <h3 style="margin-bottom: 20px; color: #333;">📱 {{ t('install_app_ios_title', lang) }}</h3>
+                <ol style="text-align: left; line-height: 2; color: #666;">
+                    <li>{{ t('install_app_ios_step1', lang) }}</li>
+                    <li>{{ t('install_app_ios_step2', lang) }}</li>
+                    <li>{{ t('install_app_ios_step3', lang) }}</li>
+                </ol>
+                <button onclick="this.closest('div').parentElement.remove()" class="btn" style="margin-top: 20px; width: 100%;">
+                    {{ t('understood', lang) }}
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.remove();
+        };
+    }
+})();
 </script>
 {% endblock %}

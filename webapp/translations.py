@@ -590,21 +590,52 @@ TRANSLATIONS = {
         'uk': 'Автоматичний перехід через',
         'de': 'Automatische Weiterleitung in'
     },
-    'subscription_documents': {
-        'ru': 'Документы',
-        'en': 'Documents',
-        'uk': 'Документи',
-        'de': 'Dokumente'
+    
+    # 🏥 DASHBOARD (Приложение)
+    'action_install_app': {
+        'ru': 'Установить приложение',
+        'en': 'Install App',
+        'uk': 'Встановити додаток',
+        'de': 'App installieren'
     },
-    'subscription_queries': {
-        'ru': 'Детальные консультации',
-        'en': 'Detailed consultations',
-        'uk': 'Детальні консультації',
-        'de': 'Detaillierte Beratungen'
+    'action_install_app_desc': {
+        'ru': 'Быстрый доступ с главного экрана',
+        'en': 'Quick access from home screen',
+        'uk': 'Швидкий доступ з головного екрану',
+        'de': 'Schnellzugriff vom Startbildschirm'
     },
-    # ============================================
+    'install_app_ios_title': {
+        'ru': 'Как установить приложение на iPhone',
+        'en': 'How to install app on iPhone',
+        'uk': 'Як встановити додаток на iPhone',
+        'de': 'App auf iPhone installieren'
+    },
+    'install_app_ios_step1': {
+        'ru': 'Нажмите кнопку "Поделиться" (квадрат со стрелкой) внизу экрана',
+        'en': 'Tap the "Share" button (square with arrow) at the bottom',
+        'uk': 'Натисніть кнопку "Поділитися" (квадрат зі стрілкою) внизу екрану',
+        'de': 'Tippen Sie auf die Schaltfläche "Teilen" (Quadrat mit Pfeil) unten'
+    },
+    'install_app_ios_step2': {
+        'ru': 'Прокрутите вниз и выберите "На экран «Домой»"',
+        'en': 'Scroll down and select "Add to Home Screen"',
+        'uk': 'Прокрутіть вниз і виберіть "На екран «Домівка»"',
+        'de': 'Scrollen Sie nach unten und wählen Sie "Zum Home-Bildschirm"'
+    },
+    'install_app_ios_step3': {
+        'ru': 'Нажмите "Добавить" в правом верхнем углу',
+        'en': 'Tap "Add" in the top right corner',
+        'uk': 'Натисніть "Додати" у правому верхньому куті',
+        'de': 'Tippen Sie oben rechts auf "Hinzufügen"'
+    },
+    'understood': {
+        'ru': 'Понятно',
+        'en': 'Got it',
+        'uk': 'Зрозуміло',
+        'de': 'Verstanden'
+    },
+
     # 🏥 DASHBOARD (Личный кабинет)
-    # ============================================
     'dashboard_welcome': {
         'ru': 'Добро пожаловать',
         'en': 'Welcome',
@@ -790,13 +821,7 @@ TRANSLATIONS = {
         'en': 'Tip of the day',
         'uk': 'Порада дня',
         'de': 'Tipp des Tages'
-    },
-    'tip_upload_docs': {
-        'ru': 'Загрузите все ваши медицинские документы, чтобы AI мог давать более точные рекомендации на основе полной картины вашего здоровья.',
-        'en': 'Upload all your medical documents so AI can provide more accurate recommendations based on your complete health picture.',
-        'uk': 'Завантажте всі ваші медичні документи, щоб AI міг давати більш точні рекомендації на основі повної картини вашого здоров\'я.',
-        'de': 'Laden Sie alle Ihre medizinischen Dokumente hoch, damit die KI genauere Empfehlungen basierend auf Ihrem vollständigen Gesundheitsbild geben kann.'
-    },
+    },    
     'start_ai_conversation': {
         'ru': 'Начните общение с AI',
         'en': 'Start AI conversation',

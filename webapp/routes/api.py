@@ -26,7 +26,8 @@ from webapp.config import Config
 from db_postgresql import (
     save_message,  
     get_user_language,    
-    get_user_profile,     
+    get_user_profile,
+    execute_query,     
     get_db_connection,    
     release_db_connection
 )
@@ -1612,6 +1613,29 @@ async def create_checkout_session(
         lang = await get_user_language(user_id)
         user_profile = await get_user_profile(user_id)
         user_name = user_profile.get('name', 'User')
+        
+        # Проверяем и отменяем старую подписку если есть
+        from subscription_manager import SubscriptionManager
+        from datetime import datetime
+        import stripe
+
+        stripe_check = await SubscriptionManager.check_real_stripe_subscription(user_id)
+
+        if stripe_check["has_active"]:
+            # Есть активная подписка - отменяем её
+            stripe_subscription_id = stripe_check["subscription_id"]
+            try:
+                stripe.Subscription.delete(stripe_subscription_id)
+                
+                # Обновляем БД
+                await execute_query("""
+                    UPDATE user_subscriptions 
+                    SET status = 'cancelled', cancelled_at = $1
+                    WHERE stripe_subscription_id = $2 AND user_id = $3
+                """, (datetime.now(), stripe_subscription_id, user_id))
+                
+            except Exception as cancel_error:
+                safe_log_error("Ошибка отмены старой подписки", error=cancel_error, user_id=user_id)
         
         # Создаём Checkout Session через StripeManager
         result = await StripeManager.create_checkout_session(

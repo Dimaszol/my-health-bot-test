@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import markdown
 from webapp.utils.logger import safe_log_error, safe_log_info
+from webapp.tips import get_random_tip
 
 # Создаём templates и регистрируем фильтр markdown
 templates = Jinja2Templates(directory="webapp/templates")
@@ -245,6 +246,10 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
     # Получаем язык пользователя
     lang = await get_user_language(user_id)
 
+    # Получаем случайный совет дня
+    from webapp.tips import get_random_tip
+    random_tip = get_random_tip(lang)
+
     # Получаем красивое название тарифа
     current_plan_name = get_plan_display_name(
         subscription_type=stats.get('subscription_type'),
@@ -260,7 +265,8 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
         'stats': stats,
         'show_telegram_connect': show_telegram_connect,
         'current_plan_name': current_plan_name,
-        'profile_completion': calculate_profile_completion(profile)
+        'profile_completion': calculate_profile_completion(profile),
+        'random_tip': random_tip  # ← ДОБАВЬ ЭТУ СТРОКУ
     })
     
     return templates.TemplateResponse('dashboard.html', context)
