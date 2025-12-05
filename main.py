@@ -1109,6 +1109,28 @@ async def handle_user_message(message: types.Message):
                     from registration import start_registration
                     await start_registration(user_id, message)
                     return
+            
+            # Если FREE - проверяем общий счетчик
+            if subscription_type == 'free':
+                try:
+                    from cumulative_counter import get_total_messages
+                    total_messages = await get_total_messages(user_id)
+                    
+                    # Если достигнут лимит в 30 сообщений - блокируем
+                    if total_messages >= 30:
+                        lang = await get_user_language(user_id)
+                        await message.answer(
+                            t('free_limit_reached_text', lang),
+                            parse_mode="HTML"
+                        )
+                        # Показываем кнопку перехода к подпискам
+                        await SubscriptionHandlers.show_subscription_upsell(
+                            message, user_id, reason="free_limit_reached"
+                        )
+                        return
+                except Exception:
+                    pass  # Если ошибка счетчика - пропускаем проверку
+
 
             # Получаем имя (для всех типов пользователей)
             name = await get_user_name(user_id)

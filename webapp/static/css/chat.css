@@ -882,3 +882,151 @@ html, body {
     touch-action: pan-y; /* Разрешаем только вертикальный скролл */
 }
 }
+
+/* ============================================
+🔒 МОДАЛЬНОЕ ОКНО: ЛИМИТ ИСЧЕРПАН
+============================================ */
+
+#limit-reached-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+#limit-reached-modal.show {
+    display: flex !important;
+}
+
+#limit-reached-modal .modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+}
+
+#limit-reached-modal .modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 2.5rem;
+    border-radius: 16px;
+    max-width: 450px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.3s ease;
+    z-index: 10001;
+}
+
+#limit-reached-modal .modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+#limit-reached-modal .modal-text {
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+    white-space: pre-line;
+}
+
+#limit-reached-modal .modal-buttons {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+#limit-reached-modal .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 0.875rem 1.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+#limit-reached-modal .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+#limit-reached-modal .btn-secondary {
+    background: #f5f5f5;
+    color: #666;
+    border: none;
+    padding: 0.875rem 1.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+#limit-reached-modal .btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+    #limit-reached-modal .modal-content {
+        padding: 2rem 1.5rem;
+        max-width: 90%;
+    }
+    
+    #limit-reached-modal .modal-title {
+        font-size: 1.25rem;
+    }
+    
+    #limit-reached-modal .modal-text {
+        font-size: 0.95rem;
+    }
+    
+    #limit-reached-modal .modal-buttons {
+        flex-direction: column;
+    }
+    
+    #limit-reached-modal .btn-primary,
+    #limit-reached-modal .btn-secondary {
+        width: 100%;
+        padding: 1rem;
+    }
+}

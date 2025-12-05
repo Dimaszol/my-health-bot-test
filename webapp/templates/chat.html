@@ -4,7 +4,7 @@
 
 {% block extra_styles %}
 <!-- 💬 СТИЛИ ЧАТА -->
-    <link rel="stylesheet" href="/static/css/chat.css?v=27">
+    <link rel="stylesheet" href="/static/css/chat.css?v=33">
 
 {% endblock %}
 
@@ -114,6 +114,23 @@
         <!-- Медицинский дисклеймер -->
         <div class="medical-disclaimer">
             {{ t('medical_disclaimer', lang) }}
+        </div>
+    </div>
+    <!-- ✅ МОДАЛЬНОЕ ОКНО: ЛИМИТ ИСЧЕРПАН -->
+    <div id="limit-reached-modal" style="display: none;">
+        <div class="modal-overlay">
+            <div class="modal-content">
+                <h3 class="modal-title">{{ t('free_limit_reached_title', lang) }}</h3>
+                <p class="modal-text">{{ t('free_limit_reached_text', lang) }}</p>
+                <div class="modal-buttons">
+                    <button onclick="window.location.href='/dashboard/subscription'" class="btn-primary">
+                        {{ t('view_plans_button', lang) }}
+                    </button>
+                    <button onclick="closeLimitModal()" class="btn-secondary">
+                        {{ t('close_button', lang) }}
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}
@@ -302,6 +319,27 @@ function showLimitModal(message) {
 }
 
 // ============================================
+// 🔒 МОДАЛЬНОЕ ОКНО: ЛИМИТ ИСЧЕРПАН
+// ============================================
+
+function showLimitReachedModal() {
+    const modal = document.getElementById('limit-reached-modal');
+    if (modal) {
+        modal.classList.add('show');
+        // Блокируем поле ввода
+        messageInput.disabled = true;
+        messageInput.placeholder = '{{ t("free_limit_reached_title", lang) }}';
+    }
+}
+
+function closeLimitModal() {
+    const modal = document.getElementById('limit-reached-modal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+// ============================================
 // 📷 ВЫБОР И ЗАГРУЗКА ФОТО
 // ============================================
 
@@ -486,6 +524,13 @@ async function sendTextMessage(message) {
         }
         
         const data = await response.json();
+
+        // Проверяем достижение лимита
+        if (data.limit_reached) {
+            showLimitReachedModal();
+            typingIndicator.style.display = 'none';
+            return;
+        }
 
         // Проверяем лимиты и обновляем индикатор
         if (data.had_limits === false && data.success) {

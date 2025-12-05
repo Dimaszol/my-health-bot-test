@@ -1746,6 +1746,32 @@ TRANSLATIONS = {
         'uk': 'Повідомлення надіслано',
         'de': 'Nachricht gesendet'
     },
+
+'free_limit_reached_title': {
+    'ru': 'Бесплатный лимит исчерпан',
+    'en': 'Free limit reached',
+    'uk': 'Безкоштовний ліміт вичерпано',
+    'de': 'Kostenloses Limit erreicht'
+},
+'free_limit_reached_text': {
+    'ru': 'Вы использовали доступные бесплатные возможности.\n\nС активным планом вы продолжите получать:\n✓ персональные рекомендации AI-ассистента\n✓ разборы медицинских документов\n✓ расширенные возможности чата',
+    'en': 'You have used all available free features.\n\nWith an active plan you will continue to receive:\n✓ personalized AI assistant recommendations\n✓ medical document analysis\n✓ advanced chat features',
+    'uk': 'Ви використали доступні безкоштовні можливості.\n\nЗ активним планом ви продовжите отримувати:\n✓ персональні рекомендації AI-асистента\n✓ розбір медичних документів\n✓ розширені можливості чату',
+    'de': 'Sie haben alle verfügbaren kostenlosen Funktionen genutzt.\n\nMit einem aktiven Plan erhalten Sie weiterhin:\n✓ personalisierte KI-Assistent-Empfehlungen\n✓ medizinische Dokumentenanalyse\n✓ erweiterte Chat-Funktionen'
+},
+'view_plans_button': {
+    'ru': 'Посмотреть тарифы',
+    'en': 'View plans',
+    'uk': 'Переглянути тарифи',
+    'de': 'Tarife ansehen'
+},
+'close_button': {
+    'ru': 'Закрыть',
+    'en': 'Close',
+    'uk': 'Закрити',
+    'de': 'Schließen'
+},
+
 # ============================================
 # 💳 СТРАНИЦА ПОДПИСОК
 # ============================================
@@ -1756,10 +1782,34 @@ TRANSLATIONS = {
     'de': 'Abonnement'
 },
 'pricing_title': {
-    'ru': 'Тарифные планы PulseBook',
-    'en': 'PulseBook Pricing Plans',
-    'uk': 'Тарифні плани PulseBook',
-    'de': 'PulseBook Preispläne'
+    'ru': 'Выберите план',
+    'en': 'Choose a plan',
+    'uk': 'Оберіть план',
+    'de': 'Wählen Sie einen Plan'
+},
+'lite_hint': {
+    'ru': 'Подходит для большинства пользователей',
+    'en': 'Suitable for most users',
+    'uk': 'Підходить для більшості користувачів',
+    'de': 'Geeignet für die meisten Benutzer'
+},
+'pro_hint': {
+    'ru': 'Для тех, кто регулярно следит за здоровьем',
+    'en': 'For those who regularly monitor their health',
+    'uk': 'Для тих, хто регулярно стежить за здоров\'ям',
+    'de': 'Für diejenigen, die ihre Gesundheit regelmäßig überwachen'
+},
+'security_title': {
+    'ru': 'Безопасная оплата и управление подпиской',
+    'en': 'Secure Payment and Subscription Management',
+    'uk': 'Безпечна оплата та керування підпискою',
+    'de': 'Sichere Zahlung und Abonnementverwaltung'
+},
+'security_text': {
+    'ru': 'PulseBook использует Stripe — международный платежный провайдер уровня PCI DSS Level 1. Мы не храним данные банковских карт. Подписку можно отменить в любой момент, авто-продление отключается одним нажатием.',
+    'en': 'PulseBook uses Stripe — an international payment provider with PCI DSS Level 1 certification. We do not store credit card data. You can cancel your subscription at any time, auto-renewal can be disabled with one click.',
+    'uk': 'PulseBook використовує Stripe — міжнародний платіжний провайдер рівня PCI DSS Level 1. Ми не зберігаємо дані банківських карт. Підписку можна скасувати в будь-який момент, авто-продовження вимикається одним натисканням.',
+    'de': 'PulseBook verwendet Stripe — einen internationalen Zahlungsanbieter mit PCI DSS Level 1-Zertifizierung. Wir speichern keine Kreditkartendaten. Sie können Ihr Abonnement jederzeit kündigen, die automatische Verlängerung kann mit einem Klick deaktiviert werden.'
 },
 'most_popular': {
     'ru': 'Самый популярный',

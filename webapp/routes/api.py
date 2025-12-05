@@ -191,6 +191,34 @@ async def chat_message(
             )
         
         # ==========================================
+        # ШАГ 1.5: ПРОВЕРКА БЕСПЛАТНОГО ЛИМИТА (30 сообщений)
+        # ==========================================
+                
+        # Получаем тип подписки
+        limits = await SubscriptionManager.get_user_limits(user_id)
+        subscription_type = limits.get('subscription_type', 'free')
+
+        # Если нет подписки - проверяем общий счетчик
+        if subscription_type == 'free':
+            try:
+                from cumulative_counter import get_total_messages
+                total_messages = await get_total_messages(user_id)
+                
+                # Если достигнут лимит в 30 сообщений - блокируем
+                if total_messages >= 30:
+                    lang = await get_user_language(user_id)
+                    return JSONResponse(
+                        status_code=403,
+                        content={
+                            'success': False,
+                            'error': t('free_limit_reached_text', lang),
+                            'limit_reached': True
+                        }
+                    )
+            except Exception:
+                pass  # Если ошибка счетчика - пропускаем проверку
+        
+        # ==========================================
         # ШАГ 2: СОХРАНЯЕМ СООБЩЕНИЕ
         # ==========================================
 
@@ -287,6 +315,15 @@ async def chat_message(
         
         # ✅ ПРОСТО AWAIT!
         await save_message(user_id, 'assistant', formatted_response)
+
+        # ==========================================
+        # 🎯 УВЕЛИЧИВАЕМ СЧЕТЧИК СООБЩЕНИЙ
+        # ==========================================
+        try:
+            from cumulative_counter import increment_and_get_total_messages
+            await increment_and_get_total_messages(user_id)
+        except Exception:
+            pass
 
         # ==========================================
         # ШАГ 9: ОБНОВЛЯЕМ СВОДКУ (каждые 7 сообщений)

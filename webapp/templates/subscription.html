@@ -11,12 +11,12 @@ footer {
 
 /* 💳 ПОЛНОЭКРАННАЯ СТРАНИЦА */
 body {
-    overflow: hidden;
+    overflow-y: auto; /* ✅ ВКЛЮЧАЕМ ПРОКРУТКУ */
 }
 
 main {
     min-height: calc(100vh - 80px);
-    padding: 2.5rem 0 !important;
+    padding: 2.5rem 0 3rem 0 !important;
     background: #f8fafb;
     overflow: visible;
     display: flex;
@@ -37,7 +37,7 @@ main {
     margin-bottom: 2.5rem;
 }
 
-.pricing-header h1 {
+.pricing-header h2 {
     font-size: 2rem;
     font-weight: 700;
     color: #1a202c;
@@ -55,10 +55,10 @@ main {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 2rem;
     margin-top: 2rem;
-    justify-content: center; /* ✅ Центрируем */
-    max-width: 1200px; /* ✅ Ограничиваем ширину */
-    margin-left: auto; /* ✅ Центрируем контейнер */
-    margin-right: auto; /* ✅ Центрируем контейнер */
+    justify-content: center;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* 🎴 КАРТОЧКА ТАРИФА */
@@ -244,11 +244,218 @@ main {
     box-shadow: none !important;
 }
 
-/* 📱 АДАПТИВНОСТЬ */
-@media (max-width: 992px) {
-    .plans-grid {
-        grid-template-columns: 1fr;
-    }
+/* 📝 ПОДСКАЗКИ К ТАРИФАМ */
+.plans-hints {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin: 40px 0;
+    flex-wrap: wrap;
+}
+
+.hint-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.hint-plan {
+    font-weight: 600;
+    color: #1a202c;
+}
+
+.hint-arrow {
+    color: #00C9A7;
+}
+
+.hint-text {
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+/* 🔒 БЛОК БЕЗОПАСНОСТИ */
+.security-info {
+    margin: 40px 0;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.security-info h3 {
+    margin-bottom: 15px;
+    color: #1a202c;
+    font-size: 1.3rem;
+}
+
+.security-info p {
+    color: #4a5568;
+    line-height: 1.6;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* 🚫 БЛОК ОТМЕНЫ ПОДПИСКИ */
+.cancel-subscription-block {
+    margin-top: 40px;
+    background: #fafafa;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+}
+
+.cancel-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.cancel-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.cancel-text {
+    flex: 1;
+}
+
+.cancel-text h3 {
+    margin: 0 0 0.3rem 0;
+    color: #4a5568;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.cancel-text p {
+    margin: 0;
+    color: #718096;
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+.cancel-button {
+    padding: 0.6rem 1.2rem;
+    background: white;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    color: #718096;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.cancel-button:hover {
+    background: #f7fafc;
+    border-color: #a0aec0;
+    color: #4a5568;
+}
+
+/* 💬 МОДАЛЬНОЕ ОКНО */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9998;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    max-width: 500px;
+    width: 90%;
+    padding: 2rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header h2 {
+    margin: 0 0 1rem 0;
+    color: #1a202c;
+    font-size: 1.5rem;
+}
+
+.modal-body {
+    margin-bottom: 1.5rem;
+}
+
+.modal-warning {
+    padding: 1rem;
+    background: #fff5f5;
+    border-left: 4px solid #fc8181;
+    border-radius: 4px;
+    color: #742a2a;
+    margin-bottom: 1rem;
+}
+
+.modal-info {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.modal-info li {
+    padding: 0.5rem 0;
+    color: #4a5568;
+    font-size: 0.9rem;
+}
+
+.modal-info li:before {
+    content: "• ";
+    color: #00C9A7;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.modal-button {
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.modal-button.cancel {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.modal-button.cancel:hover {
+    background: #cbd5e0;
+}
+
+.modal-button.confirm {
+    background: #c53030;
+    color: white;
+}
+
+.modal-button.confirm:hover {
+    background: #9b2c2c;
 }
 
 /* 💫 ЗАГРУЗКА */
@@ -282,184 +489,13 @@ main {
     to { transform: rotate(360deg); }
 }
 
-/* 🚫 БЛОК ОТМЕНЫ ПОДПИСКИ */
-.cancel-subscription-block {
-    margin-top: 1.5rem;
-    background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
-    border: 2px solid #feb2b2;
-    border-radius: 12px;
-    padding: 1.2rem 1.5rem;
-}
-
-.cancel-content {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.cancel-icon {
-    font-size: 2rem;
-    flex-shrink: 0;
-}
-
-.cancel-text {
-    flex: 1;
-}
-
-.cancel-text h3 {
-    font-size: 1.1rem;
-    color: #c53030;
-    margin: 0 0 0.3rem 0;
-}
-
-.cancel-text p {
-    font-size: 0.85rem;
-    color: #742a2a;
-    margin: 0;
-}
-
-.cancel-button {
-    padding: 0.7rem 1.5rem;
-    background: white;
-    color: #c53030;
-    border: 2px solid #c53030;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    white-space: nowrap;
-}
-
-.cancel-button:hover {
-    background: #c53030;
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(197, 48, 48, 0.3);
-}
-
-/* 💬 МОДАЛЬНОЕ ОКНО */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-}
-
-.modal-overlay.active {
-    display: flex;
-}
-
-.modal-content {
-    background: white;
-    border-radius: 16px;
-    max-width: 500px;
-    width: 90%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: modalSlideIn 0.3s ease;
-}
-
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+/* 📱 АДАПТИВНОСТЬ */
+@media (max-width: 992px) {
+    .plans-grid {
+        grid-template-columns: 1fr;
     }
 }
 
-.modal-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.modal-header h2 {
-    margin: 0;
-    color: #1a202c;
-    font-size: 1.3rem;
-}
-
-.modal-body {
-    padding: 1.5rem;
-}
-
-.modal-warning {
-    background: #fff5f5;
-    border-left: 4px solid #c53030;
-    padding: 0.8rem;
-    margin-bottom: 1rem;
-    border-radius: 4px;
-    color: #742a2a;
-    font-weight: 600;
-}
-
-.modal-info {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.modal-info li {
-    padding: 0.6rem 0;
-    color: #4a5568;
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-}
-
-.modal-info li:before {
-    content: "•";
-    color: #00C9A7;
-    font-weight: bold;
-}
-
-.modal-footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid #e2e8f0;
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-}
-
-.modal-button {
-    padding: 0.7rem 1.5rem;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: 2px solid transparent;
-}
-
-.modal-button.cancel {
-    background: #e2e8f0;
-    color: #4a5568;
-}
-
-.modal-button.cancel:hover {
-    background: #cbd5e0;
-}
-
-.modal-button.confirm {
-    background: #c53030;
-    color: white;
-}
-
-.modal-button.confirm:hover {
-    background: #9b2c2c;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(197, 48, 48, 0.3);
-}
-
-/* 📱 Адаптивность для блока отмены */
 @media (max-width: 768px) {
     .cancel-content {
         flex-direction: column;
@@ -470,6 +506,15 @@ main {
     .cancel-button {
         width: 100%;
     }
+
+    .plans-hints {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .hint-item {
+        justify-content: center;
+    }
 }
 </style>
 {% endblock %}
@@ -479,7 +524,7 @@ main {
 <div class="subscription-container">
     <!-- 📍 ЗАГОЛОВОК -->
     <div class="pricing-header">
-        <h1>{{ t('pricing_title', lang) }}</h1>        
+        <h2>{{ t('pricing_title', lang) }}</h2>        
     </div>
 
     <!-- 📦 КАРТОЧКИ ТАРИФОВ -->
@@ -561,8 +606,29 @@ main {
                 </button>
             {% endif %}
         </div>
-        {% endfor %}
+        {% endfor %}        
     </div>
+
+    <!-- 📝 ПОДСКАЗКИ К ТАРИФАМ -->
+    <div class="plans-hints">
+        <div class="hint-item">
+            <span class="hint-plan">Lite</span>
+            <span class="hint-arrow">→</span>
+            <span class="hint-text">{{ t('lite_hint', lang) }}</span>
+        </div>
+        <div class="hint-item">
+            <span class="hint-plan">Pro</span>
+            <span class="hint-arrow">→</span>
+            <span class="hint-text">{{ t('pro_hint', lang) }}</span>
+        </div>
+    </div>
+    
+    <!-- 🔒 БЛОК БЕЗОПАСНОСТИ -->
+    <div class="security-info">
+        <h3>{{ t('security_title', lang) }}</h3>
+        <p>{{ t('security_text', lang) }}</p>
+    </div>
+
     <!-- 🚫 БЛОК ОТМЕНЫ ПОДПИСКИ (показывается только если есть активная подписка) -->
     {% if has_subscription %}
     <div class="cancel-subscription-block">
@@ -604,7 +670,6 @@ main {
             </button>
         </div>
     </div>
-</div>
 </div>
 
 <!-- 💫 ЗАГРУЗКА -->

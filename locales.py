@@ -1,5 +1,6 @@
 translations = {
-    "ru": {   
+    "ru": {  
+        'free_limit_reached_text': 'Вы использовали доступные бесплатные возможности.\n\nС активным планом вы продолжите получать:\n✓ персональные рекомендации AI-ассистента\n✓ разборы медицинских документов\n✓ расширенные возможности чата', 
         "garmin_email_not_found_error": "❌ Ошибка: email не найден. Начните настройку заново.",
 "garmin_connection_success_auto": """✅ <b>Garmin подключен успешно!</b>
 
@@ -684,6 +685,7 @@ translations = {
     },
 
     "uk": {
+        'free_limit_reached_text': 'Ви використали доступні безкоштовні можливості.\n\nЗ активним планом ви продовжите отримувати:\n✓ персональні рекомендації AI-асистента\n✓ розбір медичних документів\n✓ розширені можливості чату',
         'bot_code_format_error': '❌ Невірний формат коду. Надішліть 6-значний код (тільки цифри).',
 'bot_code_not_found': '❌ Код не знайдено або закінчився.\n\nБудь ласка, створіть новий код на веб-сторінці.',
 'bot_code_already_used': '❌ Цей код вже було використано.\n\nБудь ласка, створіть новий код на веб-сторінці.',
@@ -1358,6 +1360,7 @@ translations = {
     "cancel_analysis": "❌ Скасувати"
 },
     "en": { 
+        'free_limit_reached_text': 'You have used all available free features.\n\nWith an active plan you will continue to receive:\n✓ personalized AI assistant recommendations\n✓ medical document analysis\n✓ advanced chat features',
         "garmin_email_not_found_error": "❌ Error: email not found. Start setup again.",
 "garmin_connection_success_auto": """✅ <b>Garmin connected successfully!</b>
 
@@ -2030,6 +2033,7 @@ All your data is synchronized!
 💬 Or simply ask me a question — I'm always ready to help based on your medical history!''',
 
 "de": {   
+    'free_limit_reached_text': 'Sie haben alle verfügbaren kostenlosen Funktionen genutzt.\n\nMit einem aktiven Plan erhalten Sie weiterhin:\n✓ personalisierte KI-Assistent-Empfehlungen\n✓ medizinische Dokumentenanalyse\n✓ erweiterte Chat-Funktionen',
     'bot_code_format_error': '❌ Ungültiges Code-Format. Senden Sie einen 6-stelligen Code (nur Zahlen).',
 'bot_code_not_found': '❌ Code nicht gefunden oder abgelaufen.\n\nBitte erstellen Sie einen neuen Code auf der Webseite.',
 'bot_code_already_used': '❌ Dieser Code wurde bereits verwendet.\n\nBitte erstellen Sie einen neuen Code auf der Webseite.',
