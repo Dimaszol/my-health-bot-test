@@ -1129,13 +1129,9 @@ async def handle_user_message(message: types.Message):
                     
                     # Если достигнут лимит в 30 сообщений - блокируем
                     if total_messages >= 30:
-                        await message.answer(
-                            t('free_limit_reached_text', lang),
-                            parse_mode="HTML"
-                        )
-                        # Показываем кнопку перехода к подпискам
+                        # Показываем сообщение с кнопкой перехода к подпискам
                         await SubscriptionHandlers.show_subscription_upsell(
-                            message, user_id, reason="free_limit_reached"
+                            message, user_id, reason="free_limit_reached_text"
                         )
                         return
                 except Exception:
