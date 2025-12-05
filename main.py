@@ -1110,6 +1110,17 @@ async def handle_user_message(message: types.Message):
                     await start_registration(user_id, message)
                     return
             
+            # ==========================================
+            # 🔒 ПОЛУЧАЕМ ТИП ПОДПИСКИ ПЕРЕД ПРОВЕРКОЙ
+            # ==========================================
+            from subscription_manager import SubscriptionManager
+            limits = await SubscriptionManager.get_user_limits(user_id)
+            subscription_type = limits.get('subscription_type', 'free')
+            
+            # ==========================================
+            # 🔒 ПРОВЕРКА БЕСПЛАТНОГО ЛИМИТА (30 сообщений)
+            # ==========================================
+            
             # Если FREE - проверяем общий счетчик
             if subscription_type == 'free':
                 try:
@@ -1118,7 +1129,6 @@ async def handle_user_message(message: types.Message):
                     
                     # Если достигнут лимит в 30 сообщений - блокируем
                     if total_messages >= 30:
-                        lang = await get_user_language(user_id)
                         await message.answer(
                             t('free_limit_reached_text', lang),
                             parse_mode="HTML"
@@ -1131,19 +1141,15 @@ async def handle_user_message(message: types.Message):
                 except Exception:
                     pass  # Если ошибка счетчика - пропускаем проверку
 
-
             # Получаем имя (для всех типов пользователей)
             name = await get_user_name(user_id)
             if not name:
                 name = "Пользователь"  # Fallback для веб-пользователей
-                
+                    
             user_input = message.text
             await save_message(user_id, "user", user_input)
             
-            from subscription_manager import SubscriptionManager
-            limits = await SubscriptionManager.get_user_limits(user_id)
             gpt4o_queries_left = limits.get('gpt4o_queries_left', 0)
-            subscription_type = limits.get('subscription_type', 'free')
             
             # Увеличиваем счетчик только если нет лимитов И нет подписки
             if gpt4o_queries_left == 0 and subscription_type != 'subscription':
