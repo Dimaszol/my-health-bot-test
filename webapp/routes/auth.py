@@ -96,12 +96,26 @@ async def find_or_create_web_user(google_id: str, email: str, name: str, session
             ON CONFLICT (user_id) DO NOTHING
         """, temp_user_id, name, google_id, email, session_language)
         
-        # Создаём лимиты
-        await conn.execute("""
-            INSERT INTO user_limits (user_id, documents_left, gpt4o_queries_left, subscription_type)
-            VALUES ($1, 2, 10, 'free')
-            ON CONFLICT (user_id) DO NOTHING
-        """, temp_user_id)
+        # Проверяем по email напрямую
+        existing_limits = await conn.fetchrow("""
+            SELECT user_id, documents_left, gpt4o_queries_left, subscription_type, subscription_expires_at
+            FROM user_limits
+            WHERE email = $1
+        """, email)
+
+        if existing_limits:
+            # Переносим старые лимиты + обновляем email
+            await conn.execute("""
+                UPDATE user_limits 
+                SET user_id = $1, email = $2, updated_at = NOW()
+                WHERE email = $2
+            """, temp_user_id, email)
+        else:
+            # Создаём новые лимиты с email
+            await conn.execute("""
+                INSERT INTO user_limits (user_id, email, documents_left, gpt4o_queries_left, subscription_type)
+                VALUES ($1, $2, 2, 10, 'free')
+            """, temp_user_id, email)
         
         return {
             'user_id': temp_user_id,

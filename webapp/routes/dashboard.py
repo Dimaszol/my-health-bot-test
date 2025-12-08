@@ -423,6 +423,20 @@ async def subscription_page(request: Request, user_id: int = Depends(get_current
     
     # Форматируем тарифы для шаблона
     formatted_packages = []
+    # ✅ ДОБАВЛЯЕМ БЕСПЛАТНЫЙ ТАРИФ только если нет активной подписки
+    if not has_active_subscription:
+        formatted_packages.append({
+            'id': 'free',
+            'name_key': 'plan_free',            
+            'note_key': 'free_plan_note',  # ← НОВОЕ
+            'price': '$0',
+            'price_cents': 0,
+            'type': 'free',
+            'documents': 2,
+            'gpt4o_queries': 10,
+            'features_keys': ['package_free_feature_1', 'package_free_feature_2', 'package_free_feature_3'],
+            'is_current': True  # Всегда текущий для бесплатных пользователей
+        })
     for package_id, package_info in packages.items():
         # ✅ ФИЛЬТР: Если нет подписки - пропускаем extra_pack
         if not has_active_subscription and package_id == 'extra_pack':
@@ -438,6 +452,19 @@ async def subscription_page(request: Request, user_id: int = Depends(get_current
             'features_keys': package_info['features_keys'],
             'is_current': package_id == current_package_id  # ✅ ИСПРАВЛЕНО
         })
+    
+    # ✅ ДОБАВЛЯЕМ description_key и note_key для всех пакетов
+    for package in formatted_packages:
+        if package['id'] == 'free':
+            # Уже добавлено выше
+            pass
+        elif package['id'] == 'basic_sub':            
+            package['note_key'] = 'lite_plan_note'
+        elif package['id'] == 'premium_sub':            
+            package['note_key'] = 'pro_plan_note'
+        elif package['id'] == 'extra_pack':
+            package['description_key'] = 'extra_plan_description'
+            package['note_key'] = ''  # Нет примечания для extra
 
     # Сортируем по цене
     formatted_packages.sort(key=lambda x: x['price_cents'])

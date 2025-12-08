@@ -1787,18 +1787,6 @@ TRANSLATIONS = {
     'uk': 'Оберіть план',
     'de': 'Wählen Sie einen Plan'
 },
-'lite_hint': {
-    'ru': 'Подходит для большинства пользователей',
-    'en': 'Suitable for most users',
-    'uk': 'Підходить для більшості користувачів',
-    'de': 'Geeignet für die meisten Benutzer'
-},
-'pro_hint': {
-    'ru': 'Для тех, кто регулярно следит за здоровьем',
-    'en': 'For those who regularly monitor their health',
-    'uk': 'Для тих, хто регулярно стежить за здоров\'ям',
-    'de': 'Für diejenigen, die ihre Gesundheit regelmäßig überwachen'
-},
 'security_title': {
     'ru': 'Безопасная оплата и управление подпиской',
     'en': 'Secure Payment and Subscription Management',
@@ -1854,10 +1842,10 @@ TRANSLATIONS = {
     'de': 'Aktueller Plan'
 },
 'ai_longterm_memory': {
-    'ru': 'Долгосрочная память ИИ',
-    'en': 'AI long-term memory',
-    'uk': 'Довгострокова пам\'ять ШІ',
-    'de': 'KI-Langzeitgedächtnis'
+    'ru': 'Расширенная память ИИ',
+    'en': 'Extended AI memory',
+    'uk': 'Розширена пам\'ять ШІ',
+    'de': 'Erweiterte KI-Speicher'
 },
 'conversation_summaries': {
     'ru': 'Сводки разговоров',
@@ -1888,6 +1876,49 @@ TRANSLATIONS = {
     'en': 'Valid for 30 days',
     'uk': 'Діє 30 днів',
     'de': 'Gültig für 30 Tage'
+},
+'free_plan_note': {
+    'ru': 'После использования лимитов загрузка новых документов будет недоступна. Чтобы продолжить — оформите Lite или Pro.',
+    'en': 'After using the limits, uploading new documents will be unavailable. To continue — get Lite or Pro.',
+    'uk': 'Після використання лімітів завантаження нових документів буде недоступне. Щоб продовжити — оформіть Lite або Pro.',
+    'de': 'Nach der Nutzung der Limits ist das Hochladen neuer Dokumente nicht verfügbar. Um fortzufahren — holen Sie sich Lite oder Pro.'
+},
+'lite_plan_note': {
+    'ru': 'Оптимальный выбор для большинства пользователей.',
+    'en': 'Optimal choice for most users.',
+    'uk': 'Оптимальний вибір для більшості користувачів.',
+    'de': 'Optimale Wahl für die meisten Benutzer.'
+},
+'pro_plan_note': {
+    'ru': 'Лучший вариант для пользователей, которые хотят максимум возможностей.',
+    'en': 'Best option for users who want maximum capabilities.',
+    'uk': 'Найкращий варіант для користувачів, які хочуть максимум можливостей.',
+    'de': 'Beste Option für Benutzer, die maximale Möglichkeiten wünschen.'
+},
+'package_free_feature_1': {
+    'ru': '2 медицинских документа',
+    'en': '2 medical documents',
+    'uk': '2 медичних документи',
+    'de': '2 medizinische Dokumente'
+},
+
+'package_free_feature_2': {
+    'ru': '10 детальных консультаций',
+    'en': '10 detailed consultations',
+    'uk': '10 детальних консультацій',
+    'de': '10 detaillierte Beratungen'
+},
+'package_free_feature_3': {
+    'ru': '20 базовых ответов',
+    'en': '20 basic responses',
+    'uk': '20 базових відповідей',
+    'de': '20 Basisantworten'
+},
+'free_plan_billing': {
+    'ru': 'Разовые лимиты при регистрации',
+    'en': 'One-time limits upon registration',
+    'uk': 'Разові ліміти при реєстрації',
+    'de': 'Einmalige Limits bei Registrierung'
 },
 'package_extra_name': {
     'ru': 'Дополнительный пакет',
@@ -1951,12 +1982,11 @@ TRANSLATIONS = {
     'uk': '400 детальних консультацій на місяць',
     'de': '400 detaillierte Beratungen pro Monat'
 },
-
 'package_premium_feature_3': {
-    'ru': 'Повышенный лимит на базовые ответы',
-    'en': 'Increased limit for basic responses',
-    'uk': 'Підвищений ліміт на базові відповіді',
-    'de': 'Erhöhtes Limit für Basisantworten'
+    'ru': 'Неограниченные базовые ответы',
+    'en': 'Unlimited basic responses',
+    'uk': 'Необмежені базові відповіді',
+    'de': 'Unbegrenzte Basisantworten'
 },
 'package_basic_name': {
     'ru': 'Lite',

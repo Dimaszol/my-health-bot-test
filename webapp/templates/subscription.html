@@ -122,7 +122,7 @@ main {
 
 /* 📋 ЗАГОЛОВОК ТАРИФА */
 .plan-header {
-    margin-bottom: 1.2rem;
+    margin-bottom: 0.8rem;
 }
 
 .plan-name {
@@ -140,7 +140,7 @@ main {
 }
 
 .plan-price {
-    margin: 0.8rem 0;
+    margin: 0.5rem 0;
 }
 
 .plan-price .amount {
@@ -159,10 +159,29 @@ main {
     color: #a0aec0;
 }
 
+.plan-description {
+    font-size: 0.9rem;
+    color: #4a5568;
+    margin: 0.5rem 0 0.8rem 0;  /* ← УМЕНЬШИЛИ отступы */
+    line-height: 1.5;
+}
+
+.plan-note {
+    background: #f7fafc;
+    border-left: 3px solid var(--primary-color);
+    padding: 0.6rem;
+    margin-top: 0rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    color: #4a5568;
+    border-radius: 4px;
+    font-style: italic;
+}
+
 /* ✅ СПИСОК ОСОБЕННОСТЕЙ */
 .plan-features {
     list-style: none;
-    margin: 1.2rem 0;
+    margin: 1.0rem 0;
     padding: 0;
     flex: 1;
 }
@@ -546,7 +565,7 @@ main {
             <div class="plan-header">
                 <div class="plan-name">
                     <span class="icon">
-                        {% if package.id == 'basic_sub' %}✨{% elif package.id == 'premium_sub' %}💎{% else %}📦{% endif %}
+                        {% if package.id == 'free' %}🆓{% elif package.id == 'basic_sub' %}✨{% elif package.id == 'premium_sub' %}💎{% else %}📦{% endif %}
                     </span>
                     {{ t(package.name_key, lang) }}
                 </div>
@@ -563,10 +582,16 @@ main {
                 <div class="plan-billing">
                     {% if package.type == 'subscription' %}
                         {{ t('billed_monthly', lang) }}
+                    {% elif package.id == 'free' %}
+                        {{ t('free_plan_billing', lang) }}
                     {% else %}
                         {{ t('one_time_payment', lang) }}
                     {% endif %}
-                </div>
+                </div>                
+            </div>
+            <!-- Описание тарифа -->
+            <div class="plan-description">
+                {{ t(package.description_key, lang) }}
             </div>
             
             <!-- Особенности -->
@@ -581,17 +606,21 @@ main {
                 <!-- Дополнительные особенности для каждого плана -->
                 {% if package.id == 'basic_sub' %}
                 <li><span class="icon">✓</span><span>{{ t('ai_longterm_memory', lang) }}</span></li>
-                <li><span class="icon">✓</span><span>{{ t('chat_attachments', lang) }}</span></li>
-                <li><span class="icon">✓</span><span>{{ t('chat_history', lang) }}</span></li>
+                <li><span class="icon">✓</span><span>{{ t('chat_attachments', lang) }}</span></li>                
                 <li><span class="icon">✓</span><span>{{ t('premium_support', lang) }}</span></li>
                 {% elif package.id == 'premium_sub' %}
                 <li><span class="icon">✓</span><span>{{ t('ai_longterm_memory', lang) }}</span></li>
-                <li><span class="icon">✓</span><span>{{ t('chat_attachments', lang) }}</span></li>
-                <li><span class="icon">✓</span><span>{{ t('chat_history', lang) }}</span></li>
+                <li><span class="icon">✓</span><span>{{ t('chat_attachments', lang) }}</span></li>                
                 <li><span class="icon">✓</span><span>{{ t('premium_support', lang) }}</span></li>
                 {% endif %}
 
             </ul>
+            <!-- Дополнительное примечание -->
+            {% if package.note_key %}
+            <div class="plan-note">
+                {{ t(package.note_key, lang) }}
+            </div>
+            {% endif %}
             
             <!-- Кнопка -->
             {% if package.is_current %}
@@ -607,21 +636,7 @@ main {
             {% endif %}
         </div>
         {% endfor %}        
-    </div>
-
-    <!-- 📝 ПОДСКАЗКИ К ТАРИФАМ -->
-    <div class="plans-hints">
-        <div class="hint-item">
-            <span class="hint-plan">Lite</span>
-            <span class="hint-arrow">→</span>
-            <span class="hint-text">{{ t('lite_hint', lang) }}</span>
-        </div>
-        <div class="hint-item">
-            <span class="hint-plan">Pro</span>
-            <span class="hint-arrow">→</span>
-            <span class="hint-text">{{ t('pro_hint', lang) }}</span>
-        </div>
-    </div>
+    </div>    
     
     <!-- 🔒 БЛОК БЕЗОПАСНОСТИ -->
     <div class="security-info">

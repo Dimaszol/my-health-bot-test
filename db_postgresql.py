@@ -457,6 +457,18 @@ async def create_tables():
     -- 🔄 МИГРАЦИЯ: Добавление новых полей в существующие таблицы
     -- ================================
     
+    -- Добавляем email в user_limits для защиты от повторной регистрации
+    DO $$ 
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                    WHERE table_name = 'user_limits' AND column_name = 'email') THEN
+            ALTER TABLE user_limits ADD COLUMN email VARCHAR(255);
+        END IF;
+    END $$;
+    
+    -- Создаём индекс отдельно (вне DO блока)
+    CREATE INDEX IF NOT EXISTS idx_user_limits_email ON user_limits(email);
+
     -- Добавляем новые поля в garmin_daily_data (если их еще нет)
     DO $$ 
     BEGIN
@@ -952,7 +964,7 @@ async def set_user_language(user_id: int, language: str, telegram_user=None) -> 
         
         # СОЗДАЕМ лимиты для нового пользователя
         await conn.execute(
-            "INSERT INTO user_limits (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING",
+            "INSERT INTO user_limits (user_id, email) VALUES ($1, NULL) ON CONFLICT (user_id) DO NOTHING",
             user_id
         )
         
@@ -1064,8 +1076,7 @@ async def delete_user_completely(user_id: int) -> bool:
             "conversation_summary", 
             "medical_timeline",
             "medications",
-            "documents",
-            "user_limits",
+            "documents",            
             "transactions", 
             "user_subscriptions",
             "analytics_events",

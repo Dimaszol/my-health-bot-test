@@ -279,9 +279,10 @@ class AccountMerger:
                     subscription_expires_at = $2,
                     documents_left = $3,
                     gpt4o_queries_left = $4,
+                    email = $5,  # ← ДОБАВИТЬ
                     updated_at = NOW()
-                WHERE user_id = $5
-            """, subscription_type, subscription_expires, documents_left, queries_left, primary_id)
+                WHERE user_id = $6  # ← было $5, стало $6
+            """, subscription_type, subscription_expires, documents_left, queries_left, email, primary_id)
             
             # Удаляем лимиты вторичного аккаунта
             await conn.execute("DELETE FROM user_limits WHERE user_id = $1", secondary_id)

@@ -194,7 +194,7 @@ LEGAL_TRANSLATIONS = {
 <ul>
 <li>Delete your account through profile settings (data is deleted immediately)</li>
 <li>Request export of all your data before deletion</li>
-<li>Contact us at zoldmi@gmail.com to confirm deletion</li>
+<li>Contact us at support@pulsebook.health to confirm deletion</li>
 </ul>
 
 <h2>7. INTELLECTUAL PROPERTY</h2>
@@ -331,7 +331,7 @@ LEGAL_TRANSLATIONS = {
 <li><strong>Right to withdraw consent:</strong> If data processing is based on your consent, you may withdraw it at any time</li>
 </ul>
 
-<p>To exercise any of these rights, please contact us at <a href="mailto:zoldmi@gmail.com">zoldmi@gmail.com</a>. We will respond to your request within 30 days in accordance with GDPR requirements.</p>
+<p>To exercise any of these rights, please contact us at <a href="mailto:support@pulsebook.health">support@pulsebook.health</a>. We will respond to your request within 30 days in accordance with GDPR requirements.</p>
 
 <p>You also have the right to lodge a complaint with the data protection supervisory authority of your country if you believe that the processing of your personal data violates GDPR. In the United Kingdom, this is the Information Commissioner's Office (ICO): <a href="https://ico.org.uk" target="_blank" rel="noopener noreferrer">https://ico.org.uk</a></p>
 
@@ -356,7 +356,7 @@ LEGAL_TRANSLATIONS = {
 
 <p>The Services are not intended for persons under 18 years of age. If you are under 18, do not use the Website.</p>
 
-<p>If you are a parent or guardian and discover that your child under 18 has created an account, please contact us at zoldmi@gmail.com for immediate deletion of the account and all associated data.</p>
+<p>If you are a parent or guardian and discover that your child under 18 has created an account, please contact us at support@pulsebook.health for immediate deletion of the account and all associated data.</p>
 
 <h2>15. DISCLAIMER OF WARRANTIES</h2>
 
@@ -433,7 +433,7 @@ LEGAL_TRANSLATIONS = {
 <p>You may at any time:</p>
 <ul>
 <li>Delete your account through profile settings</li>
-<li>Write to us at zoldmi@gmail.com with a deletion request</li>
+<li>Write to us at support@pulsebook.health with a deletion request</li>
 <li>Cancel Pro subscription without deleting your account</li>
 </ul>
 
@@ -467,7 +467,7 @@ LEGAL_TRANSLATIONS = {
 <p>The parties agree that the courts of England and Wales have non-exclusive jurisdiction to resolve any disputes arising from or in connection with these Terms.</p>
 
 <h3>20.3 Pre-litigation Settlement</h3>
-<p>Before resorting to court, the parties undertake to attempt in good faith to settle the dispute through negotiations for 30 (thirty) days. To initiate negotiations, send a detailed description of the claim to zoldmi@gmail.com.</p>
+<p>Before resorting to court, the parties undertake to attempt in good faith to settle the dispute through negotiations for 30 (thirty) days. To initiate negotiations, send a detailed description of the claim to support@pulsebook.health.</p>
 
 <h3>20.4 Consumer Rights</h3>
 <p>If you are a consumer residing in the European Union, nothing in these Terms affects your mandatory consumer rights under the law of your country, including the right to bring proceedings in the courts of your country.</p>
@@ -499,7 +499,7 @@ LEGAL_TRANSLATIONS = {
 
 <p>If you have any questions, comments, or complaints regarding these Terms or Services, please contact us:</p>
 
-<p><strong>Email:</strong> zoldmi@gmail.com<br>
+<p><strong>Email:</strong> support@pulsebook.health<br>
 <strong>Website:</strong> www.pulsebook.health<br>
 <strong>Location:</strong> London, United Kingdom</p>
 
@@ -689,7 +689,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 <ul>
 <li>Ihr Konto über die Profileinstellungen löschen (Daten werden sofort gelöscht)</li>
 <li>Einen Export aller Ihrer Daten vor der Löschung anfordern</li>
-<li>Uns unter zoldmi@gmail.com kontaktieren, um die Löschung zu bestätigen</li>
+<li>Uns unter support@pulsebook.health kontaktieren, um die Löschung zu bestätigen</li>
 </ul>
 
 <h2>7. GEISTIGES EIGENTUM</h2>
@@ -826,7 +826,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 <li><strong>Recht auf Widerruf der Einwilligung:</strong> Wenn die Datenverarbeitung auf Ihrer Einwilligung basiert, können Sie diese jederzeit widerrufen</li>
 </ul>
 
-<p>Um eines dieser Rechte auszuüben, kontaktieren Sie uns bitte unter <a href="mailto:zoldmi@gmail.com">zoldmi@gmail.com</a>. Wir werden auf Ihre Anfrage innerhalb von 30 Tagen gemäß DSGVO-Anforderungen antworten.</p>
+<p>Um eines dieser Rechte auszuüben, kontaktieren Sie uns bitte unter <a href="mailto:support@pulsebook.health">support@pulsebook.health</a>. Wir werden auf Ihre Anfrage innerhalb von 30 Tagen gemäß DSGVO-Anforderungen antworten.</p>
 
 <p>Sie haben auch das Recht, eine Beschwerde bei der Datenschutzaufsichtsbehörde Ihres Landes einzureichen, wenn Sie der Meinung sind, dass die Verarbeitung Ihrer personenbezogenen Daten gegen die DSGVO verstößt. In Großbritannien ist dies das Information Commissioner's Office (ICO): <a href="https://ico.org.uk" target="_blank" rel="noopener noreferrer">https://ico.org.uk</a></p>
 
@@ -851,7 +851,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 
 <p>Die Dienste sind nicht für Personen unter 18 Jahren bestimmt. Wenn Sie unter 18 sind, nutzen Sie die Website nicht.</p>
 
-<p>Wenn Sie ein Elternteil oder Erziehungsberechtigter sind und feststellen, dass Ihr Kind unter 18 Jahren ein Konto erstellt hat, kontaktieren Sie uns bitte unter zoldmi@gmail.com zur sofortigen Löschung des Kontos und aller zugehörigen Daten.</p>
+<p>Wenn Sie ein Elternteil oder Erziehungsberechtigter sind und feststellen, dass Ihr Kind unter 18 Jahren ein Konto erstellt hat, kontaktieren Sie uns bitte unter support@pulsebook.health zur sofortigen Löschung des Kontos und aller zugehörigen Daten.</p>
 
 <h2>15. HAFTUNGSAUSSCHLUSS</h2>
 
@@ -928,7 +928,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 <p>Sie können jederzeit:</p>
 <ul>
 <li>Ihr Konto über die Profileinstellungen löschen</li>
-<li>Uns unter zoldmi@gmail.com mit einer Löschanfrage kontaktieren</li>
+<li>Uns unter support@pulsebook.health mit einer Löschanfrage kontaktieren</li>
 <li>Ihr Pro-Abonnement kündigen, ohne Ihr Konto zu löschen</li>
 </ul>
 
@@ -962,7 +962,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 <p>Die Parteien vereinbaren, dass die Gerichte von England und Wales die nicht-ausschließliche Zuständigkeit zur Beilegung von Streitigkeiten aus oder im Zusammenhang mit diesen Bedingungen haben.</p>
 
 <h3>20.3 Außergerichtliche Einigung</h3>
-<p>Vor Anrufung eines Gerichts verpflichten sich die Parteien, 30 (dreißig) Tage lang in gutem Glauben zu versuchen, den Streit durch Verhandlungen beizulegen. Um Verhandlungen einzuleiten, senden Sie eine detaillierte Beschreibung des Anspruchs an zoldmi@gmail.com.</p>
+<p>Vor Anrufung eines Gerichts verpflichten sich die Parteien, 30 (dreißig) Tage lang in gutem Glauben zu versuchen, den Streit durch Verhandlungen beizulegen. Um Verhandlungen einzuleiten, senden Sie eine detaillierte Beschreibung des Anspruchs an support@pulsebook.health.</p>
 
 <h3>20.4 Verbraucherrechte</h3>
 <p>Wenn Sie ein Verbraucher mit Wohnsitz in der Europäischen Union sind, beeinträchtigt nichts in diesen Bedingungen Ihre zwingenden Verbraucherrechte gemäß dem Recht Ihres Landes, einschließlich des Rechts, Verfahren vor den Gerichten Ihres Landes einzuleiten.</p>
@@ -994,7 +994,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 
 <p>Wenn Sie Fragen, Kommentare oder Beschwerden zu diesen Bedingungen oder Diensten haben, kontaktieren Sie uns bitte:</p>
 
-<p><strong>E-Mail:</strong> zoldmi@gmail.com<br>
+<p><strong>E-Mail:</strong> support@pulsebook.health<br>
 <strong>Website:</strong> www.pulsebook.health<br>
 <strong>Standort:</strong> London, England, Vereinigtes Königreich</p>
 
@@ -1183,7 +1183,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 <ul>
 <li>Видалити свій обліковий запис через налаштування профілю (дані видаляються негайно)</li>
 <li>Запросити експорт всіх ваших даних перед видаленням</li>
-<li>Зв'язатися з нами за адресою zoldmi@gmail.com для підтвердження видалення</li>
+<li>Зв'язатися з нами за адресою support@pulsebook.health для підтвердження видалення</li>
 </ul>
 
 <h2>7. ІНТЕЛЕКТУАЛЬНА ВЛАСНІСТЬ</h2>
@@ -1320,7 +1320,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 <li><strong>Право відкликати згоду:</strong> Якщо обробка даних заснована на вашій згоді, ви можете відкликати її в будь-який час</li>
 </ul>
 
-<p>Для реалізації будь-якого з цих прав, будь ласка, зв'яжіться з нами за адресою <a href="mailto:zoldmi@gmail.com">zoldmi@gmail.com</a>. Ми відповімо на ваш запит протягом 30 днів відповідно до вимог GDPR.</p>
+<p>Для реалізації будь-якого з цих прав, будь ласка, зв'яжіться з нами за адресою <a href="mailto:support@pulsebook.health">support@pulsebook.health</a>. Ми відповімо на ваш запит протягом 30 днів відповідно до вимог GDPR.</p>
 
 <p>Ви також маєте право подати скаргу до наглядового органу із захисту даних вашої країни, якщо вважаєте, що обробка ваших персональних даних порушує GDPR. У Великобританії це Information Commissioner's Office (ICO): <a href="https://ico.org.uk" target="_blank" rel="noopener noreferrer">https://ico.org.uk</a></p>
 
@@ -1345,7 +1345,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 
 <p>Сервіси не призначені для осіб молодше 18 років. Якщо вам немає 18 років, не використовуйте Сайт.</p>
 
-<p>Якщо ви батьки або опікун і виявили, що ваша дитина молодше 18 років створила обліковий запис, будь ласка, зв'яжіться з нами за адресою zoldmi@gmail.com для негайного видалення облікового запису та всіх пов'язаних даних.</p>
+<p>Якщо ви батьки або опікун і виявили, що ваша дитина молодше 18 років створила обліковий запис, будь ласка, зв'яжіться з нами за адресою support@pulsebook.health для негайного видалення облікового запису та всіх пов'язаних даних.</p>
 
 <h2>15. ВІДМОВА ВІД ГАРАНТІЙ</h2>
 
@@ -1422,7 +1422,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 <p>Ви можете в будь-який час:</p>
 <ul>
 <li>Видалити свій обліковий запис через налаштування профілю</li>
-<li>Написати нам на zoldmi@gmail.com із запитом на видалення</li>
+<li>Написати нам на support@pulsebook.health із запитом на видалення</li>
 <li>Скасувати підписку Pro без видалення облікового запису</li>
 </ul>
 
@@ -1456,7 +1456,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 <p>Сторони погоджуються, що суди Англії та Уельсу мають невиключну юрисдикцію для розгляду будь-яких спорів, що виникають з цих Умов або у зв'язку з ними.</p>
 
 <h3>20.3 Досудове врегулювання</h3>
-<p>Перед зверненням до суду сторони зобов'язуються добросовісно спробувати врегулювати спір шляхом переговорів протягом 30 (тридцяти) днів. Для початку переговорів надішліть детальний опис претензії на zoldmi@gmail.com.</p>
+<p>Перед зверненням до суду сторони зобов'язуються добросовісно спробувати врегулювати спір шляхом переговорів протягом 30 (тридцяти) днів. Для початку переговорів надішліть детальний опис претензії на support@pulsebook.health.</p>
 
 <h3>20.4 Права споживачів</h3>
 <p>Якщо ви є споживачем, який проживає в Європейському Союзі, ніщо в цих Умовах не впливає на ваші обов'язкові права споживача, передбачені законодавством вашої країни, включаючи право звернутися до судів вашої країни.</p>
@@ -1488,7 +1488,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 
 <p>Якщо у вас є питання, коментарі або скарги щодо цих Умов або Сервісів, будь ласка, зв'яжіться з нами:</p>
 
-<p><strong>Email:</strong> zoldmi@gmail.com<br>
+<p><strong>Email:</strong> support@pulsebook.health<br>
 <strong>Веб-сайт:</strong> www.pulsebook.health<br>
 <strong>Місцезнаходження:</strong> London, United Kingdom</p>
 
@@ -1676,7 +1676,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 <ul>
 <li>Удалить свой аккаунт через настройки профиля (данные удаляются немедленно)</li>
 <li>Запросить экспорт всех ваших данных перед удалением</li>
-<li>Связаться с нами по адресу zoldmi@gmail.com для подтверждения удаления</li>
+<li>Связаться с нами по адресу support@pulsebook.health для подтверждения удаления</li>
 </ul>
 
 <h2>7. ИНТЕЛЛЕКТУАЛЬНАЯ СОБСТВЕННОСТЬ</h2>
@@ -1813,7 +1813,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 <li><strong>Право отозвать согласие:</strong> Если обработка данных основана на вашем согласии, вы можете отозвать его в любое время</li>
 </ul>
 
-<p>Для реализации любого из этих прав, пожалуйста, свяжитесь с нами по адресу <a href="mailto:zoldmi@gmail.com">zoldmi@gmail.com</a>. Мы ответим на ваш запрос в течение 30 дней в соответствии с требованиями GDPR.</p>
+<p>Для реализации любого из этих прав, пожалуйста, свяжитесь с нами по адресу <a href="mailto:support@pulsebook.health">support@pulsebook.health</a>. Мы ответим на ваш запрос в течение 30 дней в соответствии с требованиями GDPR.</p>
 
 <p>Вы также имеете право подать жалобу в надзорный орган по защите данных вашей страны, если считаете, что обработка ваших персональных данных нарушает GDPR. В Великобритании это Information Commissioner's Office (ICO): <a href="https://ico.org.uk" target="_blank" rel="noopener noreferrer">https://ico.org.uk</a></p>
 
@@ -1838,7 +1838,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 
 <p>Сервисы не предназначены для лиц младше 18 лет. Если вам нет 18 лет, не используйте Сайт.</p>
 
-<p>Если вы родитель или опекун и обнаружили, что ваш ребенок младше 18 лет создал аккаунт, свяжитесь с нами по адресу zoldmi@gmail.com для немедленного удаления аккаунта и всех связанных данных.</p>
+<p>Если вы родитель или опекун и обнаружили, что ваш ребенок младше 18 лет создал аккаунт, свяжитесь с нами по адресу support@pulsebook.health для немедленного удаления аккаунта и всех связанных данных.</p>
 
 <h2>15. ОТКАЗ ОТ ГАРАНТИЙ</h2>
 
@@ -1915,7 +1915,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 <p>Вы можете в любое время:</p>
 <ul>
 <li>Удалить свой аккаунт через настройки профиля</li>
-<li>Написать нам на zoldmi@gmail.com с запросом на удаление</li>
+<li>Написать нам на support@pulsebook.health с запросом на удаление</li>
 <li>Отменить подписку Pro без удаления аккаунта</li>
 </ul>
 
@@ -1949,7 +1949,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 <p>Стороны соглашаются, что суды Англии и Уэльса обладают неисключительной юрисдикцией для рассмотрения любых споров, возникающих из настоящих Условий или в связи с ними.</p>
 
 <h3>20.3 Досудебное урегулирование</h3>
-<p>Перед обращением в суд стороны обязуются добросовестно попытаться урегулировать спор путем переговоров в течение 30 (тридцати) дней. Для начала переговоров направьте подробное описание претензии на zoldmi@gmail.com.</p>
+<p>Перед обращением в суд стороны обязуются добросовестно попытаться урегулировать спор путем переговоров в течение 30 (тридцати) дней. Для начала переговоров направьте подробное описание претензии на support@pulsebook.health.</p>
 
 <h3>20.4 Права потребителей</h3>
 <p>Если вы являетесь потребителем, проживающим в Европейском Союзе, ничто в настоящих Условиях не влияет на ваши обязательные права потребителя, предусмотренные законодательством вашей страны, включая право обратиться в суды вашей страны.</p>
@@ -1981,7 +1981,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 
 <p>Если у вас есть вопросы, комментарии или претензии относительно настоящих Условий или Сервисов, пожалуйста, свяжитесь с нами:</p>
 
-<p><strong>Email:</strong> zoldmi@gmail.com<br>
+<p><strong>Email:</strong> support@pulsebook.health<br>
 <strong>Веб-сайт:</strong> www.pulsebook.health<br>
 <strong>Местоположение:</strong> London, United Kingdom</p>
 
@@ -2020,7 +2020,7 @@ Indem Sie sich über Google OAuth anmelden, autorisieren Sie PulseBook, Ihre gru
 <h2>2. Who We Are</h2>
 <p><strong>Data Controller:</strong> PulseBook (self-employed)</p>
 <p><strong>Location:</strong> London, United Kingdom</p>
-<p><strong>Email for privacy questions:</strong> zoldmi@gmail.com</p>
+<p><strong>Email for privacy questions:</strong> support@pulsebook.health</p>
 <p><strong>Website:</strong> www.pulsebook.health</p>
 
 <h2>3. What Information We Collect</h2>
@@ -2243,7 +2243,7 @@ PulseBook uses Google OAuth only for secure authentication. We request only your
 
 <h3>9.1. Right of Access</h3>
 <p>You can request a copy of all your data we store.</p>
-<p><strong>How to use:</strong> Email zoldmi@gmail.com with subject "Data Access Request"</p>
+<p><strong>How to use:</strong> Email support@pulsebook.health with subject "Data Access Request"</p>
 
 <h3>9.2. Right to Rectification</h3>
 <p>You can correct inaccurate or incomplete data.</p>
@@ -2251,16 +2251,16 @@ PulseBook uses Google OAuth only for secure authentication. We request only your
 
 <h3>9.3. Right to Erasure ("Right to be Forgotten")</h3>
 <p>You can request complete deletion of all your data.</p>
-<p><strong>How to use:</strong> Click "Delete Account" in settings or email zoldmi@gmail.com</p>
+<p><strong>How to use:</strong> Click "Delete Account" in settings or email support@pulsebook.health</p>
 <p><strong>Exceptions:</strong> We may retain data if required by law (e.g., tax records)</p>
 
 <h3>9.4. Right to Data Portability</h3>
 <p>You can receive your data in a structured, machine-readable format (JSON).</p>
-<p><strong>How to use:</strong> Email zoldmi@gmail.com with subject "Data Portability Request"</p>
+<p><strong>How to use:</strong> Email support@pulsebook.health with subject "Data Portability Request"</p>
 
 <h3>9.5. Right to Restrict Processing</h3>
 <p>You can ask us to temporarily stop processing your data.</p>
-<p><strong>How to use:</strong> Email zoldmi@gmail.com</p>
+<p><strong>How to use:</strong> Email support@pulsebook.health</p>
 
 <h3>9.6. Right to Object</h3>
 <p>You can object to processing your data for marketing or other purposes.</p>
@@ -2268,7 +2268,7 @@ PulseBook uses Google OAuth only for secure authentication. We request only your
 
 <h3>9.7. Right to Withdraw Consent</h3>
 <p>You can withdraw consent to data processing at any time.</p>
-<p><strong>How to use:</strong> Email zoldmi@gmail.com</p>
+<p><strong>How to use:</strong> Email support@pulsebook.health</p>
 <p><strong>Important:</strong> Withdrawal of consent does not affect the lawfulness of processing before withdrawal</p>
 
 <h3>9.8. Right to Complain</h3>
@@ -2375,7 +2375,7 @@ PulseBook uses Google OAuth only for secure authentication. We request only your
     <li>If we learn that we collected data from someone under 18, we will immediately delete it</li>
 </ul>
 
-<p><strong>For parents:</strong> If you discover that your child under 18 is using PulseBook, immediately contact us at zoldmi@gmail.com and we will delete all data.</p>
+<p><strong>For parents:</strong> If you discover that your child under 18 is using PulseBook, immediately contact us at support@pulsebook.health and we will delete all data.</p>
 
 <p><strong>COPPA Compliance (USA):</strong> We comply with the Children's Online Privacy Protection Act and do not collect data from children under 13.</p>
 
@@ -2494,13 +2494,13 @@ PulseBook uses Google OAuth only for secure authentication. We request only your
 <h2>18. Contact Information</h2>
 
 <h3>18.1. General Questions:</h3>
-<p><strong>Email:</strong> zoldmi@gmail.com</p>
+<p><strong>Email:</strong> support@pulsebook.health</p>
 <p><strong>Website:</strong> www.pulsebook.health</p>
 <p><strong>Response Time:</strong> Within 48 hours (business days)</p>
 
 <h3>18.2. Privacy Questions:</h3>
-<p><strong>Email:</strong> zoldmi@gmail.com (subject "Privacy Question")</p>
-<p><strong>For GDPR requests:</strong> zoldmi@gmail.com (subject "GDPR Request")</p>
+<p><strong>Email:</strong> support@pulsebook.health (subject "Privacy Question")</p>
+<p><strong>For GDPR requests:</strong> support@pulsebook.health (subject "GDPR Request")</p>
 
 <h3>18.3. Data Protection Officer (DPO):</h3>
 <p>Not currently appointed (not required for small organizations). If needed, information will be updated.</p>
@@ -2558,7 +2558,7 @@ PulseBook uses Google OAuth only for secure authentication. We request only your
 <p style="text-align: center; margin-top: 40px;">
     <strong>Thank you for using PulseBook!</strong><br>
     We value your trust and are committed to protecting your privacy.<br>
-    For any questions contact: <a href="mailto:zoldmi@gmail.com">zoldmi@gmail.com</a>
+    For any questions contact: <a href="mailto:support@pulsebook.health">support@pulsebook.health</a>
 </p>
 ''',
 'de': '''
@@ -2587,7 +2587,7 @@ PulseBook uses Google OAuth only for secure authentication. We request only your
 <h2>2. Wer wir sind</h2>
 <p><strong>Datenverantwortlicher:</strong> PulseBook (selbstständig)</p>
 <p><strong>Standort:</strong> London, Vereinigtes Königreich</p>
-<p><strong>E-Mail für Datenschutzfragen:</strong> zoldmi@gmail.com</p>
+<p><strong>E-Mail für Datenschutzfragen:</strong> support@pulsebook.health</p>
 <p><strong>Website:</strong> www.pulsebook.health</p>
 
 <h2>3. Welche Informationen wir sammeln</h2>
@@ -2809,7 +2809,7 @@ PulseBook verwendet Google OAuth nur zur sicheren Authentifizierung. Wir fordern
 
 <h3>9.1. Auskunftsrecht</h3>
 <p>Sie können eine Kopie aller Ihrer von uns gespeicherten Daten anfordern.</p>
-<p><strong>Wie zu nutzen:</strong> E-Mail an zoldmi@gmail.com mit Betreff "Data Access Request"</p>
+<p><strong>Wie zu nutzen:</strong> E-Mail an support@pulsebook.health mit Betreff "Data Access Request"</p>
 
 <h3>9.2. Recht auf Berichtigung</h3>
 <p>Sie können ungenaue oder unvollständige Daten korrigieren.</p>
@@ -2817,16 +2817,16 @@ PulseBook verwendet Google OAuth nur zur sicheren Authentifizierung. Wir fordern
 
 <h3>9.3. Recht auf Löschung ("Recht auf Vergessenwerden")</h3>
 <p>Sie können die vollständige Löschung aller Ihrer Daten anfordern.</p>
-<p><strong>Wie zu nutzen:</strong> Klicken Sie auf "Konto löschen" in den Einstellungen oder senden Sie eine E-Mail an zoldmi@gmail.com</p>
+<p><strong>Wie zu nutzen:</strong> Klicken Sie auf "Konto löschen" in den Einstellungen oder senden Sie eine E-Mail an support@pulsebook.health</p>
 <p><strong>Ausnahmen:</strong> Wir können Daten aufbewahren, wenn dies gesetzlich vorgeschrieben ist (z.B. Steuerunterlagen)</p>
 
 <h3>9.4. Recht auf Datenübertragbarkeit</h3>
 <p>Sie können Ihre Daten in einem strukturierten, maschinenlesbaren Format (JSON) erhalten.</p>
-<p><strong>Wie zu nutzen:</strong> E-Mail an zoldmi@gmail.com mit Betreff "Data Portability Request"</p>
+<p><strong>Wie zu nutzen:</strong> E-Mail an support@pulsebook.health mit Betreff "Data Portability Request"</p>
 
 <h3>9.5. Recht auf Einschränkung der Verarbeitung</h3>
 <p>Sie können uns bitten, die Verarbeitung Ihrer Daten vorübergehend einzustellen.</p>
-<p><strong>Wie zu nutzen:</strong> E-Mail an zoldmi@gmail.com</p>
+<p><strong>Wie zu nutzen:</strong> E-Mail an support@pulsebook.health</p>
 
 <h3>9.6. Widerspruchsrecht</h3>
 <p>Sie können der Verarbeitung Ihrer Daten für Marketing oder andere Zwecke widersprechen.</p>
@@ -2834,7 +2834,7 @@ PulseBook verwendet Google OAuth nur zur sicheren Authentifizierung. Wir fordern
 
 <h3>9.7. Recht auf Widerruf der Einwilligung</h3>
 <p>Sie können Ihre Einwilligung zur Datenverarbeitung jederzeit widerrufen.</p>
-<p><strong>Wie zu nutzen:</strong> E-Mail an zoldmi@gmail.com</p>
+<p><strong>Wie zu nutzen:</strong> E-Mail an support@pulsebook.health</p>
 <p><strong>Wichtig:</strong> Der Widerruf der Einwilligung berührt nicht die Rechtmäßigkeit der vor dem Widerruf erfolgten Verarbeitung</p>
 
 <h3>9.8. Beschwerderecht</h3>
@@ -2941,7 +2941,7 @@ PulseBook verwendet Google OAuth nur zur sicheren Authentifizierung. Wir fordern
     <li>Wenn wir erfahren, dass wir Daten von jemandem unter 18 Jahren gesammelt haben, werden wir diese sofort löschen</li>
 </ul>
 
-<p><strong>Für Eltern:</strong> Wenn Sie feststellen, dass Ihr Kind unter 18 Jahren PulseBook nutzt, kontaktieren Sie uns sofort unter zoldmi@gmail.com, und wir werden alle Daten löschen.</p>
+<p><strong>Für Eltern:</strong> Wenn Sie feststellen, dass Ihr Kind unter 18 Jahren PulseBook nutzt, kontaktieren Sie uns sofort unter support@pulsebook.health, und wir werden alle Daten löschen.</p>
 
 <p><strong>COPPA-Konformität (USA):</strong> Wir halten uns an den Children's Online Privacy Protection Act und sammeln keine Daten von Kindern unter 13 Jahren.</p>
 
@@ -3060,13 +3060,13 @@ PulseBook verwendet Google OAuth nur zur sicheren Authentifizierung. Wir fordern
 <h2>18. Kontaktinformationen</h2>
 
 <h3>18.1. Allgemeine Fragen:</h3>
-<p><strong>E-Mail:</strong> zoldmi@gmail.com</p>
+<p><strong>E-Mail:</strong> support@pulsebook.health</p>
 <p><strong>Website:</strong> www.pulsebook.health</p>
 <p><strong>Antwortzeit:</strong> Innerhalb von 48 Stunden (Werktage)</p>
 
 <h3>18.2. Datenschutzfragen:</h3>
-<p><strong>E-Mail:</strong> zoldmi@gmail.com (Betreff "Privacy Question")</p>
-<p><strong>Für DSGVO-Anfragen:</strong> zoldmi@gmail.com (Betreff "GDPR Request")</p>
+<p><strong>E-Mail:</strong> support@pulsebook.health (Betreff "Privacy Question")</p>
+<p><strong>Für DSGVO-Anfragen:</strong> support@pulsebook.health (Betreff "GDPR Request")</p>
 
 <h3>18.3. Datenschutzbeauftragter (DSB):</h3>
 <p>Derzeit nicht ernannt (für kleine Organisationen nicht erforderlich). Bei Bedarf werden die Informationen aktualisiert.</p>
@@ -3124,7 +3124,7 @@ PulseBook verwendet Google OAuth nur zur sicheren Authentifizierung. Wir fordern
 <p style="text-align: center; margin-top: 40px;">
     <strong>Vielen Dank, dass Sie PulseBook nutzen!</strong><br>
     Wir schätzen Ihr Vertrauen und verpflichten uns zum Schutz Ihrer Privatsphäre.<br>
-    Bei Fragen kontaktieren Sie uns: <a href="mailto:zoldmi@gmail.com">zoldmi@gmail.com</a>
+    Bei Fragen kontaktieren Sie uns: <a href="mailto:support@pulsebook.health">support@pulsebook.health</a>
 </p>
 ''',
 'uk': '''
@@ -3153,7 +3153,7 @@ PulseBook verwendet Google OAuth nur zur sicheren Authentifizierung. Wir fordern
 <h2>2. Хто ми</h2>
 <p><strong>Контролер даних:</strong> PulseBook (самозайнятий)</p>
 <p><strong>Місцезнаходження:</strong> London, United Kingdom</p>
-<p><strong>Email для питань про конфіденційність:</strong> zoldmi@gmail.com</p>
+<p><strong>Email для питань про конфіденційність:</strong> support@pulsebook.health</p>
 <p><strong>Веб-сайт:</strong> www.pulsebook.health</p>
 
 <h2>3. Яку інформацію ми збираємо</h2>
@@ -3374,7 +3374,7 @@ PulseBook використовує Google OAuth лише для безпечно
 
 <h3>9.1. Право на доступ</h3>
 <p>Ви можете запросити копію всіх ваших даних, які ми зберігаємо.</p>
-<p><strong>Як використати:</strong> Напишіть на zoldmi@gmail.com з темою "Data Access Request"</p>
+<p><strong>Як використати:</strong> Напишіть на support@pulsebook.health з темою "Data Access Request"</p>
 
 <h3>9.2. Право на виправлення</h3>
 <p>Ви можете виправити неточні або неповні дані.</p>
@@ -3382,16 +3382,16 @@ PulseBook використовує Google OAuth лише для безпечно
 
 <h3>9.3. Право на видалення ("Право бути забутим")</h3>
 <p>Ви можете запросити повне видалення всіх ваших даних.</p>
-<p><strong>Як використати:</strong> Натисніть "Видалити акаунт" в налаштуваннях або напишіть на zoldmi@gmail.com</p>
+<p><strong>Як використати:</strong> Натисніть "Видалити акаунт" в налаштуваннях або напишіть на support@pulsebook.health</p>
 <p><strong>Винятки:</strong> Ми можемо зберегти дані, якщо це потрібно за законом (напр. податкові записи)</p>
 
 <h3>9.4. Право на переносимість даних</h3>
 <p>Ви можете отримати свої дані в структурованому машиночитаємому форматі (JSON).</p>
-<p><strong>Як використати:</strong> Напишіть на zoldmi@gmail.com з темою "Data Portability Request"</p>
+<p><strong>Як використати:</strong> Напишіть на support@pulsebook.health з темою "Data Portability Request"</p>
 
 <h3>9.5. Право на обмеження обробки</h3>
 <p>Ви можете попросити нас тимчасово припинити обробку ваших даних.</p>
-<p><strong>Як використати:</strong> Напишіть на zoldmi@gmail.com</p>
+<p><strong>Як використати:</strong> Напишіть на support@pulsebook.health</p>
 
 <h3>9.6. Право на заперечення</h3>
 <p>Ви можете заперечити проти обробки ваших даних для маркетингу або інших цілей.</p>
@@ -3399,7 +3399,7 @@ PulseBook використовує Google OAuth лише для безпечно
 
 <h3>9.7. Право відкликати згоду</h3>
 <p>Ви можете в будь-який момент відкликати згоду на обробку даних.</p>
-<p><strong>Як використати:</strong> Напишіть на zoldmi@gmail.com</p>
+<p><strong>Як використати:</strong> Напишіть на support@pulsebook.health</p>
 <p><strong>Важливо:</strong> Відкликання згоди не впливає на законність обробки до відкликання</p>
 
 <h3>9.8. Право на скаргу</h3>
@@ -3506,7 +3506,7 @@ PulseBook використовує Google OAuth лише для безпечно
     <li>Якщо ми дізнаємось, що зібрали дані від особи молодше 18 років, ми негайно видалимо ці дані</li>
 </ul>
 
-<p><strong>Для батьків:</strong> Якщо ви виявили, що ваша дитина молодше 18 років використовує PulseBook, негайно зв'яжіться з нами за адресою zoldmi@gmail.com, і ми видалимо всі дані.</p>
+<p><strong>Для батьків:</strong> Якщо ви виявили, що ваша дитина молодше 18 років використовує PulseBook, негайно зв'яжіться з нами за адресою support@pulsebook.health, і ми видалимо всі дані.</p>
 
 <p><strong>Дотримання COPPA (США):</strong> Ми дотримуємося Children's Online Privacy Protection Act і не збираємо дані від дітей молодше 13 років.</p>
 
@@ -3625,13 +3625,13 @@ PulseBook використовує Google OAuth лише для безпечно
 <h2>18. Контактна інформація</h2>
 
 <h3>18.1. Загальні питання:</h3>
-<p><strong>Email:</strong> zoldmi@gmail.com</p>
+<p><strong>Email:</strong> support@pulsebook.health</p>
 <p><strong>Веб-сайт:</strong> www.pulsebook.health</p>
 <p><strong>Час відповіді:</strong> Протягом 48 годин (робочі дні)</p>
 
 <h3>18.2. Питання про конфіденційність:</h3>
-<p><strong>Email:</strong> zoldmi@gmail.com (з темою "Privacy Question")</p>
-<p><strong>Для запитів по GDPR:</strong> zoldmi@gmail.com (з темою "GDPR Request")</p>
+<p><strong>Email:</strong> support@pulsebook.health (з темою "Privacy Question")</p>
+<p><strong>Для запитів по GDPR:</strong> support@pulsebook.health (з темою "GDPR Request")</p>
 
 <h3>18.3. Data Protection Officer (DPO):</h3>
 <p>Наразі не призначений (не потрібно для невеликих організацій). Якщо знадобиться, інформація буде оновлена.</p>
@@ -3689,7 +3689,7 @@ PulseBook використовує Google OAuth лише для безпечно
 <p style="text-align: center; margin-top: 40px;">
     <strong>Дякуємо за використання PulseBook!</strong><br>
     Ми цінуємо вашу довіру та зобов'язуємось захищати вашу конфіденційність.<br>
-    З будь-яких питань звертайтесь: <a href="mailto:zoldmi@gmail.com">zoldmi@gmail.com</a>
+    З будь-яких питань звертайтесь: <a href="mailto:support@pulsebook.health">support@pulsebook.health</a>
 </p>
 ''',
         'ru': '''
@@ -3718,7 +3718,7 @@ PulseBook використовує Google OAuth лише для безпечно
 <h2>2. Кто мы</h2>
 <p><strong>Контроллер данных:</strong> PulseBook (self-employed)</p>
 <p><strong>Местоположение:</strong> London, United Kingdom</p>
-<p><strong>Email для вопросов о конфиденциальности:</strong> zoldmi@gmail.com</p>
+<p><strong>Email для вопросов о конфиденциальности:</strong> support@pulsebook.health</p>
 <p><strong>Веб-сайт:</strong> www.pulsebook.health</p>
 
 <h2>3. Какую информацию мы собираем</h2>
@@ -3939,7 +3939,7 @@ PulseBook использует Google OAuth только для безопасн
 
 <h3>9.1. Право на доступ</h3>
 <p>Вы можете запросить копию всех ваших данных, которые мы храним.</p>
-<p><strong>Как использовать:</strong> Напишите на zoldmi@gmail.com с темой "Data Access Request"</p>
+<p><strong>Как использовать:</strong> Напишите на support@pulsebook.health с темой "Data Access Request"</p>
 
 <h3>9.2. Право на исправление</h3>
 <p>Вы можете исправить неточные или неполные данные.</p>
@@ -3947,16 +3947,16 @@ PulseBook использует Google OAuth только для безопасн
 
 <h3>9.3. Право на удаление ("Право быть забытым")</h3>
 <p>Вы можете запросить полное удаление всех ваших данных.</p>
-<p><strong>Как использовать:</strong> Нажмите "Удалить аккаунт" в настройках или напишите на zoldmi@gmail.com</p>
+<p><strong>Как использовать:</strong> Нажмите "Удалить аккаунт" в настройках или напишите на support@pulsebook.health</p>
 <p><strong>Исключения:</strong> Мы можем сохранить данные, если это требуется по закону (напр. налоговые записи)</p>
 
 <h3>9.4. Право на переносимость данных</h3>
 <p>Вы можете получить свои данные в структурированном машиночитаемом формате (JSON).</p>
-<p><strong>Как использовать:</strong> Напишите на zoldmi@gmail.com с темой "Data Portability Request"</p>
+<p><strong>Как использовать:</strong> Напишите на support@pulsebook.health с темой "Data Portability Request"</p>
 
 <h3>9.5. Право на ограничение обработки</h3>
 <p>Вы можете попросить нас временно прекратить обработку ваших данных.</p>
-<p><strong>Как использовать:</strong> Напишите на zoldmi@gmail.com</p>
+<p><strong>Как использовать:</strong> Напишите на support@pulsebook.health</p>
 
 <h3>9.6. Право на возражение</h3>
 <p>Вы можете возразить против обработки ваших данных для маркетинга или других целей.</p>
@@ -3964,7 +3964,7 @@ PulseBook использует Google OAuth только для безопасн
 
 <h3>9.7. Право отозвать согласие</h3>
 <p>Вы можете в любой момент отозвать согласие на обработку данных.</p>
-<p><strong>Как использовать:</strong> Напишите на zoldmi@gmail.com</p>
+<p><strong>Как использовать:</strong> Напишите на support@pulsebook.health</p>
 <p><strong>Важно:</strong> Отзыв согласия не влияет на законность обработки до отзыва</p>
 
 <h3>9.8. Право на жалобу</h3>
@@ -4071,7 +4071,7 @@ PulseBook использует Google OAuth только для безопасн
     <li>Если мы узнаем, что собрали данные от лица младше 18 лет, мы немедленно удалим эти данные</li>
 </ul>
 
-<p><strong>Для родителей:</strong> Если вы обнаружили, что ваш ребенок младше 18 лет использует PulseBook, немедленно свяжитесь с нами по адресу zoldmi@gmail.com, и мы удалим все данные.</p>
+<p><strong>Для родителей:</strong> Если вы обнаружили, что ваш ребенок младше 18 лет использует PulseBook, немедленно свяжитесь с нами по адресу support@pulsebook.health, и мы удалим все данные.</p>
 
 <p><strong>Соблюдение COPPA (США):</strong> Мы соблюдаем Children's Online Privacy Protection Act и не собираем данные от детей младше 13 лет.</p>
 
@@ -4190,13 +4190,13 @@ PulseBook использует Google OAuth только для безопасн
 <h2>18. Контактная информация</h2>
 
 <h3>18.1. Общие вопросы:</h3>
-<p><strong>Email:</strong> zoldmi@gmail.com</p>
+<p><strong>Email:</strong> support@pulsebook.health</p>
 <p><strong>Веб-сайт:</strong> www.pulsebook.health</p>
 <p><strong>Время ответа:</strong> В течение 48 часов (рабочие дни)</p>
 
 <h3>18.2. Вопросы о конфиденциальности:</h3>
-<p><strong>Email:</strong> zoldmi@gmail.com (с темой "Privacy Question")</p>
-<p><strong>Для запросов по GDPR:</strong> zoldmi@gmail.com (с темой "GDPR Request")</p>
+<p><strong>Email:</strong> support@pulsebook.health (с темой "Privacy Question")</p>
+<p><strong>Для запросов по GDPR:</strong> support@pulsebook.health (с темой "GDPR Request")</p>
 
 <h3>18.3. Data Protection Officer (DPO):</h3>
 <p>В настоящее время не назначен (не требуется для небольших организаций). Если потребуется, информация будет обновлена.</p>
@@ -4254,7 +4254,7 @@ PulseBook использует Google OAuth только для безопасн
 <p style="text-align: center; margin-top: 40px;">
     <strong>Спасибо за использование PulseBook!</strong><br>
     Мы ценим ваше доверие и обязуемся защищать вашу конфиденциальность.<br>
-    По любым вопросам обращайтесь: <a href="mailto:zoldmi@gmail.com">zoldmi@gmail.com</a>
+    По любым вопросам обращайтесь: <a href="mailto:support@pulsebook.health">support@pulsebook.health</a>
 </p>
         '''
     },
