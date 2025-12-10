@@ -349,14 +349,16 @@ translations = {
         "gdpr_welcome_title": "👋 Привет! Я PulseBook — ваш личный помощник здоровья",
         "gdpr_welcome_text": """
         <b>Что я умею:</b>
-        • 📄 Анализирую медицинские документы
-        • 💬 Отвечаю на вопросы о здоровье
-        • 🧠 Запоминаю вашу историю
+        - 🗂 Анализирую медицинские документы
+        - 💬 Отвечаю на вопросы о здоровье
+        - 🧠 Запоминаю вашу историю
 
-        🔒 Всё конфиденциально — доступ только у вас
+        🔒 Всё конфиденциально — данные доступны только вам.
 
-        📋 <a href="https://bit.ly/pulsebook-privacy">Политика конфиденциальности</a>""",
+        🌐 <b>Лучший опыт — через <a href="https://pulsebook.health">веб-версию PulseBook</a></b>
+        Там можно хранить весь медицинский архив, загружать PDF/фото, смотреть динамику и синхронизировать всё с Telegram.""",
         "gdpr_consent_button": "☑️ Понятно, начинаем!",
+        "open_web_version": "🌐 Открыть веб-версию",
         "gdpr_consent_given": "✅ Согласие получено! Начинаем регистрацию...",
 
         # Удаление данных
@@ -1053,14 +1055,16 @@ translations = {
     "gdpr_welcome_title": "👋 Привіт! Я PulseBook — ваш особистий помічник здоров'я",
     "gdpr_welcome_text": """
     <b>Що я вмію:</b>
-    - 📄 Аналізую медичні документи
+    - 🗂 Аналізую медичні документи
     - 💬 Відповідаю на питання про здоров'я
     - 🧠 Запам'ятовую вашу історію
 
-    🔒 Все конфіденційно — доступ тільки у вас
+    🔒 Все конфіденційно — дані доступні тільки вам.
 
-    📋 <a href="https://bit.ly/pulsebook-privacy">Політика конфіденційності</a>""",
+    🌐 <b>Найкращий досвід — через <a href="https://pulsebook.health">веб-версію PulseBook</a></b>
+    Там можна зберігати весь медичний архів, завантажувати PDF/фото, дивитись динаміку та синхронізувати все з Telegram.""",
     "gdpr_consent_button": "☑️ Зрозуміло, починаємо!",
+    "open_web_version": "🌐 Відкрити веб-версію",
     "gdpr_consent_given": "✅ Згоду отримано! Починаємо реєстрацію...",
 
     # Удаление данных
@@ -1697,14 +1701,16 @@ Garmin analysis requires detailed consultations.
     "gdpr_welcome_title": "👋 Hi! I'm PulseBook — your personal health assistant",
     "gdpr_welcome_text": """
     <b>What I can do:</b>
-    - 📄 Analyze medical documents
+    - 🗂 Analyze medical documents
     - 💬 Answer health questions
     - 🧠 Remember your history
 
-    🔒 Everything is confidential — only you have access
+    🔒 Everything is confidential — data accessible only to you.
 
-    📋 <a href="https://bit.ly/pulsebook-privacy">Privacy Policy</a>""",
+    🌐 <b>Best experience — through <a href="https://pulsebook.health">PulseBook web version</a></b>
+    Store your entire medical archive, upload PDF/photos, track dynamics and sync everything with Telegram.""",
     "gdpr_consent_button": "☑️ Understood, let's start!",
+    "open_web_version": "🌐 Open Web Version",
     "gdpr_consent_given": "✅ Consent received! Starting registration...",
 
     # Data deletion
@@ -2361,15 +2367,18 @@ Für die Garmin-Analyse sind detaillierte Beratungen erforderlich.
     "error_unexpected_general": "❌ Ein unerwarteter Fehler ist aufgetreten. Versuchen Sie es später.",
     "profile_delete_data": "Profil löschen",
     "gdpr_welcome_title": "👋 Hallo! Ich bin PulseBook — Ihr persönlicher Gesundheitsassistent",
-    "gdpr_welcome_text": """<b>Was ich kann:</b>
-    - 📄 Medizinische Dokumente analysieren
-    - 💬 Gesundheitsfragen beantworten  
+    "gdpr_welcome_text": """
+    <b>Was ich kann:</b>
+    - 🗂 Medizinische Dokumente analysieren
+    - 💬 Gesundheitsfragen beantworten
     - 🧠 Ihre Geschichte merken
 
-    🔒 Alles vertraulich — nur Sie haben Zugriff
+    🔒 Alles vertraulich — Daten nur für Sie zugänglich.
 
-    📋 <a href="https://bit.ly/pulsebook-privacy">Datenschutzerklärung</a>""",
+    🌐 <b>Beste Erfahrung — über die <a href="https://pulsebook.health">PulseBook Webversion</a></b>
+    Dort können Sie Ihr gesamtes medizinisches Archiv speichern, PDF/Fotos hochladen, Dynamik verfolgen und alles mit Telegram synchronisieren.""",
     "gdpr_consent_button": "✨ Jetzt starten",
+    "open_web_version": "🌐 Webversion öffnen",
     "gdpr_consent_button": "☑️ Verstanden, lassen Sie uns beginnen!",
     "gdpr_consent_given": "✅ Einverständnis erhalten! Registrierung wird gestartet...",
 

@@ -604,11 +604,36 @@ function addMessage(text, role) {
     messageDiv.appendChild(timeDiv);
     chatContainer.insertBefore(messageDiv, typingIndicator);
     
-    scrollToBottom();
+    // ✅ РАЗНАЯ ЛОГИКА СКРОЛЛА
+    if (role === 'user') {
+        // Для сообщений пользователя - скроллим в самый низ
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    } else {
+        // Для сообщений бота - используем умный скролл (вопрос сверху)
+        scrollToBottom();
+    }
 }
 
 function scrollToBottom() {
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+    // Небольшая задержка, чтобы DOM успел обновиться
+    setTimeout(() => {
+        // Находим последнее сообщение пользователя
+        const userMessages = chatContainer.querySelectorAll('.user-message');
+        
+        if (userMessages.length > 0) {
+            // Берём последнее сообщение пользователя
+            const lastUserMessage = userMessages[userMessages.length - 1];
+            
+            // Прокручиваем так, чтобы последнее сообщение пользователя было вверху
+            lastUserMessage.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start'  // 'start' = сообщение у верхнего края
+            });
+        } else {
+            // Если нет сообщений пользователя - прокручиваем вниз как обычно
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    }, 100); // 100мс задержка
 }
 
 // 🔄 ДИНАМИЧЕСКОЕ ОБНОВЛЕНИЕ ИНДИКАТОРА
@@ -677,8 +702,10 @@ messageInput.addEventListener('keydown', function(e) {
     }
 });
 
-// Прокручиваем вниз при загрузке страницы
-window.addEventListener('load', scrollToBottom);
+// Прокручиваем вниз при загрузке страницы (в самый низ)
+window.addEventListener('load', function() {
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+});
 
 </script>
 {% endblock %}

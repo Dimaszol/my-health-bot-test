@@ -5,7 +5,7 @@
 {% block extra_styles %}
 <!-- 📄 СТИЛИ СТРАНИЦЫ ДОКУМЕНТОВ -->
 <link rel="stylesheet" href="/static/css/documents.css?v=1">
-<link rel="stylesheet" href="/static/css/documents-mobile.css?v=1">
+<link rel="stylesheet" href="/static/css/documents-mobile.css?v=2">
 <style>
 footer {
     display: none !important;
@@ -227,7 +227,7 @@ footer {
             {% endif %}
             
             <!-- Disclaimer + Кнопка удаления -->
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+            <div class="disclaimer-delete-container">
                 <!-- Disclaimer слева -->
                 <p style="margin: 0; font-size: 0.8rem; color: #6b7280; line-height: 1.4; flex: 1;">
                     ⚠️ {{ t('ai_disclaimer', lang) }}

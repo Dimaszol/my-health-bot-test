@@ -123,7 +123,7 @@
                             <li><a href="/logout" class="btn btn-secondary">{{ t('btn_logout', lang) }}</a></li>
                         {% else %}
                             <!-- 🏠 Меню для гостей -->
-                            <li><a href="/">{{ t('menu_home', lang) }}</a></li>
+                            <li><a href="/#how-it-works">{{ t('menu_how_it_works', lang) }}</a></li>
                             <li><a href="/#features">{{ t('menu_features', lang) }}</a></li>
                             <li><a href="/#security">{{ t('menu_security', lang) }}</a></li>
                             
@@ -234,9 +234,9 @@
             {% else %}
                 <!-- 🌐 Меню для гостей -->
                 <li>
-                    <a href="/">
-                        <span class="menu-icon">🏠</span>
-                        <span>{{ t('menu_home', lang) }}</span>
+                    <a href="/#how-it-works">
+                        <span class="menu-icon">🔍</span>
+                        <span>{{ t('menu_how_it_works', lang) }}</span>
                     </a>
                 </li>
                 <li>
@@ -251,7 +251,6 @@
                         <span>{{ t('menu_security', lang) }}</span>
                     </a>
                 </li>
-                <li>
                     <a href="/faq">
                         <span class="menu-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">

@@ -399,3 +399,35 @@
         cursor: pointer !important;
     }
 }
+
+/* ========== ДИСКЛЕЙМЕР И КНОПКА УДАЛЕНИЯ ========== */
+.disclaimer-delete-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+@media (max-width: 768px) {
+    .disclaimer-delete-container {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+    }
+    
+    .disclaimer-delete-container p {
+        text-align: center !important;
+        margin: 0 !important;
+        font-size: 0.75rem !important;
+    }
+    
+    .disclaimer-delete-container .delete-btn,
+    .disclaimer-delete-container .btn-delete {
+        width: 100% !important;
+        justify-content: center !important;
+        margin: 0 !important;
+    }
+}

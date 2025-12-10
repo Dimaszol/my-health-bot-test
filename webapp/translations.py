@@ -347,6 +347,12 @@ TRANSLATIONS = {
         'uk': 'Профіль',
         'de': 'Profil'
     },
+    'menu_how_it_works': {
+        'ru': 'Как это работает',
+        'en': 'How it works',
+        'uk': 'Як це працює',
+        'de': 'Wie funktioniert es'
+    },
     'menu_features': {
         'ru': 'Возможности',
         'en': 'Features',
@@ -521,35 +527,7 @@ TRANSLATIONS = {
         'en': 'Your data is protected by encryption and complies with GDPR standards.',
         'uk': 'Ваші дані захищені шифруванням та відповідають стандартам GDPR.',
         'de': 'Ihre Daten sind durch Verschlüsselung geschützt und entsprechen den GDPR-Standards.'
-    },
-    
-    # ============================================
-    # 📈 СТАТИСТИКА
-    # ============================================
-    'stats_trust_title': {
-        'ru': 'Нам доверяют тысячи пользователей',
-        'en': 'Thousands of users trust us',
-        'uk': 'Нам довіряють тисячі користувачів',
-        'de': 'Tausende von Benutzern vertrauen uns'
-    },
-    'stats_active_users': {
-        'ru': 'Активных пользователей',
-        'en': 'Active users',
-        'uk': 'Активних користувачів',
-        'de': 'Aktive Benutzer'
-    },
-    'stats_documents_analyzed': {
-        'ru': 'Проанализированных документов',
-        'en': 'Documents analyzed',
-        'uk': 'Проаналізованих документів',
-        'de': 'Analysierte Dokumente'
-    },
-    'stats_ai_consultations': {
-        'ru': 'AI-консультаций',
-        'en': 'AI consultations',
-        'uk': 'AI-консультацій',
-        'de': 'KI-Beratungen'
-    },
+    },      
     
     # ============================================
     # 🚀 ПРИЗЫВ К ДЕЙСТВИЮ
@@ -855,29 +833,29 @@ TRANSLATIONS = {
     # ============================================
     # 📤 ПРОГРЕСС ЗАГРУЗКИ ДОКУМЕНТОВ
     # ============================================
-    'progress_upload': {
-        'ru': '📤 Загружаем файл...',
-        'en': '📤 Uploading file...',
-        'uk': '📤 Завантажуємо файл...',
-        'de': '📤 Datei wird hochgeladen...'
+    "progress_upload": {
+        "ru": "⬆️ Подготавливаем документ к анализу…",
+        "en": "⬆️ Preparing the document for analysis…",
+        "uk": "⬆️ Готуємо документ до аналізу…",
+        "de": "⬆️ Dokument wird für die Analyse vorbereitet…"
     },
-    'progress_extract': {
-        'ru': '🔍 Анализируем содержимое...',
-        'en': '🔍 Analyzing content...',
-        'uk': '🔍 Аналізуємо вміст...',
-        'de': '🔍 Inhalt wird analysiert...'
+    "progress_extract": {
+        "ru": "🔍 Строим медицинскую модель документа…",
+        "en": "🔍 Building the medical model of the document…",
+        "uk": "🔍 Створюємо медичну модель документа…",
+        "de": "🔍 Medizinisches Modell des Dokuments wird erstellt…"
     },
-    'progress_analyze': {
-        'ru': '🤖 Формируем медицинское заключение AI...',
-        'en': '🤖 Generating AI medical report...',
-        'uk': '🤖 Формуємо медичний висновок AI...',
-        'de': '🤖 KI-Medizinbericht wird erstellt...'
+    "progress_analyze": {
+        "ru": "⚙️ Анализируем документ несколькими AI-моделями…",
+        "en": "⚙️ Analyzing the document using multiple AI models…",
+        "uk": "⚙️ Аналізуємо документ за допомогою кількох AI-моделей…",
+        "de": "⚙️ Analyse des Dokuments mit mehreren KI-Modellen…"
     },
-    'progress_save': {
-        'ru': '💾 Сохраняем в базу данных...',
-        'en': '💾 Saving to database...',
-        'uk': '💾 Зберігаємо в базу даних...',
-        'de': '💾 In Datenbank speichern...'
+    "progress_save": {
+        "ru": "📁 Формируем AI-сводку и сохраняем результаты…",
+        "en": "📁 Generating an AI summary and saving results…",
+        "uk": "📁 Формуємо AI-зведення та зберігаємо результати…",
+        "de": "📁 Erstellung der KI-Zusammenfassung und Speichern der Ergebnisse…"
     },
     'progress_completed': {
         'ru': '✅ Документ успешно обработан!',
@@ -892,22 +870,24 @@ TRANSLATIONS = {
         'de': 'Datei-Upload'
     },
     'progress_step_extract': {
-        'ru': 'Анализ содержимого',
-        'en': 'Content analysis',
-        'uk': 'Аналіз вмісту',
-        'de': 'Inhaltsanalyse'
+        'ru': 'Извлечение данных',
+        'en': 'Data extraction',
+        'uk': 'Витяг даних',
+        'de': 'Datenauszug'
     },
+
     'progress_step_analyze': {
-        'ru': 'Анализ AI',
-        'en': 'AI Analysis',
-        'uk': 'Аналіз AI',
-        'de': 'KI-Analyse'
+        'ru': 'Анализ AI-моделями',
+        'en': 'AI models analysis',
+        'uk': 'Аналіз AI-моделями',
+        'de': 'Analyse durch KI-Modelle'
     },
+
     'progress_step_save': {
-        'ru': 'Сохранение',
-        'en': 'Saving',
-        'uk': 'Збереження',
-        'de': 'Speichern'
+        'ru': 'Формирование сводки',
+        'en': 'Summary generation',
+        'uk': 'Формування зведення',
+        'de': 'Erstellung der Zusammenfassung'
     },
     'progress_please_wait': {
         'ru': 'Пожалуйста, подождите... Анализ занимает до 1 минуты на каждую страницу',

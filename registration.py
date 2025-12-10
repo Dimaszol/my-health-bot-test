@@ -44,11 +44,15 @@ async def show_gdpr_welcome(user_id: int, message: Message, lang: str):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
             text=t("gdpr_consent_button", lang),
-            callback_data="gdpr_consent_agree"  # ✅ ПРАВИЛЬНО: согласие
+            callback_data="gdpr_consent_agree"
         )],
         [InlineKeyboardButton(
             text=t("change_language", lang),
-            callback_data="change_language_registration"  # ✅ ПРАВИЛЬНО: смена языка
+            callback_data="change_language_registration"
+        )],
+        [InlineKeyboardButton(
+            text=t("open_web_version", lang),
+            url="https://pulsebook.health"
         )]
     ])
     
