@@ -459,6 +459,19 @@ async def show_settings_menu_new(message: types.Message):
         reply_markup=settings_keyboard(lang)
     )
 
+@dp.message(lambda msg: msg.text in get_all_values_for_key("main_webapp"))
+@handle_telegram_errors
+async def show_webapp_link(message: types.Message):
+    """Показать ссылку на веб-версию"""
+    lang = await get_user_language(message.from_user.id)
+    
+    await message.answer(
+        t("webapp_message", lang),
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text=t("open_web_version", lang), url="https://pulsebook.health")]
+        ])
+    )
+
 @dp.callback_query(lambda c: c.data.startswith("promo_buy:"))
 @handle_telegram_errors
 async def handle_promo_purchase_callback(callback: types.CallbackQuery):
