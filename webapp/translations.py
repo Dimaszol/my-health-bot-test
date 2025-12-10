@@ -1186,17 +1186,41 @@ TRANSLATIONS = {
         'uk': 'Привіт! Я ваш персональний медичний асистент.',
         'de': 'Hallo! Ich bin Ihr persönlicher medizinischer Assistent.'
     },
-    'chat_start_conversation_line1': {
-        'ru': 'Я анализирую ваши документы, историю и симптомы.',
-        'en': 'I analyze your documents, history, and symptoms.',
-        'uk': 'Я аналізую ваші документи, історію та симптоми.',
-        'de': 'Ich analysiere Ihre Dokumente, Krankengeschichte und Symptome.'
+    'chat_intro_text': {
+        'ru': 'Я анализирую ваши документы, историю и симптомы. Задайте любой вопрос о здоровье — ответы будут персональными и контекстными.',
+        'en': 'I analyze your documents, history, and symptoms. Ask any health question — answers will be personalized and contextual.',
+        'uk': 'Я аналізую ваші документи, історію та симптоми. Поставте будь-яке питання про здоров\'я — відповіді будуть персональними та контекстними.',
+        'de': 'Ich analysiere Ihre Dokumente, Krankengeschichte und Symptome. Stellen Sie eine Frage zur Gesundheit — die Antworten sind personalisiert und kontextbezogen.'
     },
-    'chat_start_conversation_line2': {
-        'ru': 'Задайте любой вопрос о здоровье — получите персональные рекомендации на основе всех ваших данных.',
-        'en': 'Ask any health question — get personalized recommendations based on all your data.',
-        'uk': 'Поставте будь-яке питання про здоров\'я — отримайте персональні рекомендації на основі всіх ваших даних.',
-        'de': 'Stellen Sie eine Frage zu Ihrer Gesundheit — erhalten Sie personalisierte Empfehlungen basierend auf all Ihren Daten.'
+    'chat_tips_title': {
+        'ru': 'Чтобы получить максимально точные рекомендации:',
+        'en': 'To get the most accurate recommendations:',
+        'uk': 'Щоб отримати максимально точні рекомендації:',
+        'de': 'Um die genauesten Empfehlungen zu erhalten:'
+    },
+    'chat_tip1_title': {
+        'ru': '1. Заполните профиль.',
+        'en': '1. Fill out your profile.',
+        'uk': '1. Заповніть профіль.',
+        'de': '1. Füllen Sie Ihr Profil aus.'
+    },
+    'chat_tip1_text': {
+        'ru': 'Так мои ответы будут точнее и более персональными.',
+        'en': 'This will make my answers more accurate and personalized.',
+        'uk': 'Так мої відповіді будуть точнішими та більш персональними.',
+        'de': 'So werden meine Antworten genauer und personalisierter.'
+    },
+    'chat_tip2_title': {
+        'ru': '2. Проверьте медкарту.',
+        'en': '2. Review your medical records.',
+        'uk': '2. Перевірте медкарту.',
+        'de': '2. Überprüfen Sie Ihre Krankenakte.'
+    },
+    'chat_tip2_text': {
+        'ru': 'Выберите, какие документы будут учитываться при формировании ответа — просто переключайте тумблер «Учитывать в чате».',
+        'en': 'Choose which documents should be considered in responses — just toggle "Consider in chat".',
+        'uk': 'Виберіть, які документи будуть враховуватися при формуванні відповіді — просто перемикайте тумблер «Враховувати в чаті».',
+        'de': 'Wählen Sie aus, welche Dokumente bei der Antwortbildung berücksichtigt werden — schalten Sie einfach "Im Chat berücksichtigen" um.'
     },
     'chat_placeholder': {
         'ru': 'Напишите ваш вопрос...',
@@ -1298,6 +1322,12 @@ TRANSLATIONS = {
         'uk': 'Рік народження',
         'de': 'Geburtsjahr'
     },
+    'birth_year_invalid': {
+        'ru': '⚠️ Введите корректный год рождения. Вам должно быть не менее 18 лет.',
+        'en': '⚠️ Please enter a valid birth year. You must be at least 18 years old.',
+        'uk': '⚠️ Введіть коректний рік народження. Вам має бути не менше 18 років.',
+        'de': '⚠️ Bitte geben Sie ein gültiges Geburtsjahr ein. Sie müssen mindestens 18 Jahre alt sein.'
+    },
     'profile_gender': {
         'ru': 'Пол',
         'en': 'Gender',
@@ -1353,10 +1383,10 @@ TRANSLATIONS = {
         'de': 'Alkohol'
     },
     'profile_physical_activity': {
-        'ru': 'Физическая активность',
-        'en': 'Physical activity',
-        'uk': 'Фізична активність',
-        'de': 'Körperliche Aktivität'
+        'ru': 'Активность',
+        'en': 'Activity',
+        'uk': 'Активність',
+        'de': 'Aktivität'
     },
     'profile_how_to_fill': {
         'ru': 'Зачем заполнять анкету?',

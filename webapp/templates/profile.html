@@ -62,17 +62,17 @@ footer {
     
     <!-- Режим просмотра -->
     <div id="basic-view-mode">
-        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 1rem; margin-bottom: 1rem;">
+        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 0.5rem; margin-bottom: 1rem;">
             <strong>{{ t('profile_name', lang) }}:</strong>
             <span id="name-display">{{ user.name if user else t('profile_not_specified', lang) }}</span>
         </div>
         
-        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 1rem; margin-bottom: 1rem;">
+        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 0.5rem; margin-bottom: 1rem;">
             <strong>{{ t('profile_email', lang) }}:</strong>
             <span>{{ user.email if user else t('profile_not_specified', lang) }}</span>
         </div>
         
-        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 1rem; margin-bottom: 1rem;">
+        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 0.5rem; margin-bottom: 1rem;">
             <strong>{{ t('profile_registered', lang) }}:</strong>
             <span>{{ user.created_at.strftime('%d.%m.%Y') if user and user.created_at else t('unknown', lang) }}</span>
         </div>
@@ -80,13 +80,13 @@ footer {
     
     <!-- Режим редактирования (скрыт по умолчанию) -->
     <div id="basic-edit-mode" style="display: none;">
-        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 1rem; margin-bottom: 1rem;">
+        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 0.5rem; margin-bottom: 1rem; align-items: center;">
             <strong>{{ t('profile_name', lang) }}:</strong>
             <input 
                 type="text" 
                 id="name-input" 
                 value="{{ user.name if user else '' }}"
-                style="padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
+                style="width: 100%; max-width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem; box-sizing: border-box;"
                 maxlength="100"
             >
         </div>
@@ -143,22 +143,22 @@ footer {
     
     <!-- Режим просмотра -->
     <div id="medical-view-mode">
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
             <!-- Год рождения -->
             <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_birth_year', lang) }}</strong>
+                <strong style="display: block; margin-bottom: 0.3rem;">{{ t('profile_birth_year', lang) }}</strong>
                 <span style="color: #666;" id="birth-year-display">{{ user.birth_year if user and user.birth_year else t('profile_not_specified', lang) }}</span>
             </div>
             
             <!-- Пол -->
             <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_gender', lang) }}</strong>
+                <strong style="display: block; margin-bottom: 0.3rem;">{{ t('profile_gender', lang) }}</strong>
                 <span style="color: #666;" id="gender-display">{{ user.gender if user and user.gender else t('profile_not_specified', lang) }}</span>
             </div>
             
             <!-- Рост -->
             <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_height', lang) }}</strong>
+                <strong style="display: block; margin-bottom: 0.3rem;">{{ t('profile_height', lang) }}</strong>
                 <span style="color: #666;" id="height-display">
                     {% if user and user.height_cm %}
                         {{ user.height_cm }} {{ t('profile_height_unit', lang) }}
@@ -170,7 +170,7 @@ footer {
             
             <!-- Вес -->
             <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_weight', lang) }}</strong>
+                <strong style="display: block; margin-bottom: 0.3rem;">{{ t('profile_weight', lang) }}</strong>
                 <span style="color: #666;" id="weight-display">
                     {% if user and user.weight_kg %}
                         {{ user.weight_kg }} {{ t('profile_weight_unit', lang) }}
@@ -216,7 +216,7 @@ footer {
     
     <!-- Режим редактирования (скрыт по умолчанию) -->
     <div id="medical-edit-mode" style="display: none;">
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
             <!-- Год рождения -->
             <div>
                 <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_birth_year', lang) }}</strong>
@@ -910,6 +910,33 @@ async function confirmDelete() {
     to { 
         transform: translateY(0);
         opacity: 1;
+    }
+}
+/* Адаптация для мобильных */
+@media (max-width: 768px) {
+    /* Медицинская анкета - 2 колонки */
+    #medical-view-mode > div:first-child {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 1rem !important;
+    }
+    
+    #medical-view-mode > div > div strong {
+        margin-bottom: 0.3rem !important;
+        font-size: 0.9rem;
+    }
+    
+    #medical-edit-mode > div:first-child {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 1rem !important;
+    }
+}
+
+/* Только на ОЧЕНЬ узких экранах (<400px) делаем 1 колонку для Basic Info */
+@media (max-width: 440px) {
+    #basic-view-mode > div,
+    #basic-edit-mode > div {
+        grid-template-columns: 1fr !important;
+        gap: 0.3rem !important;
     }
 }
 </style>

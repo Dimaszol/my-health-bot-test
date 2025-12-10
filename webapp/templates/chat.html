@@ -4,7 +4,7 @@
 
 {% block extra_styles %}
 <!-- 💬 СТИЛИ ЧАТА -->
-    <link rel="stylesheet" href="/static/css/chat.css?v=33">
+    <link rel="stylesheet" href="/static/css/chat.css?v=34">
 
 {% endblock %}
 
@@ -47,9 +47,22 @@
                         <circle cx="20" cy="10" r="2"></circle>
                     </svg>
                 </div>
-                <h2 style="margin-bottom: 0.5rem; color: #333;">{{ t('chat_greeting', lang) }}</h2>
-                <p>{{ t('chat_start_conversation_line1', lang) }}</p>
-                <p>{{ t('chat_start_conversation_line2', lang) }}</p>
+                <h2 style="margin-bottom: 0.75rem; color: #333; font-weight: 700;">{{ t('chat_greeting', lang) }}</h2>
+                <p style="margin-bottom: 1.5rem; color: #666;">{{ t('chat_intro_text', lang) }}</p>
+                
+                <div style="text-align: left; max-width: 500px; margin: 0 auto;">
+                    <h3 style="margin-bottom: 1rem; color: #333; font-weight: 700;">{{ t('chat_tips_title', lang) }}</h3>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <strong style="color: #00c9a7;">{{ t('chat_tip1_title', lang) }}</strong><br>
+                        <span style="color: #666;">{{ t('chat_tip1_text', lang) }}</span>
+                    </div>
+                    
+                    <div>
+                        <strong style="color: #00c9a7;">{{ t('chat_tip2_title', lang) }}</strong><br>
+                        <span style="color: #666;">{{ t('chat_tip2_text', lang) }}</span>
+                    </div>
+                </div>
             </div>
         {% endif %}
         
