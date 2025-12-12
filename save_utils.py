@@ -199,7 +199,7 @@ async def maybe_update_summary(user_id):
         except (KeyError, IndexError, TypeError) as e:
             continue
     
-    if len(user_messages) < 6:
+    if len(user_messages) < 4:
         return False  # ждём пока пользователь напишет хотя бы 6 новых сообщений
 
     dialogue = format_dialogue(new_messages)

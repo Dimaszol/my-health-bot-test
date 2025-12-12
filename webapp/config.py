@@ -127,7 +127,7 @@ class Config:
         'X-Frame-Options': 'DENY',
         'X-XSS-Protection': '1; mode=block',
         'Strict-Transport-Security': 'max-age=31536000; includeSubDomains' if IS_PRODUCTION else '',
-        'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' apis.google.com cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com;",
+        'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' apis.google.com cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data:;",
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'
     }

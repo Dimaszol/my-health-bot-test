@@ -39,15 +39,19 @@ async def get_recent_messages_formatted(user_id: int, limit: int = 6) -> str:
                 # Убираем HTML теги
                 content = re.sub(r'<[^>]+>', '', content)
                 
-                # Простая обрезка для всех сообщений
-                if len(content) > 100:
-                    content = content[:97]
-                    # Для USER - не режем слово посередине
-                    if role == "USER":
+                # ✅ РАЗНАЯ ОБРЕЗКА: USER - до 500 символов, BOT - до 150
+                if role == "USER":
+                    # Вопросы пользователя - максимум 500 символов (или вообще не режем)
+                    if len(content) > 500:
+                        content = content[:497]
                         last_space = content.rfind(' ')
-                        if last_space > 80:
+                        if last_space > 450:
                             content = content[:last_space]
-                    content += "..."
+                        content += "..."
+                else:
+                    # Ответы бота - обрезаем до 100 символов
+                    if len(content) > 100:
+                        content = content[:97] + "..."
                 
                 formatted_lines.append(f"{role}: {content}")
         
