@@ -19,7 +19,13 @@ class StripeConfig:
     PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
     SECRET_KEY = os.getenv("STRIPE_SECRET_KEY") 
     WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-    
+    # ✅ НОВОЕ: Price ID из переменных окружения (БЕЗ fallback)
+    BASIC_PRICE_ID = os.getenv("STRIPE_BASIC_PRICE_ID")
+    PREMIUM_PRICE_ID = os.getenv("STRIPE_PREMIUM_PRICE_ID")
+
+    # Проверка что переменные заданы
+    if not BASIC_PRICE_ID or not PREMIUM_PRICE_ID:
+        raise ValueError("❌ STRIPE_BASIC_PRICE_ID и STRIPE_PREMIUM_PRICE_ID должны быть заданы в .env")
     # URL для возврата после оплаты
     # Telegram URLs
     TELEGRAM_SUCCESS_URL = os.getenv("TELEGRAM_SUCCESS_URL", "https://t.me/PulsebookBot")
@@ -39,8 +45,7 @@ class StripeConfig:
             "gpt4o_queries": 100,
             "type": "subscription",
             "duration_days": 30,
-            #"stripe_price_id": "price_1RkSNlCS4n1EZxNVsvI16u91",  # реальный
-            "stripe_price_id": "price_1RXp3eCS4n1EZxNVbn0G3WsQ", # тестовый
+            "stripe_price_id": BASIC_PRICE_ID,
             "user_friendly_name_key": "package_basic_name",  # ✅ КЛЮЧ ЛОКАЛИЗАЦИИ
             "features_keys": [  # ✅ КЛЮЧИ ВМЕСТО ЗАХАРДКОЖЕННОГО ТЕКСТА
                 "package_basic_feature_1",
@@ -56,8 +61,7 @@ class StripeConfig:
             "gpt4o_queries": 400,
             "type": "subscription",
             "duration_days": 30,
-            "stripe_price_id": "price_1RkSPZCS4n1EZxNVlAlH8480",  #реальный
-            "stripe_price_id": "price_1RXp4qCS4n1EZxNVjJX9xNgf",  # тестовый
+            "stripe_price_id": PREMIUM_PRICE_ID,
             "user_friendly_name_key": "package_premium_name",  # ✅ КЛЮЧ ЛОКАЛИЗАЦИИ
             "features_keys": [  # ✅ КЛЮЧИ ВМЕСТО ЗАХАРДКОЖЕННОГО ТЕКСТА
                 "package_premium_feature_1",

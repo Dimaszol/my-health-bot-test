@@ -23,100 +23,34 @@ class SubscriptionWebhookHandler:
     
     async def handle_subscription_webhook(self, request):
         """
-        ✅ PRODUCTION версия - минимальное логирование, полная функциональность
+        ✅ PRODUCTION версия - обработка Stripe webhook
         """
         try:
+            import stripe
+            import os
             
-            try:
-                import stripe
-                import os
-                
-                payload = await request.read()
-                sig_header = request.headers.get('stripe-signature')
-                webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
-                
-                if sig_header and webhook_secret and webhook_secret.startswith('whsec_'):
-                    # Прямой Stripe webhook
-                    event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
-                    data = event
-                    logger.info("✅ Webhook verified with Stripe signature")
-                    
-                    # Извлекаем данные из Stripe формата
-                    event_type = data.get('type')
-                    
-                    if event_type == 'invoice.payment_succeeded':
-                        # Извлекаем данные для подписки
-                        invoice_data = data.get('data', {}).get('object', {})
-                        
-                        # ✅ ПРАВИЛЬНОЕ извлечение user_id
-                        stripe_customer_id = None
-                        lines = invoice_data.get('lines', {}).get('data', [])
-                        if lines:
-                            line_metadata = lines[0].get('metadata', {})
-                            stripe_customer_id = line_metadata.get('user_id')
-                        
-                        # Если не нашли в line items - ищем в subscription metadata
-                        if not stripe_customer_id:
-                            parent = invoice_data.get('parent', {})
-                            if parent.get('type') == 'subscription_details':
-                                sub_metadata = parent.get('subscription_details', {}).get('metadata', {})
-                                stripe_customer_id = sub_metadata.get('user_id')
-                        
-                        # ✅ ПРАВИЛЬНОЕ извлечение subscription_id
-                        subscription_id = None
-                        
-                        # Способ 1: Из lines -> parent -> subscription_item_details -> subscription
-                        if lines and len(lines) > 0:
-                            parent = lines[0].get('parent', {})
-                            if parent.get('type') == 'subscription_item_details':
-                                subscription_item_details = parent.get('subscription_item_details', {})
-                                subscription_id = subscription_item_details.get('subscription')
-                        
-                        # Способ 2: Если не найден выше, пробуем из parent -> subscription_details
-                        if not subscription_id:
-                            parent = invoice_data.get('parent', {})
-                            if parent.get('type') == 'subscription_details':
-                                subscription_details = parent.get('subscription_details', {})
-                                subscription_id = subscription_details.get('subscription')
-                        
-                        amount = invoice_data.get('amount_paid', 0)
-                        
-                    elif event_type == 'checkout.session.completed':
-                        # Извлекаем данные для разовой покупки
-                        session_data = data.get('data', {}).get('object', {})
-                        session_id = session_data.get('id')
-                        stripe_customer_id = None  # Будет извлечен в StripeManager
-                        subscription_id = None
-                        amount = 0
-                        
-                else:
-                    # Fallback для тестирования без подписи
-                    data = json.loads(payload.decode('utf-8'))
-                    
-                    # Make.com формат (если понадобится)
-                    event_type = data.get('event_type')
-                    stripe_customer_id = data.get('user_id')
-                    subscription_id = data.get('subscription_id')
-                    amount = int(data.get('amount', 0))
-                    
-            except Exception as e:
-                data = await request.json()
-                
-                # Простой JSON формат
-                event_type = data.get('event_type') or data.get('type')
-                stripe_customer_id = data.get('user_id')
-                subscription_id = data.get('subscription_id')
-                amount = int(data.get('amount', 0))
+            payload = await request.read()
+            sig_header = request.headers.get('stripe-signature')
+            webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
             
-            # ✅ ПРОСТАЯ ОБРАБОТКА - только 2 типа событий
+            # Проверяем подпись Stripe
+            if sig_header and webhook_secret and webhook_secret.startswith('whsec_'):
+                event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+                logger.info("✅ Webhook verified with Stripe signature")
+            else:
+                # Fallback для тестирования без подписи
+                data = json.loads(payload.decode('utf-8'))
+                event = data
+            
+            # Извлекаем тип события
+            event_type = event.get('type')
+            
+            # ✅ ОБРАБОТКА invoice.payment_succeeded (автопродление подписки)
             if event_type == 'invoice.payment_succeeded':
-                # Подписки
-                if not stripe_customer_id:
-                    logger.error("❌ User ID not found in invoice webhook")
-                    return web.json_response(
-                        {"status": "error", "message": "User ID not found"}, 
-                        status=400
-                    )
+                # Извлекаем данные из invoice
+                invoice_data = event.get('data', {}).get('object', {})
+                subscription_id = invoice_data.get('subscription')
+                amount = invoice_data.get('amount_paid', 0)
                 
                 if not subscription_id:
                     logger.error("❌ Subscription ID not found in invoice webhook")
@@ -125,56 +59,60 @@ class SubscriptionWebhookHandler:
                         status=400
                     )
                 
+                # Обрабатываем платёж
                 result = await self._handle_successful_payment(
-                    stripe_customer_id, subscription_id, amount
+                    invoice_data, subscription_id, amount
                 )
-                
+            
+            # ✅ ОБРАБОТКА checkout.session.completed (первичная покупка и разовые платежи)
             elif event_type == 'checkout.session.completed':
-                # Разовые покупки и первичные подписки
-                session_id = data.get('session_id') or data.get('data', {}).get('object', {}).get('id')
+                session_data = event.get('data', {}).get('object', {})
+                session_id = session_data.get('id')
                 
-                if session_id:
-                    try:
-                        from stripe_manager import StripeManager
-                        success, message = await StripeManager.handle_successful_payment(session_id)
+                if not session_id:
+                    logger.error("❌ Missing session_id in checkout.session.completed")
+                    return web.json_response(
+                        {"status": "error", "message": "Missing session_id"}, 
+                        status=400
+                    )
+                
+                try:
+                    from stripe_manager import StripeManager
+                    success, message = await StripeManager.handle_successful_payment(session_id)
+                    
+                    if success:
+                        result = {
+                            "status": "success",
+                            "message": f"Payment processed: {message}",
+                            "session_id": session_id
+                        }
                         
-                        if success:
-                            result = {
-                                "status": "success",
-                                "message": f"One-time payment processed: {message}",
-                                "session_id": session_id
-                            }
-                            
-                            # ✅ ИСПРАВЛЕНИЕ: Всегда отправляем уведомление пользователю
-                            try:
-                                import stripe
-                                session = stripe.checkout.Session.retrieve(session_id)
-                                user_id = int(session.metadata.get('user_id'))
-                                lang = await get_user_language(user_id)
-                                localized_message = t("webhook_payment_processed_auto", lang, message=message)
-                                await self.bot.send_message(user_id, localized_message, parse_mode="HTML")
-                            except Exception:
-                                pass  # ⚠️ Не логируем детали ошибки уведомления
-                        else:
-                            result = {
-                                "status": "error",
-                                "message": f"Payment processing failed: {message}"
-                            }
-                    except Exception as e:
-                        logger.error(f"❌ Checkout processing failed")
+                        # Отправляем уведомление пользователю
+                        try:
+                            session = stripe.checkout.Session.retrieve(session_id)
+                            user_id = int(session.metadata.get('user_id'))
+                            lang = await get_user_language(user_id)
+                            localized_message = t("webhook_payment_processed_auto", lang, message=message)
+                            await self.bot.send_message(user_id, localized_message, parse_mode="HTML")
+                        except Exception:
+                            pass  # Игнорируем ошибки уведомления
+                    else:
                         result = {
                             "status": "error",
-                            "message": "Exception in checkout processing"
+                            "message": f"Payment processing failed: {message}"
                         }
-                else:
-                    result = {"status": "error", "message": "Missing session_id"}
-                    logger.error("❌ Missing session_id in checkout.session.completed")
-                    
+                except Exception as e:
+                    logger.error(f"❌ Checkout processing failed")
+                    result = {
+                        "status": "error",
+                        "message": "Exception in checkout processing"
+                    }
+            
+            # Игнорируем все остальные события
             else:
-                # Игнорируем все остальные события
                 result = {"status": "ignored", "message": f"Event {event_type} ignored"}
             
-            # ✅ ИСПРАВЛЕНИЕ JSON SERIALIZATION: Возвращаем результат с правильным сериализатором
+            # Возвращаем результат
             response_data = {
                 "status": "success",
                 "message": "Webhook processed successfully",
@@ -192,29 +130,41 @@ class SubscriptionWebhookHandler:
                 status=500
             )
     
-    async def _handle_successful_payment(self, stripe_customer_id, subscription_id, amount):
+    async def _handle_successful_payment(self, invoice_data, subscription_id, amount):
         """
-        ✅ PRODUCTION - Обработка успешного платежа (БЕЗ логирования чувствительных данных)
+        ✅ ИСПРАВЛЕНО - Извлекаем user_id через stripe_customer_id из БД
         """
         try:
-            # 1. Проверяем и преобразуем user_id
+            # 1. Получаем Stripe customer_id из invoice
+            stripe_customer_id = invoice_data.get('customer')
+            
             if not stripe_customer_id:
-                logger.error("❌ stripe_customer_id is empty")
-                return {"status": "error", "message": "stripe_customer_id is required"}
+                logger.error("❌ Customer ID not found in webhook")
+                return {"status": "error", "message": "Customer ID not found"}
             
-            try:
-                user_id = int(stripe_customer_id)
-            except (ValueError, TypeError):
-                logger.error(f"❌ Invalid user_id format")
-                return {"status": "error", "message": "Invalid user_id"}
+            if not subscription_id:
+                logger.error("❌ Subscription ID not found")
+                return {"status": "error", "message": "Subscription ID not found"}
             
-            # 2. Определяем пакет
-            package_id = self._determine_package_by_amount(amount)
-            
-            # 3. Получаем соединение с БД напрямую
+            # 2. Получаем соединение с БД
             conn = await get_db_connection()
             try:
-                # 4. ✅ ВАЖНО: Проверяем существование пользователя
+                # 3. Находим user_id по customer_id
+                user_data = await conn.fetchrow("""
+                    SELECT user_id FROM user_subscriptions 
+                    WHERE stripe_customer_id = $1
+                """, stripe_customer_id)
+                
+                if not user_data:
+                    logger.error("❌ User not found by customer_id")
+                    return {"status": "error", "message": "User not found"}
+                
+                user_id = user_data['user_id']
+                
+                # 4. Определяем пакет
+                package_id = self._determine_package_by_amount(amount)
+                
+                # 5. Проверяем существование пользователя
                 user_exists = await conn.fetchrow("""
                     SELECT user_id FROM users WHERE user_id = $1
                 """, user_id)
@@ -227,7 +177,7 @@ class SubscriptionWebhookHandler:
                         ON CONFLICT (user_id) DO NOTHING
                     """, user_id, f"User {user_id}", datetime.now())
                 
-                # 5. ✅ ВАЖНО: Используем ПРАВИЛЬНЫЙ метод - purchase_package
+                # 6. Используем ПРАВИЛЬНЫЙ метод - purchase_package
                 result = await SubscriptionManager.purchase_package(
                     user_id=user_id,
                     package_id=package_id,
@@ -238,35 +188,20 @@ class SubscriptionWebhookHandler:
                     logger.error(f"❌ SubscriptionManager failed")
                     return {"status": "error", "message": "SubscriptionManager failed"}
                 
-                # 6. Сохраняем/обновляем подписку в БД НАПРЯМУЮ через PostgreSQL
-                existing_subscription = await conn.fetchrow("""
-                    SELECT id, stripe_subscription_id FROM user_subscriptions 
-                    WHERE user_id = $1
-                """, user_id)
+                # 7. Обновляем подписку в БД
+                await conn.execute("""
+                    UPDATE user_subscriptions 
+                    SET stripe_subscription_id = $1, 
+                        package_id = $2, 
+                        status = $3,
+                        created_at = $4,
+                        cancelled_at = $5
+                    WHERE stripe_customer_id = $6
+                """, subscription_id, package_id, 'active', datetime.now(), None, stripe_customer_id)
                 
-                if existing_subscription:
-                    # Обновляем существующую
-                    await conn.execute("""
-                        UPDATE user_subscriptions 
-                        SET stripe_subscription_id = $1, 
-                            package_id = $2, 
-                            status = $3,
-                            created_at = $4,
-                            cancelled_at = $5
-                        WHERE user_id = $6
-                    """, subscription_id, package_id, 'active', datetime.now(), None, user_id)
-                else:
-                    # Создаем новую
-                    await conn.execute("""
-                        INSERT INTO user_subscriptions 
-                        (user_id, stripe_subscription_id, package_id, status, created_at, cancelled_at)
-                        VALUES ($1, $2, $3, $4, $5, $6)
-                    """, user_id, subscription_id, package_id, 'active', datetime.now(), None)
-                
-                # 7. Отправляем уведомление
+                # 8. Отправляем уведомление
                 await self._send_renewal_notification(user_id, package_id)
                 
-                # ✅ ИСПРАВЛЕНИЕ: Убираем datetime объекты из ответа
                 return {
                     "status": "success",
                     "message": "Subscription renewed",

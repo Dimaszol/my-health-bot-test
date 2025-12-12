@@ -2309,6 +2309,13 @@ TRANSLATIONS = {
     'de': 'Premium-Abonnement'
 },
 
+"extra_plan_description": {
+    'ru': 'Дополнительные лимиты на 30 дней',
+    'en': 'Additional limits for 30 days',
+    'uk': 'Додаткові ліміти на 30 днів',
+    'de': 'Zusätzliche Limits für 30 Tage'
+},
+
 # === FAQ ===
 'faq_title': {
     'ru': 'Ответы на вопросы',

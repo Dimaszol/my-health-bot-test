@@ -469,6 +469,19 @@ async def create_tables():
     -- Создаём индекс отдельно (вне DO блока)
     CREATE INDEX IF NOT EXISTS idx_user_limits_email ON user_limits(email);
 
+    -- Добавляем stripe_customer_id в user_subscriptions
+    DO $$ 
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                    WHERE table_name = 'user_subscriptions' AND column_name = 'stripe_customer_id') THEN
+            ALTER TABLE user_subscriptions ADD COLUMN stripe_customer_id TEXT;
+        END IF;
+    END $$;
+    
+    -- Создаём индекс для stripe_customer_id
+    CREATE INDEX IF NOT EXISTS idx_user_subscriptions_stripe_customer 
+    ON user_subscriptions(stripe_customer_id);
+
     -- Добавляем новые поля в garmin_daily_data (если их еще нет)
     DO $$ 
     BEGIN

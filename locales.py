@@ -268,10 +268,10 @@ translations = {
         # Особенности планов
         "promo_basic_feature_1": "5 загруженных документов",
         "promo_basic_feature_2": "100 детальных консультаций",
-        "promo_basic_feature_3": "100 вопросов в день",
+        "promo_basic_feature_3": "Повышенный лимит на базовые ответы",
+        "promo_premium_feature_3": "Неограниченные базовые ответы",
         "promo_premium_feature_1": "20 загруженных документов",
-        "promo_premium_feature_2": "400 детальных консультаций",
-        "promo_premium_feature_3": "100 вопросов в день",
+        "promo_premium_feature_2": "400 детальных консультаций",        
         # Ошибки промокодов
         "promo_invalid_format": "❌ Неверный формат промокода",
         "promo_not_found": "❌ Промокод не найден",   
@@ -356,7 +356,7 @@ translations = {
         🔒 Всё конфиденциально — данные доступны только вам.
 
         🌐 <b>Лучший опыт — через <a href="https://pulsebook.health">веб-версию PulseBook</a></b>
-        Там можно хранить весь медицинский архив, загружать PDF/фото, смотреть динамику и синхронизировать всё с Telegram.""",
+    Там можно хранить весь медицинский архив, загружать PDF/фото, смотреть динамику и синхронизировать всё с Telegram.""",
         "gdpr_consent_button": "☑️ Понятно, начинаем!",
         "open_web_version": "🌐 Открыть веб-версию",
         "gdpr_consent_given": "✅ Согласие получено! Начинаем регистрацию...",
@@ -428,7 +428,7 @@ translations = {
         "subscription_active": "✅ Активная",
         "subscription_choose": "\n🛒 <b>Выберите подписку:</b>",
         "subscription_sync_note": "🔄 <i>Данные синхронизированы с платежной системой</i>",
-        "limits_usage_info": "\n💡 <b>Как используются лимиты:</b>\n• Загрузка документов и снимков: -1 документ\n• Вопрос в чат: -1 детальный ответ\n• Базовые ответы - бесплатно, в рамках дневного лимита",
+        "limits_usage_info": "\n💡 <b>Как используются лимиты:</b>\n• Загрузка документов и снимков: -1 документ\n• Вопрос в чат: -1 детальный ответ\n• Базовые ответы - в рамках тарифа",
         "purchase_request_error": "❌ Ошибка обработки запроса",
         # Подтверждение покупки
         "purchase_confirmation_title": "🛒 <b>Подтверждение покупки</b>\n\n{package_description}\n\n💳 Нажмите 'Оплатить' для перехода к безопасной оплате через Stripe.",
@@ -548,8 +548,8 @@ translations = {
             "🎁 <b>Ваши стартовые возможности:</b>\n\n"
             "📋 2 анализа медицинских документов\n"
             "⚕️ 10 детальных консультаций, включая вопросы по фото\n"
-            "💬 Базовые ответы в рамках дневных лимитов\n\n"
-            "Подробнее — в ⚙️ <b>Настройки</b>"           
+            "💬 Базовые ответы в рамках тарифа\n\n"
+            "Подробнее — в ⚙️ <b>Настройки</b>"
         ),
         "btn_view": "✅ Посмотреть",
         "btn_download": "📥 Скачать",
@@ -976,10 +976,10 @@ translations = {
     # Особенности планов
     "promo_basic_feature_1": "5 завантажених документів",
     "promo_basic_feature_2": "100 детальних консультацій",
-    "promo_basic_feature_3": "100 питань на день",
+    "promo_basic_feature_3": "Підвищений ліміт на базові відповіді",
+    "promo_premium_feature_3": "Необмежені базові відповіді",
     "promo_premium_feature_1": "20 завантажених документів",
-    "promo_premium_feature_2": "400 детальних консультацій",
-    "promo_premium_feature_3": "100 питань на день",
+    "promo_premium_feature_2": "400 детальних консультацій",    
     # Ошибки промокодов
     "promo_invalid_format": "❌ Невірний формат промокоду",
     "promo_not_found": "❌ Промокод не знайдено",   
@@ -1136,7 +1136,7 @@ translations = {
     "subscription_active": "✅ Активна",
     "subscription_choose": "\n🛒 <b>Оберіть підписку:</b>",
     "subscription_sync_note": "🔄 <i>Дані синхронізовано з платіжною системою</i>",
-    "limits_usage_info": "\n💡 <b>Як використовуються ліміти:</b>\n• Завантаження документів та знімків: -1 документ\n• Питання в чат: -1 детальна відповідь\n• Базові відповіді - безкоштовно, в рамках денного ліміту",
+    "limits_usage_info": "\n💡 <b>Як використовуються ліміти:</b>\n• Завантаження документів і знімків: -1 документ\n• Питання в чат: -1 детальна відповідь\n• Базові відповіді - в межах тарифу",
     "purchase_request_error": "❌ Помилка обробки запиту",
     # Подтверждение покупки
     "purchase_confirmation_title": "🛒 <b>Підтвердження покупки</b>\n\n{package_description}\n\n💳 Натисніть 'Оплатити' для переходу до безпечної оплати через Stripe.",
@@ -1255,9 +1255,9 @@ translations = {
     "how_to_use_1": (
         "🎁 <b>Ваші стартові можливості:</b>\n\n"
         "📋 2 аналізи медичних документів\n"
-        "⚕️ 10 детальних консультацій, включаючи питання по фото\n"
-        "💬 Базові відповіді в рамках денних лімітів\n\n"
-        "Детальніше — у ⚙️ <b>Налаштування</b>"           
+        "⚕️ 10 детальних консультацій, включаючи питання за фото\n"
+        "💬 Базові відповіді в межах тарифу\n\n"
+        "Детальніше — в ⚙️ <b>Налаштування</b>"
     ),
     "btn_view": "✅ Переглянути",
     "btn_download": "📥 Завантажити",
@@ -1624,10 +1624,10 @@ Garmin analysis requires detailed consultations.
     # Plan features
     "promo_basic_feature_1": "5 uploaded documents",
     "promo_basic_feature_2": "100 detailed consultations",
-    "promo_basic_feature_3": "100 questions per day",
+    "promo_basic_feature_3": "Increased limit for basic answers",
+    "promo_premium_feature_3": "Unlimited basic answers",
     "promo_premium_feature_1": "20 uploaded documents",
-    "promo_premium_feature_2": "400 detailed consultations",
-    "promo_premium_feature_3": "100 questions per day",
+    "promo_premium_feature_2": "400 detailed consultations",    
     # Promo code errors
     "promo_invalid_format": "❌ Invalid promo code format",
     "promo_not_found": "❌ Promo code not found",   
@@ -1784,7 +1784,7 @@ Garmin analysis requires detailed consultations.
     "subscription_active": "✅ Active",
     "subscription_choose": "\n🛒 <b>Choose subscription:</b>",
     "subscription_sync_note": "🔄 <i>Data synchronized with payment system</i>",
-    "limits_usage_info": "\n💡 <b>How limits are used:</b>\n• Uploading documents and images: -1 document\n• Chat question: -1 detailed response\n• Basic responses - free, within daily limit",
+    "limits_usage_info": "\n💡 <b>How limits are used:</b>\n• Uploading documents and images: -1 document\n• Chat question: -1 detailed answer\n• Basic answers - within the plan",
     "purchase_request_error": "❌ Request processing error",
     # Purchase confirmation
     "purchase_confirmation_title": "🛒 <b>Purchase confirmation</b>\n\n{package_description}\n\n💳 Click 'Pay' to proceed to secure payment via Stripe.",
@@ -1901,11 +1901,11 @@ Garmin analysis requires detailed consultations.
         "💬 Or simply ask me a question — I'm always ready to help based on your medical history!"
     ),
     "how_to_use_1": (
-        "🎁 <b>Your starting capabilities:</b>\n\n"
+        "🎁 <b>Your starter benefits:</b>\n\n"
         "📋 2 medical document analyses\n"
         "⚕️ 10 detailed consultations, including photo questions\n"
-        "💬 Basic responses within daily limits\n\n"
-        "More details — in ⚙️ <b>Settings</b>"           
+        "💬 Basic answers within the plan\n\n"
+        "Learn more in ⚙️ <b>Settings</b>"
     ),
     "btn_view": "✅ View",
     "btn_download": "📥 Download",
@@ -2294,10 +2294,10 @@ Für die Garmin-Analyse sind detaillierte Beratungen erforderlich.
     # Plan-Features
     "promo_basic_feature_1": "5 hochgeladene Dokumente",
     "promo_basic_feature_2": "100 detaillierte Beratungen",
-    "promo_basic_feature_3": "100 Fragen pro Tag",
+    "promo_basic_feature_3": "Erhöhtes Limit für grundlegende Antworten",
+    "promo_premium_feature_3": "Unbegrenzte grundlegende Antworten",
     "promo_premium_feature_1": "20 hochgeladene Dokumente",
-    "promo_premium_feature_2": "400 detaillierte Beratungen",
-    "promo_premium_feature_3": "100 Fragen pro Tag",
+    "promo_premium_feature_2": "400 detaillierte Beratungen",    
     # Promocode-Fehler
     "promo_invalid_format": "❌ Ungültiges Promocode-Format",
     "promo_not_found": "❌ Promocode nicht gefunden",   
@@ -2455,7 +2455,7 @@ Für die Garmin-Analyse sind detaillierte Beratungen erforderlich.
     "subscription_active": "✅ Aktiv",
     "subscription_choose": "\n🛒 <b>Abonnement wählen:</b>",
     "subscription_sync_note": "🔄 <i>Daten mit Zahlungssystem synchronisiert</i>",
-    "limits_usage_info": "\n💡 <b>Wie Limits verwendet werden:</b>\n• Hochladen von Dokumenten und Bildern: -1 Dokument\n• Chat-Frage: -1 detaillierte Antwort\n• Basis-Antworten - kostenlos, innerhalb des Tageslimits",
+    "limits_usage_info": "\n💡 <b>Wie Limits verwendet werden:</b>\n• Hochladen von Dokumenten und Bildern: -1 Dokument\n• Chat-Frage: -1 detaillierte Antwort\n• Grundlegende Antworten - im Rahmen des Tarifs",
     "purchase_request_error": "❌ Anfrageverarbeitungsfehler",
     # Kaufbestätigung
     "purchase_confirmation_title": "🛒 <b>Kaufbestätigung</b>\n\n{package_description}\n\n💳 Klicken Sie 'Bezahlen' um zur sicheren Zahlung über Stripe zu gelangen.",
@@ -2573,10 +2573,10 @@ Für die Garmin-Analyse sind detaillierte Beratungen erforderlich.
     ),
     "how_to_use_1": (
         "🎁 <b>Ihre Startmöglichkeiten:</b>\n\n"
-        "📋 2 medizinische Dokumentenanalysen\n"
-        "⚕️ 10 detaillierte Beratungen, einschließlich Foto-Fragen\n"
-        "💬 Basis-Antworten innerhalb der Tageslimits\n\n"
-        "Mehr Details — in ⚙️ <b>Einstellungen</b>"           
+        "📋 2 Analysen medizinischer Dokumente\n"
+        "⚕️ 10 detaillierte Beratungen, einschließlich Fragen zu Fotos\n"
+        "💬 Grundlegende Antworten im Rahmen des Tarifs\n\n"
+        "Mehr erfahren in ⚙️ <b>Einstellungen</b>"
     ),
     "btn_view": "✅ Anzeigen",
     "btn_download": "📥 Herunterladen",

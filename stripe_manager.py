@@ -172,23 +172,23 @@ class StripeManager:
                 # ✅ ИСПРАВЛЕНО: Локализованное сообщение ошибки
                 error_msg = f"Package not found: {package_id}"
                 return False, error_msg
-            
-            # ✅ ИСПРАВЛЕНИЕ SQL: Заменяем INSERT OR REPLACE на PostgreSQL UPSERT
+                        
             if package_info['type'] == 'subscription':
-                # Для подписок сохраняем Stripe subscription ID
+                # Для подписок сохраняем Stripe subscription ID и customer ID
                 subscription_id = session.subscription
+                customer_id = session.customer 
                 
                 # ✅ ИСПРАВЛЕНИЕ: Сначала удаляем старую подписку
                 await execute_query("""
                     DELETE FROM user_subscriptions WHERE user_id = $1
                 """, (user_id,))
 
-                # Затем вставляем новую
+                # Затем вставляем новую с customer_id
                 await execute_query("""
                     INSERT INTO user_subscriptions 
-                    (user_id, stripe_subscription_id, package_id, status, created_at, cancelled_at)
-                    VALUES ($1, $2, $3, 'active', $4, $5)
-                """, (user_id, subscription_id, package_id, datetime.now(), None))
+                    (user_id, stripe_subscription_id, stripe_customer_id, package_id, status, created_at, cancelled_at)
+                    VALUES ($1, $2, $3, $4, 'active', $5, $6)
+                """, (user_id, subscription_id, customer_id, package_id, datetime.now(), None)) 
                 
                 # Выдаем лимиты
                 result = await SubscriptionManager.purchase_package(
@@ -208,6 +208,28 @@ class StripeManager:
                     package_id=package_id,
                     payment_method='stripe_payment'
                 )
+                # ✅ ДОБАВЬ: Сохраняем customer_id для будущих подписок
+                customer_id = session.customer
+                if customer_id:
+                    # Проверяем есть ли уже запись
+                    existing = await fetch_one("""
+                        SELECT id FROM user_subscriptions WHERE user_id = $1
+                    """, (user_id,))
+                    
+                    if existing:
+                        # Обновляем customer_id если запись есть
+                        await execute_query("""
+                            UPDATE user_subscriptions 
+                            SET stripe_customer_id = $1
+                            WHERE user_id = $2
+                        """, (customer_id, user_id))
+                    else:
+                        # Создаём запись только с customer_id (без subscription_id)
+                        await execute_query("""
+                            INSERT INTO user_subscriptions 
+                            (user_id, stripe_customer_id, package_id, status, created_at)
+                            VALUES ($1, $2, $3, 'one_time', $4)
+                        """, (user_id, customer_id, package_id, datetime.now()))
                 
                 # ✅ ИСПРАВЛЕНО: Локализованное сообщение с названием пакета
                 package_name = package_info['name']
@@ -573,8 +595,21 @@ class StripeGDPRManager:
     async def _find_stripe_customer(user_id: int) -> str:
         """Находит Stripe customer_id по user_id"""
         try:
-            logger.info(f"Поиск Stripe customer пропущен (поле отсутствует) для пользователя")
-            return None
+            from db_postgresql import get_db_connection, release_db_connection
+            
+            conn = await get_db_connection()
+            try:
+                row = await conn.fetchrow("""
+                    SELECT stripe_customer_id 
+                    FROM user_subscriptions 
+                    WHERE user_id = $1 AND stripe_customer_id IS NOT NULL
+                    LIMIT 1
+                """, user_id)
+                
+                return row['stripe_customer_id'] if row else None
+                
+            finally:
+                await release_db_connection(conn)
             
         except Exception as e:
             logger.error(f"Ошибка поиска Stripe customer для пользователя")
@@ -606,7 +641,7 @@ class StripeGDPRManager:
                 # Удаляем записи подписок с Stripe ID
                 result = await conn.execute("""
                     DELETE FROM user_subscriptions 
-                    WHERE user_id = $1 AND stripe_subscription_id IS NOT NULL
+                    WHERE user_id = $1
                 """, user_id)
                 
                 logger.info(f"✅ Stripe ссылки очищены из базы для пользователя")
