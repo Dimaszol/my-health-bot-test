@@ -2316,6 +2316,13 @@ TRANSLATIONS = {
     'de': 'Zusätzliche Limits für 30 Tage'
 },
 
+"exit_app_hint": {
+    "ru": "Нажмите ещё раз для выхода",
+    "en": "Press again to exit",
+    "uk": "Натисніть ще раз для виходу",
+    "de": "Drücken Sie erneut zum Beenden"
+},
+
 # === FAQ ===
 'faq_title': {
     'ru': 'Ответы на вопросы',

@@ -484,3 +484,38 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// ============================================
+// 🔙 ОБРАБОТКА КНОПКИ "НАЗАД" В PWA
+// ============================================
+
+if (window.matchMedia('(display-mode: standalone)').matches) {
+    let backPressCount = 0;
+    let backPressTimer = null;
+
+    window.addEventListener('popstate', function(e) {
+        e.preventDefault();
+        
+        backPressCount++;
+        
+        if (backPressCount === 1) {
+            // Получаем перевод из data-атрибута или глобальной переменной
+            const exitHint = window.translations?.exit_app_hint || 'Нажмите ещё раз для выхода';
+            alert(exitHint);
+            
+            backPressTimer = setTimeout(() => {
+                backPressCount = 0;
+            }, 2000);
+        } else if (backPressCount === 2) {
+            clearTimeout(backPressTimer);
+            window.close();
+            if (document.visibilityState === 'visible') {
+                window.blur();
+            }
+        }
+        
+        history.pushState(null, '', window.location.href);
+    });
+    
+    history.pushState(null, '', window.location.href);
+}
