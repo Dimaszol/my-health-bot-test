@@ -258,7 +258,7 @@ Extract ONLY 1-2 most critical medical facts. If nothing is critically important
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_tokens=500,  # Меньше токенов = короче ответ
+                max_completion_tokens=500,  # Меньше токенов = короче ответ
                 temperature=0.1
             )
             
@@ -322,12 +322,12 @@ Respond in {lang} but use only numbers and commas."""
     try:
         async with OPENAI_SEMAPHORE:
             response = await client.chat.completions.create(
-                model="gpt-5-mini",
+                model="gpt-5-nano",
                 messages=[
                     {"role": "system", "content": "You are a medical quality assessor. Be strict about what constitutes a concrete medical fact."},
                     {"role": "user", "content": validation_prompt}
                 ],
-                max_tokens=100,
+                max_completion_tokens=100,
                 temperature=0.1
             )
             
@@ -458,7 +458,7 @@ Create ONE comprehensive timeline entry combining all important medical findings
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_tokens=200,
+                max_completion_tokens=200,
                 temperature=0.1
             )
             

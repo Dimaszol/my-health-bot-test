@@ -557,7 +557,7 @@ class GarminAnalyzer:
                 'activity_trend': trends.get('activity_trend', 'stable'),
                 'stress_trend': trends.get('stress_trend', 'stable'),
                 'recovery_trend': trends.get('recovery_trend', 'stable'),
-                'gpt_model_used': 'gpt-5-chat-latest',
+                'gpt_model_used': 'gpt-5.2',
                 'created_at': datetime.now()
             }
             

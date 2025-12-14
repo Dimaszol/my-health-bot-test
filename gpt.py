@@ -176,7 +176,7 @@ async def summarize_note_text(note: str, lang: str = "ru") -> str:  # 🔄 async
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": note}
         ],
-        max_tokens=300,
+        max_completion_tokens=300,
         temperature=0.3
     )
     return response.choices[0].message.content.strip()
@@ -203,7 +203,7 @@ async def generate_title_for_note(note: str) -> str:  # 🔄 async
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": note}
         ],
-        max_tokens=25,
+        max_completion_tokens=25,
         temperature=0.3
     )
     
@@ -247,7 +247,7 @@ async def extract_text_from_image(image_path: str) -> str:  # 🔄 async
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
             ]}
         ],
-        max_tokens=1500,
+        max_completion_tokens=1500,
         temperature=0
     )
     return response.choices[0].message.content.strip()
@@ -341,7 +341,7 @@ async def update_medications_via_gpt(user_input: str, current_list: list, user_l
             },
             {"role": "user", "content": prompt}
         ],
-        max_tokens=500,
+        max_completion_tokens=500,
         temperature=0.2
     )
     
@@ -432,7 +432,7 @@ async def ask_structured(text: str, lang: str = "ru", max_tokens: int = 2500) ->
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        max_tokens=max_tokens,
+        max_completion_tokens=max_tokens,
         temperature=0.2  # Низкая для консистентности форматирования
     )
     return response.choices[0].message.content.strip()
@@ -471,7 +471,7 @@ Your answer for "{user_question}":
             },
             {"role": "user", "content": prompt}
         ],
-        max_tokens=150,      # ✅ Достаточно для короткого запроса
+        max_completion_tokens=150,      # ✅ Достаточно для короткого запроса
         temperature=0.2      # ✅ Низкая креативность для технической задачи
     )
     
@@ -497,7 +497,7 @@ async def ask_gpt_keywords(prompt: str) -> str:  # 🔄 async
             {"role": "system", "content": "You are a medical keyword extractor."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=300,
+        max_completion_tokens=300,
         temperature=0.2
     )
     return response.choices[0].message.content.strip()
@@ -646,7 +646,7 @@ async def ask_doctor(context_text: str, user_question: str,
                     {"role": "assistant", "content": "I have reviewed the patient's medical information and am ready to answer the question."},
                     {"role": "user", "content": f"Patient's question: {user_question}"}
                 ],
-                max_tokens=3000,  # ← Обычный параметр
+                max_completion_tokens=3000,  # ← Обычный параметр
                 temperature=0.6,
                 frequency_penalty=0.2,  # ← Уменьшаем повторения
                 presence_penalty=0.2    # ← Поощряем разнообразие
@@ -660,7 +660,7 @@ async def ask_doctor(context_text: str, user_question: str,
                     {"role": "assistant", "content": "I have reviewed the patient's medical information and am ready to answer the question."},
                     {"role": "user", "content": f"Patient's question: {user_question}"}
                 ],
-                max_tokens=2500,
+                max_completion_tokens=2500,
                 temperature=0.5,
             )
         
@@ -682,7 +682,7 @@ async def ask_doctor(context_text: str, user_question: str,
                         {"role": "assistant", "content": "I have reviewed the patient's medical information and am ready to answer the question."},
                         {"role": "user", "content": f"Patient's question: {user_question}"}
                     ],
-                    max_tokens=2500,
+                    max_completion_tokens=2500,
                     temperature=0.5
                 )
                 
@@ -736,7 +736,7 @@ Never mix languages within a single response.
                 {"role": "system", "content": enhanced_system_prompt},
                 {"role": "user", "content": full_prompt}
             ],
-            max_tokens=2500,
+            max_completion_tokens=2500,
             temperature=0.5,
         )
         
@@ -767,7 +767,7 @@ async def is_medical_text(text: str) -> bool:  # 🔄 async
             {"role": "system", "content": "You are a medical classification assistant. Your task is to check if a text is medical in nature."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=10,
+        max_completion_tokens=10,
         temperature=0
     )
 
@@ -835,7 +835,7 @@ async def generate_medical_summary(text: str, lang: str, document_date: str = No
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        max_tokens=1500,
+        max_completion_tokens=1500,
         temperature=0.3
     )
     return response.choices[0].message.content.strip()
@@ -885,7 +885,7 @@ async def generate_title_from_text(text: str, lang: str) -> str:  # 🔄 async
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"{title_prompt}\n\n{text}"}
         ],
-        max_tokens=100,
+        max_completion_tokens=100,
         temperature=0.3
     )
     return response.choices[0].message.content.strip()
@@ -1007,7 +1007,7 @@ TECHNICAL PARAMETERS:
                 "content": prompt
             }
         ],
-        max_tokens=1300,  # Увеличенный лимит для полного анализа
+        max_completion_tokens=1300,  # Увеличенный лимит для полного анализа
         temperature=0.4   # Более детерминированный вывод для стабильной структуры
     )
     
@@ -1035,7 +1035,7 @@ async def check_openai_status() -> bool:  # 🔄 async
         response = await client.chat.completions.create(  # 🔄 await
             model="gpt-5-nano",
             messages=[{"role": "user", "content": "ping"}],
-            max_tokens=1
+            max_completion_tokens=1
         )
         return True
     except Exception:
