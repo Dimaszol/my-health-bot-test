@@ -279,7 +279,7 @@ async def chat_message(
             model_name = "GPT-5 (детальная консультация)"
         else:
             use_gemini = False
-            model_name = "GPT-4o-mini (базовая консультация)"
+            model_name = "GPT-5-mini (базовая консультация)"
         
         # ==========================================
         # ШАГ 6: ГЕНЕРИРУЕМ ОТВЕТ

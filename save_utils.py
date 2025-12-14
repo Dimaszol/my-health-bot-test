@@ -251,8 +251,7 @@ async def maybe_update_summary(user_id):
                     },
                     {"role": "user", "content": prompt}
                 ],
-                max_completion_tokens=400,
-                temperature=0.2  # Низкая температура для точности сводок
+                max_completion_tokens=400
             )
             
             # ✅ БЕЗОПАСНОЕ получение ответа

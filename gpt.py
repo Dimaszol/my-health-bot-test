@@ -176,8 +176,7 @@ async def summarize_note_text(note: str, lang: str = "ru") -> str:  # 🔄 async
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": note}
         ],
-        max_completion_tokens=300,
-        temperature=0.3
+        max_completion_tokens=300
     )
     return response.choices[0].message.content.strip()
 
@@ -203,8 +202,7 @@ async def generate_title_for_note(note: str) -> str:  # 🔄 async
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": note}
         ],
-        max_completion_tokens=25,
-        temperature=0.3
+        max_completion_tokens=25
     )
     
     title = response.choices[0].message.content.strip().strip('"\'')
@@ -247,8 +245,7 @@ async def extract_text_from_image(image_path: str) -> str:  # 🔄 async
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
             ]}
         ],
-        max_completion_tokens=1500,
-        temperature=0
+        max_completion_tokens=1500
     )
     return response.choices[0].message.content.strip()
 
@@ -341,8 +338,7 @@ async def update_medications_via_gpt(user_input: str, current_list: list, user_l
             },
             {"role": "user", "content": prompt}
         ],
-        max_completion_tokens=500,
-        temperature=0.2
+        max_completion_tokens=500
     )
     
     raw_text = response.choices[0].message.content.strip()
@@ -432,8 +428,7 @@ async def ask_structured(text: str, lang: str = "ru", max_tokens: int = 2500) ->
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        max_completion_tokens=max_tokens,
-        temperature=0.2  # Низкая для консистентности форматирования
+        max_completion_tokens=max_tokens
     )
     return response.choices[0].message.content.strip()
 
@@ -471,8 +466,7 @@ Your answer for "{user_question}":
             },
             {"role": "user", "content": prompt}
         ],
-        max_completion_tokens=150,      # ✅ Достаточно для короткого запроса
-        temperature=0.2      # ✅ Низкая креативность для технической задачи
+        max_completion_tokens=150      # ✅ Достаточно для короткого запроса
     )
     
     # Простая очистка
@@ -497,8 +491,7 @@ async def ask_gpt_keywords(prompt: str) -> str:  # 🔄 async
             {"role": "system", "content": "You are a medical keyword extractor."},
             {"role": "user", "content": prompt}
         ],
-        max_completion_tokens=300,
-        temperature=0.2
+        max_completion_tokens=300
     )
     return response.choices[0].message.content.strip()
 
@@ -646,10 +639,7 @@ async def ask_doctor(context_text: str, user_question: str,
                     {"role": "assistant", "content": "I have reviewed the patient's medical information and am ready to answer the question."},
                     {"role": "user", "content": f"Patient's question: {user_question}"}
                 ],
-                max_completion_tokens=3000,  # ← Обычный параметр
-                temperature=0.6,
-                frequency_penalty=0.2,  # ← Уменьшаем повторения
-                presence_penalty=0.2    # ← Поощряем разнообразие
+                max_completion_tokens=3000  # ← Обычный параметр
             )
         else:
             response = await client.chat.completions.create(
@@ -660,8 +650,7 @@ async def ask_doctor(context_text: str, user_question: str,
                     {"role": "assistant", "content": "I have reviewed the patient's medical information and am ready to answer the question."},
                     {"role": "user", "content": f"Patient's question: {user_question}"}
                 ],
-                max_completion_tokens=2500,
-                temperature=0.5,
+                max_completion_tokens=2500
             )
         
         answer = response.choices[0].message.content.strip()
@@ -682,8 +671,7 @@ async def ask_doctor(context_text: str, user_question: str,
                         {"role": "assistant", "content": "I have reviewed the patient's medical information and am ready to answer the question."},
                         {"role": "user", "content": f"Patient's question: {user_question}"}
                     ],
-                    max_completion_tokens=2500,
-                    temperature=0.5
+                    max_completion_tokens=2500
                 )
                 
                 answer = response.choices[0].message.content.strip()
@@ -736,8 +724,7 @@ Never mix languages within a single response.
                 {"role": "system", "content": enhanced_system_prompt},
                 {"role": "user", "content": full_prompt}
             ],
-            max_completion_tokens=2500,
-            temperature=0.5,
+            max_completion_tokens=2500
         )
         
         # Обработка ответа (адаптируем под OpenAI формат)
@@ -762,7 +749,7 @@ async def is_medical_text(text: str) -> bool:  # 🔄 async
     )
 
     response = await client.chat.completions.create(  # 🔄 await
-        model="gpt-5-nano",
+        model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You are a medical classification assistant. Your task is to check if a text is medical in nature."},
             {"role": "user", "content": prompt}
@@ -835,8 +822,7 @@ async def generate_medical_summary(text: str, lang: str, document_date: str = No
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        max_completion_tokens=1500,
-        temperature=0.3
+        max_completion_tokens=1500
     )
     return response.choices[0].message.content.strip()
 
@@ -885,8 +871,7 @@ async def generate_title_from_text(text: str, lang: str) -> str:  # 🔄 async
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"{title_prompt}\n\n{text}"}
         ],
-        max_completion_tokens=100,
-        temperature=0.3
+        max_completion_tokens=100
     )
     return response.choices[0].message.content.strip()
 
@@ -990,7 +975,6 @@ WRITING STYLE:
 - Keep medical accuracy while being motivating
 
 TECHNICAL PARAMETERS:
-- Temperature: 0.4 for more consistent structure
 - Focus on provided data only
 - If key data missing, briefly mention what would enhance the analysis"""
 
@@ -1007,8 +991,7 @@ TECHNICAL PARAMETERS:
                 "content": prompt
             }
         ],
-        max_completion_tokens=1300,  # Увеличенный лимит для полного анализа
-        temperature=0.4   # Более детерминированный вывод для стабильной структуры
+        max_completion_tokens=1300 # Увеличенный лимит для полного анализа
     )
     
     analysis = response.choices[0].message.content.strip()
