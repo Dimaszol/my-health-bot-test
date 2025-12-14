@@ -3,6 +3,7 @@
 import os
 import uuid
 import logging
+import asyncio
 from typing import Tuple, Optional
 try:
     from supabase import create_client, Client
@@ -177,16 +178,13 @@ class SupabaseStorage:
     
     async def delete_file(self, storage_path: str) -> bool:
         """
-        Удаляет файл из Supabase Storage
-        
-        Args:
-            storage_path: Путь к файлу в хранилище
-            
-        Returns:
-            bool: Успех операции
+        Удаляет файл из Supabase Storage                
         """
         try:
-            self.supabase.storage.from_(self.bucket_name).remove([storage_path])
+            # ✅ Выполняем синхронный Supabase API в отдельном потоке
+            await asyncio.to_thread(
+                lambda: self.supabase.storage.from_(self.bucket_name).remove([storage_path])
+            )
             
             logger.info(f"✅ [SUPABASE] Файл удален: {storage_path}")
             return True

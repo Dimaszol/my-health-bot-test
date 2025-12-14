@@ -1086,13 +1086,17 @@ async def delete_document(
             except Exception as e:
                 safe_log_warning("Ошибка удаления из medical_timeline", error=e, document_id=document_id)
             
-            # 4️⃣ Удаляем файл с диска
+            # 4️⃣ Удаляем файл
             if doc['file_path']:
                 try:
-                    from supabase_storage import get_file_storage
-                    storage = get_file_storage()
-                    storage.delete_file(doc['file_path'])
-
+                    if doc['file_path'].startswith("users/"):  # Supabase
+                        from supabase_storage import get_storage_manager
+                        storage = get_storage_manager()
+                        await storage.delete_file(doc['file_path'])
+                    else:  # Локальное хранилище
+                        import asyncio
+                        if os.path.exists(doc['file_path']):
+                            await asyncio.to_thread(os.remove, doc['file_path'])  # ✅ Асинхронно!
                 except Exception as e:
                     safe_log_warning("Ошибка удаления файла документа", error=e, document_id=document_id)
             

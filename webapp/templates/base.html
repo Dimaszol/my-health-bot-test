@@ -83,7 +83,7 @@
                         {% if session.get('user_id') %}
                             <!-- 👤 Меню для авторизованных пользователей -->
                             <li>
-                                <a href="/dashboard">
+                                <a href="/dashboard" onclick="goTo('/dashboard'); return false;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
                                         <rect x="3" y="3" width="7" height="7"></rect>
                                         <rect x="14" y="3" width="7" height="7"></rect>
@@ -93,10 +93,10 @@
                                     {{ t('menu_dashboard', lang) }}
                                 </a>
                             </li>
-                            <li><a href="/dashboard/chat">💬 {{ t('menu_chat', lang) }}</a></li>
-                            <li><a href="/dashboard/documents">📄 {{ t('menu_documents', lang) }}</a></li>
+                            <li><a href="/dashboard/chat" onclick="goTo('/dashboard/chat'); return false;">💬 {{ t('menu_chat', lang) }}</a></li>
+                            <li><a href="/dashboard/documents" onclick="goTo('/dashboard/documents'); return false;">📄 {{ t('menu_documents', lang) }}</a></li>
                             <li>
-                                <a href="/dashboard/profile">
+                                <a href="/dashboard/profile" onclick="goTo('/dashboard/profile'); return false;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                         <circle cx="12" cy="7" r="4"></circle>
@@ -172,7 +172,7 @@
             {% if session.get('user_id') %}
                 <!-- 👤 Меню для авторизованных пользователей -->
                 <li>
-                    <a href="/dashboard">
+                    <a href="/dashboard" onclick="goTo('/dashboard'); return false;">
                         <span class="menu-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="3" width="7" height="7"></rect>
@@ -185,19 +185,19 @@
                     </a>
                 </li>
                 <li>
-                    <a href="/dashboard/chat">
+                    <a href="/dashboard/chat" onclick="goTo('/dashboard/chat'); return false;">
                         <span class="menu-icon">💬</span>
                         <span>{{ t('menu_chat', lang) }}</span>
                     </a>
                 </li>
                 <li>
-                    <a href="/dashboard/documents">
+                    <a href="/dashboard/documents" onclick="goTo('/dashboard/documents'); return false;">
                         <span class="menu-icon">📄</span>
                         <span>{{ t('menu_documents', lang) }}</span>
                     </a>
                 </li>
                 <li>
-                    <a href="/dashboard/profile">
+                    <a href="/dashboard/profile" onclick="goTo('/dashboard/profile'); return false;">
                         <span class="menu-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>

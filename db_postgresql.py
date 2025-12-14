@@ -1066,17 +1066,18 @@ async def delete_user_completely(user_id: int) -> bool:
             user_id
         )
         
-        # 2. Удаляем физические файлы
-        import os
+        # 2. Удаляем файлы из Supabase Storage
         for doc in documents:
             file_path = doc['file_path']
-            if file_path and file_path != "memory_note" and os.path.exists(file_path):
+            if file_path and file_path.startswith("users/"):
                 try:
-                    os.remove(file_path)
-                except OSError as e:
-                    pass
-        
-        # 3. ✅ НОВОЕ: Удаляем данные из Stripe (GDPR)
+                    from supabase_storage import get_storage_manager
+                    storage = get_storage_manager()
+                    await storage.delete_file(file_path)
+                except Exception as e:
+                    pass  # Игнорируем ошибки при GDPR удалении
+
+        # 3. Удаляем данные из Stripe (GDPR)
         try:
             from stripe_manager import StripeGDPRManager
             await StripeGDPRManager.delete_user_stripe_data_gdpr(user_id)

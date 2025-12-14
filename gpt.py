@@ -171,7 +171,7 @@ async def summarize_note_text(note: str, lang: str = "ru") -> str:  # 🔄 async
     )
 
     response = await client.chat.completions.create(  # 🔄 await
-        model="gpt-4o-mini",
+        model="gpt-5-mini",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": note}
@@ -198,13 +198,13 @@ async def generate_title_for_note(note: str) -> str:  # 🔄 async
     )
     
     response = await client.chat.completions.create(  # 🔄 await
-        model="gpt-4o-mini",
+        model="gpt-5-nano",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": note}
         ],
         max_tokens=25,
-        temperature=0.6
+        temperature=0.3
     )
     
     title = response.choices[0].message.content.strip().strip('"\'')
@@ -239,7 +239,7 @@ async def extract_text_from_image(image_path: str) -> str:  # 🔄 async
     )
 
     response = await client.chat.completions.create(  # 🔄 await
-        model="gpt-4o",
+        model="gpt-5.2",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": [
@@ -333,7 +333,7 @@ async def update_medications_via_gpt(user_input: str, current_list: list, user_l
     )
 
     response = await client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-5-mini",
         messages=[
             {
                 "role": "system", 
@@ -427,7 +427,7 @@ async def ask_structured(text: str, lang: str = "ru", max_tokens: int = 2500) ->
     )
 
     response = await client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-5.2",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
@@ -463,7 +463,7 @@ Your answer for "{user_question}":
     
     # 🎯 ПРЯМОЙ ВЫЗОВ с правильными параметрами для технической задачи
     response = await client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-5-nano",
         messages=[
             {
                 "role": "system", 
@@ -492,7 +492,7 @@ Your answer for "{user_question}":
 async def ask_gpt_keywords(prompt: str) -> str:  # 🔄 async
     """Безопасное извлечение ключевых слов"""
     response = await client.chat.completions.create(  # 🔄 await
-        model="gpt-4o-mini",
+        model="gpt-5-nano",
         messages=[
             {"role": "system", "content": "You are a medical keyword extractor."},
             {"role": "user", "content": prompt}
@@ -583,7 +583,7 @@ async def ask_doctor(context_text: str, user_question: str,
     # ✅ ПРОСТАЯ ЛОГИКА ВЫБОРА МОДЕЛИ
     if use_gemini:
         # Есть лимиты - используем GPT-5 с усиленным промптом
-        model = "gpt-5-chat-latest"
+        model = "gpt-5.2"
         system_prompt = f"""
 {base_system_prompt}
 
@@ -600,13 +600,13 @@ async def ask_doctor(context_text: str, user_question: str,
 • Explicitly separate *observations* (what data shows) from *interpretations* (clinical meaning)
 
 """
-        model_info = "gpt-5-chat-latest"
+        model_info = "gpt-5.2"
         
     else:
-        # Нет лимитов - используем GPT-4o-mini
-        model = "gpt-4o-mini"
+        # Нет лимитов - используем gpt-5-mini
+        model = "gpt-5-mini"
         system_prompt = base_system_prompt
-        model_info = "GPT-4o-mini"
+        model_info = "gpt-5-mini"
 
     # ✅ ИНСТРУКЦИИ с учетом контекста общения
     if recent_interaction and not is_greeting:
@@ -637,7 +637,7 @@ async def ask_doctor(context_text: str, user_question: str,
     # ✅ ЕДИНЫЙ ВЫЗОВ API
     try:
         # GPT-5 использует особые параметры
-        if model == "gpt-5-chat-latest":
+        if model == "gpt-5.2":
             response = await client.chat.completions.create(
                 model=model,
                 messages=[
@@ -670,12 +670,12 @@ async def ask_doctor(context_text: str, user_question: str,
     except Exception as e:
         logger.error(f"❌ Ошибка модели {model}: {str(e)}")
         
-        # Fallback на GPT-4o-mini при любой ошибке
-        if model != "gpt-4o-mini":
+        # Fallback на gpt-5-mini при любой ошибке
+        if model != "gpt-5-mini":
             try:
                 logger.warning(f"⚠️ Fallback на GPT-4o-mini")
                 response = await client.chat.completions.create(
-                    model="gpt-4o-mini",
+                    model="gpt-5-mini",
                     messages=[
                         {"role": "system", "content": enhanced_system_prompt},
                         {"role": "user", "content": context_text},  # ← Контекст пациента
@@ -731,7 +731,7 @@ Never mix languages within a single response.
 
         # Заменяем Gemini на GPT-5
         response = await client.chat.completions.create(
-            model="gpt-5-chat-latest",
+            model="gpt-5.2",
             messages=[
                 {"role": "system", "content": enhanced_system_prompt},
                 {"role": "user", "content": full_prompt}
@@ -762,7 +762,7 @@ async def is_medical_text(text: str) -> bool:  # 🔄 async
     )
 
     response = await client.chat.completions.create(  # 🔄 await
-        model="gpt-4o-mini",
+        model="gpt-5-nano",
         messages=[
             {"role": "system", "content": "You are a medical classification assistant. Your task is to check if a text is medical in nature."},
             {"role": "user", "content": prompt}
@@ -830,7 +830,7 @@ async def generate_medical_summary(text: str, lang: str, document_date: str = No
     )
 
     response = await client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-5.2",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
@@ -880,7 +880,7 @@ async def generate_title_from_text(text: str, lang: str) -> str:  # 🔄 async
     )
 
     response = await client.chat.completions.create(  # 🔄 await
-        model="gpt-4o-mini",
+        model="gpt-5-mini",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"{title_prompt}\n\n{text}"}
@@ -996,7 +996,7 @@ TECHNICAL PARAMETERS:
 
     # Вызов GPT-5 с правильными параметрами
     response = await client.chat.completions.create(
-        model="gpt-5-chat-latest",  # ✅ Правильное название модели GPT-5
+        model="gpt-5.2",
         messages=[
             {
                 "role": "system",
@@ -1014,7 +1014,7 @@ TECHNICAL PARAMETERS:
     analysis = response.choices[0].message.content.strip()
     
     # Безопасное логирование
-    logger.info(f"Health analysis generated using GPT-5 for user profile")
+    logger.info(f"Health analysis generated using GPT-5.2 for user profile")
     
     return safe_telegram_text(analysis)
 
@@ -1033,7 +1033,7 @@ async def check_openai_status() -> bool:  # 🔄 async
     """Асинхронная проверка доступности OpenAI API"""
     try:
         response = await client.chat.completions.create(  # 🔄 await
-            model="gpt-4o-mini",
+            model="gpt-5-nano",
             messages=[{"role": "user", "content": "ping"}],
             max_tokens=1
         )

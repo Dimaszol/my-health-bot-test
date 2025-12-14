@@ -852,10 +852,10 @@ TRANSLATIONS = {
         "de": "⚙️ Analyse des Dokuments mit mehreren KI-Modellen…"
     },
     "progress_save": {
-        "ru": "📁 Формируем AI-сводку и сохраняем результаты…",
-        "en": "📁 Generating an AI summary and saving results…",
-        "uk": "📁 Формуємо AI-зведення та зберігаємо результати…",
-        "de": "📁 Erstellung der KI-Zusammenfassung und Speichern der Ergebnisse…"
+        "ru": "📁 Формируем сводку и сохраняем результаты…",
+        "en": "📁 Generating summary and saving results…",
+        "uk": "📁 Формуємо зведення та зберігаємо результати…",
+        "de": "📁 Zusammenfassung wird erstellt und Ergebnisse werden gespeichert…"
     },
     'progress_completed': {
         'ru': '✅ Документ успешно обработан!',
