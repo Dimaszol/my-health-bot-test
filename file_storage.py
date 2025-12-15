@@ -16,7 +16,7 @@ class FileStorage:
         try:
             self.storage_manager = get_storage_manager()
             self.storage_type = "supabase"
-            logger.info("✅ Supabase Storage инициализирован")
+            logger.info("✅ Файловое хранилище инициализировано")
         except Exception as e:
             logger.error(f"❌ Ошибка инициализации Supabase Storage: {e}")
             # Fallback только для локальной разработки
@@ -83,7 +83,6 @@ class FileStorage:
                         loop.close()
                 
                 if success:
-                    logger.info(f"✅ [SUPABASE] Файл сохранен: {storage_path}")
                     return True, storage_path
                 else:
                     logger.error(f"❌ [SUPABASE] Ошибка сохранения: {storage_path}")
@@ -116,8 +115,7 @@ class FileStorage:
             
             # Копируем файл
             shutil.copy2(source_path, destination_path)
-            
-            logger.info(f"✅ [LOCAL] Файл сохранен: {destination_path}")
+
             return True, destination_path
             
         except Exception as e:
@@ -168,7 +166,6 @@ class FileStorage:
                 # ✅ ЛОКАЛЬНОЕ УДАЛЕНИЕ
                 if os.path.exists(file_path):
                     os.remove(file_path)
-                    logger.info(f"✅ Файл удален: {file_path}")
                     return True
                 return False
         except Exception as e:
@@ -181,7 +178,7 @@ class FileStorage:
             if self.storage_type == "supabase":
                 # Для Supabase нужна отдельная логика удаления по пользователю
                 # Пока возвращаем True (файлы удаляются при удалении записей из БД)
-                logger.info(f"✅ GDPR: файлы пользователя {user_id} будут удалены через БД")
+                logger.debug("GDPR: файлы будут удалены через БД")
                 return True
             else:
                 # Локальное удаление
@@ -189,7 +186,6 @@ class FileStorage:
                 user_dir = os.path.join(self.temp_dir, f"users/{user_id}")
                 if os.path.exists(user_dir):
                     shutil.rmtree(user_dir)
-                    logger.info(f"✅ Удалена папка пользователя: {user_dir}")
                 return True
         except Exception as e:
             logger.error(f"❌ Ошибка удаления файлов пользователя: {e}")
@@ -269,17 +265,15 @@ def check_storage_setup() -> dict:
             stats = {
                 'storage_type': 'supabase',
                 'status': 'connected',
-                'bucket': 'medical-documents',
                 'storage_path': 'Supabase Cloud Storage'  # ← ДОБАВЛЯЕМ ЭТО ПОЛЕ
             }
         else:
             stats = {
                 'storage_type': 'local_fallback',
                 'status': 'fallback_mode',
-                'storage_path': getattr(storage, 'temp_dir', '/app/files')  # ← БЕЗОПАСНО ПОЛУЧАЕМ
+                'storage_path': 'local_storage'  # ← БЕЗОПАСНО ПОЛУЧАЕМ
             }
         
-        logger.info(f"📊 Статистика хранилища: {stats}")
         return {
             'success': True,
             'stats': stats

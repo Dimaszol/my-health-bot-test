@@ -372,8 +372,8 @@ async def update_medications_via_gpt(user_input: str, current_list: list, user_l
         return current_list  # Возвращаем старый список при ошибке
 
 @async_safe_openai_call(max_retries=2, delay=1.0)
-async def ask_structured(text: str, lang: str = "ru", max_tokens: int = 2500) -> str:  # 🔄 async
-    """Создание красивого отображения медицинского документа для пользователя"""
+async def ask_structured(text: str, lang: str = "ru", max_tokens: int = 3000) -> str:
+    """Создание красивого отображения медицинского документа для пользователя - raw_text в таблице documents"""
     
     system_prompt = (
         "You are a medical information designer who creates clear, beautiful, and patient-friendly "
@@ -426,16 +426,15 @@ async def ask_structured(text: str, lang: str = "ru", max_tokens: int = 2500) ->
         f"MEDICAL DOCUMENT TO FORMAT:\n{text}"
     )
 
-    response = await client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
-        max_tokens=max_tokens,
-        temperature=0.2  # Низкая для консистентности форматирования
+    full_input = f"{system_prompt}\n\n{user_prompt}"
+    
+    response = await client.responses.create(
+        model="gpt-5.2",
+        input=full_input,
+        max_output_tokens=2500
     )
-    return response.choices[0].message.content.strip()
+    
+    return (response.output_text or "").strip()
 
 @async_safe_openai_call(max_retries=2, delay=1.0)
 async def enrich_query_for_vector_search(user_question: str) -> str:
@@ -549,7 +548,7 @@ async def extract_keywords(text: str) -> list[str]:
 async def ask_doctor(context_text: str, user_question: str, 
                     lang: str, user_id: int = None, use_gemini: bool = False) -> str:
     """
-    ✅ УПРОЩЕННАЯ версия — одна функция для всех моделей
+    Главный промт ответов в чате
     """
     
     # ✅ АНАЛИЗИРУЕМ НЕДАВНЮЮ ИСТОРИЮ
@@ -582,8 +581,8 @@ async def ask_doctor(context_text: str, user_question: str,
 
     # ✅ ПРОСТАЯ ЛОГИКА ВЫБОРА МОДЕЛИ
     if use_gemini:
-        # Есть лимиты - используем GPT-5 с усиленным промптом
-        model = "gpt-5-chat-latest"
+        # Есть лимиты - используем GPT-5.2 с усиленным промптом
+        model = "gpt-5.2"
         system_prompt = f"""
 {base_system_prompt}
 
@@ -591,16 +590,16 @@ async def ask_doctor(context_text: str, user_question: str,
 {lang_instruction}
 
 🧠 ADVANCED GPT-5 MEDICAL CAPABILITIES (MANDATORY):
-• Perform deep step-by-step clinical reasoning with explicit logic chains
-• Comprehensive understanding of lab results patterns and anomalies
-• Interpret lab values as a physician would, flagging anomalies and patterns
-• Base recommendations on evidence and major guidelines (NICE, ADA, ESC, WHO, etc.)
-• Personalized risk assessment based on complete medical history
-• Evidence-based recommendations with latest medical research insights
-• Explicitly separate *observations* (what data shows) from *interpretations* (clinical meaning)
+- Perform deep step-by-step clinical reasoning with explicit logic chains
+- Comprehensive understanding of lab results patterns and anomalies
+- Interpret lab values as a physician would, flagging anomalies and patterns
+- Base recommendations on evidence and major guidelines (NICE, ADA, ESC, WHO, etc.)
+- Personalized risk assessment based on complete medical history
+- Evidence-based recommendations with latest medical research insights
+- Explicitly separate *observations* (what data shows) from *interpretations* (clinical meaning)
 
 """
-        model_info = "gpt-5-chat-latest"
+        model_info = "gpt-5.2"
         
     else:
         # Нет лимитов - используем GPT-4o-mini
@@ -636,27 +635,23 @@ async def ask_doctor(context_text: str, user_question: str,
        
     # ✅ ЕДИНЫЙ ВЫЗОВ API
     try:
-        # GPT-5 использует особые параметры
-        if model == "gpt-5-chat-latest":
-            response = await client.chat.completions.create(
+        # GPT-5.2 использует responses API
+        if model == "gpt-5.2":
+            full_input = f"{enhanced_system_prompt}\n\n{context_text}\n\nI have reviewed the patient's medical information and am ready to answer the question.\n\nPatient's question: {user_question}"
+            
+            response = await client.responses.create(
                 model=model,
-                messages=[
-                    {"role": "system", "content": enhanced_system_prompt},
-                    {"role": "user", "content": context_text},  # ← Контекст пациента
-                    {"role": "assistant", "content": "I have reviewed the patient's medical information and am ready to answer the question."},
-                    {"role": "user", "content": f"Patient's question: {user_question}"}
-                ],
-                max_tokens=3000,  # ← Обычный параметр
-                temperature=0.6,
-                frequency_penalty=0.2,  # ← Уменьшаем повторения
-                presence_penalty=0.2    # ← Поощряем разнообразие
+                input=full_input,
+                max_output_tokens=3000
             )
+            
+            answer = (response.output_text or "").strip()
         else:
             response = await client.chat.completions.create(
                 model=model,
                 messages=[
                     {"role": "system", "content": enhanced_system_prompt},
-                    {"role": "user", "content": context_text},  # ← Контекст пациента
+                    {"role": "user", "content": context_text},
                     {"role": "assistant", "content": "I have reviewed the patient's medical information and am ready to answer the question."},
                     {"role": "user", "content": f"Patient's question: {user_question}"}
                 ],
@@ -664,7 +659,8 @@ async def ask_doctor(context_text: str, user_question: str,
                 temperature=0.5,
             )
         
-        answer = response.choices[0].message.content.strip()
+            answer = response.choices[0].message.content.strip()
+        
         return safe_telegram_text(answer)
         
     except Exception as e:
@@ -678,7 +674,7 @@ async def ask_doctor(context_text: str, user_question: str,
                     model="gpt-4o-mini",
                     messages=[
                         {"role": "system", "content": enhanced_system_prompt},
-                        {"role": "user", "content": context_text},  # ← Контекст пациента
+                        {"role": "user", "content": context_text},
                         {"role": "assistant", "content": "I have reviewed the patient's medical information and am ready to answer the question."},
                         {"role": "user", "content": f"Patient's question: {user_question}"}
                     ],
@@ -776,7 +772,7 @@ async def is_medical_text(text: str) -> bool:  # 🔄 async
 
 @async_safe_openai_call(max_retries=2, delay=1.0)
 async def generate_medical_summary(text: str, lang: str, document_date: str = None) -> str:
-    """Безопасное создание медицинского резюме с правильной датой"""
+    """Саммари которое идет в векторы"""
     
     # Получаем текущую дату для fallback
     current_date = datetime.now().strftime("%d.%m.%Y")

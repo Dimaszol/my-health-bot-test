@@ -35,7 +35,7 @@ class SupabaseStorage:
             '.docx', '.doc', '.txt', '.rtf'
         }
         
-        logger.info(f"✅ Supabase Storage инициализирован: {self.bucket_name}")
+        logger.info(f"✅ Supabase Storage инициализирован")
     
     def _generate_safe_filename(self, original_filename: str, user_id: int) -> str:
         """
@@ -53,7 +53,7 @@ class SupabaseStorage:
         
         # ✅ Проверяем расширение
         if extension not in self.allowed_extensions:
-            logger.warning(f"⚠️ [USER:{user_id}] Неподдерживаемое расширение: {extension}")
+            logger.warning(f"⚠️ Неподдерживаемое расширение: {extension}")
             extension = '.pdf'  # Fallback на PDF
         
         # 🎯 Генерируем безопасное имя: medical_doc_UUID.расширение
@@ -61,8 +61,8 @@ class SupabaseStorage:
         safe_filename = f"medical_doc_{file_uuid}{extension}"
         
         # 🔒 БЕЗОПАСНОЕ ЛОГИРОВАНИЕ (без оригинального имени файла)
-        logger.info(f"✅ [USER:{user_id}] Сгенерировано безопасное имя: {safe_filename}")
-        logger.debug(f"🔍 [USER:{user_id}] Оригинал: {len(original_filename)} символов, расширение: {extension}")
+        logger.info(f"✅ Сгенерировано безопасное имя файла")
+        logger.debug(f"🔍 Оригинал: {len(original_filename)} символов, расширение: {extension}")
         
         return safe_filename
     
@@ -75,9 +75,7 @@ class SupabaseStorage:
         safe_filename = self._generate_safe_filename(filename, user_id)
         
         # 📁 Формируем путь: users/123456/medical_doc_abc123.pdf
-        storage_path = f"users/{user_id}/{safe_filename}"
-        
-        logger.info(f"✅ [STORAGE] Путь сгенерирован: {storage_path}")
+        storage_path = f"users/{user_id}/{safe_filename}"              
         
         return storage_path
     
@@ -107,18 +105,14 @@ class SupabaseStorage:
             
             # ✅ ПРОВЕРЯЕМ ЧТО file_data это bytes
             if not isinstance(file_data, bytes):
-                return False, f"Ошибка чтения файла: неверный тип данных"
-            
-            logger.info(f"🔍 [DEBUG] Читаем файл: {len(file_data)} bytes")
-            
+                return False, f"Ошибка чтения файла: неверный тип данных"           
+           
             # ✅ ЗАГРУЖАЕМ В SUPABASE
             try:
                 response = self.supabase.storage.from_(self.bucket_name).upload(
                     path=storage_path,
                     file=file_data
-                )
-                
-                logger.info(f"🔍 [DEBUG] Supabase response type: {type(response)}")
+                )                
                 
                 # ✅ ПРОВЕРЯЕМ РЕЗУЛЬТАТ
                 if response is None:
@@ -127,12 +121,10 @@ class SupabaseStorage:
                 # Supabase должен вернуть словарь с путем к файлу
                 if isinstance(response, dict):
                     if 'error' in response and response['error']:
-                        return False, f"Supabase error: {response['error']}"
+                        return False, f"Supabase error: {response['error']}"                    
                     
-                    logger.info(f"✅ [SUPABASE] Файл загружен: {storage_path}")
                     return True, storage_path
-                else:
-                    logger.info(f"✅ [SUPABASE] Файл загружен: {storage_path}")
+                else:                   
                     return True, storage_path
                 
             except Exception as upload_error:
@@ -169,7 +161,6 @@ class SupabaseStorage:
             with open(local_path, 'wb') as file:
                 file.write(response)
             
-            logger.info(f"✅ [SUPABASE] Файл скачан: {storage_path} → {local_path}")
             return True
             
         except Exception as e:
@@ -185,8 +176,7 @@ class SupabaseStorage:
             await asyncio.to_thread(
                 lambda: self.supabase.storage.from_(self.bucket_name).remove([storage_path])
             )
-            
-            logger.info(f"✅ [SUPABASE] Файл удален: {storage_path}")
+                
             return True
             
         except Exception as e:

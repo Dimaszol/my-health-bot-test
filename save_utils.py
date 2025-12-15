@@ -149,9 +149,8 @@ def format_dialogue(messages, max_len=300):
     return "\n".join(result)
 
 async def maybe_update_summary(user_id):
-    """
-    ✅ МУЛЬТИЯЗЫЧНАЯ версия без использования ask_gpt
-    Создает сводки разговоров с прямым вызовом OpenAI API
+    """    
+    Создает сводки разговоров с с чата в conversation_summary
     """
     from datetime import datetime, timedelta
     
@@ -199,8 +198,8 @@ async def maybe_update_summary(user_id):
         except (KeyError, IndexError, TypeError) as e:
             continue
     
-    if len(user_messages) < 6:
-        return False  # ждём пока пользователь напишет хотя бы 6 новых сообщений
+    if len(user_messages) < 4:
+        return False  # ждём пока пользователь напишет хотя бы 4 новых сообщений
 
     dialogue = format_dialogue(new_messages)
     today = datetime.now().strftime("%d.%m.%Y")
@@ -235,8 +234,7 @@ async def maybe_update_summary(user_id):
     # ⚠️ Ограничиваем объём промта по символам (~токены)
     if len(prompt) > 5000:
         prompt = prompt[:5000]
-
-    # ✅ ПРЯМОЙ ВЫЗОВ OpenAI API ВМЕСТО ask_gpt
+    
     try:
         async with OPENAI_SEMAPHORE:
             response = await client.chat.completions.create(

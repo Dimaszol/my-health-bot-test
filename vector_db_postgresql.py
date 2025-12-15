@@ -796,3 +796,22 @@ async def get_all_user_chunks(user_id: int, limit: int = 4) -> List[Dict]:
     if vector_db:
         return await vector_db.get_all_user_chunks(user_id, limit)
     return []
+
+async def delete_chunks_by_document(document_id: int) -> bool:
+    """Удаляет все векторы документа из базы"""
+    if vector_db:
+        try:
+            conn = await vector_db.db_pool.acquire()
+            try:
+                await conn.execute(
+                    "DELETE FROM document_vectors WHERE document_id = $1",
+                    document_id
+                )
+                logger.info(f"✅ Векторы документа {document_id} удалены")
+                return True
+            finally:
+                await vector_db.db_pool.release(conn)
+        except Exception as e:
+            logger.error(f"❌ Ошибка удаления векторов документа {document_id}: {e}")
+            return False
+    return False
