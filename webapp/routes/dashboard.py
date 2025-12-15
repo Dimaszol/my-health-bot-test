@@ -476,3 +476,7 @@ async def subscription_page(request: Request, user_id: int = Depends(get_current
     context['has_subscription'] = current_package_id is not None  # ✅ ИСПРАВЛЕНО
     
     return templates.TemplateResponse("subscription.html", context)
+
+@router.get("/test-gpt5")
+async def test_gpt5_page(request: Request):
+    return templates.TemplateResponse("test_gpt5.html", {"request": request})

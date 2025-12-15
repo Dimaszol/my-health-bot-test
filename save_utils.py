@@ -1,3 +1,4 @@
+import openai
 import asyncio
 import base64
 import mimetypes
@@ -10,6 +11,9 @@ from gpt import client, OPENAI_SEMAPHORE
 from datetime import datetime
 
 load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
+# Семафор для ограничения одновременных запросов
+OPENAI_SEMAPHORE = asyncio.Semaphore(5)
 
 def encode_file_to_base64(file_path, user_id):
     """Безопасное кодирование файла в base64"""
@@ -195,8 +199,8 @@ async def maybe_update_summary(user_id):
         except (KeyError, IndexError, TypeError) as e:
             continue
     
-    if len(user_messages) < 4:
-        return False  # ждём пока пользователь напишет хотя бы 4 новых сообщений
+    if len(user_messages) < 6:
+        return False  # ждём пока пользователь напишет хотя бы 6 новых сообщений
 
     dialogue = format_dialogue(new_messages)
     today = datetime.now().strftime("%d.%m.%Y")
@@ -236,7 +240,7 @@ async def maybe_update_summary(user_id):
     try:
         async with OPENAI_SEMAPHORE:
             response = await client.chat.completions.create(
-                model="gpt-5-mini",
+                model="gpt-4o-mini",
                 messages=[
                     {
                         "role": "system", 
@@ -251,7 +255,8 @@ async def maybe_update_summary(user_id):
                     },
                     {"role": "user", "content": prompt}
                 ],
-                max_completion_tokens=400
+                max_tokens=400,
+                temperature=0.2  # Низкая температура для точности сводок
             )
             
             # ✅ БЕЗОПАСНОЕ получение ответа

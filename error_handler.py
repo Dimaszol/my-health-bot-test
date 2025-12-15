@@ -258,9 +258,9 @@ def check_openai_health() -> bool:
         client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         
         response = client.chat.completions.create(
-            model="gpt-5-nano",
+            model="gpt-4o-mini",
             messages=[{"role": "user", "content": "test"}],
-            max_completion_tokens=1
+            max_tokens=1
         )
         return True
         

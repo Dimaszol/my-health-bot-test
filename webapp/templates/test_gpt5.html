@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT-5 Mini Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .error {
+            border-left-color: #f44336;
+            background: #ffebee;
+            color: #c62828;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        .label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 GPT-5 Mini Test Page</h1>
+        <p style="color: #666; margin-bottom: 20px;">
+            Тестовая страница для проверки GPT-5-mini responses API
+        </p>
+        
+        <div class="label">Введите текст для генерации заголовка:</div>
+        <textarea id="inputText" placeholder="Вставьте медицинский текст...">Біохімія: глюкоза 5,76 ммоль/л, холестерин 6,95, ЛПНП 3,68 підвищений; ГГТ 44,10; нирки норма. Дата обстеження: 03.02.2025</textarea>
+        
+        <button id="testBtn" onclick="testGPT5()">Тест GPT-5-mini</button>
+        
+        <div id="response"></div>
+    </div>
+
+    <script>
+        async function testGPT5() {
+            const btn = document.getElementById('testBtn');
+            const responseDiv = document.getElementById('response');
+            const inputText = document.getElementById('inputText').value;
+            
+            if (!inputText.trim()) {
+                responseDiv.innerHTML = '<div class="response error">Введите текст!</div>';
+                return;
+            }
+            
+            btn.disabled = true;
+            responseDiv.innerHTML = '<div class="response loading">⏳ Отправка запроса к GPT-5-mini...</div>';
+            
+            try {
+                const response = await fetch('/api/test-gpt5', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: inputText,
+                        lang: 'uk'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    responseDiv.innerHTML = `
+                        <div class="response">
+                            <strong>✅ Результат:</strong><br>
+                            ${data.title || '(пусто)'}
+                            <hr style="margin: 15px 0; border: none; border-top: 1px solid #ddd;">
+                            <small style="color: #666;">
+                                <strong>Модель:</strong> ${data.model}<br>
+                                <strong>Время:</strong> ${data.processing_time}ms<br>
+                                <strong>response.output_text:</strong> ${data.output_text || '(null)'}
+                            </small>
+                        </div>
+                    `;
+                } else {
+                    responseDiv.innerHTML = `
+                        <div class="response error">
+                            <strong>❌ Ошибка:</strong><br>
+                            ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                responseDiv.innerHTML = `
+                    <div class="response error">
+                        <strong>❌ Ошибка запроса:</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

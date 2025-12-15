@@ -174,7 +174,7 @@ async def get_timeline_by_document(document_id: int, user_id: int) -> List[Dict]
 # ==========================================
 
 async def extract_medical_events_gpt(document_text: str, existing_timeline: List[Dict], lang: str = "ru") -> List[Dict]:
-    """Извлечение КРИТИЧЕСКИ ВАЖНЫХ медицинских событий через GPT-5"""
+    """Извлечение КРИТИЧЕСКИ ВАЖНЫХ медицинских событий через GPT-4o-mini"""
     
     # Форматируем существующую медкарту
     timeline_text = ""
@@ -253,12 +253,13 @@ Extract ONLY 1-2 most critical medical facts. If nothing is critically important
     try:
         async with OPENAI_SEMAPHORE:
             response = await client.chat.completions.create(
-                model="gpt-5.2",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_completion_tokens=500  # Меньше токенов = короче ответ
+                max_tokens=500,  # Меньше токенов = короче ответ
+                temperature=0.1
             )
             
             result = response.choices[0].message.content.strip()
@@ -321,12 +322,13 @@ Respond in {lang} but use only numbers and commas."""
     try:
         async with OPENAI_SEMAPHORE:
             response = await client.chat.completions.create(
-                model="gpt-5-nano",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You are a medical quality assessor. Be strict about what constitutes a concrete medical fact."},
                     {"role": "user", "content": validation_prompt}
                 ],
-                max_completion_tokens=100
+                max_tokens=100,
+                temperature=0.1
             )
             
             validation_result = response.choices[0].message.content.strip()
@@ -451,12 +453,13 @@ Create ONE comprehensive timeline entry combining all important medical findings
     try:
         async with OPENAI_SEMAPHORE:
             response = await client.chat.completions.create(
-                model="gpt-5.2",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_completion_tokens=200
+                max_tokens=200,
+                temperature=0.1
             )
             
             result = response.choices[0].message.content.strip()

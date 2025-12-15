@@ -1747,3 +1747,109 @@ async def cancel_subscription_endpoint(
                 'error': error_message
             }
         )
+    
+# ============================================
+# 🧪 ТЕСТОВЫЙ ENDPOINT (удалить после отладки)
+# ============================================
+from pydantic import BaseModel
+import time
+
+class TestGPT5Request(BaseModel):
+    text: str
+    lang: str = "uk"
+
+@router.post("/test-gpt5")
+async def test_gpt5_mini(request_data: TestGPT5Request):
+    """🧪 Тестовый endpoint для проверки GPT-5-mini"""
+    try:
+        start_time = time.time()
+        
+        from gpt import client
+        
+        lang_names = {'ru': 'Russian', 'uk': 'Ukrainian', 'en': 'English', 'de': 'German'}
+        target_language = lang_names.get(request_data.lang, 'Ukrainian')
+        
+        system_prompt = (
+            "You are a medical assistant.\n"
+            "Your task is to generate a concise medical document title.\n"
+            f"You MUST respond ONLY in {target_language}.\n"
+            "Return ONLY the title as plain text."
+        )
+        
+        user_prompt = f"Generate a short title:\n\n{request_data.text[:1500]}"
+        
+        print(f"\n{'='*60}")
+        print(f"🧪 TEST GPT-5-MINI")
+        print(f"📝 Input: {request_data.text[:100]}...")
+        
+        response = await client.responses.create(
+            model="gpt-5.2",  # ← 5.2 вместо nano
+            input=[
+                {"role": "user", "content": f"Generate a short Ukrainian medical document title:\n\n{request_data.text[:1500]}"}
+            ],
+            max_output_tokens=100
+        )
+        
+        print(f"📥 Response type: {type(response)}")
+        print(f"Has output_text: {hasattr(response, 'output_text')}")
+        
+        output_text_direct = getattr(response, 'output_text', None)
+        print(f"output_text value: {repr(output_text_direct)}")
+        
+        # 🔍 ДЕТАЛЬНАЯ ДИАГНОСТИКА response.output
+        texts = []
+        if hasattr(response, 'output'):
+            print(f"\n🔍 response.output exists!")
+            
+            for i, item in enumerate(response.output or []):
+                print(f"\n  📦 Item {i}:")
+                print(f"     Type: {type(item)}")
+                
+                # ✅ ПРОБУЕМ ИЗВЛЕЧЬ ИЗ REASONING
+                if hasattr(item, 'summary'):
+                    summary = getattr(item, 'summary', None)
+                    print(f"     summary: {repr(summary)}")
+                    if summary:
+                        texts.append(summary)
+                
+                if hasattr(item, 'content'):
+                    content = getattr(item, 'content', None)
+                    print(f"     content: {repr(content)}")
+                    if content:
+                        texts.append(str(content))
+                
+                # Пробуем все текстовые атрибуты
+                for attr in ['text', 'output', 'result', 'answer']:
+                    if hasattr(item, attr):
+                        val = getattr(item, attr, None)
+                        if val:
+                            print(f"     {attr}: {repr(val)[:200]}")
+                            texts.append(str(val))
+        
+        extracted = " ".join(t.strip() for t in texts if t and str(t).strip())
+        print(f"\n✅ Extracted: {repr(extracted)}")
+        
+        texts = []
+        if hasattr(response, 'output'):
+            for item in response.output or []:
+                if hasattr(item, 'content'):
+                    for block in item.content or []:
+                        if hasattr(block, 'text') and block.text:
+                            texts.append(block.text)
+                            print(f"✅ Found text: {repr(block.text)}")
+        
+        extracted = " ".join(t.strip() for t in texts if t and t.strip())
+        
+        return JSONResponse(content={
+            'success': True,
+            'title': extracted or output_text_direct or "",
+            'model': 'gpt-5-mini',
+            'processing_time': int((time.time() - start_time) * 1000),
+            'output_text': output_text_direct
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"❌ ERROR: {str(e)}")
+        print(traceback.format_exc())
+        return JSONResponse(status_code=500, content={'success': False, 'error': str(e)})
