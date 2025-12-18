@@ -312,9 +312,12 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
             
             system_prompt = (
                 "You are a compassionate and knowledgeable virtual physician who guides the user through their medical journey. "
+                "IMPORTANT: The 'User's medical documents' section contains the user's OWN medical records and test results that they uploaded. "
+                "When the user asks about their tests (ECG, blood work, etc.), refer to the documents in that section. "
                 "You speak in a friendly, human tone and provide explanations when needed. "
                 f"Always respond in the '{lang}' language."
             )
+
             
         except Exception as e:
             system_prompt = "You are a helpful medical assistant."
@@ -340,7 +343,7 @@ async def process_user_question_detailed(user_id: int, user_input: str) -> Dict:
             "",
             f"🏥 Medical timeline:\n{medical_timeline}",
             "",
-            f"🔎 Related historical data:\n{chunks_text or 'Релевантная информация не найдена'}",
+            f"🔎 User's medical documents (uploaded by user):\n{chunks_text or 'No documents uploaded'}",
             "",
             f"💬 Recent messages (last 3 pairs):\n{recent_messages_text}",
             ""

@@ -163,8 +163,8 @@ async def create_tables():
     -- 📊 ЛИМИТЫ ПОЛЬЗОВАТЕЛЕЙ
     CREATE TABLE IF NOT EXISTS user_limits (
         user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
-        documents_left INTEGER DEFAULT 2,
-        gpt4o_queries_left INTEGER DEFAULT 10,
+        documents_left INTEGER DEFAULT 1,
+        gpt4o_queries_left INTEGER DEFAULT 5,
         subscription_type TEXT DEFAULT 'free',
         subscription_expires_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -795,8 +795,8 @@ async def get_user_limits(user_id: int) -> Dict:
     try:
         row = await conn.fetchrow("SELECT * FROM user_limits WHERE user_id = $1", user_id)
         return dict(row) if row else {
-            "documents_left": 2,
-            "gpt4o_queries_left": 10,
+            "documents_left": 1,
+            "gpt4o_queries_left": 5,
             "subscription_type": "free"
         }
     except Exception as e:

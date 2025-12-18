@@ -546,8 +546,8 @@ translations = {
         ),
         "how_to_use_1": (
             "🎁 <b>Ваши стартовые возможности:</b>\n\n"
-            "📋 2 анализа медицинских документов\n"
-            "⚕️ 10 детальных консультаций, включая вопросы по фото\n"
+            "📋 1 анализ медицинского документа\n"
+            "⚕️ 5 детальных консультаций, включая вопросы по фото\n"
             "💬 Базовые ответы в рамках тарифа\n\n"
             "Подробнее — в ⚙️ <b>Настройки</b>"
         ),
@@ -1254,8 +1254,8 @@ translations = {
     ),
     "how_to_use_1": (
         "🎁 <b>Ваші стартові можливості:</b>\n\n"
-        "📋 2 аналізи медичних документів\n"
-        "⚕️ 10 детальних консультацій, включаючи питання за фото\n"
+        "📋 1 аналіз медичного документа\n"
+        "⚕️ 5 детальних консультацій, включаючи питання з фото\n"
         "💬 Базові відповіді в межах тарифу\n\n"
         "Детальніше — в ⚙️ <b>Налаштування</b>"
     ),
@@ -1901,11 +1901,11 @@ Garmin analysis requires detailed consultations.
         "💬 Or simply ask me a question — I'm always ready to help based on your medical history!"
     ),
     "how_to_use_1": (
-        "🎁 <b>Your starter benefits:</b>\n\n"
-        "📋 2 medical document analyses\n"
-        "⚕️ 10 detailed consultations, including photo questions\n"
-        "💬 Basic answers within the plan\n\n"
-        "Learn more in ⚙️ <b>Settings</b>"
+        "🎁 <b>Your starting benefits:</b>\n\n"
+        "📋 1 medical document analysis\n"
+        "⚕️ 5 detailed consultations, including photo questions\n"
+        "💬 Basic responses within your plan\n\n"
+        "More details — in ⚙️ <b>Settings</b>"
     ),
     "btn_view": "✅ View",
     "btn_download": "📥 Download",
@@ -2573,10 +2573,10 @@ Für die Garmin-Analyse sind detaillierte Beratungen erforderlich.
     ),
     "how_to_use_1": (
         "🎁 <b>Ihre Startmöglichkeiten:</b>\n\n"
-        "📋 2 Analysen medizinischer Dokumente\n"
-        "⚕️ 10 detaillierte Beratungen, einschließlich Fragen zu Fotos\n"
-        "💬 Grundlegende Antworten im Rahmen des Tarifs\n\n"
-        "Mehr erfahren in ⚙️ <b>Einstellungen</b>"
+        "📋 1 Analyse eines medizinischen Dokuments\n"
+        "⚕️ 5 detaillierte Beratungen, einschließlich Fragen mit Fotos\n"
+        "💬 Basisantworten im Rahmen Ihres Tarifs\n\n"
+        "Mehr Details — in ⚙️ <b>Einstellungen</b>"
     ),
     "btn_view": "✅ Anzeigen",
     "btn_download": "📥 Herunterladen",

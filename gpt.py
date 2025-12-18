@@ -528,8 +528,10 @@ async def extract_keywords(text: str) -> list[str]:
 
         All terms must be:
         – in **dictionary form**  
-        – in **English only**, even if the original text is in another language
+        – in **English only**, ALWAYS in ENGLISH, NEVER translate to Russian/Ukrainian/German
         – **comma-separated**, with no explanations.
+
+        ⚠️ CRITICAL: Return keywords in ENGLISH ONLY, regardless of input language!
 
         "{text}"
         """

@@ -114,7 +114,7 @@ async def find_or_create_web_user(google_id: str, email: str, name: str, session
             # Создаём новые лимиты с email
             await conn.execute("""
                 INSERT INTO user_limits (user_id, email, documents_left, gpt4o_queries_left, subscription_type)
-                VALUES ($1, $2, 2, 10, 'free')
+                VALUES ($1, $2, 1, 5, 'free')
             """, temp_user_id, email)
         
         return {

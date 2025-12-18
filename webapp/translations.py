@@ -1906,17 +1906,17 @@ TRANSLATIONS = {
     'de': 'Beste Option für Benutzer, die maximale Möglichkeiten wünschen.'
 },
 'package_free_feature_1': {
-    'ru': '2 медицинских документа',
-    'en': '2 medical documents',
-    'uk': '2 медичних документи',
-    'de': '2 medizinische Dokumente'
+    'ru': '1 медицинский документ',
+    'en': '1 medical document',
+    'uk': '1 медичний документ',
+    'de': '1 medizinisches Dokument'
 },
 
 'package_free_feature_2': {
-    'ru': '10 детальных консультаций',
-    'en': '10 detailed consultations',
-    'uk': '10 детальних консультацій',
-    'de': '10 detaillierte Beratungen'
+    'ru': '5 детальных консультаций',
+    'en': '5 detailed consultations',
+    'uk': '5 детальних консультацій',
+    'de': '5 detaillierte Beratungen'
 },
 'package_free_feature_3': {
     'ru': '20 базовых ответов',
