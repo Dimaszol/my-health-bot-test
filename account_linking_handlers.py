@@ -6,7 +6,6 @@ from account_merger import AccountMerger
 import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 async def handle_linking_code(message: types.Message, bot: Bot):
     telegram_id = message.from_user.id
@@ -113,9 +112,6 @@ async def handle_linking_code(message: types.Message, bot: Bot):
                 WHERE link_code = $2
             """, telegram_id, code)
             
-            # Перед вызовом:
-            logger.info(f"🔄 Вызов merge_accounts: telegram_id={telegram_id}, web_user_id={web_user_id}")
-
             # Выполняем слияние
             result = await AccountMerger.merge_accounts(
                 telegram_id,
@@ -124,9 +120,6 @@ async def handle_linking_code(message: types.Message, bot: Bot):
                 web_user['email']
             )
             
-            # После вызова:
-            logger.info(f"📊 Результат merge_accounts: {result}")
-
             if result['success']:
                                
                 # ✅ ДОБАВЛЯЕМ: Показываем приветствие и меню
