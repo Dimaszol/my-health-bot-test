@@ -420,12 +420,6 @@ async def ask_structured(text: str, lang: str = "ru", max_tokens: int = 3000) ->
         "• Redundant information or unnecessary repetition\n"
         "• Overly technical explanations without context\n"
         "• Poor formatting that's hard to read on small screens\n\n"
-        "CRITICAL RULE:"
-        "Do NOT change the level of medical certainty."
-        "If the source text expresses uncertainty, suspicion, or differential diagnosis,"
-        "you MUST preserve this uncertainty exactly and must NOT make it more definitive."
-        "You must NOT add new medical interpretations, diagnoses, localizations, or conclusions."
-        "Only reformat and clarify what is already explicitly stated in the source text."
         
         "GOAL: Create a document that patients will want to save, reference, and easily understand while preserving complete medical accuracy.\n\n"
         
@@ -872,7 +866,7 @@ async def generate_title_from_text(text: str, lang: str) -> str:  # 🔄 async
         "• If NO date is found in the document - do NOT add any date to the title\n"
         "• NEVER use example dates or make up dates\n\n"
         
-        "🧾 Focus only on the essence: type of exam, organ, diagnosis, etc. No extra words, no quotes, no formal phrases.\n"
+        "🧾 Focus only on the essence: type of exam, body system or anatomical region. Do NOT include interpretations or diagnoses.\n"
         
         "EXAMPLES:\n"
         "• If document contains date '15.06.2023': → 'Liver ultrasound 15.06.2023'\n"

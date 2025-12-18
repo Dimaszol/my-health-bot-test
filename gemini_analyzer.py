@@ -159,29 +159,10 @@ class GeminiMedicalAnalyzer:
     2. **Technical data** - visible parameters and settings  
     3. **Detailed findings** - what specifically is visible, measurements
     4. **Pathological changes** - deviations from the norm, if any
-    5. **Diagnostic conclusion** - Explain the most likely clinical interpretation. If findings are atypical, conflicting, or incomplete, explicitly state uncertainty
-and describe the most important serious conditions that must be ruled out.
+    5. **Diagnostic conclusion** - what this means clinically
     6. **Recommendations** - what to do next, which doctor to consult
 
     CRITICAL: For TEXT documents - transcribe first, then analyze. For IMAGING studies - analyze directly.
-    Before providing diagnoses or detailed recommendations, you MUST assess the clinical urgency.
-
-**Clinical urgency assessment (mandatory):**
-Classify the situation into ONE category:
-- 🔴 Immediate / life-threatening (requires emergency care now)
-- 🟠 Urgent (requires medical attention within 24–72 hours)
-- 🟡 Non-urgent but clinically significant
-- 🟢 No clinically significant findings
-
-Base this primarily on risk patterns, not on final diagnoses.
-IMPORTANT:
-If findings suggest an acute or potentially life-threatening condition, 
-prioritize describing the RISK PATTERN rather than naming chronic or definitive diagnoses.
-
-Avoid assigning chronic diagnoses unless there is clear and explicit evidence.
-If the urgency level is 🔴 Immediate, 
-DO NOT recommend routine tests, screening exams, or outpatient follow-up.
-Focus only on emergency actions and escalation of care.
 
     IMPORTANT: Respond in {response_language} language."""
 
