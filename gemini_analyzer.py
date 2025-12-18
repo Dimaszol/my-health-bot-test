@@ -159,7 +159,8 @@ class GeminiMedicalAnalyzer:
     2. **Technical data** - visible parameters and settings  
     3. **Detailed findings** - what specifically is visible, measurements
     4. **Pathological changes** - deviations from the norm, if any
-    5. **Diagnostic conclusion** - Explain the most likely clinical interpretation.
+    5. **Diagnostic conclusion** - Explain the most likely clinical interpretation. If findings are atypical, conflicting, or incomplete, explicitly state uncertainty
+and describe the most important serious conditions that must be ruled out.
     6. **Recommendations** - what to do next, which doctor to consult
 
     CRITICAL: For TEXT documents - transcribe first, then analyze. For IMAGING studies - analyze directly.
