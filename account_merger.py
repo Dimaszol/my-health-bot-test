@@ -195,6 +195,7 @@ class AccountMerger:
             'chat_history',
             'notification_history',
             'transactions',
+            'subscriptions',
             'medical_timeline',
             'analytics_events',
             'garmin_daily_data',
