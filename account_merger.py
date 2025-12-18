@@ -39,6 +39,7 @@ class AccountMerger:
                 'message': str
             }
         """
+        logger.info(f"🔄 НАЧАЛО СЛИЯНИЯ: telegram_id={telegram_id}, web_user_id={web_user_id}")
         conn = await get_db_connection()
         
         try:
@@ -49,6 +50,7 @@ class AccountMerger:
                 "SELECT * FROM users WHERE user_id = $1",
                 telegram_id
             )
+            logger.info(f"📊 telegram_user найден: {telegram_user is not None}")
             
             # ====================================
             # ПРОВЕРКА 2: Существует ли Web аккаунт?
@@ -57,16 +59,19 @@ class AccountMerger:
                 "SELECT * FROM users WHERE user_id = $1",
                 web_user_id
             )
+            logger.info(f"📊 web_user найден: {web_user is not None}")
             
             # ====================================
             # СЦЕНАРИЙ 1: Telegram аккаунта НЕТ (новый пользователь)
             # ====================================
             if not telegram_user:
+                logger.info(f"✅ СЦЕНАРИЙ 1: Конвертация web → telegram")
                 # Обновляем web аккаунт: меняем user_id на telegram_id
                 await AccountMerger._convert_web_to_telegram(
                     conn, web_user_id, telegram_id, google_id, email
                 )
                 
+                logger.info(f"✅ Конвертация завершена успешно")
                 return {
                     'success': True,
                     'action': 'linked',
@@ -78,6 +83,7 @@ class AccountMerger:
             # СЦЕНАРИЙ 2: Оба аккаунта существуют → СЛИЯНИЕ
             # ====================================
             if telegram_user and web_user:
+                logger.info(f"🔀 СЦЕНАРИЙ 2: Полное слияние двух аккаунтов")
                 
                 # Выполняем полное слияние
                 await AccountMerger._full_merge(
@@ -90,6 +96,7 @@ class AccountMerger:
                     email
                 )
                 
+                logger.info(f"✅ Слияние завершено успешно")
                 return {
                     'success': True,
                     'action': 'merged',
@@ -100,6 +107,7 @@ class AccountMerger:
             # ====================================
             # СЦЕНАРИЙ 3: Есть только Telegram аккаунт
             # ====================================
+            logger.info(f"🔗 СЦЕНАРИЙ 3: Добавление веб к существующему Telegram")
                         
             await conn.execute("""
                 UPDATE users 
@@ -111,6 +119,7 @@ class AccountMerger:
                 WHERE user_id = $3
             """, google_id, email, telegram_id)
             
+            logger.info(f"✅ Обновление завершено успешно")
             return {
                 'success': True,
                 'action': 'linked',
@@ -119,7 +128,7 @@ class AccountMerger:
             }
             
         except Exception as e:
-            logger.error("Ошибка при слиянии аккаунтов")
+            logger.error(f"❌ ОШИБКА СЛИЯНИЯ: {e}", exc_info=True)
             return {
                 'success': False,
                 'action': 'error',

@@ -110,7 +110,11 @@ async def check_link_status(request: Request):
     try:
         # Проверка пользователя
         current_user = get_current_user(request)
+        print(f"🔍 [LINK STATUS] Проверка статуса связывания")
+        print(f"   👤 Current user: {current_user['user_id'] if current_user else 'NONE'}")
+        
         if not current_user:
+            print(f"   ❌ Пользователь не авторизован")
             return JSONResponse({
                 'success': False, 
                 'error': 'not_authenticated'
@@ -120,13 +124,16 @@ async def check_link_status(request: Request):
         try:
             data = await request.json()
             link_code = data.get('code')
-        except Exception:
+            print(f"   🔑 Проверяем код: {link_code}")
+        except Exception as e:
+            print(f"   ❌ Ошибка парсинга JSON: {e}")
             return JSONResponse({
                 'success': False,
                 'error': 'invalid_json'
             }, status_code=400)
         
         if not link_code:
+            print(f"   ❌ Код не предоставлен")
             return JSONResponse({
                 'success': False,
                 'error': 'no_code'
@@ -142,10 +149,17 @@ async def check_link_status(request: Request):
             """, link_code)
             
             if not link_record:
+                print(f"   ❌ Код не найден в БД")
                 return JSONResponse({
                     'success': False,
                     'status': 'not_found'
                 })
+            
+            print(f"   ✅ Код найден в БД:")
+            print(f"      - is_used: {link_record['is_used']}")
+            print(f"      - telegram_user_id: {link_record['telegram_user_id']}")
+            print(f"      - web_user_id: {link_record['web_user_id']}")
+            print(f"      - expires_at: {link_record['expires_at']}")
             
             # Проверка прав доступа
             is_owner = (
@@ -154,6 +168,7 @@ async def check_link_status(request: Request):
             )
             
             if not is_owner:
+                print(f"   ❌ Пользователь не владелец кода")
                 return JSONResponse({
                     'success': False,
                     'status': 'not_found'
@@ -161,6 +176,7 @@ async def check_link_status(request: Request):
             
             # Проверка истёк ли код
             if link_record['expires_at'] < datetime.now():
+                print(f"   ⏰ Код истёк")
                 return JSONResponse({
                     'success': False,
                     'status': 'expired'
@@ -169,9 +185,11 @@ async def check_link_status(request: Request):
             # Проверка использован ли код
             if link_record['is_used']:
                 telegram_id = link_record['telegram_user_id']
+                print(f"   ✅ Код использован! telegram_id={telegram_id}")
                 
                 # Обновляем сессию
                 request.session['user_id'] = telegram_id
+                print(f"   🔄 Обновляем сессию на telegram_id={telegram_id}")
                 
                 # Получаем данные пользователя
                 user_data = await conn.fetchrow(
@@ -183,6 +201,7 @@ async def check_link_status(request: Request):
                     request.session['name'] = user_data['name']
                     request.session['email'] = user_data['email']
                     request.session['google_id'] = user_data['google_id']
+                    print(f"   ✅ Данные пользователя загружены: {user_data['name']}")
                 
                 return JSONResponse({
                     'success': True,
@@ -192,6 +211,7 @@ async def check_link_status(request: Request):
                 })
             
             # Код ещё не использован
+            print(f"   ⏳ Код ещё не использован, ждём...")
             return JSONResponse({
                 'success': True,
                 'status': 'waiting'
@@ -201,12 +221,14 @@ async def check_link_status(request: Request):
             await release_db_connection(conn)
     
     except Exception as e:
+        print(f"   💥 КРИТИЧЕСКАЯ ОШИБКА: {e}")
+        import traceback
+        traceback.print_exc()
         return JSONResponse({
             'success': False,
             'error': 'internal_error',
             'message': str(e)
         }, status_code=500)
-
 
 @router.get("/api/refresh-link-code")
 async def refresh_link_code(request: Request):
