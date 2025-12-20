@@ -376,45 +376,55 @@ async def ask_structured(text: str, lang: str = "ru", max_tokens: int = 3000) ->
     """Создание красивого отображения медицинского документа для пользователя - raw_text в таблице documents"""
     
     system_prompt = (
-        "You are a medical text formatter. "
-        "Your task is to improve readability and structure of the provided medical text "
-        "WITHOUT adding, removing, interpreting, or modifying medical meaning. "
-        "You must preserve all medical facts exactly as given. "
-        "⚠️ Do NOT add new medical information, explanations, interpretations, or recommendations. "
+        "You are a medical information designer who creates clear, beautiful, and patient-friendly "
+        "medical document summaries. Your goal is to make medical information easily readable and "
+        "well-organized for patients while preserving all important clinical details. "
         f"⚠️ Always respond strictly in '{lang}' language, regardless of input language."
     )
 
-
     user_prompt = (
         "⚠️ DOCUMENT FORMATTING TASK:\n"
-        "Reformat the provided medical text for clarity and readability ONLY.\n\n"
-
-        "STRICT RULES:\n"
-        "• DO NOT add new information\n"
-        "• DO NOT remove medical facts\n"
-        "• DO NOT interpret, explain, summarize, or draw conclusions\n"
-        "• DO NOT change numerical values, units, or medical terminology\n"
-        "• DO NOT add recommendations or medical advice\n\n"
-
-        "PRIVACY:\n"
-        "• Remove personal identifiers if present (names, IDs, contacts, addresses)\n\n"
-
-        "FORMATTING GUIDELINES:\n"
-        "• Do NOT create a title\n"
-        "• Start directly with content sections using **bold headers**\n"
-        "• Use bullet points (•) for lists\n"
-        "• Group related information logically\n"
-        "• Keep the original medical meaning unchanged\n"
-        "• Optimize layout for easy reading on mobile devices\n\n"
-
-        "OUTPUT REQUIREMENTS:\n"
-        "• Use ONLY the information provided below\n"
-        "• Preserve the original clinical content exactly\n"
-        "• The task is formatting, not medical interpretation\n\n"
-
-        f"MEDICAL TEXT TO FORMAT:\n{text}"
+        "Transform this medical information into a beautiful, clear summary that a patient can easily read and reference.\n\n"
+        
+        "🔒 PRIVACY & CONTENT RULES:\n"
+        "• REMOVE ALL personal identifiers: patient names, doctor names, medical record numbers, addresses, phone numbers\n"
+        "• REMOVE phrases like 'the patient', 'patient reports', 'patient was advised' - focus on medical content only\n"
+        "• REMOVE administrative text, disclaimers, legal notices, and non-medical formal phrases\n"
+        "• KEEP all medical data: diagnoses, test results, measurements, medications, recommendations\n\n"
+        
+        "📋 STRUCTURE & FORMATTING:\n"
+        "⚠️ DO NOT include a document title at the beginning - the title will be added separately.\n"
+        "⚠️ Start directly with the content sections using **bold headers** for main sections.\n"
+        "• Use bullet points (•) for lists of findings, medications, or recommendations\n"
+        "• Group related information logically (lab results by system, imaging by organ, etc.)\n"
+        "• Highlight abnormal values with 🔍 emoji when values are outside normal ranges\n"
+        "• Use clear, scannable formatting that's easy to read on mobile devices\n\n"
+        
+        "🏥 MEDICAL CONTENT GUIDELINES:\n"
+        "• Include ALL numerical values with units and reference ranges when available\n"
+        "• Clearly indicate when values are elevated, decreased, or normal\n"
+        "• Preserve exact medical terminology but add brief explanations in parentheses when helpful\n"
+        "• Maintain diagnostic codes (ICD, medical classifications) when present\n"
+        "• Group medications with dosages and frequencies clearly\n"
+        "• Make recommendations actionable and specific\n\n"
+        
+        "✨ READABILITY OPTIMIZATION:\n"
+        "• Use short paragraphs and clear sections\n"
+        "• Make key findings easy to spot and understand\n"
+        "• Organize information from most important to supporting details\n"
+        "• Use consistent formatting throughout\n"
+        "• Ensure the summary serves as a complete reference the patient can save and review\n\n"
+        
+        "🚫 AVOID:\n"
+        "• Complex medical tables (convert to readable lists)\n"
+        "• Redundant information or unnecessary repetition\n"
+        "• Overly technical explanations without context\n"
+        "• Poor formatting that's hard to read on small screens\n\n"
+        
+        "GOAL: Create a document that patients will want to save, reference, and easily understand while preserving complete medical accuracy.\n\n"
+        
+        f"MEDICAL DOCUMENT TO FORMAT:\n{text}"
     )
-
 
     full_input = f"{system_prompt}\n\n{user_prompt}"
     
