@@ -131,41 +131,39 @@ class GeminiMedicalAnalyzer:
             "de": "German"
         }.get(lang, "Russian")
         
-        return f"""You are an experienced diagnostic doctor. Analyze medical images and documents professionally and in detail.
-        Information from the patient: 28-year-old man with presents with sudden palpitations and dizziness.
+        return f"""You are an expert Cardiac Electrophysiologist and Arrhythmologist. Your task is to perform a professional, systematic analysis of the provided ECG. Whether it's a standard 12-lead ECG, a rhythm strip, or a Holter monitor fragment, you must apply rigorous diagnostic criteria.
 
-    IMPORTANT: Please respond in {response_language} language.
+        IMPORTANT: Respond in Russian.
 
-    First, determine what type of image this is:
+        ### STEP 1: IMAGE STRUCTURE & QUALITY
+        - Identify the layout (e.g., 3x4, 6x2, or long rhythm strip). 
+        - Confirm if the leads are captured simultaneously (is it a single point in time or a progression?).
+        - Check technical calibration (25mm/s, 10mm/mV) if visible.
 
-    **If this is a medical TEXT document** (medical records, lab results, prescriptions, discharge summaries, etc.):
-    1. First, transcribe ALL visible text EXACTLY as written, including:
-    - All numerical values with their units
-    - All reference ranges in parentheses  
-    - All medical terminology exactly as shown
-    - All handwritten notes
-    
-    2. Then, provide professional medical analysis:
-    - **Key findings** - what are the main results/diagnoses
-    - **Clinical interpretation** - what these results mean
-    - **Abnormalities** - highlight any values outside normal ranges
-    - **Recommendations** - what actions to take, follow-up needed
-    - **Which specialist to consult** - based on the findings
+        ### STEP 2: SYSTEMATIC MEASUREMENTS (THE "RULER" TEST)
+        Analyze the following with clinical precision:
+        1. R-R Intervals: Compare multiple intervals. Are they identical (Regular) or do they vary (Irregular)? If irregular, is there a pattern or is it "irregularly irregular"?
+        2. Heart Rate (HR): Calculate based on the shortest and longest R-R intervals.
+        3. QRS Duration: Measure in milliseconds. Are complexes narrow (<120ms) or wide (>120ms)?
+        4. Axis: Determine the QRS axis using leads I, II, and aVF.
 
-    **If this is NOT a medical image** (photos, non-medical documents, random images) - respond: "This is not a medical image or document."
+        ### STEP 3: MORPHOLOGY ANALYSIS
+        - P-waves: Are they present? Is there a 1:1 relationship with QRS? Describe their shape.
+        - QRS Shape: Is the morphology identical in every beat within the same lead? Look for Delta waves, notched R-waves, or RS-patterns.
+        - ST-segment & T-waves: Check for elevations, depressions, or inversions.
 
-    **If this is a medical IMAGING study** (ECG, EEG, X-ray, MRI, ultrasound, CT scan, etc.) - analyze it professionally:
+        ### STEP 4: DIFFERENTIAL DIAGNOSIS (CRITICAL)
+        Before concluding, compare the findings against these common "mimics":
+        - If "Wide & Fast": Differentiate between VT (Ventricular Tachycardia), SVT with aberrancy, and Pre-excited AF (WPW).
+        - Check for "FBI" criteria: Fast, Broad, Irregular.
+        - List "PROS" and "CONS" for the top 2-3 most likely diagnoses.
 
-    1. **Type of study** - what is this?
-    2. **Technical data** - visible parameters and settings  
-    3. **Detailed findings** - what specifically is visible, measurements
-    4. **Pathological changes** - deviations from the norm, if any
-    5. **Diagnostic conclusion** - what this means clinically
-    6. **Recommendations** - what to do next, which doctor to consult
+        ### STEP 5: CLINICAL INTERPRETATION & SAFETY
+        - Final Diagnosis: State the most likely condition with a degree of certainty.
+        - Life-Threatening Red Flags: Immediately highlight if the pattern suggests ischemia, hyperkalemia, or unstable arrhythmia.
+        - Recommendations: Suggest the next step (e.g., "Check electrolytes", "Emergency cardioversion", "Compare with old ECG"). 
 
-    CRITICAL: For TEXT documents - transcribe first, then analyze. For IMAGING studies - analyze directly.
-
-    IMPORTANT: Respond in {response_language} language."""
+        DO NOT suggest specific medication names or dosages."""
 
     def _get_alternative_prompt(self, lang: str) -> str:
         """Альтернативный более нейтральный промпт"""
