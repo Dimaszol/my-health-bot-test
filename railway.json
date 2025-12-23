@@ -1,8 +1,0 @@
-{
-  "build": {
-    "builder": "NIXPACKS"
-  },
-  "deploy": {
-    "startCommand": "echo 'Bot paused - use local version'"
-  }
-}

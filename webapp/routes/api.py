@@ -1783,7 +1783,7 @@ async def test_gpt5_mini(request_data: TestGPT5Request):
         print(f"📝 Input: {request_data.text[:100]}...")
         
         response = await client.responses.create(
-            model="gpt-5.2",  # ← 5.2 вместо nano
+            model="gpt-5.2-pro",  # ← 5.2 вместо nano
             input=[
                 {"role": "user", "content": f"Generate a short Ukrainian medical document title:\n\n{request_data.text[:1500]}"}
             ],
