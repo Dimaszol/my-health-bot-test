@@ -84,593 +84,490 @@ async def create_tables():
     """
     
     tables_sql = """
-    -- 👤 ТАБЛИЦА ПОЛЬЗОВАТЕЛЕЙ
-    CREATE TABLE IF NOT EXISTS users (
-        user_id BIGINT PRIMARY KEY,
-        name TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        birth_year INTEGER,
-        gender TEXT,
-        height_cm INTEGER,
-        weight_kg REAL,
-        chronic_conditions TEXT,
-        medications TEXT,
-        allergies TEXT,
-        smoking TEXT,
-        alcohol TEXT,
-        physical_activity TEXT,
-        family_history TEXT,
-        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        language TEXT DEFAULT 'ru',
-        gdpr_consent BOOLEAN DEFAULT FALSE,
-        gdpr_consent_time TIMESTAMP DEFAULT NULL,
-        total_messages_count INTEGER DEFAULT 0,
-        
-        -- 🆕 Колонки для веб-авторизации
-        google_id VARCHAR(255) UNIQUE,
-        email VARCHAR(255) UNIQUE,
-        registration_source VARCHAR(20) DEFAULT 'telegram'
-    );
+        -- ================================
+        -- 👤 ТАБЛИЦА ПОЛЬЗОВАТЕЛЕЙ
+        -- ================================
+        CREATE TABLE IF NOT EXISTS users (
+            user_id BIGINT PRIMARY KEY,
+            name TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            birth_year INTEGER,
+            gender TEXT,
+            height_cm INTEGER,
+            weight_kg REAL,
+            chronic_conditions TEXT,
+            medications TEXT,
+            allergies TEXT,
+            smoking TEXT,
+            alcohol TEXT,
+            physical_activity TEXT,
+            family_history TEXT,
+            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            language TEXT DEFAULT 'ru',
+            gdpr_consent BOOLEAN DEFAULT FALSE,
+            gdpr_consent_time TIMESTAMP DEFAULT NULL,
+            total_messages_count INTEGER DEFAULT 0,
+            google_id VARCHAR(255) UNIQUE,
+            email VARCHAR(255) UNIQUE,
+            registration_source VARCHAR(20) DEFAULT 'telegram'
+        );
 
-    -- 💬 ИСТОРИЯ ЧАТА
-    CREATE TABLE IF NOT EXISTS chat_history (
-        id SERIAL PRIMARY KEY,
-        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-        role TEXT NOT NULL,
-        message TEXT NOT NULL,
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+        -- ================================
+        -- 💬 ИСТОРИЯ ЧАТА
+        -- ================================
+        CREATE TABLE IF NOT EXISTS chat_history (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+            role TEXT NOT NULL,
+            message TEXT NOT NULL,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
 
-    -- 📄 ДОКУМЕНТЫ
-    CREATE TABLE IF NOT EXISTS documents (
-        id SERIAL PRIMARY KEY,
-        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-        title TEXT,
-        file_path TEXT,
-        file_type TEXT,
-        raw_text TEXT,
-        summary TEXT,
-        confirmed BOOLEAN DEFAULT FALSE,
-        uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        vector_id TEXT
-    );
+        -- ================================
+        -- 📄 ДОКУМЕНТЫ
+        -- ================================
+        CREATE TABLE IF NOT EXISTS documents (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+            title TEXT,
+            file_path TEXT,
+            file_type TEXT,
+            raw_text TEXT,
+            summary TEXT,
+            full_analysis TEXT,
+            confirmed BOOLEAN DEFAULT FALSE,
+            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            vector_id TEXT
+        );
 
-    -- 🧠 ВЕКТОРЫ ДОКУМЕНТОВ (pgvector) - ЭТА ТАБЛИЦА ВАЖНА!
-    CREATE TABLE IF NOT EXISTS document_vectors (
-        id SERIAL PRIMARY KEY,
-        document_id INTEGER REFERENCES documents(id) ON DELETE CASCADE,
-        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-        chunk_index INTEGER NOT NULL,
-        chunk_text TEXT NOT NULL,
-        embedding vector(1536),  -- OpenAI embeddings размер
-        metadata JSONB DEFAULT '{}',
-        keywords TEXT DEFAULT '',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        
-        -- 🔍 УНИКАЛЬНЫЙ ИНДЕКС
-        CONSTRAINT unique_chunk UNIQUE(document_id, chunk_index)
-    );
+        -- ================================
+        -- 🧠 ВЕКТОРЫ ДОКУМЕНТОВ (pgvector)
+        -- ================================
+        CREATE TABLE IF NOT EXISTS document_vectors (
+            id SERIAL PRIMARY KEY,
+            document_id INTEGER REFERENCES documents(id) ON DELETE CASCADE,
+            user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+            chunk_index INTEGER NOT NULL,
+            chunk_text TEXT NOT NULL,
+            embedding vector(1536),
+            metadata JSONB DEFAULT '{}',
+            keywords TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT unique_chunk UNIQUE(document_id, chunk_index)
+        );
 
-    -- 💊 ЛЕКАРСТВА
-    CREATE TABLE IF NOT EXISTS medications (
-        id SERIAL PRIMARY KEY,
-        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-        name TEXT NOT NULL,
-        time TEXT,
-        label TEXT
-    );
+        -- ================================
+        -- 💊 ЛЕКАРСТВА
+        -- ================================
+        CREATE TABLE IF NOT EXISTS medications (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            time TEXT,
+            label TEXT
+        );
 
-    -- 📊 ЛИМИТЫ ПОЛЬЗОВАТЕЛЕЙ
-    CREATE TABLE IF NOT EXISTS user_limits (
-        user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
-        documents_left INTEGER DEFAULT 1,
-        gpt4o_queries_left INTEGER DEFAULT 5,
-        subscription_type TEXT DEFAULT 'free',
-        subscription_expires_at TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+        -- ================================
+        -- 📊 ЛИМИТЫ ПОЛЬЗОВАТЕЛЕЙ
+        -- ================================
+        CREATE TABLE IF NOT EXISTS user_limits (
+            user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+            documents_left INTEGER DEFAULT 1,
+            gpt4o_queries_left INTEGER DEFAULT 5,
+            subscription_type TEXT DEFAULT 'free',
+            subscription_expires_at TIMESTAMP,
+            email VARCHAR(255),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
 
-    -- 💳 ТРАНЗАКЦИИ
-    CREATE TABLE IF NOT EXISTS transactions (
-        id SERIAL PRIMARY KEY,
-        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-        stripe_session_id TEXT UNIQUE,
-        amount_usd REAL,
-        package_type TEXT,
-        status TEXT DEFAULT 'pending',
-        payment_method TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        completed_at TIMESTAMP,
-        package_id TEXT,
-        documents_granted INTEGER DEFAULT 0,
-        queries_granted INTEGER DEFAULT 0,
-        promo_code TEXT
-    );
+        -- ================================
+        -- 💳 ТРАНЗАКЦИИ
+        -- ================================
+        CREATE TABLE IF NOT EXISTS transactions (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+            stripe_session_id TEXT UNIQUE,
+            amount_usd REAL,
+            package_type TEXT,
+            status TEXT DEFAULT 'pending',
+            payment_method TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            completed_at TIMESTAMP,
+            package_id TEXT,
+            documents_granted INTEGER DEFAULT 0,
+            queries_granted INTEGER DEFAULT 0,
+            promo_code TEXT
+        );
 
-    -- 📦 ПАКЕТЫ ПОДПИСОК
-    CREATE TABLE IF NOT EXISTS subscription_packages (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        price_usd REAL NOT NULL,
-        documents_included INTEGER DEFAULT 0,
-        gpt4o_queries_included INTEGER DEFAULT 0,
-        type TEXT DEFAULT 'one_time',
-        is_active BOOLEAN DEFAULT TRUE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+        -- ================================
+        -- 📦 ПАКЕТЫ ПОДПИСОК
+        -- ================================
+        CREATE TABLE IF NOT EXISTS subscription_packages (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            price_usd REAL NOT NULL,
+            documents_included INTEGER DEFAULT 0,
+            gpt4o_queries_included INTEGER DEFAULT 0,
+            type TEXT DEFAULT 'one_time',
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
 
-    -- 🔄 ПОДПИСКИ ПОЛЬЗОВАТЕЛЕЙ
-    CREATE TABLE IF NOT EXISTS user_subscriptions (
-        id SERIAL PRIMARY KEY,
-        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-        stripe_subscription_id TEXT UNIQUE,
-        package_id TEXT REFERENCES subscription_packages(id),
-        status TEXT DEFAULT 'active',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        cancelled_at TIMESTAMP
-    );
+        -- ================================
+        -- 🔄 ПОДПИСКИ ПОЛЬЗОВАТЕЛЕЙ
+        -- ================================
+        CREATE TABLE IF NOT EXISTS user_subscriptions (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+            stripe_subscription_id TEXT UNIQUE,
+            stripe_customer_id TEXT,
+            package_id TEXT REFERENCES subscription_packages(id),
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            cancelled_at TIMESTAMP
+        );
 
-    -- 🧠 РЕЗЮМЕ РАЗГОВОРОВ
-    CREATE TABLE IF NOT EXISTS conversation_summary (
-        id SERIAL PRIMARY KEY,
-        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-        summary_text TEXT,
-        last_message_id INTEGER,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+        -- ================================
+        -- 🧠 РЕЗЮМЕ РАЗГОВОРОВ
+        -- ================================
+        CREATE TABLE IF NOT EXISTS conversation_summary (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+            summary_text TEXT,
+            last_message_id INTEGER,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
 
-    -- 📋 МЕДИЦИНСКАЯ КАРТА ПАЦИЕНТА
-    CREATE TABLE IF NOT EXISTS medical_timeline (
-        id SERIAL PRIMARY KEY,
-        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-        source_document_id INTEGER REFERENCES documents(id) ON DELETE CASCADE,
-        event_date DATE NOT NULL,
-        category TEXT DEFAULT 'general' CHECK (category IN ('diagnosis', 'treatment', 'test', 'procedure', 'general')),
-        importance TEXT DEFAULT 'normal' CHECK (importance IN ('critical', 'important', 'normal')),
-        description TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+        -- ================================
+        -- 📋 МЕДИЦИНСКАЯ КАРТА ПАЦИЕНТА
+        -- ================================
+        CREATE TABLE IF NOT EXISTS medical_timeline (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+            source_document_id INTEGER REFERENCES documents(id) ON DELETE CASCADE,
+            event_date DATE NOT NULL,
+            category TEXT DEFAULT 'general' CHECK (category IN ('diagnosis', 'treatment', 'test', 'procedure', 'general')),
+            importance TEXT DEFAULT 'normal' CHECK (importance IN ('critical', 'important', 'normal')),
+            description TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
 
-    -- 📊 АНАЛИТИКА
-    CREATE TABLE IF NOT EXISTS analytics_events (
-        id SERIAL PRIMARY KEY,
-        user_id BIGINT NOT NULL,
-        event TEXT NOT NULL,
-        properties JSONB DEFAULT '{}',
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+        -- ================================
+        -- 📊 АНАЛИТИКА
+        -- ================================
+        CREATE TABLE IF NOT EXISTS analytics_events (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL,
+            event TEXT NOT NULL,
+            properties JSONB DEFAULT '{}',
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
 
-    -- ================================
-    -- 🏃 ТАБЛИЦЫ GARMIN ИНТЕГРАЦИИ
-    -- ================================
+        -- ================================
+        -- 🏃 GARMIN: ПОДКЛЮЧЕНИЯ
+        -- ================================
+        CREATE TABLE IF NOT EXISTS garmin_connections (
+            user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+            garmin_email TEXT NOT NULL,
+            garmin_password TEXT NOT NULL,
+            is_active BOOLEAN DEFAULT TRUE,
+            last_sync_date DATE,
+            sync_errors INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
 
-    -- 📱 ПОДКЛЮЧЕНИЯ К GARMIN (УПРОЩЕННАЯ ВЕРСИЯ)
-    CREATE TABLE IF NOT EXISTS garmin_connections (
-        user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
-        garmin_email TEXT NOT NULL, -- Зашифрованный email
-        garmin_password TEXT NOT NULL, -- Зашифрованный пароль
-        is_active BOOLEAN DEFAULT TRUE,
-        last_sync_date DATE, -- Последняя дата синхронизации
-        sync_errors INTEGER DEFAULT 0, -- Счетчик ошибок подключения
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+        -- ================================
+        -- 🏃 GARMIN: ЕЖЕДНЕВНЫЕ ДАННЫЕ
+        -- ================================
+        CREATE TABLE IF NOT EXISTS garmin_daily_data (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+            data_date DATE NOT NULL,
+            
+            -- Активность
+            steps INTEGER,
+            calories INTEGER,
+            floors_climbed INTEGER,
+            distance_meters INTEGER,
+            active_periods_15min INTEGER,
+            sedentary_periods_15min INTEGER,
+            sleep_periods_15min INTEGER,
+            total_calories INTEGER,
+            vigorous_intensity_minutes INTEGER,
+            moderate_intensity_minutes INTEGER,
+            
+            -- Сон
+            sleep_duration_minutes INTEGER,
+            sleep_deep_minutes INTEGER,
+            sleep_light_minutes INTEGER,
+            sleep_rem_minutes INTEGER,
+            sleep_awake_minutes INTEGER,
+            sleep_score INTEGER,
+            nap_duration_minutes INTEGER,
+            sleep_need_minutes INTEGER,
+            sleep_baseline_minutes INTEGER,
+            
+            -- Пульс
+            resting_heart_rate INTEGER,
+            avg_heart_rate INTEGER,
+            max_heart_rate INTEGER,
+            min_heart_rate INTEGER,
+            hrv_rmssd REAL,
+            heart_rate_measurements INTEGER,
+            hr_zone_rest_percent REAL,
+            hr_zone_aerobic_percent REAL,
+            resting_heart_rate_7day_avg INTEGER,
+            hrv_status TEXT,
+            hrv_baseline REAL,
+            
+            -- Стресс и энергия
+            stress_avg INTEGER,
+            stress_max INTEGER,
+            stress_min INTEGER,
+            stress_high_periods_count INTEGER,
+            stress_low_periods_count INTEGER,
+            body_battery_max INTEGER,
+            body_battery_min INTEGER,
+            body_battery_avg REAL,
+            body_battery_charged INTEGER,
+            body_battery_drained INTEGER,
+            body_battery_after_sleep INTEGER,
+            body_battery_stress_events INTEGER,
+            body_battery_recovery_events INTEGER,
+            body_battery_activity_events INTEGER,
+            
+            -- Дыхание и кислород
+            spo2_avg REAL,
+            respiration_avg REAL,
+            
+            -- Готовность и фитнес
+            training_readiness INTEGER,
+            training_readiness_status TEXT,
+            readiness_sleep_factor INTEGER,
+            readiness_hrv_factor INTEGER,
+            readiness_stress_factor INTEGER,
+            vo2_max REAL,
+            fitness_age INTEGER,
+            training_status TEXT,
+            training_load_7day INTEGER,
+            
+            -- Тренировки
+            activities_count INTEGER DEFAULT 0,
+            activities_duration_minutes INTEGER DEFAULT 0,
+            activities_calories INTEGER DEFAULT 0,
+            activities_types TEXT,
+            activities_max_intensity INTEGER,
+            activities_data JSONB,
+            
+            -- Дополнительные биометрические данные
+            body_temperature REAL,
+            hydration_ml INTEGER,
+            menstrual_cycle_phase TEXT,
+            
+            -- Метаданные
+            data_completeness_score REAL,
+            last_sync_quality TEXT,
+            data_quality JSONB,
+            sync_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            
+            UNIQUE(user_id, data_date)
+        );
 
-    -- 📊 ЕЖЕДНЕВНЫЕ ДАННЫЕ ЗДОРОВЬЯ ИЗ GARMIN (РАСШИРЕННАЯ ВЕРСИЯ)
-    CREATE TABLE IF NOT EXISTS garmin_daily_data (
-        id SERIAL PRIMARY KEY,
-        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-        data_date DATE NOT NULL, -- Дата данных
-        
-        -- Базовая активность
-        steps INTEGER,
-        calories INTEGER,
-        floors_climbed INTEGER,
-        distance_meters INTEGER,
-        
-        -- Данные сна (основные)
-        sleep_duration_minutes INTEGER,
-        sleep_deep_minutes INTEGER,
-        sleep_light_minutes INTEGER,
-        sleep_rem_minutes INTEGER,
-        sleep_awake_minutes INTEGER,
-        sleep_score INTEGER, -- 0-100
-        
-        -- НОВЫЕ: Дополнительные данные сна
-        nap_duration_minutes INTEGER,
-        sleep_need_minutes INTEGER,
-        sleep_baseline_minutes INTEGER,
-        
-        -- Пульс (основные)
-        resting_heart_rate INTEGER,
-        avg_heart_rate INTEGER,
-        max_heart_rate INTEGER,
-        hrv_rmssd REAL, -- Вариабельность пульса
-        
-        -- НОВЫЕ: Дополнительные данные пульса
-        min_heart_rate INTEGER,
-        heart_rate_measurements INTEGER,
-        hr_zone_rest_percent REAL,
-        hr_zone_aerobic_percent REAL,
-        resting_heart_rate_7day_avg INTEGER,
-        
-        -- Стресс и энергия (основные)
-        stress_avg INTEGER, -- 0-100
-        stress_max INTEGER,
-        body_battery_max INTEGER, -- 0-100
-        body_battery_min INTEGER,
-        body_battery_charged INTEGER, -- Восстановление энергии
-        body_battery_drained INTEGER, -- Трата энергии
-        body_battery_after_sleep INTEGER,
-        
-        -- НОВЫЕ: Дополнительные данные стресса
-        stress_min INTEGER,
-        stress_high_periods_count INTEGER,
-        stress_low_periods_count INTEGER,
-        
-        -- НОВЫЕ: Дополнительные данные Body Battery
-        body_battery_avg REAL,
-        body_battery_stress_events INTEGER,
-        body_battery_recovery_events INTEGER,
-        body_battery_activity_events INTEGER,
-        
-        -- Кислород и дыхание
-        spo2_avg REAL, -- Кислород в крови %
-        respiration_avg REAL, -- Частота дыхания
-        
-        -- Готовность и фитнес (основные)
-        training_readiness INTEGER, -- 0-100
-        vo2_max REAL,
-        fitness_age INTEGER,
-        
-        -- НОВЫЕ: Расширенные данные готовности
-        training_readiness_status TEXT,
-        readiness_sleep_factor INTEGER,
-        readiness_hrv_factor INTEGER,
-        readiness_stress_factor INTEGER,
-        
-        -- НОВЫЕ: Данные активности
-        active_periods_15min INTEGER,
-        sedentary_periods_15min INTEGER,
-        sleep_periods_15min INTEGER,
-        total_calories INTEGER,
-        vigorous_intensity_minutes INTEGER,
-        moderate_intensity_minutes INTEGER,
-        
-        -- Тренировки (основные)
-        activities_count INTEGER DEFAULT 0,
-        activities_duration_minutes INTEGER DEFAULT 0,
-        activities_calories INTEGER DEFAULT 0,
-        activities_data JSONB, -- Детали тренировок
-        
-        -- НОВЫЕ: Дополнительные данные тренировок
-        activities_types TEXT,
-        activities_max_intensity INTEGER,
-        
-        -- НОВЫЕ: HRV данные
-        hrv_status TEXT,
-        hrv_baseline REAL,
-        
-        -- НОВЫЕ: Тренировочный статус
-        training_status TEXT,
-        training_load_7day INTEGER,
-        
-        -- НОВЫЕ: Дополнительные биометрические данные
-        body_temperature REAL,
-        hydration_ml INTEGER,
-        menstrual_cycle_phase TEXT,
-        
-        -- НОВЫЕ: Метаданные качества данных
-        data_completeness_score REAL,
-        last_sync_quality TEXT,
-        
-        -- Служебные поля
-        sync_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        data_quality JSONB, -- Какие данные доступны
-        
-        UNIQUE(user_id, data_date) -- Одна запись на день
-    );
+        -- ================================
+        -- 🏃 GARMIN: ИСТОРИЯ АНАЛИЗОВ
+        -- ================================
+        CREATE TABLE IF NOT EXISTS garmin_analysis_history (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+            analysis_date DATE NOT NULL,
+            data_period TEXT DEFAULT '1_day',
+            analysis_text TEXT NOT NULL,
+            recommendations TEXT,
+            health_score REAL,
+            sleep_trend TEXT,
+            activity_trend TEXT,
+            stress_trend TEXT,
+            recovery_trend TEXT,
+            used_consultation_limit BOOLEAN DEFAULT TRUE,
+            gpt_model_used TEXT DEFAULT 'gpt-4o',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, analysis_date)
+        );
 
-    -- 🧠 ИСТОРИЯ AI АНАЛИЗОВ GARMIN
-    CREATE TABLE IF NOT EXISTS garmin_analysis_history (
-        id SERIAL PRIMARY KEY,
-        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-        analysis_date DATE NOT NULL,
-        data_period TEXT DEFAULT '1_day', -- 1_day, 7_days, 30_days
-        
-        -- Анализ от AI
-        analysis_text TEXT NOT NULL,
-        recommendations TEXT,
-        health_score REAL, -- Общая оценка здоровья 0-100
-        
-        -- Тренды
-        sleep_trend TEXT, -- improving, stable, declining
-        activity_trend TEXT,
-        stress_trend TEXT,
-        recovery_trend TEXT,
-        
-        -- Использованные лимиты
-        used_consultation_limit BOOLEAN DEFAULT TRUE,
-        gpt_model_used TEXT DEFAULT 'gpt-4o', -- ИСПРАВЛЕНО: используем реальную модель
-        
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        
-        UNIQUE(user_id, analysis_date) -- Один анализ в день
-    );
+        -- ================================
+        -- 🏃 GARMIN: НАСТРОЙКИ АНАЛИЗА
+        -- ================================
+        CREATE TABLE IF NOT EXISTS garmin_analysis_settings (
+            user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+            focus_areas TEXT[],
+            goals JSONB,
+            medical_conditions TEXT[],
+            enable_daily_analysis BOOLEAN DEFAULT TRUE,
+            enable_weekly_summary BOOLEAN DEFAULT TRUE,
+            enable_alerts BOOLEAN DEFAULT TRUE,
+            min_sleep_hours REAL DEFAULT 6.0,
+            max_stress_threshold INTEGER DEFAULT 80,
+            min_body_battery INTEGER DEFAULT 20,
+            target_steps INTEGER DEFAULT 10000,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
 
-    -- ⚙️ НАСТРОЙКИ АНАЛИЗА GARMIN (дополнительные)
-    CREATE TABLE IF NOT EXISTS garmin_analysis_settings (
-        user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
-        
-        -- Персонализация анализа
-        focus_areas TEXT[], -- ['sleep', 'activity', 'stress', 'recovery']
-        goals JSONB, -- Цели пользователя
-        medical_conditions TEXT[], -- Учитывать медицинские состояния
-        
-        -- Уведомления
-        enable_daily_analysis BOOLEAN DEFAULT TRUE,
-        enable_weekly_summary BOOLEAN DEFAULT TRUE,
-        enable_alerts BOOLEAN DEFAULT TRUE, -- Предупреждения о проблемах
-        
-        -- Пороги для алертов
-        min_sleep_hours REAL DEFAULT 6.0,
-        max_stress_threshold INTEGER DEFAULT 80,
-        min_body_battery INTEGER DEFAULT 20,
-        target_steps INTEGER DEFAULT 10000,
-        
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+        -- ================================
+        -- 🏃 GARMIN: ОТСЛЕЖИВАНИЕ СНА
+        -- ================================
+        CREATE TABLE IF NOT EXISTS garmin_users_sleep_tracking (
+            user_id BIGINT PRIMARY KEY,
+            last_analyzed_sleep_duration INTEGER,
+            last_analysis_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
 
-    -- Таблица времени последнего сна
-    CREATE TABLE IF NOT EXISTS garmin_users_sleep_tracking (
-        user_id BIGINT PRIMARY KEY,
-        last_analyzed_sleep_duration INTEGER, -- Время сна в минутах для сравнения
-        last_analysis_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-    );
-    -- ============================================
-    -- 🔗 ТАБЛИЦА ДЛЯ ПРИВЯЗКИ АККАУНТОВ
-    -- ============================================
-    
-    CREATE TABLE IF NOT EXISTS account_links (
-        link_code VARCHAR(6) PRIMARY KEY,
-        telegram_user_id BIGINT,
-        web_user_id BIGINT,
-        direction VARCHAR(20),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        expires_at TIMESTAMP NOT NULL,
-        is_used BOOLEAN DEFAULT FALSE
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_account_links_telegram ON account_links(telegram_user_id);
-    CREATE INDEX IF NOT EXISTS idx_account_links_web ON account_links(web_user_id);
-    CREATE INDEX IF NOT EXISTS idx_account_links_active ON account_links(link_code) WHERE is_used = FALSE;
-
+        -- ================================
+        -- 🔗 ПРИВЯЗКА АККАУНТОВ
+        -- ================================
+        CREATE TABLE IF NOT EXISTS account_links (
+            link_code VARCHAR(6) PRIMARY KEY,
+            telegram_user_id BIGINT,
+            web_user_id BIGINT,
+            direction VARCHAR(20),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP NOT NULL,
+            is_used BOOLEAN DEFAULT FALSE
+        );
     """
-    
-    # НОВАЯ СЕКЦИЯ: Миграция для добавления полей в существующие таблицы
+
+    # ================================
+    # 🔄 МИГРАЦИИ (для будущих изменений)
+    # ================================
     migration_sql = """
-    -- ================================
-    -- 🔄 МИГРАЦИЯ: Добавление новых полей в существующие таблицы
-    -- ================================
-    
-    -- Добавляем email в user_limits для защиты от повторной регистрации
-    DO $$ 
-    BEGIN
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                    WHERE table_name = 'user_limits' AND column_name = 'email') THEN
-            ALTER TABLE user_limits ADD COLUMN email VARCHAR(255);
-        END IF;
-    END $$;
-    
-    -- Создаём индекс отдельно (вне DO блока)
-    CREATE INDEX IF NOT EXISTS idx_user_limits_email ON user_limits(email);
-
-    -- Добавляем stripe_customer_id в user_subscriptions
-    DO $$ 
-    BEGIN
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                    WHERE table_name = 'user_subscriptions' AND column_name = 'stripe_customer_id') THEN
-            ALTER TABLE user_subscriptions ADD COLUMN stripe_customer_id TEXT;
-        END IF;
-    END $$;
-    
-    -- Создаём индекс для stripe_customer_id
-    CREATE INDEX IF NOT EXISTS idx_user_subscriptions_stripe_customer 
-    ON user_subscriptions(stripe_customer_id);
-
-    -- Добавляем новые поля в garmin_daily_data (если их еще нет)
-    DO $$ 
-    BEGIN
-        -- Проверяем и добавляем новые поля
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_name = 'garmin_daily_data' AND column_name = 'nap_duration_minutes') THEN
-            ALTER TABLE garmin_daily_data ADD COLUMN nap_duration_minutes INTEGER;
-        END IF;
+        -- Этот блок используется для добавления новых полей в существующие таблицы
+        -- Все текущие поля уже добавлены в основные CREATE TABLE выше
         
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_name = 'garmin_daily_data' AND column_name = 'data_completeness_score') THEN
-            ALTER TABLE garmin_daily_data ADD COLUMN data_completeness_score REAL;
-        END IF;
-        
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_name = 'garmin_daily_data' AND column_name = 'last_sync_quality') THEN
-            ALTER TABLE garmin_daily_data ADD COLUMN last_sync_quality TEXT;
-        END IF;
-        
-        -- Добавляем все остальные поля одним блоком (PostgreSQL игнорирует IF NOT EXISTS если поле уже есть)
-        BEGIN
-            ALTER TABLE garmin_daily_data 
-                ADD COLUMN IF NOT EXISTS sleep_need_minutes INTEGER,
-                ADD COLUMN IF NOT EXISTS sleep_baseline_minutes INTEGER,
-                ADD COLUMN IF NOT EXISTS body_battery_avg REAL,
-                ADD COLUMN IF NOT EXISTS body_battery_stress_events INTEGER,
-                ADD COLUMN IF NOT EXISTS body_battery_recovery_events INTEGER,
-                ADD COLUMN IF NOT EXISTS body_battery_activity_events INTEGER,
-                ADD COLUMN IF NOT EXISTS stress_min INTEGER,
-                ADD COLUMN IF NOT EXISTS stress_high_periods_count INTEGER,
-                ADD COLUMN IF NOT EXISTS stress_low_periods_count INTEGER,
-                ADD COLUMN IF NOT EXISTS min_heart_rate INTEGER,
-                ADD COLUMN IF NOT EXISTS heart_rate_measurements INTEGER,
-                ADD COLUMN IF NOT EXISTS hr_zone_rest_percent REAL,
-                ADD COLUMN IF NOT EXISTS hr_zone_aerobic_percent REAL,
-                ADD COLUMN IF NOT EXISTS resting_heart_rate_7day_avg INTEGER,
-                ADD COLUMN IF NOT EXISTS active_periods_15min INTEGER,
-                ADD COLUMN IF NOT EXISTS sedentary_periods_15min INTEGER,
-                ADD COLUMN IF NOT EXISTS sleep_periods_15min INTEGER,
-                ADD COLUMN IF NOT EXISTS total_calories INTEGER,
-                ADD COLUMN IF NOT EXISTS vigorous_intensity_minutes INTEGER,
-                ADD COLUMN IF NOT EXISTS moderate_intensity_minutes INTEGER,
-                ADD COLUMN IF NOT EXISTS activities_types TEXT,
-                ADD COLUMN IF NOT EXISTS activities_max_intensity INTEGER,
-                ADD COLUMN IF NOT EXISTS hrv_status TEXT,
-                ADD COLUMN IF NOT EXISTS hrv_baseline REAL,
-                ADD COLUMN IF NOT EXISTS training_readiness_status TEXT,
-                ADD COLUMN IF NOT EXISTS readiness_sleep_factor INTEGER,
-                ADD COLUMN IF NOT EXISTS readiness_hrv_factor INTEGER,
-                ADD COLUMN IF NOT EXISTS readiness_stress_factor INTEGER,
-                ADD COLUMN IF NOT EXISTS training_status TEXT,
-                ADD COLUMN IF NOT EXISTS training_load_7day INTEGER,
-                ADD COLUMN IF NOT EXISTS body_temperature REAL,
-                ADD COLUMN IF NOT EXISTS hydration_ml INTEGER,
-                ADD COLUMN IF NOT EXISTS menstrual_cycle_phase TEXT;
-        EXCEPTION WHEN OTHERS THEN
-            -- Игнорируем ошибки если поля уже существуют
-            NULL;
-        END;
-    END $$;
+        -- Пример будущей миграции:
+        -- DO $$ 
+        -- BEGIN
+        --     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+        --                   WHERE table_name = 'documents' AND column_name = 'new_field') THEN
+        --         ALTER TABLE documents ADD COLUMN new_field TEXT;
+        --     END IF;
+        -- END $$;
     """
 
+    # ================================
+    # 📊 ИНДЕКСЫ
+    # ================================
     indices_sql = """
-    -- ================================
-    -- 📊 ИНДЕКСЫ ДЛЯ ВЕКТОРНОГО ПОИСКА (ВАЖНО!)
-    -- ================================
-    CREATE INDEX IF NOT EXISTS idx_document_vectors_user_id ON document_vectors(user_id);
-    CREATE INDEX IF NOT EXISTS idx_document_vectors_document_id ON document_vectors(document_id);
-    CREATE INDEX IF NOT EXISTS idx_document_vectors_embedding ON document_vectors USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
-    CREATE INDEX IF NOT EXISTS idx_document_vectors_keywords ON document_vectors USING gin(to_tsvector('russian', keywords));
+        -- Векторный поиск
+        CREATE INDEX IF NOT EXISTS idx_document_vectors_user_id ON document_vectors(user_id);
+        CREATE INDEX IF NOT EXISTS idx_document_vectors_document_id ON document_vectors(document_id);
+        CREATE INDEX IF NOT EXISTS idx_document_vectors_embedding ON document_vectors USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+        CREATE INDEX IF NOT EXISTS idx_document_vectors_keywords ON document_vectors USING gin(to_tsvector('russian', keywords));
 
-    -- ================================
-    -- 📊 ИНДЕКСЫ ДЛЯ GARMIN ТАБЛИЦ (ВКЛЮЧАЯ НОВЫЕ ПОЛЯ)
-    -- ================================
-    
-    -- Индексы для быстрого поиска данных Garmin
-    CREATE INDEX IF NOT EXISTS idx_garmin_daily_data_user_date ON garmin_daily_data(user_id, data_date DESC);
-    CREATE INDEX IF NOT EXISTS idx_garmin_daily_data_date ON garmin_daily_data(data_date DESC);
-    CREATE INDEX IF NOT EXISTS idx_garmin_analysis_user_date ON garmin_analysis_history(user_id, analysis_date DESC);
-    CREATE INDEX IF NOT EXISTS idx_garmin_connections_active ON garmin_connections(user_id) WHERE is_active = TRUE;
-    CREATE INDEX IF NOT EXISTS idx_garmin_connections_sync_errors ON garmin_connections(sync_errors) WHERE sync_errors >= 5;
-    
-    -- НОВЫЕ индексы для новых полей
-    CREATE INDEX IF NOT EXISTS idx_garmin_daily_completeness ON garmin_daily_data(data_completeness_score) WHERE data_completeness_score IS NOT NULL;
-    CREATE INDEX IF NOT EXISTS idx_garmin_daily_sync_quality ON garmin_daily_data(last_sync_quality) WHERE last_sync_quality IS NOT NULL;
-    CREATE INDEX IF NOT EXISTS idx_garmin_daily_training_status ON garmin_daily_data(user_id, training_status) WHERE training_status IS NOT NULL;
+        -- Garmin
+        CREATE INDEX IF NOT EXISTS idx_garmin_daily_data_user_date ON garmin_daily_data(user_id, data_date DESC);
+        CREATE INDEX IF NOT EXISTS idx_garmin_daily_data_date ON garmin_daily_data(data_date DESC);
+        CREATE INDEX IF NOT EXISTS idx_garmin_analysis_user_date ON garmin_analysis_history(user_id, analysis_date DESC);
+        CREATE INDEX IF NOT EXISTS idx_garmin_connections_active ON garmin_connections(user_id) WHERE is_active = TRUE;
+        CREATE INDEX IF NOT EXISTS idx_garmin_connections_sync_errors ON garmin_connections(sync_errors) WHERE sync_errors >= 5;
+        CREATE INDEX IF NOT EXISTS idx_garmin_daily_completeness ON garmin_daily_data(data_completeness_score) WHERE data_completeness_score IS NOT NULL;
+        CREATE INDEX IF NOT EXISTS idx_garmin_daily_sync_quality ON garmin_daily_data(last_sync_quality) WHERE last_sync_quality IS NOT NULL;
+        CREATE INDEX IF NOT EXISTS idx_garmin_daily_training_status ON garmin_daily_data(user_id, training_status) WHERE training_status IS NOT NULL;
 
-    -- ================================
-    -- 📊 ОСТАЛЬНЫЕ ИНДЕКСЫ
-    -- ================================
-    CREATE INDEX IF NOT EXISTS idx_analytics_user_id ON analytics_events(user_id);
-    CREATE INDEX IF NOT EXISTS idx_analytics_event ON analytics_events(event);
-    CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON analytics_events(timestamp);
-    CREATE INDEX IF NOT EXISTS idx_analytics_user_event ON analytics_events(user_id, event);
-    CREATE INDEX IF NOT EXISTS idx_medical_timeline_user_date ON medical_timeline(user_id, event_date DESC);
-    CREATE INDEX IF NOT EXISTS idx_medical_timeline_user_importance ON medical_timeline(user_id, importance);
-    CREATE INDEX IF NOT EXISTS idx_medical_timeline_category ON medical_timeline(user_id, category);
-    CREATE INDEX IF NOT EXISTS idx_chat_history_user_id ON chat_history(user_id);
-    CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id);
-    CREATE INDEX IF NOT EXISTS idx_medications_user_id ON medications(user_id);
-    CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
-    CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id);
-    CREATE INDEX IF NOT EXISTS idx_users_gdpr_consent ON users(gdpr_consent);
-    CREATE INDEX IF NOT EXISTS idx_sleep_tracking_user ON garmin_users_sleep_tracking(user_id);
+        -- Основные таблицы
+        CREATE INDEX IF NOT EXISTS idx_analytics_user_id ON analytics_events(user_id);
+        CREATE INDEX IF NOT EXISTS idx_analytics_event ON analytics_events(event);
+        CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON analytics_events(timestamp);
+        CREATE INDEX IF NOT EXISTS idx_analytics_user_event ON analytics_events(user_id, event);
+        CREATE INDEX IF NOT EXISTS idx_medical_timeline_user_date ON medical_timeline(user_id, event_date DESC);
+        CREATE INDEX IF NOT EXISTS idx_medical_timeline_user_importance ON medical_timeline(user_id, importance);
+        CREATE INDEX IF NOT EXISTS idx_medical_timeline_category ON medical_timeline(user_id, category);
+        CREATE INDEX IF NOT EXISTS idx_chat_history_user_id ON chat_history(user_id);
+        CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id);
+        CREATE INDEX IF NOT EXISTS idx_medications_user_id ON medications(user_id);
+        CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
+        CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id);
+        CREATE INDEX IF NOT EXISTS idx_user_subscriptions_stripe_customer ON user_subscriptions(stripe_customer_id);
+        CREATE INDEX IF NOT EXISTS idx_users_gdpr_consent ON users(gdpr_consent);
+        CREATE INDEX IF NOT EXISTS idx_sleep_tracking_user ON garmin_users_sleep_tracking(user_id);
+        CREATE INDEX IF NOT EXISTS idx_user_limits_email ON user_limits(email);
+        CREATE INDEX IF NOT EXISTS idx_account_links_telegram ON account_links(telegram_user_id);
+        CREATE INDEX IF NOT EXISTS idx_account_links_web ON account_links(web_user_id);
+        CREATE INDEX IF NOT EXISTS idx_account_links_active ON account_links(link_code) WHERE is_used = FALSE;
     """
 
+    # ================================
+    # 🔄 ФУНКЦИИ И ТРИГГЕРЫ
+    # ================================
     functions_sql = """
-    -- ================================
-    -- 🔄 ФУНКЦИИ И ТРИГГЕРЫ
-    -- ================================
-
-    -- Функция для обновления timestamps
-    CREATE OR REPLACE FUNCTION update_medical_timeline_timestamp()
-    RETURNS TRIGGER AS $$
-    BEGIN
-        NEW.updated_at = CURRENT_TIMESTAMP;
-        RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql;
-
-    -- Функция очистки старых данных Garmin (старше 1 года)
-    CREATE OR REPLACE FUNCTION cleanup_old_garmin_data()
-    RETURNS INTEGER AS $$
-    DECLARE
-        deleted_count INTEGER;
-    BEGIN
-        -- Удаляем данные старше 1 года
-        DELETE FROM garmin_daily_data 
-        WHERE data_date < CURRENT_DATE - INTERVAL '1 year';
-        
-        GET DIAGNOSTICS deleted_count = ROW_COUNT;
-        
-        -- Удаляем анализы старше 6 месяцев
-        DELETE FROM garmin_analysis_history 
-        WHERE analysis_date < CURRENT_DATE - INTERVAL '6 months';
-        
-        -- Логируем результат (если есть таблица логов)
+        -- Функция обновления timestamps
+        CREATE OR REPLACE FUNCTION update_medical_timeline_timestamp()
+        RETURNS TRIGGER AS $$
         BEGIN
-            INSERT INTO analytics_events (user_id, event, properties) 
-            VALUES (0, 'garmin_cleanup', json_build_object('deleted_records', deleted_count)::jsonb);
-        EXCEPTION WHEN OTHERS THEN
-            -- Игнорируем ошибки логирования
+            NEW.updated_at = CURRENT_TIMESTAMP;
+            RETURN NEW;
         END;
-        
-        RETURN deleted_count;
-    END;
-    $$ LANGUAGE plpgsql;
+        $$ LANGUAGE plpgsql;
 
-    -- Триггер для medical_timeline
-    DO $$ 
-    BEGIN
-        IF NOT EXISTS (
-            SELECT 1 FROM pg_trigger 
-            WHERE tgname = 'medical_timeline_update_timestamp'
-        ) THEN
-            CREATE TRIGGER medical_timeline_update_timestamp
-                BEFORE UPDATE ON medical_timeline
-                FOR EACH ROW
-                EXECUTE FUNCTION update_medical_timeline_timestamp();
-        END IF;
-    END $$;
+        -- Функция очистки старых данных Garmin
+        CREATE OR REPLACE FUNCTION cleanup_old_garmin_data()
+        RETURNS INTEGER AS $$
+        DECLARE
+            deleted_count INTEGER;
+        BEGIN
+            DELETE FROM garmin_daily_data 
+            WHERE data_date < CURRENT_DATE - INTERVAL '1 year';
+            GET DIAGNOSTICS deleted_count = ROW_COUNT;
+            
+            DELETE FROM garmin_analysis_history 
+            WHERE analysis_date < CURRENT_DATE - INTERVAL '6 months';
+            
+            BEGIN
+                INSERT INTO analytics_events (user_id, event, properties) 
+                VALUES (0, 'garmin_cleanup', json_build_object('deleted_records', deleted_count)::jsonb);
+            EXCEPTION WHEN OTHERS THEN NULL;
+            END;
+            
+            RETURN deleted_count;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        -- Триггер для medical_timeline
+        DO $$ 
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_trigger 
+                WHERE tgname = 'medical_timeline_update_timestamp'
+            ) THEN
+                CREATE TRIGGER medical_timeline_update_timestamp
+                    BEFORE UPDATE ON medical_timeline
+                    FOR EACH ROW
+                    EXECUTE FUNCTION update_medical_timeline_timestamp();
+            END IF;
+        END $$;
     """
 
+    # ================================
+    # 📝 КОММЕНТАРИИ
+    # ================================
     comments_sql = """
-    -- ================================
-    -- 📝 КОММЕНТАРИИ К ТАБЛИЦАМ И НОВЫМ ПОЛЯМ
-    -- ================================
-    COMMENT ON COLUMN users.gdpr_consent IS 'Пользователь дал согласие на обработку данных (GDPR)';
-    COMMENT ON COLUMN users.gdpr_consent_time IS 'Время когда пользователь дал согласие GDPR';
-    COMMENT ON TABLE document_vectors IS 'Векторные эмбеддинги документов для семантического поиска';
-    
-    -- Комментарии для Garmin таблиц
-    COMMENT ON TABLE garmin_connections IS 'Подключения пользователей к Garmin Connect';
-    COMMENT ON TABLE garmin_daily_data IS 'Ежедневные данные здоровья из часов Garmin (расширенная версия)';  
-    COMMENT ON TABLE garmin_analysis_history IS 'История AI анализов данных Garmin';
-    COMMENT ON TABLE garmin_analysis_settings IS 'Настройки персонализации анализа Garmin';
-    COMMENT ON TABLE garmin_users_sleep_tracking IS 'Простое отслеживание сна по продолжительности';
-    COMMENT ON COLUMN garmin_connections.garmin_email IS 'Зашифрованный email от Garmin Connect';
-    COMMENT ON COLUMN garmin_connections.garmin_password IS 'Зашифрованный пароль от Garmin Connect';
-    COMMENT ON COLUMN garmin_connections.sync_errors IS 'Счетчик ошибок синхронизации (при >= 5 пользователь деактивируется)';
-    COMMENT ON COLUMN garmin_daily_data.data_quality IS 'JSON с информацией о качестве и доступности данных';
-    
-    -- Комментарии к новым полям
-    COMMENT ON COLUMN garmin_daily_data.nap_duration_minutes IS 'Длительность дневного сна в минутах';
-    COMMENT ON COLUMN garmin_daily_data.data_completeness_score IS 'Оценка полноты собранных данных от 0 до 100';
-    COMMENT ON COLUMN garmin_daily_data.last_sync_quality IS 'Качество последней синхронизации: good, partial, poor';
-    COMMENT ON COLUMN garmin_daily_data.body_battery_stress_events IS 'Количество стрессовых событий влияющих на Body Battery';
-    COMMENT ON COLUMN garmin_daily_data.heart_rate_measurements IS 'Количество измерений пульса за день';
-    COMMENT ON COLUMN garmin_daily_data.training_readiness_status IS 'Статус готовности к тренировкам: optimal, good, fair, poor';
+        COMMENT ON COLUMN users.gdpr_consent IS 'Согласие на обработку данных (GDPR)';
+        COMMENT ON COLUMN users.gdpr_consent_time IS 'Время согласия GDPR';
+        COMMENT ON TABLE document_vectors IS 'Векторные эмбеддинги для семантического поиска';
+        COMMENT ON COLUMN documents.full_analysis IS 'Полный анализ от Gemini специалиста для врачей';
+        COMMENT ON TABLE garmin_connections IS 'Подключения к Garmin Connect';
+        COMMENT ON TABLE garmin_daily_data IS 'Ежедневные данные здоровья из Garmin';
+        COMMENT ON TABLE garmin_analysis_history IS 'История AI анализов Garmin';
+        COMMENT ON TABLE garmin_analysis_settings IS 'Настройки персонализации анализа';
+        COMMENT ON TABLE garmin_users_sleep_tracking IS 'Отслеживание сна';
+        COMMENT ON COLUMN garmin_connections.garmin_email IS 'Зашифрованный email Garmin';
+        COMMENT ON COLUMN garmin_connections.garmin_password IS 'Зашифрованный пароль Garmin';
+        COMMENT ON COLUMN garmin_connections.sync_errors IS 'Счетчик ошибок синхронизации';
+        COMMENT ON COLUMN garmin_daily_data.data_completeness_score IS 'Полнота данных 0-100';
+        COMMENT ON COLUMN garmin_daily_data.last_sync_quality IS 'Качество синхронизации: good, partial, poor';
     """
 
     try:
@@ -736,14 +633,14 @@ async def update_user_profile(user_id: int, field: str, value: Any) -> bool:
 
 # 📄 ФУНКЦИИ ДЛЯ РАБОТЫ С ДОКУМЕНТАМИ
 async def save_document(user_id: int, title: str, file_path: str, file_type: str, 
-                       raw_text: str, summary: str, confirmed: bool = True, vector_id: str = None) -> Optional[int]:
+                       raw_text: str, summary: str, full_analysis: str = None, confirmed: bool = True, vector_id: str = None) -> Optional[int]:
     """Сохранить документ (исправленная версия)"""
     conn = await get_db_connection()
     try:
         doc_id = await conn.fetchval(
-            """INSERT INTO documents (user_id, title, file_path, file_type, raw_text, summary, confirmed, vector_id)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id""",
-            user_id, title, file_path, file_type, raw_text, summary, confirmed, vector_id
+            """INSERT INTO documents (user_id, title, file_path, file_type, raw_text, summary, full_analysis, confirmed, vector_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id""",
+            user_id, title, file_path, file_type, raw_text, summary, full_analysis, confirmed, vector_id
         )
         return doc_id
     except Exception as e:

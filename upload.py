@@ -202,7 +202,8 @@ async def handle_document_upload(message: types.Message, bot):
             file_path=final_file_path,
             file_type=file_type,
             raw_text=raw_text,
-            summary=summary
+            summary=summary,
+            full_analysis=vision_text
         )
         
         chunks = await split_into_chunks(summary, document_id, user_id)

@@ -943,7 +943,8 @@ async def upload_document(
             file_path=permanent_path,
             file_type=file_type,
             raw_text=raw_text,
-            summary=summary
+            summary=summary,
+            full_analysis=vision_text
         )
         
         # STEP 7: Добавляем в векторную базу
