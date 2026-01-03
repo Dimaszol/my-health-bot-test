@@ -5,7 +5,7 @@
 {% block extra_styles %}
 <!-- 📄 СТИЛИ СТРАНИЦЫ ДОКУМЕНТОВ -->
 <link rel="stylesheet" href="/static/css/documents.css?v=1">
-<link rel="stylesheet" href="/static/css/documents-mobile.css?v=2">
+<link rel="stylesheet" href="/static/css/documents-mobile.css?v=3">
 <style>
 footer {
     display: none !important;
@@ -38,15 +38,6 @@ footer {
         
     <form id="upload-form">
         <div class="form-group">
-            <label>{{ t('document_title_optional', lang) }}</label>
-            <input 
-                type="text" 
-                id="doc-title" 
-                placeholder="{{ t('document_title_placeholder', lang) }}"
-            />
-        </div>
-        
-        <div class="form-group">
             <label>{{ t('select_file', lang) }}</label>
             <input 
                 type="file" 
@@ -58,6 +49,25 @@ footer {
             <p style="color: #999; font-size: 0.9rem; margin-top: 0.5rem;">
                 {{ t('supported_formats', lang) }}
             </p>
+        </div>
+        
+        <div class="form-group" style="margin-top: 1.5rem;">
+            <label style="font-weight: 600; color: #333; margin-bottom: 0.5rem; display: block;">
+                {{ t('additional_context_label', lang) }}
+            </label>            
+            <textarea 
+                id="doc-context" 
+                maxlength="400"
+                rows="2"
+                placeholder="{{ t('additional_context_placeholder', lang) }}"
+                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; font-family: inherit; resize: none; overflow: hidden;"
+            ></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                <p style="color: #999; font-size: 0.85rem; margin: 0;">
+                    {{ t('additional_context_hint', lang) }}
+                </p>
+                <span id="char-counter" style="color: #999; font-size: 0.85rem;">0/400</span>
+            </div>
         </div>
         
         <button type="submit" class="btn">
@@ -108,111 +118,187 @@ footer {
     </div>
 </div>
 
+{% if not documents %}
+<div class="card" style="margin-bottom: 2rem; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #60a5fa; padding: 2rem;">
+    <div style="text-align: center;">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.5" style="margin: 0 auto 1.5rem auto; display: block;">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <p style="font-size: 1.15rem; line-height: 1.7; color: #1e40af; margin: 0;">
+            {{ t('no_documents_action', lang) }}
+        </p>
+    </div>
+</div>
+{% endif %}
+
 <!-- 📋 СПИСОК ДОКУМЕНТОВ -->
-{% if documents %}
-<div id="documents-list">
-    <h2 style="margin-bottom: 1.5rem;">{{ t('uploaded_documents', lang) }} ({{ documents|length }})</h2>
-    
-    {% for doc in documents %}
-    <div class="card document-card" data-doc-id="{{ doc.id }}">
-        <!-- Заголовок карточки (всегда видимый) -->
-        <div class="document-header" style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 1rem;">
+{% for doc in documents %}
+<div class="card document-card" data-doc-id="{{ doc.id }}">
+    <!-- Заголовок карточки (всегда видимый) -->
+    <div class="document-header" style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 1rem;">
         <div class="document-header-left" style="display: flex; flex-direction: column; justify-content: center; flex: 1;">
-            <!-- Название + Тип документа рядом -->
-            <h3 class="document-title">
-                {{ doc.title }}
-                <span class="doc-type-badge">
-                    {% if doc.file_path and doc.file_path.endswith('.pdf') %}
-                        PDF
-                    {% elif doc.file_path and doc.file_path.endswith('.docx') %}
-                        DOCX
-                    {% elif doc.file_path and doc.file_path.endswith('.txt') %}
-                        TXT
-                    {% elif doc.file_path and (doc.file_path.endswith('.jpg') or doc.file_path.endswith('.jpeg') or doc.file_path.endswith('.png')) %}
-                        IMAGE
-                    {% else %}
-                        DOC
-                    {% endif %}
-                </span>
-            </h3>
             
-            <!-- Medical timeline записи (без изменений) -->
-            {% if doc.timeline_entries and doc.timeline_entries|length > 0 %}
-            <div style="margin-top: 0.8rem;">
-                <ul style="margin: 0; padding-left: 0; color: #666; list-style-type: none;">
-                    {% for entry in doc.timeline_entries %}
-                    <li style="margin-bottom: 0.4rem; line-height: 1.6; display: flex; align-items: flex-start; gap: 0.5rem;">
-                        <!-- Эмодзи важности вместо маркера списка -->
-                        {% if entry.importance == 'critical' %}
-                        <span style="color: #dc3545; flex-shrink: 0; font-size: 0.9rem;" title="{{ t('importance_critical', lang) }}">🔴</span>
-                        {% elif entry.importance == 'important' %}
-                        <span style="color: #ffc107; flex-shrink: 0; font-size: 0.9rem;" title="{{ t('importance_important', lang) }}">🟡</span>
-                        {% else %}
-                        <span style="color: #999; flex-shrink: 0; font-size: 0.9rem;">⚪</span>
-                        {% endif %}
-                        
-                        <!-- Текст описания -->
-                        <span style="color: #444; flex: 1;">{{ entry.description }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
+            <!-- ===================== РЕЖИМ ПРОСМОТРА ===================== -->
+            <div id="doc-view-{{ doc.id }}">
+                <!-- Название + Дата -->
+                <h3 class="document-title" style="margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 1rem;">
+                    <span style="flex: 1;">{{ doc.title }}</span>
+                    <span style="color: #999; font-size: 0.85rem; font-weight: 400;">
+                        {{ doc.document_date.strftime('%d.%m.%Y') if doc.document_date else t('unknown', lang) }}
+                    </span>
+                </h3>
+                
+                <!-- Medical timeline записи -->
+                {% if doc.timeline_entries and doc.timeline_entries|length > 0 %}
+                <div style="margin-top: 0.8rem;">
+                    <ul style="margin: 0; padding-left: 0; color: #666; list-style-type: none;">
+                        {% for entry in doc.timeline_entries %}
+                        <li style="margin-bottom: 0.4rem; line-height: 1.6; display: flex; align-items: flex-start; gap: 0.5rem;">
+                            {% if entry.importance == 'critical' %}
+                            <span style="color: #dc3545; flex-shrink: 0; font-size: 0.9rem;" title="{{ t('importance_critical', lang) }}">🔴</span>
+                            {% elif entry.importance == 'important' %}
+                            <span style="color: #ffc107; flex-shrink: 0; font-size: 0.9rem;" title="{{ t('importance_important', lang) }}">🟡</span>
+                            {% else %}
+                            <span style="color: #999; flex-shrink: 0; font-size: 0.9rem;">⚪</span>
+                            {% endif %}
+                            <span style="color: #444; flex: 1;">{{ entry.description }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
+
+            <!-- ===================== РЕЖИМ РЕДАКТИРОВАНИЯ (скрыт) ===================== -->
+            <div id="doc-edit-{{ doc.id }}" style="display: none;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                    <!-- Название (занимает всё доступное место слева) -->
+                    <input 
+                        type="text" 
+                        id="edit-title-{{ doc.id }}"
+                        value="{{ doc.title }}"
+                        style="flex: 1; padding: 0.5rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1.1rem; font-weight: 600;"
+                        maxlength="200">
+                    
+                    <!-- Дата (справа, фиксированная ширина) -->
+                    <input 
+                        type="date" 
+                        id="edit-date-{{ doc.id }}"
+                        value="{{ doc.document_date.strftime('%Y-%m-%d') if doc.document_date else '' }}"
+                        style="padding: 0.5rem; border: 2px solid #667eea; border-radius: 6px; font-size: 0.85rem; color: #666; width: 150px;">
+                </div>
+                
+                <!-- Medical timeline (только просмотр в режиме редактирования) -->
+                {% if doc.timeline_entries and doc.timeline_entries|length > 0 %}
+                <div style="margin-top: 0.8rem;">
+                    <ul style="margin: 0; padding-left: 0; color: #666; list-style-type: none;">
+                        {% for entry in doc.timeline_entries %}
+                        <li style="margin-bottom: 0.4rem; line-height: 1.6; display: flex; align-items: flex-start; gap: 0.5rem;">
+                            {% if entry.importance == 'critical' %}
+                            <span style="color: #dc3545; flex-shrink: 0;">🔴</span>
+                            {% elif entry.importance == 'important' %}
+                            <span style="color: #ffc107; flex-shrink: 0;">🟡</span>
+                            {% else %}
+                            <span style="color: #999; flex-shrink: 0;">⚪</span>
+                            {% endif %}
+                            <span style="color: #444; flex: 1;">{{ entry.description }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
         </div>
         
         <!-- Кнопки справа -->
         <div style="display: flex; flex-direction: column; justify-content: space-between; align-self: stretch; min-width: 150px; gap: 0.8rem;">
             
-            <!-- Дата загрузки (вверху справа) -->
-            <p style="margin: 0; color: #999; font-size: 0.85rem; text-align: center;">
-                <span class="local-time" data-utc="{{ doc.uploaded_at.isoformat() if doc.uploaded_at else '' }}">
-                    {{ doc.uploaded_at.strftime('%d.%m.%Y %H:%M') if doc.uploaded_at else t('unknown', lang) }}
-                </span>
-            </p>
-            
-            <!-- Верхний ряд: Скачать + Тумблер -->
-            <div style="display: flex; justify-content: center; align-items: center; gap: 3rem;">
+            <!-- Верхний ряд: Скачать + Редактировать + Тумблер -->
+            <div style="display: flex; justify-content: center; align-items: center; gap: 1.5rem;">
                 
-                <!-- Кнопка Скачать слева -->
+                <!-- Кнопка Скачать -->
                 <a href="/api/download-document/{{ doc.id }}" 
-                class="btn-download-minimal" 
-                download
-                title="{{ t('btn_download', lang) }}"
-                style="display: flex; align-items: center;">
+                   class="btn-download-minimal" 
+                   download
+                   title="{{ t('btn_download', lang) }}"
+                   style="display: flex; align-items: center;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
                 </a>
+
+                <!-- РЕЖИМ ПРОСМОТРА: Кнопка Редактировать -->
+                <button 
+                    id="doc-edit-btn-{{ doc.id }}"
+                    class="btn-edit-minimal" 
+                    onclick="editDocument('{{ doc.id }}', event)"
+                    title="{{ t('edit', lang) }}"
+                    style="display: flex; align-items: center; background: none; border: none; cursor: pointer; color: #4b5563; padding: 0; transition: color 0.2s;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
                 
-                <!-- Компактный тумблер справа -->
-                <label class="toggle-switch-compact">
+                <!-- РЕЖИМ РЕДАКТИРОВАНИЯ: Кнопки Сохранить и Отмена (скрыты, РЯДОМ) -->
+                <div id="doc-edit-buttons-{{ doc.id }}" style="display: none; gap: 0.5rem;">
+                    <button 
+                        id="doc-save-btn-{{ doc.id }}"
+                        onclick="saveDocumentEdit('{{ doc.id }}')"
+                        title="{{ t('save', lang) }}"
+                        style="padding: 0.4rem; background: #00C9A7; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </button>
+                    <button 
+                        id="doc-cancel-btn-{{ doc.id }}"
+                        onclick="cancelDocumentEdit('{{ doc.id }}')"
+                        title="{{ t('cancel', lang) }}"
+                        style="padding: 0.4rem; background: #cbd5e0; color: #2d3748; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Компактный тумблер -->
+                <label class="toggle-switch-compact" 
+                    title="{{ t('toggle_document_in_chat', lang) }}">
                     <input type="checkbox" 
-                        {{ 'checked' if doc.confirmed else '' }}
+                        data-doc-id="{{ doc.id }}"
                         onchange="toggleDocumentConfirmed('{{ doc.id }}', this.checked)"
-                        data-doc-id="{{ doc.id }}">
+                        {% if doc.confirmed %}checked{% endif %}>
                     <span class="toggle-slider-compact"></span>
                 </label>
             </div>
-                    
-            <!-- Кнопка Показать внизу -->
+
+            <!-- Кнопка "Детальный анализ" -->
+            <a href="/dashboard/document/{{ doc.id }}" 
+            class="btn-show-minimal"
+            style="text-decoration: none;">
+                🔍 {{ t('btn_detailed_analysis', lang) }}
+            </a>
+            
+            <!-- Кнопка Показать -->
             <button 
-                class="btn-show-minimal"
-                onclick="toggleDocument('{{ doc.id }}')"
-                id="toggle-btn-{{ doc.id }}"
-            >
+                class="btn-show-minimal btn-toggle"
+                data-doc-id="{{ doc.id }}"
+                id="toggle-btn-{{ doc.id }}">
                 <span class="show-icon">▶</span>
                 <span class="show-text">{{ t('btn_show', lang) }}</span>
             </button>
         </div>
-        </div>
-        
-        <!-- Раскрывающееся содержимое -->
-        <div class="document-body-wrapper" style="display: none;">
+    </div>
+    
+    <!-- Раскрывающееся содержимое (без изменений) -->
+    <div class="document-body-wrapper" style="display: none;">
         <div style="padding: 1rem 0; border-top: 1px solid #e5e7eb; margin-top: 1rem;">
             
-            <!-- 🤖 AI-АНАЛИЗ ДОКУМЕНТА -->
+            <!-- AI-АНАЛИЗ ДОКУМЕНТА -->
             {% if doc.raw_text %}
             <div style="background: #f8f9ff; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem;">
                 <div style="color: #374151; line-height: 1.7;">
@@ -225,40 +311,111 @@ footer {
                 <p style="color: #856404; margin: 0.5rem 0 0 0; font-size: 0.9rem;">{{ t('no_analysis_retry', lang) }}</p>
             </div>
             {% endif %}
-            
+
             <!-- Disclaimer + Кнопка удаления -->
             <div class="disclaimer-delete-container">
-                <!-- Disclaimer слева -->
                 <p style="margin: 0; font-size: 0.8rem; color: #6b7280; line-height: 1.4; flex: 1;">
-                    ⚠️ {{ t('ai_disclaimer', lang) }}
+                    {{ t('ai_disclaimer', lang) }}
                 </p>
                 
-                <!-- Кнопка удаления справа -->
                 <button 
                     class="btn-action btn-delete delete-btn"
                     data-doc-id="{{ doc.id }}"
-                    type="button"
-                >
+                    type="button">
                     <span class="btn-icon">🗑️</span>
                     <span>{{ t('btn_delete_document', lang) }}</span>
                 </button>
             </div>
         </div>
     </div>
-    </div>  <!-- ✅ ВАЖНО: Закрывающий тег для document-card -->
-    {% endfor %}
 </div>
-{% else %}
-<div class="empty-state-card" style="text-align: center; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid var(--primary-color); border-radius: 16px; padding: 3rem 2rem; box-shadow: 0 4px 12px rgba(0, 201, 167, 0.1);">
-    <!-- SVG иконка папки -->
-    <div style="margin-bottom: 1.5rem;">
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.5" style="margin: 0 auto; display: block;">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-        </svg>
-    </div>    
-    <p style="font-size: 1.15rem; line-height: 1.7; color: #1e40af; margin: 0;">
-        {{ t('no_documents_action', lang) }}
-    </p>
+{% endfor %}
+
+<!-- 📘 ЛЕГЕНДА ДЛЯ КАРТОЧЕК ДОКУМЕНТОВ -->
+{% if documents %}
+<div class="card" style="margin-top: 2rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #667eea;">
+    <h3 style="color: #667eea; margin-bottom: 1rem; font-size: 1.1rem;">
+        {{ t('legend_title', lang) }}
+    </h3>
+    
+    <div style="display: grid; gap: 1rem; font-size: 0.9rem; line-height: 1.6;">
+        <!-- Скачать -->
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <div style="width: 40px; display: flex; justify-content: center; align-items: center; flex-shrink: 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+            </div>
+            <div>
+                <strong>{{ t('legend_download', lang) }}</strong>
+            </div>
+        </div>
+
+        <!-- Редактировать -->
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <div style="width: 40px; display: flex; justify-content: center; align-items: center; flex-shrink: 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </div>
+            <div>
+                <strong>{{ t('legend_edit', lang) }}</strong>
+            </div>
+        </div>
+
+        <!-- Учитывать/не учитывать -->
+        <div>
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <div style="width: 40px; display: flex; justify-content: center; align-items: center; flex-shrink: 0;">
+                    <div style="position: relative; width: 40px; height: 22px; background: #00C9A7; border-radius: 20px;">
+                        <div style="position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; background: white; border-radius: 50%; transition: 0.3s;"></div>
+                    </div>
+                </div>
+                <strong>{{ t('legend_toggle', lang) }}</strong>
+            </div>
+            <div style="margin-top: 0.5rem; padding-left: calc(40px + 0.75rem); color: #666;">
+                {{ t('legend_toggle_desc', lang) }}
+            </div>
+        </div>
+        
+        <!-- Детальный анализ -->
+        <div>
+            <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                <div style="width: 40px; display: flex; justify-content: center; align-items: flex-start; flex-shrink: 0; padding-top: 0.2rem;">
+                    <span>🔍</span>
+                </div>
+                <div>
+                    <strong>{{ t('legend_analysis', lang) }}</strong> — {{ t('legend_analysis_desc', lang) }}
+                </div>
+            </div>
+            <div style="font-size: 0.85rem; margin-top: 0.5rem; color: #856404; padding-left: calc(40px + 0.75rem);">
+                ⚠️ {{ t('legend_warning', lang) }}
+            </div>
+        </div>
+
+        <!-- Сводка -->
+        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+            <div style="width: 40px; display: flex; justify-content: center; align-items: flex-start; flex-shrink: 0; padding-top: 0.2rem;">
+                <span style="color: #667eea;">▶</span>
+            </div>
+            <div>
+                <strong>{{ t('legend_summary', lang) }}</strong> — {{ t('legend_summary_desc', lang) }}
+            </div>
+        </div>
+        
+        <!-- Разделительная линия -->
+        <div style="border-top: 1px solid #ddd; margin: 0.5rem 0;"></div>
+
+        <!-- Индикаторы состояния -->
+        <div style="padding-left: 1.5rem;">
+            <div style="margin-bottom: 0.4rem;">⚪ <span style="color: #666;">{{ t('legend_indicator_normal', lang) }}</span></div>
+            <div style="margin-bottom: 0.4rem;">🟡 <span style="color: #666;">{{ t('legend_indicator_attention', lang) }}</span></div>
+            <div>🔴 <span style="color: #666;">{{ t('legend_indicator_serious', lang) }}</span></div>
+        </div>
+    </div>
 </div>
 {% endif %}
 
@@ -488,21 +645,66 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // 3️⃣ Делегирование для кнопок удаления
+    // 3️⃣ Делегирование для всех кнопок
     const documentsContainer = document.getElementById('documents-list');
     
     if (documentsContainer) {
         documentsContainer.addEventListener('click', async function(e) {
+            // Кнопка удаления
             const deleteBtn = e.target.closest('.delete-btn');
-            
             if (deleteBtn) {
                 e.stopPropagation();
                 e.preventDefault();
-                
                 const docId = deleteBtn.getAttribute('data-doc-id');
-                console.log('🗑️ Клик по удалению, docId:', docId);
-                
                 await deleteDocument(docId);
+                return;
+            }
+            
+            // Кнопка редактирования
+            const editBtn = e.target.closest('.btn-edit-minimal');
+            if (editBtn) {
+                e.stopPropagation();
+                e.preventDefault();
+                const docId = editBtn.getAttribute('data-doc-id');
+                editDocument(docId, e);
+                return;
+            }
+            
+            // Кнопка сохранения редактирования
+            const saveBtn = e.target.closest('.btn-save-edit');
+            if (saveBtn) {
+                e.stopPropagation();
+                e.preventDefault();
+                const docId = saveBtn.getAttribute('data-doc-id');
+                await saveDocumentEdit(docId);
+                return;
+            }
+            
+            // Кнопка отмены редактирования
+            const cancelBtn = e.target.closest('.btn-cancel-edit');
+            if (cancelBtn) {
+                e.stopPropagation();
+                e.preventDefault();
+                const docId = cancelBtn.getAttribute('data-doc-id');
+                cancelDocumentEdit(docId);
+                return;
+            }
+            
+            // Кнопка показать/скрыть
+            const toggleBtn = e.target.closest('.btn-toggle');
+            if (toggleBtn) {
+                const docId = toggleBtn.getAttribute('data-doc-id');
+                toggleDocument(docId);
+                return;
+            }
+        });
+        
+        // Обработчик изменения чекбоксов
+        documentsContainer.addEventListener('change', function(e) {
+            if (e.target.type === 'checkbox' && e.target.getAttribute('data-doc-id')) {
+                const docId = e.target.getAttribute('data-doc-id');
+                const isChecked = e.target.checked;
+                toggleDocumentConfirmed(docId, isChecked);
             }
         });
         console.log('✅ Делегирование настроено!');
@@ -512,17 +714,47 @@ document.addEventListener('DOMContentLoaded', function() {
     // 4️⃣ ФОРМА ЗАГРУЗКИ ДОКУМЕНТА
     // ========================================
     
-    const uploadForm = document.getElementById('upload-form');
+    const uploadForm = document.getElementById('upload-form');   
     
     if (uploadForm) {
+        // ========================================
+        // СЧЕТЧИК СИМВОЛОВ для дополнительного контекста
+        // ========================================
+        const contextInput = document.getElementById('doc-context');
+        const charCounter = document.getElementById('char-counter');
+
+        if (contextInput && charCounter) {
+            // Автоматическое расширение textarea
+            const autoResize = () => {
+                contextInput.style.height = 'auto';
+                contextInput.style.height = contextInput.scrollHeight + 'px';
+            };
+            
+            contextInput.addEventListener('input', () => {
+                const length = contextInput.value.length;
+                charCounter.textContent = `${length}/400`;
+                
+                // Меняем цвет при приближении к лимиту
+                if (length > 350) {
+                    charCounter.style.color = '#ef4444';
+                } else if (length > 300) {
+                    charCounter.style.color = '#f59e0b';
+                } else {
+                    charCounter.style.color = '#999';
+                }
+                
+                // Автоматически расширяем поле
+                autoResize();
+            });
+        }
+        
         const uploadCard = document.getElementById('upload-card');
         const progressCard = document.getElementById('progress-card');
         
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const fileInput = document.getElementById('doc-file');
-            const titleInput = document.getElementById('doc-title');
+            const fileInput = document.getElementById('doc-file');            
             
             if (!fileInput.files[0]) {
                 alert('{{ t("please_select_file", lang) }}');
@@ -532,7 +764,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Создаём FormData
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
-            formData.append('title', titleInput.value || '');
+            formData.append('additional_context', contextInput.value || ''); // ← используем уже объявленный
             
             // Скрываем форму, показываем прогресс
             uploadCard.style.display = 'none';
@@ -670,5 +902,85 @@ style.textContent = `
     }
 `;
 document.head.appendChild(flashAnimationStyle);
+
+// ========================================
+// ✏️ РЕДАКТИРОВАНИЕ ДОКУМЕНТА
+// ========================================
+
+function editDocument(docId, event) {
+    event.stopPropagation();
+    
+    // Скрываем режим просмотра
+    const viewMode = document.getElementById(`doc-view-${docId}`);
+    if (viewMode) viewMode.style.display = 'none';
+    
+    // Показываем режим редактирования
+    const editMode = document.getElementById(`doc-edit-${docId}`);
+    if (editMode) editMode.style.display = 'block';
+    
+    // Скрываем кнопку редактировать
+    const editBtn = document.getElementById(`doc-edit-btn-${docId}`);
+    if (editBtn) editBtn.style.display = 'none';
+    
+    // Показываем кнопки сохранить/отменить
+    const editButtons = document.getElementById(`doc-edit-buttons-${docId}`);
+    if (editButtons) editButtons.style.display = 'flex';
+}
+
+function cancelDocumentEdit(docId) {
+    // Показываем режим просмотра
+    const viewMode = document.getElementById(`doc-view-${docId}`);
+    if (viewMode) viewMode.style.display = 'block';
+    
+    // Скрываем режим редактирования
+    const editMode = document.getElementById(`doc-edit-${docId}`);
+    if (editMode) editMode.style.display = 'none';
+    
+    // Показываем кнопку редактировать
+    const editBtn = document.getElementById(`doc-edit-btn-${docId}`);
+    if (editBtn) editBtn.style.display = 'flex';
+    
+    // Скрываем кнопки сохранить/отменить
+    const editButtons = document.getElementById(`doc-edit-buttons-${docId}`);
+    if (editButtons) editButtons.style.display = 'none';
+}
+
+async function saveDocumentEdit(docId) {
+    const titleInput = document.getElementById(`edit-title-${docId}`);
+    const dateInput = document.getElementById(`edit-date-${docId}`);
+    
+    if (!titleInput || !dateInput) return;
+    
+    const newTitle = titleInput.value.trim();
+    const newDate = dateInput.value;
+    
+    if (!newTitle) {
+        alert('{{ t("error_empty_title", lang) }}');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/update-document/${docId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: newTitle,
+                document_date: newDate
+            })
+        });
+        
+        if (response.ok) {
+            showFlashMessage('{{ t("document_updated", lang) }}', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showFlashMessage('{{ t("error_save_failed", lang) }}', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        showFlashMessage('{{ t("error_save_failed", lang) }}', 'error');
+    }
+}
 </script>
 {% endblock %}

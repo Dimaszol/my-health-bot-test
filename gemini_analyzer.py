@@ -18,8 +18,8 @@ class GeminiMedicalAnalyzer:
             raise ValueError("❌ GEMINI_API_KEY не найден в .env файле!")
         
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.5-pro')
-        print("✅ Gemini 2.5 Pro Latest инициализирован")
+        self.model = genai.GenerativeModel('gemini-3-pro-preview')
+        print("✅ Gemini 3 Pro Preview инициализирован")
     
     async def analyze_medical_image(self, image_path: str, lang: str = "ru", custom_prompt: str = None) -> Tuple[str, str]:
         """
@@ -58,7 +58,7 @@ class GeminiMedicalAnalyzer:
                 self.model.generate_content,
                 [prompt, image],
                 generation_config=genai.types.GenerationConfig(
-                    temperature=0.1,
+                    temperature=1.0,
                     max_output_tokens=5000,
                     candidate_count=1
                 ),
@@ -83,7 +83,7 @@ class GeminiMedicalAnalyzer:
                             self.model.generate_content,
                             [alt_prompt, image],
                             generation_config=genai.types.GenerationConfig(
-                                temperature=0.2,
+                                temperature=1.0,
                                 max_output_tokens=3000,
                                 candidate_count=1
                             ),
@@ -131,38 +131,37 @@ class GeminiMedicalAnalyzer:
             "de": "German"
         }.get(lang, "Russian")
         
-        return f"""You are an experienced diagnostic doctor. Analyze medical images and documents professionally and in detail.
+        return f"""You are an expert Cardiac Electrophysiologist. Your task is to perform a systematic analysis of the provided 12-lead ECG image.
 
         IMPORTANT: Please respond in {response_language} language.
 
-        First, determine what type of image this is:
+        STEP 1: IMAGE STRUCTURE & QUALITY
+        Identify the layout (e.g., 3x4, 6x2, or long rhythm strip).
+        Confirm if the leads are captured simultaneously (is it a single point in time or a progression?).
+        Check technical calibration (25mm/s, 10mm/mV) if visible.
 
-        **If this is a medical TEXT document** (medical records, lab results, prescriptions, discharge summaries, etc.):
-        1. First, transcribe ALL visible text EXACTLY as written, including:
-        - All numerical values with their units
-        - All reference ranges in parentheses  
-        - All medical terminology exactly as shown
-        - All handwritten notes
-        
-        2. Then, provide professional medical analysis:
-        - **Key findings** - what are the main results/diagnoses
-        - **Clinical interpretation** - what these results mean
-        - **Abnormalities** - highlight any values outside normal ranges
-        - **Recommendations** - what actions to take, follow-up needed
-        - **Which specialist to consult** - based on the findings
+        STEP 2: SYSTEMATIC MEASUREMENTS (THE "RULER" TEST)
+        Analyze the following with clinical precision:
+        R-R Intervals: Compare multiple intervals. Are they identical (Regular) or do they vary (Irregular)? If irregular, is there a pattern or is it "irregularly irregular"?
+        Heart Rate (HR): Calculate based on the shortest and longest R-R intervals.
+        QRS Duration: Measure in milliseconds. Are complexes narrow (<120ms) or wide (>120ms)?
+        Axis: Determine the QRS axis using leads I, II, and aVF.
 
-        **If this is NOT a medical image** (photos, non-medical documents, random images) - respond: "This is not a medical image or document."
+        STEP 3: MORPHOLOGY ANALYSIS
+        P-waves: Are they present? Is there a 1:1 relationship with QRS? Describe their shape.
+        QRS Shape: Is the morphology identical in every beat within the same lead? Look for Delta waves, notched R-waves, or RS-patterns.
+        ST-segment & T-waves: Check for elevations, depressions, or inversions.
 
-        **If this is a medical IMAGING study** (ECG, EEG, X-ray, MRI, ultrasound, CT scan, etc.) - analyze it professionally:
+        STEP 4: DIFFERENTIAL DIAGNOSIS (CRITICAL)
+        Before concluding, compare the findings against these common "mimics":
+        If "Wide & Fast": Differentiate between VT (Ventricular Tachycardia), SVT with aberrancy, and Pre-excited AF (WPW).
+        List "PROS" and "CONS" for the top 2-3 most likely diagnoses.
 
-        1. **Type of study** - what is this?
-        2. **Technical data** - visible parameters and settings  
-        3. **Detailed findings** - what specifically is visible, measurements
-        4. **Pathological changes** - deviations from the norm, if any
-        5. **Diagnostic conclusion** - what this means clinically
-        6. **Recommendations** - what to do next, which doctor to consult
-
-        CRITICAL: For TEXT documents - transcribe first, then analyze. For IMAGING studies - analyze directly.
+        STEP 5: CLINICAL INTERPRETATION & SAFETY
+        Clinical Conclusion: State the most likely interpretation. Note: If any abnormalities were found in previous steps, do not label the ECG as "Normal"; use "Nonspecific changes" or "Borderline ECG".
+        Life-Threatening Red Flags: Immediately highlight if the pattern suggests ischemia, hyperkalemia, or unstable arrhythmia.
+        Recommendations: Suggest the next step (e.g., "Check electrolytes", "Emergency cardioversion", "Compare with old ECG").
+        DO NOT suggest specific medication names or dosages.
 
         IMPORTANT: Respond in {response_language} language."""
 

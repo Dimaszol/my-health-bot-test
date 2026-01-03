@@ -84,87 +84,74 @@ async def handle_document_upload(message: types.Message, bot):
 
         await message.answer(t("document_received", lang))
 
-        # ОБРАБОТКА ФАЙЛА
-        # ===== ЗАМЕНИ БЛОК "ОБРАБОТКА ФАЙЛА" В upload.py =====
+        # ===================================================
+        # 🆕 НОВАЯ ЛОГИКА: ИСПОЛЬЗУЕМ document_processor.py
+        # ===================================================
 
-        if file_ext == '.pdf':
-            try:
-                image_paths = convert_pdf_to_images(local_file, output_dir=f"files/{user_id}/pages")
-                if not image_paths:
-                    await message.answer(t("pdf_read_failed", lang))
-                    return  # ← НЕ записываем лимит если PDF нечитаемый
-                if len(image_paths) > 5:
-                    await message.answer(t("file_too_many_pages", lang, pages=len(image_paths)))
-                    image_paths = image_paths[:5]
+        from document_processor import process_document
 
-                vision_text = ""
-                for img_path in image_paths:
-                    try:
-                        page_text, _ = await send_to_gpt_vision(img_path, lang)
-                        if page_text:  # Проверяем что текст получен
-                            vision_text += page_text + "\n\n"
-                    except Exception as page_error:
-                        # Логируем ошибку страницы, но продолжаем
-                        logger.warning(f"Ошибка обработки страницы {img_path}: {page_error}")
-                        continue
+        # Определяем тип файла
+        file_type = "pdf" if file_ext == ".pdf" else "image"
 
-                vision_text = vision_text.strip()
-                
-                # Если не удалось извлечь текст ни с одной страницы
-                if not vision_text:
-                    await message.answer(t("pdf_read_failed", lang))
-                    return
-                    
-            except Exception as e:
-                # Детальное логирование для диагностики
-                logger.error(f"Ошибка PDF для пользователя {user_id}: {str(e)}")
-                logger.error(f"PDF файл: {local_file}")
-                logger.error(f"Тип ошибки: {type(e).__name__}")
-                
-                await message.answer(t("pdf_processing_error", lang))
-                return  # ← НЕ записываем лимит при ошибке PDF
-        else:
-            try:
-                vision_text, _ = await send_to_gpt_vision(local_file, lang)
-            except Exception as e:
-                logger.error(f"Ошибка анализа изображения для пользователя {user_id}: {str(e)}")
-                await message.answer(t("image_analysis_error", lang))
-                return  # ← НЕ записываем лимит при ошибке изображения
+        # Обрабатываем документ через новый пайплайн
+        result = await process_document(
+            file_path=local_file,
+            user_id=user_id,
+            lang=lang,
+            additional_context=None  # В Telegram боте пока нет доп. контекста
+        )
 
-        if not await is_medical_text(vision_text):
-            await message.answer(t("not_medical_doc", lang))
-            return  # ← НЕ записываем лимит для немедицинских документов
-        
-        # ✅ НОВЫЙ ПОРЯДОК: Сначала заголовок!
-        auto_title = await generate_title_from_text(text=vision_text[:1500], lang=lang)
-        
-        # ✅ Затем структурированный текст БЕЗ заголовка
-        raw_text = await ask_structured(vision_text[:8000], lang=lang)
-        
-        # ✅ И резюме для векторной базы
-        summary = await generate_medical_summary(vision_text[:8000], lang)
+        # Проверяем результат
+        if not result.get('success', False):
+            # Удаляем временный файл
+            if os.path.exists(local_file):
+                os.remove(local_file)
+            
+            error_type = result.get('error_type', 'unknown')
+            
+            # Специальная обработка для немедицинских документов
+            if error_type == 'not_medical':
+                await message.answer(t("not_medical_document", lang))
+                return
+            
+            # Общая ошибка обработки
+            await message.answer(t("document_processing_error", lang))
+            return
+
+        # Извлекаем результаты
+        title = result['title']
+        raw_text = result['raw_text']
+        summary = result['summary']
+        vision_text = result['full_analysis']
+        document_type = result.get('document_type')
+        subtype = result.get('subtype')
+        document_date = result.get('document_date')
+
+        # ===================================================
+        # 📱 ОТПРАВКА РЕЗУЛЬТАТА ПОЛЬЗОВАТЕЛЮ В TELEGRAM
+        # ===================================================
 
         if raw_text:
-            # ✅ Импортируем функции разбивки сообщений
+            # Импортируем функции разбивки сообщений
             from gpt import safe_telegram_text, split_long_message
             
-            # ✅ Применяем правильное форматирование 
+            # Применяем правильное форматирование 
             formatted_text = safe_telegram_text(raw_text)
             
-            # ✅ НОВОЕ: Заголовок включаем в header сообщения
-            header = f"{t('vision_read_text', lang)}\n «{auto_title}»"
+            # Заголовок включаем в header сообщения
+            header = f"{t('vision_read_text', lang)}\n «{title}»"
             full_text = f"{header}\n\n{formatted_text}"
             
-            # ✅ Разбиваем на части если слишком длинное
+            # Разбиваем на части если слишком длинное
             message_parts = split_long_message(full_text, max_length=4000)
             
-            # ✅ Отправляем каждую часть отдельно
+            # Отправляем каждую часть отдельно
             for i, part in enumerate(message_parts):
                 try:
                     await message.answer(part, parse_mode="HTML")
                     
                     # Небольшая задержка между сообщениями для читаемости
-                    if i < len(message_parts) - 1:  # Не ждем после последнего
+                    if i < len(message_parts) - 1:
                         import asyncio
                         await asyncio.sleep(0.5)
                         
@@ -177,7 +164,11 @@ async def handle_document_upload(message: types.Message, bot):
                         await message.answer(t("display_error", lang))
         else:
             await message.answer(t("vision_failed", lang))
-            return  # ← НЕ записываем лимит если обработка не удалась
+            return
+
+        # ===================================================
+        # 💾 СОХРАНЕНИЕ В ПОСТОЯННОЕ ХРАНИЛИЩЕ И БД
+        # ===================================================
 
         storage = get_file_storage()
         success, permanent_path = storage.save_file(
@@ -190,20 +181,22 @@ async def handle_document_upload(message: types.Message, bot):
             await message.answer(t("file_storage_error", lang))
             return
 
-        # Используем постоянный путь вместо временного
-        final_file_path = permanent_path
-
         # Логируем успешное сохранение
         logger.info(f"✅ Файл сохранен в постоянное хранилище: {permanent_path}")
 
+        # Сохраняем в БД
         document_id = await save_document(
             user_id=user_id,
-            title=auto_title,
-            file_path=final_file_path,
+            file_path=permanent_path,
             file_type=file_type,
             raw_text=raw_text,
             summary=summary,
-            full_analysis=vision_text
+            full_analysis=vision_text,
+            title=title,
+            document_type=document_type,
+            subtype=subtype,
+            additional_context=None,
+            document_date=document_date
         )
         
         chunks = await split_into_chunks(summary, document_id, user_id)
@@ -238,7 +231,7 @@ async def handle_document_upload(message: types.Message, bot):
         await SubscriptionManager.spend_limits(user_id, documents=1)
         logger.info(f"✅ Основной лимит списан для пользователя")
 
-        await message.answer(t("document_saved", lang, title=auto_title), parse_mode="HTML")
+        await message.answer(t("document_saved", lang, title=title), parse_mode="HTML")
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text=t("rename_doc_button", lang), callback_data=f"rename_{document_id}")],

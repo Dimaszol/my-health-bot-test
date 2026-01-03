@@ -249,7 +249,7 @@ async function checkPhotoLimits() {
         const response = await fetch('/api/check-photo-limits');
         // ✅ ПРОВЕРКА АУТЕНТИФИКАЦИИ
         if (response.status === 401) {
-            window.location.href = '/auth/login';
+            window.location.href = '/login';
             return false;
         }
         const data = await response.json();
@@ -464,7 +464,7 @@ async function sendPhotoForAnalysis(file, question) {
 
         // ✅ ПРОВЕРКА АУТЕНТИФИКАЦИИ
         if (response.status === 401) {
-            window.location.href = '/auth/login';
+            window.location.href = '/login';
             return;
         }
         
@@ -534,7 +534,7 @@ async function sendTextMessage(message) {
 
         // ✅ ПРОВЕРКА АУТЕНТИФИКАЦИИ
         if (response.status === 401) {
-            window.location.href = '/auth/login';
+            window.location.href = '/login';
             return;
         }
         

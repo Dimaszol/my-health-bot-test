@@ -297,7 +297,8 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
                 raw_text,
                 summary,
                 uploaded_at,
-                confirmed
+                confirmed,
+                document_date
             FROM documents
             WHERE user_id = $1
             ORDER BY uploaded_at DESC
@@ -476,6 +477,50 @@ async def subscription_page(request: Request, user_id: int = Depends(get_current
     context['has_subscription'] = current_package_id is not None  # ✅ ИСПРАВЛЕНО
     
     return templates.TemplateResponse("subscription.html", context)
+
+@router.get("/document/{doc_id}", response_class=HTMLResponse)
+async def document_detail(
+    request: Request, 
+    doc_id: int,
+    user_id: int = Depends(get_current_user)
+):
+    """
+    Детальная страница одного документа
+    Показывает: дату, название, медкарту, превью, полный анализ, сводку
+    """
+    from db_postgresql import get_db_connection, release_db_connection
+    from medical_timeline import get_timeline_by_document
+    
+    conn = await get_db_connection()
+    try:
+        # Получаем полную информацию о документе
+        doc = await conn.fetchrow("""
+            SELECT 
+                id, title, file_path, file_type, document_date,
+                raw_text, summary, full_analysis, 
+                document_type, subtype, additional_context,
+                uploaded_at, confirmed
+            FROM documents
+            WHERE id = $1 AND user_id = $2
+        """, doc_id, user_id)
+        
+        if not doc:
+            raise HTTPException(status_code=404, detail="Документ не найден")
+        
+        # Получаем медкарту для этого документа
+        timeline = await get_timeline_by_document(doc_id, user_id)
+        
+    finally:
+        await release_db_connection(conn)
+    
+    # Формируем контекст
+    context = get_template_context(request)
+    context.update({
+        'doc': dict(doc),
+        'timeline': timeline
+    })
+    
+    return templates.TemplateResponse("document_detail.html", context)
 
 @router.get("/test-gpt5")
 async def test_gpt5_page(request: Request):

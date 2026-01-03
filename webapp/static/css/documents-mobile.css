@@ -430,4 +430,20 @@
         justify-content: center !important;
         margin: 0 !important;
     }
+    
+/* ✏️ РЕЖИМ РЕДАКТИРОВАНИЯ - ПОЛЯ ВЕРТИКАЛЬНО */
+    div[id^="doc-edit-"] > div:first-child {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    
+    div[id^="doc-edit-"] input[type="text"] {
+        width: 100% !important;
+        flex: none !important;
+    }
+    
+    div[id^="doc-edit-"] input[type="date"] {
+        width: 100% !important;
+        margin-top: 0.5rem;
+    }
 }

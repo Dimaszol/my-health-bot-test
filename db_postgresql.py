@@ -137,7 +137,9 @@ async def create_tables():
             full_analysis TEXT,
             confirmed BOOLEAN DEFAULT FALSE,
             uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            vector_id TEXT
+            document_type VARCHAR(50),
+            subtype VARCHAR(100),
+            additional_context TEXT
         );
 
         -- ================================
@@ -447,6 +449,11 @@ async def create_tables():
         -- Этот блок используется для добавления новых полей в существующие таблицы
         -- Все текущие поля уже добавлены в основные CREATE TABLE выше
         
+        DO $$ 
+        BEGIN
+            NULL;  -- Пустая операция, но синтаксически правильная
+        END $$;
+        
         -- Пример будущей миграции:
         -- DO $$ 
         -- BEGIN
@@ -631,16 +638,27 @@ async def update_user_profile(user_id: int, field: str, value: Any) -> bool:
     finally:
         await release_db_connection(conn)
 
-# 📄 ФУНКЦИИ ДЛЯ РАБОТЫ С ДОКУМЕНТАМИ
-async def save_document(user_id: int, title: str, file_path: str, file_type: str, 
-                       raw_text: str, summary: str, full_analysis: str = None, confirmed: bool = True, vector_id: str = None) -> Optional[int]:
-    """Сохранить документ (исправленная версия)"""
+async def save_document(user_id: int, file_path: str, file_type: str, 
+                       raw_text: str, summary: str, full_analysis: str = None, 
+                       confirmed: bool = True, document_type: str = None, 
+                       subtype: str = None, additional_context: str = None,
+                       title: str = None, document_date: str = None) -> Optional[int]:
+    """Сохранить документ"""
     conn = await get_db_connection()
     try:
+        # Конвертируем строку даты в объект date
+        from datetime import datetime
+        date_obj = None
+        if document_date:
+            try:
+                date_obj = datetime.strptime(document_date, '%Y-%m-%d').date()
+            except ValueError:
+                logger.warning(f"Invalid date format: {document_date}, using None")
+        
         doc_id = await conn.fetchval(
-            """INSERT INTO documents (user_id, title, file_path, file_type, raw_text, summary, full_analysis, confirmed, vector_id)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id""",
-            user_id, title, file_path, file_type, raw_text, summary, full_analysis, confirmed, vector_id
+            """INSERT INTO documents (user_id, title, file_path, file_type, raw_text, summary, full_analysis, confirmed, document_type, subtype, additional_context, document_date)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id""",
+            user_id, title, file_path, file_type, raw_text, summary, full_analysis, confirmed, document_type, subtype, additional_context, date_obj
         )
         return doc_id
     except Exception as e:

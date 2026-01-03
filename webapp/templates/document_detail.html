@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}{{ doc.title }} - {{ t('site_title', lang) }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px; margin: 2rem auto; padding: 0 1rem;">
+    
+    <!-- Кнопка "Назад" вверху -->
+    <a href="/dashboard/documents" style="display: inline-flex; align-items: center; gap: 0.5rem; color: #667eea; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.95rem;">
+        ← Назад к документам
+    </a>
+    
+    <!-- Шапка: дата и название в одну строку -->
+    <div style="margin-bottom: 2rem; border-bottom: 2px solid #667eea; padding-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap;">
+            <h1 style="font-size: 2rem; color: #333; margin: 0;">
+                {{ doc.title }}
+            </h1>
+            <p style="color: #999; font-size: 0.9rem; margin: 0; white-space: nowrap;">
+                📅 {{ doc.document_date.strftime('%d.%m.%Y') if doc.document_date else 'Дата неизвестна' }}
+            </p>
+        </div>        
+    </div>
+    
+    <!-- Медкарта (без заголовка) -->
+    {% if timeline and timeline|length > 0 %}
+    <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8f9fa; border-left: 4px solid #667eea; border-radius: 8px;">
+        <ul style="margin: 0; padding-left: 0; list-style-type: none;">
+            {% for entry in timeline %}
+            <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start; gap: 0.5rem;">
+                {% if entry.importance == 'critical' %}
+                <span style="color: #dc3545; font-size: 0.9rem;">🔴</span>
+                {% elif entry.importance == 'important' %}
+                <span style="color: #ffc107; font-size: 0.9rem;">🟡</span>
+                {% else %}
+                <span style="color: #999; font-size: 0.9rem;">⚪</span>
+                {% endif %}
+                <span style="color: #444; line-height: 1.6;">{{ entry.description }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <!-- Превью документа (без заголовка) -->
+    <div style="margin-bottom: 2rem; text-align: center;">
+        {% if doc.file_type in ['jpg', 'jpeg', 'png', 'webp', 'image'] %}
+            <img src="/api/document-image/{{ doc.id }}" 
+                 alt="Документ" 
+                 style="max-width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        {% elif doc.file_type == 'pdf' %}
+            <iframe src="/api/document-pdf/{{ doc.id }}" 
+                    style="width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 8px;"></iframe>
+        {% else %}
+            <p style="color: #999; text-align: center; padding: 2rem;">Предпросмотр недоступен для этого типа файла</p>
+        {% endif %}
+    </div>
+    
+    <!-- Детальный анализ -->
+    {% if doc.full_analysis %}
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3 style="color: #667eea; margin-bottom: 0.5rem;">🔬 Анализ документа (консилиум ИИ)</h3>
+        <p style="color: #999; font-size: 0.85rem; line-height: 1.5; margin-bottom: 1.5rem;">
+            Анализ документа несколькими специализированными моделями с последующей консолидацией рассуждений. 
+            Это не диагноз и не окончательный вывод, а профессиональное обсуждение возможных интерпретаций.
+        </p>
+        <div style="line-height: 1.8; color: #444; font-size: 0.95rem;">
+            {{ doc.full_analysis | markdown | safe }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Сводка для пациента -->
+    {% if doc.raw_text %}
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3 style="color: #667eea; margin-bottom: 1rem;">📝 Сводка по документу</h3>
+        <div style="line-height: 1.8; color: #444; font-size: 0.95rem;">
+            {{ doc.raw_text | markdown | safe }}
+        </div>
+    </div>
+    {% endif %}
+    
+</div>
+{% endblock %}

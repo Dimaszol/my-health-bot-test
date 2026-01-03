@@ -922,18 +922,29 @@ TRANSLATIONS = {
         'uk': 'Завантажте медичні файли, щоб PulseBook розумів ваш контекст і відповідав точніше',
         'de': 'Laden Sie Ihre medizinischen Dateien hoch, damit PulseBook Ihren Kontext versteht und genauer antwortet'
     },
-    
-    'document_title_optional': {
-        'ru': 'Название документа (необязательно)',
-        'en': 'Document title (optional)',
-        'uk': 'Назва документа (необов\'язково)',
-        'de': 'Dokumententitel (optional)'
+    'additional_context_label': {
+        'ru': 'Контекст для анализа (по желанию)',
+        'en': 'Context for analysis (optional)',
+        'uk': 'Контекст для аналізу (за бажанням)',
+        'de': 'Kontext für Analyse (optional)'
     },
-    'document_title_placeholder': {
-        'ru': 'Например: Анализ крови от 15.01.2025',
-        'en': 'Example: Blood test from 15.01.2025',
-        'uk': 'Наприклад: Аналіз крові від 15.01.2025',
-        'de': 'Beispiel: Bluttest vom 15.01.2025'
+    'additional_context_description': {
+        'ru': 'Укажите информацию, которая может быть важна для интерпретации этого документа (симптомы, цель исследования, контекст).',
+        'en': 'Provide information that may be important for interpreting this document (symptoms, purpose of the study, context).',
+        'uk': 'Вкажіть інформацію, яка може бути важливою для інтерпретації цього документу (симптоми, мета дослідження, контекст).',
+        'de': 'Geben Sie Informationen an, die für die Interpretation dieses Dokuments wichtig sein könnten (Symptome, Zweck der Untersuchung, Kontext).'
+    },
+    'additional_context_placeholder': {
+        'ru': 'Например: слабость, сдавал не натощак, принимаю витамины или контроль лечения...',
+        'en': 'For example: weakness, not fasting, taking vitamins or treatment monitoring...',
+        'uk': 'Наприклад: слабкість, здавав не натщесерце, приймаю вітаміни або контроль лікування...',
+        'de': 'Zum Beispiel: Schwäche, nicht nüchtern, nehme Vitamine oder Behandlungskontrolle...'
+    },
+    'additional_context_hint': {
+        'ru': 'Добавьте детали, которые могут быть важны для интерпретации этого документа. Если важного контекста нет — оставьте поле пустым.',
+        'en': 'Add details that may be important for interpreting this document. If there is no important context — leave the field empty.',
+        'uk': 'Додайте деталі, які можуть бути важливі для інтерпретації цього документу. Якщо важливого контексту немає — залиште поле порожнім.',
+        'de': 'Fügen Sie Details hinzu, die für die Interpretation dieses Dokuments wichtig sein könnten. Wenn es keinen wichtigen Kontext gibt — lassen Sie das Feld leer.'
     },
     'select_file': {
         'ru': 'Выберите файл',
@@ -1012,6 +1023,88 @@ TRANSLATIONS = {
         'en': 'Document deleted',
         'uk': 'Документ видалено',
         'de': 'Dokument gelöscht'
+    },
+
+    # ============================================
+    # 📘 ЛЕГЕНДА ДОКУМЕНТОВ
+    # ============================================
+    'legend_title': {
+        'ru': 'Как читать карточки документов',
+        'en': 'How to read document cards',
+        'uk': 'Як читати картки документів',
+        'de': 'So lesen Sie Dokumentkarten'
+    },
+    'legend_download': {
+        'ru': 'Скачать исходный документ',
+        'en': 'Download original document',
+        'uk': 'Завантажити вихідний документ',
+        'de': 'Originaldokument herunterladen'
+    },    
+    'legend_edit': {
+        'ru': 'Редактировать название или дату документа',
+        'en': 'Edit document name or date',
+        'uk': 'Редагувати назву або дату документа',
+        'de': 'Dokumentname oder -datum bearbeiten'
+    },
+    'legend_toggle': {
+        'ru': 'Учитывать / не учитывать',
+        'en': 'Include / exclude',
+        'uk': 'Враховувати / не враховувати',
+        'de': 'Einbeziehen / ausschließen'
+    },
+    'legend_toggle_desc': {
+        'ru': 'Выбирайте, какие документы использовать при общении в чате. Рекомендуется оставлять включёнными только те документы, которые относятся к текущему вопросу — это помогает ИИ давать более точные и релевантные ответы',
+        'en': 'Choose which documents to use when chatting. It is recommended to keep only documents relevant to the current question enabled — this helps AI provide more accurate and relevant answers',
+        'uk': 'Вибирайте, які документи використовувати при спілкуванні в чаті. Рекомендується залишати увімкненими лише ті документи, які стосуються поточного питання — це допомагає ШІ давати точніші та релевантніші відповіді',
+        'de': 'Wählen Sie aus, welche Dokumente beim Chatten verwendet werden sollen. Es wird empfohlen, nur Dokumente zu aktivieren, die für die aktuelle Frage relevant sind — dies hilft der KI, genauere und relevantere Antworten zu geben'
+    },
+    'legend_analysis': {
+        'ru': 'Детальный анализ',
+        'en': 'Detailed analysis',
+        'uk': 'Детальний аналіз',
+        'de': 'Detaillierte Analyse'
+    },
+    'legend_analysis_desc': {
+        'ru': 'Подробный разбор документа несколькими ИИ-моделями с разными взглядами на данные',
+        'en': 'Detailed analysis of the document by several AI models with different views on the data',
+        'uk': 'Детальний розбір документа кількома ШІ-моделями з різними поглядами на дані',
+        'de': 'Detaillierte Analyse des Dokuments durch mehrere KI-Modelle mit unterschiedlichen Ansichten der Daten'
+    },
+    'legend_warning': {
+        'ru': 'Здесь представлены рассуждения и возможные интерпретации. Это не диагноз и не медицинское заключение. Раздел помогает лучше понять документ и может быть полезен врачу при очной оценке',
+        'en': 'This section presents reasoning and possible interpretations. This is not a diagnosis or medical conclusion. The section helps to better understand the document and may be useful to a doctor during an in-person evaluation',
+        'uk': 'Тут представлені міркування та можливі інтерпретації. Це не діагноз і не медичний висновок. Розділ допомагає краще зрозуміти документ і може бути корисним лікарю при очній оцінці',
+        'de': 'Dieser Abschnitt enthält Überlegungen und mögliche Interpretationen. Dies ist keine Diagnose oder medizinische Schlussfolgerung. Der Abschnitt hilft, das Dokument besser zu verstehen und kann für einen Arzt bei einer persönlichen Bewertung nützlich sein'
+    },
+    'legend_summary': {
+        'ru': 'Сводка',
+        'en': 'Summary',
+        'uk': 'Зведення',
+        'de': 'Zusammenfassung'
+    },
+    'legend_summary_desc': {
+        'ru': 'Краткое описание ключевых наблюдений по документу',
+        'en': 'Brief description of key observations from the document',
+        'uk': 'Короткий опис ключових спостережень по документу',
+        'de': 'Kurze Beschreibung der wichtigsten Beobachtungen aus dem Dokument'
+    },
+    'legend_indicator_normal': {
+        'ru': ' — значимых отклонений не выявлено',
+        'en': ' — no significant deviations detected',
+        'uk': ' — значних відхилень не виявлено',
+        'de': ' — keine signifikanten Abweichungen festgestellt'
+    },
+    'legend_indicator_attention': {
+        'ru': ' — есть находки, требующие внимания или уточнения',
+        'en': ' — findings requiring attention or clarification',
+        'uk': ' — є знахідки, що потребують уваги або уточнення',
+        'de': ' — Befunde, die Aufmerksamkeit oder Klärung erfordern'
+    },
+    'legend_indicator_serious': {
+        'ru': ' — потенциально серьёзные изменения, рекомендуется обсудить с врачом',
+        'en': ' — potentially serious changes, recommended to discuss with a doctor',
+        'uk': ' — потенційно серйозні зміни, рекомендується обговорити з лікарем',
+        'de': ' — potenziell ernsthafte Veränderungen, Besprechung mit einem Arzt empfohlen'
     },
 
     # ============================================
@@ -1120,10 +1213,10 @@ TRANSLATIONS = {
     },
     
     'btn_show': {
-        'ru': 'Показать',
-        'uk': 'Показати',
-        'en': 'Show',
-        'de': 'Anzeigen'
+        'ru': 'Сводка',
+        'uk': 'Зведення',
+        'en': 'Summary',
+        'de': 'Zusammenfassung'
     },
 
     'btn_hide': {
@@ -1143,6 +1236,24 @@ TRANSLATIONS = {
         'en': 'Document is NOT included in AI responses',
         'uk': 'Документ НЕ враховується у відповідях ШІ',
         'de': 'Dokument wird NICHT in KI-Antworten berücksichtigt'
+    },
+    'toggle_document_in_chat': {
+        'ru': 'Учитывать в памяти чата',
+        'en': 'Include in chat memory',
+        'uk': 'Враховувати в пам\'яті чату',
+        'de': 'In Chat-Speicher einbeziehen'
+    },
+    'btn_detailed_analysis': {
+        'ru': 'Детальный анализ',
+        'en': 'Detailed Analysis',
+        'uk': 'Детальний аналіз',
+        'de': 'Detaillierte Analyse'
+    },
+    'document_updated': {
+        'ru': 'Документ успешно обновлён',
+        'en': 'Document updated successfully',
+        'uk': 'Документ успішно оновлено',
+        'de': 'Dokument erfolgreich aktualisiert'
     },
     
     # ============================================

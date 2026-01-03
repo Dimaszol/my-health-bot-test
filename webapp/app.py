@@ -165,11 +165,6 @@ from starlette.responses import Response
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """
     Middleware для добавления заголовков безопасности ко всем ответам
-    
-    Защищает от:
-    - XSS атак (Content-Security-Policy)
-    - Clickjacking (X-Frame-Options)
-    - MIME-type снифинга (X-Content-Type-Options)
     """
     
     async def dispatch(self, request: Request, call_next):
@@ -177,9 +172,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         
         # Добавляем все заголовки из config.py
         for header_name, header_value in Config.SECURITY_HEADERS.items():
-            # Пропускаем пустые значения (например HSTS в development)
             if header_value:
-                response.headers[header_name] = header_value
+                # ✅ Для PDF/изображений разрешаем iframe с того же домена
+                if header_name == "X-Frame-Options" and (
+                    request.url.path.startswith("/api/document-pdf/") or 
+                    request.url.path.startswith("/api/document-image/")
+                ):
+                    response.headers[header_name] = "SAMEORIGIN"
+                else:
+                    response.headers[header_name] = header_value
         
         return response
 

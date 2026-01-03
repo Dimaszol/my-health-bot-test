@@ -430,12 +430,12 @@
                 .then(response => {
                     if (!response.ok) {
                         // Сессия истекла - редирект на логин
-                        window.location.href = '/auth/login';
+                        window.location.href = '/login';
                     }
                 })
                 .catch(() => {
                     // Ошибка сети - тоже редирект
-                    window.location.href = '/auth/login';
+                    window.location.href = '/login';
                 });
             }
         })();

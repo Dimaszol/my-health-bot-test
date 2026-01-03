@@ -8,7 +8,7 @@ import tempfile
 import uuid
 from datetime import datetime
 from fastapi import APIRouter, Request, Depends, UploadFile, File, Form, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 from webapp.translations import t
 from error_handler import log_error_with_context
@@ -710,7 +710,7 @@ async def analyze_photo_with_question(
 async def upload_document(
     request: Request,
     file: UploadFile = File(...),
-    title: str = Form(None),
+    additional_context: str = Form(None),
     user_id: int = Depends(get_current_user)
 ):
     """
@@ -839,112 +839,86 @@ async def upload_document(
         file_type = "pdf" if file_ext == "pdf" else "image"
         vision_text = ""
         
-        # STEP 1: Извлекаем текст в зависимости от типа файла
-        if file_ext == 'pdf':
-            try:
-                image_paths = convert_pdf_to_images(local_file, f"{temp_dir}/pages")
-                
-                if not image_paths:
-                    return JSONResponse(
-                        status_code=400,
-                        content={'success': False, 'error': t('pdf_read_failed', lang)}
-                    )
-                
-                # Ограничиваем до 5 страниц
-                if len(image_paths) > 5:
-                    image_paths = image_paths[:5]
-                
-                # Извлекаем текст с каждой страницы
-                for img_path in image_paths:
-                    try:
-                        page_text, _ = await send_to_gpt_vision(img_path, lang)
-                        if page_text:
-                            vision_text += page_text + "\n\n"
-                    except Exception as page_error:
-                        continue
-                
-                vision_text = vision_text.strip()
-                
-                if not vision_text:
-                    return JSONResponse(
-                        status_code=400,
-                        content={'success': False, 'error': t('pdf_read_failed', lang)}
-                    )
-                    
-            except Exception as e:
-                safe_log_error("Ошибка обработки PDF", error=e, user_id=user_id)
+        # ===================================================
+        # 🆕 НОВАЯ ЛОГИКА: ИСПОЛЬЗУЕМ document_processor.py
+        # ===================================================
+
+        from document_processor import process_document
+
+        # Определяем тип файла (нужен для save_document)
+        file_type = "pdf" if file_ext == "pdf" else "image"
+
+        # Обрабатываем документ через новый пайплайн
+        result = await process_document(
+            file_path=local_file,
+            user_id=user_id,
+            lang=lang,
+            additional_context=additional_context
+        )
+
+        # Проверяем результат
+        if not result.get('success', False):
+            # Удаляем временный файл
+            if os.path.exists(local_file):
+                os.remove(local_file)
+            
+            error_type = result.get('error_type', 'unknown')
+            
+            # Специальная обработка для немедицинских документов
+            if error_type == 'not_medical':
                 return JSONResponse(
                     status_code=400,
-                    content={'success': False, 'error': t('pdf_processing_error', lang)}
+                    content={
+                        'success': False,
+                        'error': result.get('message', t('not_medical_document', lang))
+                    }
                 )
-        
-        elif file_ext in ['jpg', 'jpeg', 'png', 'webp']:
-            # Изображение → анализируем через Vision API
-            try:
-                vision_text, _ = await send_to_gpt_vision(local_file, lang)
-            except Exception as e:
-                safe_log_error("Ошибка анализа изображения Vision API", error=e, user_id=user_id)
-                return JSONResponse(
-                    status_code=400,
-                    content={'success': False, 'error': t('image_analysis_error', lang)}
-                )
-        
-        else:
-            # Текстовый файл → читаем напрямую
-            try:
-                with open(local_file, 'r', encoding='utf-8') as f:
-                    vision_text = f.read()
-            except UnicodeDecodeError:
-                try:
-                    with open(local_file, 'r', encoding='cp1251') as f:
-                        vision_text = f.read()
-                except Exception as e:
-                    safe_log_error("Ошибка чтения текстового файла", error=e, user_id=user_id)
-                    return JSONResponse(
-                        status_code=400,
-                        content={'success': False, 'error': t('file_read_error', lang)}
-                    )
-        
-        # STEP 2: Проверяем что это медицинский документ
-        if not await is_medical_text(vision_text):
+            
+            # Общая ошибка обработки
             return JSONResponse(
-                status_code=400,
-                content={'success': False, 'error': t('not_medical_doc', lang)}
+                status_code=500,
+                content={
+                    'success': False,
+                    'error': result.get('message', t('document_processing_error', lang))
+                }
             )
-        
-        # STEP 3: Генерируем заголовок
-        if title and title.strip():
-            auto_title = title.strip()
-        else:
-            auto_title = await generate_title_from_text(text=vision_text[:1500], lang=lang)
-        
-        # STEP 4: Создаём структурированный текст и резюме
-        raw_text = await ask_structured(vision_text[:8000], lang=lang)
-        summary = await generate_medical_summary(vision_text[:8000], lang)
-        
-        # STEP 5: Сохраняем файл в постоянное хранилище
+
+        # Извлекаем результаты
+        title = result['title']
+        raw_text = result['raw_text']
+        summary = result['summary']
+        vision_text = result['full_analysis']
+        document_type = result.get('document_type')
+        subtype = result.get('subtype')
+        document_date = result.get('document_date')
+
+        # Сохраняем файл в постоянное хранилище
         storage = get_file_storage()
         success, permanent_path = storage.save_file(
             user_id=user_id,
             filename=filename,
             source_path=local_file
         )
-        
+
         if not success:
             return JSONResponse(
                 status_code=500,
                 content={'success': False, 'error': t('file_storage_error', lang)}
             )
-         
-        # STEP 6: Сохраняем в БД
+
+        # Сохраняем в БД
         document_id = await save_document(
             user_id=user_id,
-            title=auto_title,
             file_path=permanent_path,
             file_type=file_type,
             raw_text=raw_text,
             summary=summary,
-            full_analysis=vision_text
+            full_analysis=vision_text,
+            title=title,
+            document_type=document_type,
+            subtype=subtype,
+            additional_context=additional_context,
+            document_date=document_date
         )
         
         # STEP 7: Добавляем в векторную базу
@@ -991,9 +965,9 @@ async def upload_document(
         return {
             'success': True,
             'document_id': document_id,
-            'title': auto_title,
+            'title': title,
             'summary': summary[:200] + '...' if len(summary) > 200 else summary,
-            'message': t('document_uploaded_successfully', lang, title=auto_title)
+            'message': t('document_uploaded_successfully', lang, title=title)
         }
     
     # ❌ ЕДИНСТВЕННЫЙ except для всех ошибок
@@ -1748,7 +1722,7 @@ async def cancel_subscription_endpoint(
                 'error': error_message
             }
         )
-    
+
 # ============================================
 # 🧪 ТЕСТОВЫЙ ENDPOINT (удалить после отладки)
 # ============================================
@@ -1854,3 +1828,206 @@ async def test_gpt5_mini(request_data: TestGPT5Request):
         print(f"❌ ERROR: {str(e)}")
         print(traceback.format_exc())
         return JSONResponse(status_code=500, content={'success': False, 'error': str(e)})
+
+# ==========================================
+# 📄 ОТОБРАЖЕНИЕ ФАЙЛОВ ДОКУМЕНТОВ
+# ==========================================
+
+@router.get("/document-image/{doc_id}")
+async def get_document_image(doc_id: int, user_id: int = Depends(get_current_user)):
+    """
+    Возвращает изображение документа для отображения
+    """
+    from db_postgresql import get_db_connection, release_db_connection
+    import tempfile
+    
+    conn = await get_db_connection()
+    try:
+        doc = await conn.fetchrow(
+            "SELECT file_path FROM documents WHERE id = $1 AND user_id = $2",
+            doc_id, user_id
+        )
+        
+        if not doc:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        file_path = doc['file_path']
+        
+        # Если файл в Supabase Storage
+        if file_path.startswith("users/"):
+            from supabase_storage import get_storage_manager
+            storage = get_storage_manager()
+            
+            # Создаём временный файл
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file_path)[1])
+            temp_path = temp_file.name
+            temp_file.close()
+            
+            # Скачиваем из Supabase
+            success = await storage.download_file(
+                storage_path=file_path,
+                local_path=temp_path
+            )
+            
+            if not success:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+                raise HTTPException(status_code=404, detail="File not found in storage")
+            
+            # Определяем media_type
+            ext = os.path.splitext(file_path)[1].lower()
+            media_type_map = {
+                '.png': 'image/png',
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.webp': 'image/webp',
+                '.gif': 'image/gif'
+            }
+            media_type = media_type_map.get(ext, 'image/png')
+            
+            return FileResponse(temp_path, media_type=media_type)
+        
+        # Если локальный файл
+        else:
+            if not os.path.isabs(file_path):
+                file_path = os.path.abspath(file_path)
+            
+            if not os.path.exists(file_path):
+                raise HTTPException(status_code=404, detail="File not found")
+            
+            ext = os.path.splitext(file_path)[1].lower()
+            media_type_map = {
+                '.png': 'image/png',
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.webp': 'image/webp',
+                '.gif': 'image/gif'
+            }
+            media_type = media_type_map.get(ext, 'image/png')
+            
+            return FileResponse(file_path, media_type=media_type)
+        
+    finally:
+        await release_db_connection(conn)
+
+@router.get("/document-pdf/{doc_id}")
+async def get_document_pdf(doc_id: int, user_id: int = Depends(get_current_user)):
+    """
+    Возвращает PDF документ для отображения в iframe
+    """
+    from db_postgresql import get_db_connection, release_db_connection
+    import tempfile
+    
+    conn = await get_db_connection()
+    try:
+        doc = await conn.fetchrow(
+            "SELECT file_path FROM documents WHERE id = $1 AND user_id = $2",
+            doc_id, user_id
+        )
+        
+        if not doc:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        file_path = doc['file_path']
+        
+        # Если файл в Supabase Storage
+        if file_path.startswith("users/"):
+            from supabase_storage import get_storage_manager
+            storage = get_storage_manager()
+            
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+            temp_path = temp_file.name
+            temp_file.close()
+            
+            success = await storage.download_file(
+                storage_path=file_path,
+                local_path=temp_path
+            )
+            
+            if not success:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+                raise HTTPException(status_code=404, detail="File not found in storage")
+            
+            return FileResponse(temp_path, media_type="application/pdf")
+        
+        # Если локальный файл
+        else:
+            if not os.path.isabs(file_path):
+                file_path = os.path.abspath(file_path)
+            
+            if not os.path.exists(file_path):
+                raise HTTPException(status_code=404, detail="File not found")
+            
+            return FileResponse(file_path, media_type="application/pdf")
+        
+    finally:
+        await release_db_connection(conn)
+
+@router.post("/update-document/{document_id}")
+async def update_document(
+    document_id: int,
+    request: Request,
+    user_id: int = Depends(get_current_user)
+):
+    """Обновление названия и даты документа"""
+    from db_postgresql import get_db_connection, release_db_connection, get_user_language
+    from datetime import datetime
+    
+    lang = await get_user_language(user_id)
+    
+    data = await request.json()
+    new_title = data.get('title', '').strip()
+    new_date_str = data.get('document_date')  # ← Было uploaded_at
+    
+    if not new_title:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": t("error_empty_title", lang)}
+        )
+    
+    conn = await get_db_connection()
+    try:
+        # Проверяем что документ принадлежит пользователю
+        doc = await conn.fetchrow(
+            "SELECT user_id FROM documents WHERE id = $1",
+            document_id
+        )
+        
+        if not doc or doc['user_id'] != user_id:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "message": "Document not found"}
+            )
+        
+        # Парсим дату (формат YYYY-MM-DD с фронтенда)
+        if new_date_str:
+            try:
+                new_date = datetime.strptime(new_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                new_date = None
+        else:
+            new_date = None
+        
+        # Обновляем документ (document_date вместо uploaded_at)
+        await conn.execute(
+            """
+            UPDATE documents 
+            SET title = $1, document_date = $2
+            WHERE id = $3
+            """,
+            new_title, new_date, document_id
+        )
+        
+        return {"success": True, "message": t("document_updated", lang)}
+        
+    except Exception as e:
+        from error_handler import safe_log_error
+        safe_log_error("Ошибка обновления документа", error=e, user_id=user_id, document_id=document_id)
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": t("error_save_failed", lang)}
+        )
+        
+    finally:
+        await release_db_connection(conn)
