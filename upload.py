@@ -126,6 +126,7 @@ async def handle_document_upload(message: types.Message, bot):
         document_type = result.get('document_type')
         subtype = result.get('subtype')
         document_date = result.get('document_date')
+        first_analysis = result.get('first_analysis')
 
         # ===================================================
         # 📱 ОТПРАВКА РЕЗУЛЬТАТА ПОЛЬЗОВАТЕЛЮ В TELEGRAM
@@ -191,6 +192,7 @@ async def handle_document_upload(message: types.Message, bot):
             file_type=file_type,
             raw_text=raw_text,
             summary=summary,
+            first_analysis=first_analysis,
             full_analysis=vision_text,
             title=title,
             document_type=document_type,

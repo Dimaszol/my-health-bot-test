@@ -139,7 +139,9 @@ async def create_tables():
             uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             document_type VARCHAR(50),
             subtype VARCHAR(100),
-            additional_context TEXT
+            additional_context TEXT,
+            first_analysis TEXT,
+            document_date DATE
         );
 
         -- ================================
@@ -639,7 +641,8 @@ async def update_user_profile(user_id: int, field: str, value: Any) -> bool:
         await release_db_connection(conn)
 
 async def save_document(user_id: int, file_path: str, file_type: str, 
-                       raw_text: str, summary: str, full_analysis: str = None, 
+                       raw_text: str, summary: str, full_analysis: str = None,
+                       first_analysis: str = None,  # ← НОВЫЙ ПАРАМЕТР
                        confirmed: bool = True, document_type: str = None, 
                        subtype: str = None, additional_context: str = None,
                        title: str = None, document_date: str = None) -> Optional[int]:
@@ -656,9 +659,9 @@ async def save_document(user_id: int, file_path: str, file_type: str,
                 logger.warning(f"Invalid date format: {document_date}, using None")
         
         doc_id = await conn.fetchval(
-            """INSERT INTO documents (user_id, title, file_path, file_type, raw_text, summary, full_analysis, confirmed, document_type, subtype, additional_context, document_date)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id""",
-            user_id, title, file_path, file_type, raw_text, summary, full_analysis, confirmed, document_type, subtype, additional_context, date_obj
+            """INSERT INTO documents (user_id, title, file_path, file_type, raw_text, summary, full_analysis, first_analysis, confirmed, document_type, subtype, additional_context, document_date)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id""",
+            user_id, title, file_path, file_type, raw_text, summary, full_analysis, first_analysis, confirmed, document_type, subtype, additional_context, date_obj
         )
         return doc_id
     except Exception as e:

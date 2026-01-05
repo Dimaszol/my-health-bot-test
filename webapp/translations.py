@@ -898,6 +898,12 @@ TRANSLATIONS = {
     # ============================================
     # 📄 СТРАНИЦА ДОКУМЕНТОВ
     # ============================================
+    'open_pdf': {
+        'ru': 'Посмотреть документ',
+        'en': 'View document',
+        'uk': 'Переглянути документ',
+        'de': 'Dokument ansehen'
+    },
     'no_document_limits_title': {
         'ru': 'Лимит документов исчерпан',
         'en': 'Document limit reached',
@@ -935,16 +941,22 @@ TRANSLATIONS = {
         'de': 'Geben Sie Informationen an, die für die Interpretation dieses Dokuments wichtig sein könnten (Symptome, Zweck der Untersuchung, Kontext).'
     },
     'additional_context_placeholder': {
-        'ru': 'Например: слабость, сдавал не натощак, принимаю витамины или контроль лечения...',
-        'en': 'For example: weakness, not fasting, taking vitamins or treatment monitoring...',
-        'uk': 'Наприклад: слабкість, здавав не натщесерце, приймаю вітаміни або контроль лікування...',
-        'de': 'Zum Beispiel: Schwäche, nicht nüchtern, nehme Vitamine oder Behandlungskontrolle...'
+        'ru': 'Например: кашель 2 недели, без температуры, боль в груди, ЭКГ для контроля...',
+        'en': 'Example: cough for 2 weeks, no fever, chest pain, ECG for monitoring...',
+        'uk': 'Наприклад: кашель 2 тижні, без температури, біль у грудях, ЕКГ для контролю...',
+        'de': 'Beispiel: Husten seit 2 Wochen, kein Fieber, Brustschmerzen, EKG zur Kontrolle...'
     },
-    'additional_context_hint': {
-        'ru': 'Добавьте детали, которые могут быть важны для интерпретации этого документа. Если важного контекста нет — оставьте поле пустым.',
-        'en': 'Add details that may be important for interpreting this document. If there is no important context — leave the field empty.',
-        'uk': 'Додайте деталі, які можуть бути важливі для інтерпретації цього документу. Якщо важливого контексту немає — залиште поле порожнім.',
-        'de': 'Fügen Sie Details hinzu, die für die Interpretation dieses Dokuments wichtig sein könnten. Wenn es keinen wichtigen Kontext gibt — lassen Sie das Feld leer.'
+    'additional_context_hint_title': {
+        'ru': 'Для изображений и ЭКГ контекст существенно влияет на интерпретацию.',
+        'en': 'For images and ECG, context significantly affects interpretation.',
+        'uk': 'Для зображень та ЕКГ контекст суттєво впливає на інтерпретацію.',
+        'de': 'Bei Bildern und EKG beeinflusst der Kontext die Interpretation erheblich.'
+    },
+    'additional_context_hint_description': {
+        'ru': 'Пожалуйста, укажите симптомы, длительность, причину исследования или контроль лечения. Отсутствие контекста может привести к неточным или избыточным выводам. Если важного контекста нет — оставьте поле пустым.',
+        'en': 'Please specify symptoms, duration, reason for the study, or treatment monitoring. Lack of context may lead to inaccurate or excessive conclusions. If there is no important context — leave the field empty.',
+        'uk': 'Будь ласка, вкажіть симптоми, тривалість, причину дослідження або контроль лікування. Відсутність контексту може призвести до неточних або надлишкових висновків. Якщо важливого контексту немає — залиште поле порожнім.',
+        'de': 'Bitte geben Sie Symptome, Dauer, Grund für die Untersuchung oder Behandlungskontrolle an. Fehlender Kontext kann zu ungenauen oder übermäßigen Schlussfolgerungen führen. Wenn es keinen wichtigen Kontext gibt — lassen Sie das Feld leer.'
     },
     'select_file': {
         'ru': 'Выберите файл',
@@ -1063,6 +1075,60 @@ TRANSLATIONS = {
         'en': 'Detailed analysis',
         'uk': 'Детальний аналіз',
         'de': 'Detaillierte Analyse'
+    },
+    'back_to_documents': {
+        'ru': 'Назад к документам',
+        'en': 'Back to documents',
+        'uk': 'Назад до документів',
+        'de': 'Zurück zu Dokumenten'
+    },
+    'date_unknown': {
+        'ru': 'Дата неизвестна',
+        'en': 'Date unknown',
+        'uk': 'Дата невідома',
+        'de': 'Datum unbekannt'
+    },
+    'context_label': {
+        'ru': 'Контекст',
+        'en': 'Context',
+        'uk': 'Контекст',
+        'de': 'Kontext'
+    },
+    'preview_unavailable': {
+        'ru': 'Предпросмотр недоступен для этого типа файла',
+        'en': 'Preview unavailable for this file type',
+        'uk': 'Попередній перегляд недоступний для цього типу файлу',
+        'de': 'Vorschau für diesen Dateityp nicht verfügbar'
+    },
+    'first_analysis_title': {
+        'ru': 'Первичный анализ',
+        'en': 'Initial Analysis',
+        'uk': 'Первинний аналіз',
+        'de': 'Erstanalyse'
+    },
+    'first_analysis_description': {
+        'ru': 'Анализ данных и формирование клинических рамок для дальнейшего обсуждения. Не является медицинским заключением.',
+        'en': 'Data analysis and formation of clinical framework for further discussion. Not a medical conclusion.',
+        'uk': 'Аналіз даних та формування клінічних рамок для подальшого обговорення. Не є медичним висновком.',
+        'de': 'Datenanalyse und Bildung des klinischen Rahmens für weitere Diskussionen. Keine medizinische Schlussfolgerung.'
+    },
+    'full_analysis_title': {
+        'ru': 'Медицинская интерпретация',
+        'en': 'Medical Interpretation',
+        'uk': 'Медична інтерпретація',
+        'de': 'Medizinische Interpretation'
+    },
+    'full_analysis_description': {
+        'ru': 'Анализ документа специализированными моделями на основе первичного анализа с последующей консолидацией рассуждений. Представляет собой обсуждение возможных интерпретаций и не является диагнозом или окончательным выводом.',
+        'en': 'Analysis of the document by specialized models based on the primary analysis, followed by consolidation of reasoning. It represents a discussion of possible interpretations and does not constitute a diagnosis or a final conclusion.',
+        'uk': 'Аналіз документа спеціалізованими моделями на основі первинного аналізу з подальшою консолідацією міркувань. Є обговоренням можливих інтерпретацій і не є діагнозом або остаточним висновком.',
+        'de': 'Analyse des Dokuments durch spezialisierte Modelle auf Grundlage der primären Analyse mit anschließender Konsolidierung der Überlegungen. Sie stellt eine Diskussion möglicher Interpretationen dar und ist keine Diagnose oder endgültige Schlussfolgerung.'
+    },
+    'raw_text_title': {
+        'ru': 'Сводка по документу',
+        'en': 'Document Summary',
+        'uk': 'Зведення по документу',
+        'de': 'Dokumentenzusammenfassung'
     },
     'legend_analysis_desc': {
         'ru': 'Подробный разбор документа несколькими ИИ-моделями с разными взглядами на данные',

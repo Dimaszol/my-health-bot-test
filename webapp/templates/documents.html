@@ -62,12 +62,17 @@ footer {
                 placeholder="{{ t('additional_context_placeholder', lang) }}"
                 style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; font-family: inherit; resize: none; overflow: hidden;"
             ></textarea>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                <p style="color: #999; font-size: 0.85rem; margin: 0;">
-                    {{ t('additional_context_hint', lang) }}
+            <div style="margin-top: 0.5rem;">
+            <p style="color: #666; font-size: 0.9rem; font-weight: 600; margin: 0 0 0.5rem 0;">
+                {{ t('additional_context_hint_title', lang) }}
+            </p>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                <p style="color: #999; font-size: 0.85rem; margin: 0; flex: 1;">
+                    {{ t('additional_context_hint_description', lang) }}
                 </p>
-                <span id="char-counter" style="color: #999; font-size: 0.85rem;">0/400</span>
+                <span id="char-counter" style="color: #999; font-size: 0.85rem; white-space: nowrap;">0/400</span>
             </div>
+</div>
         </div>
         
         <button type="submit" class="btn">

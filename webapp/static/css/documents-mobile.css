@@ -430,7 +430,7 @@
         justify-content: center !important;
         margin: 0 !important;
     }
-    
+
 /* ✏️ РЕЖИМ РЕДАКТИРОВАНИЯ - ПОЛЯ ВЕРТИКАЛЬНО */
     div[id^="doc-edit-"] > div:first-child {
         flex-direction: column !important;
@@ -445,5 +445,26 @@
     div[id^="doc-edit-"] input[type="date"] {
         width: 100% !important;
         margin-top: 0.5rem;
+    }
+}
+
+/* ========== PDF VIEWER ========== */
+/* Десктоп: показываем iframe, скрываем кнопку */
+.pdf-viewer-desktop { 
+    display: block; 
+}
+
+.pdf-viewer-mobile { 
+    display: none; 
+}
+
+/* Мобилка: скрываем iframe, показываем кнопку */
+@media (max-width: 768px) {
+    .pdf-viewer-desktop { 
+        display: none !important; 
+    }
+    
+    .pdf-viewer-mobile { 
+        display: block !important; 
     }
 }

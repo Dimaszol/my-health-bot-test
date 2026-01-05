@@ -891,6 +891,7 @@ async def upload_document(
         document_type = result.get('document_type')
         subtype = result.get('subtype')
         document_date = result.get('document_date')
+        first_analysis = result.get('first_analysis')
 
         # Сохраняем файл в постоянное хранилище
         storage = get_file_storage()
@@ -913,6 +914,7 @@ async def upload_document(
             file_type=file_type,
             raw_text=raw_text,
             summary=summary,
+            first_analysis=first_analysis,
             full_analysis=vision_text,
             title=title,
             document_type=document_type,

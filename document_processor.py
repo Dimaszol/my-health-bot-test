@@ -2,7 +2,7 @@ import os
 import logging
 from typing import Dict, Any, Optional
 from gemini_classifier import classify_document
-from gemini_specialist import analyze_with_specialist, build_patient_context
+from gemini_specialist import analyze_with_assistant, analyze_with_specialist, build_patient_context
 from gpt import generate_title_from_text, ask_structured, generate_medical_summary
 from db_postgresql import get_user_profile, t
 
@@ -21,9 +21,11 @@ async def process_document(
     Процесс:
     1. Классификация документа (Gemini Classifier)
     2. Проверка is_medical
-    3. Анализ специалистом (Gemini Specialist)
-    4. GPT пост-обработка (title, raw_text, summary)
-    5. Возврат готовых данных для сохранения
+    3. Подготовка контекста пациента
+    4. Анализ ассистентом (Gemini Assistant)
+    5. Анализ специалистом (Gemini Specialist)
+    6. GPT пост-обработка (title, raw_text, summary)
+    7. Возврат готовых данных для сохранения
     
     Args:
         file_path: Путь к файлу документа
@@ -50,7 +52,7 @@ async def process_document(
         # ==========================================
         
         logger.info("")
-        logger.info("📋 STEP 1/5: DOCUMENT CLASSIFICATION (Gemini 2.5 Flash)")
+        logger.info("📋 STEP 1/6: DOCUMENT CLASSIFICATION (Gemini 2.5 Flash)")
         logger.info("-" * 80)
         logger.info("⏳ Calling classify_document()...")
         
@@ -68,7 +70,7 @@ async def process_document(
         # ==========================================
         
         logger.info("")
-        logger.info("🔍 STEP 2/5: CHECKING IF DOCUMENT IS MEDICAL")
+        logger.info("🔍 STEP 2/6: CHECKING IF DOCUMENT IS MEDICAL")
         logger.info("-" * 80)
         
         is_medical = classification.get('is_medical', False)
@@ -91,7 +93,7 @@ async def process_document(
         # ==========================================
         
         logger.info("")
-        logger.info("👤 STEP 3/5: BUILDING PATIENT CONTEXT")
+        logger.info("👤 STEP 3/6: BUILDING PATIENT CONTEXT")
         logger.info("-" * 80)
         logger.info("⏳ Loading user profile from database...")
         
@@ -116,11 +118,11 @@ async def process_document(
             logger.info("Context is empty (no profile data or additional context)")
         
         # ==========================================
-        # ШАГ 4: АНАЛИЗ СПЕЦИАЛИСТОМ
+        # ШАГ 4: АНАЛИЗ АССИСТЕНТОМ
         # ==========================================
         
         logger.info("")
-        logger.info("🩺 STEP 4/5: SPECIALIST ANALYSIS (Gemini 3 Pro Preview)")
+        logger.info("🩺 STEP 4/6: ASSISTANT ANALYSIS (Gemini 3 Pro Preview)")
         logger.info("-" * 80)
         
         document_type = classification.get('document_type', 'generic')
@@ -129,24 +131,68 @@ async def process_document(
         logger.info(f"Original document_type: {document_type}")
         logger.info(f"Confidence level: {confidence}")
         
-        # Если уверенность низкая, используем Generic специалиста
         if confidence < 0.85:
             logger.info(f"⚠️ Confidence is below 0.85 threshold")
-            logger.info(f"🔄 Switching to GENERIC specialist for safety")
+            logger.info(f"🔄 Switching to GENERIC assistant for safety")
             document_type = 'generic'
         else:
-            logger.info(f"✅ Confidence is good, using specialized prompt: {document_type}")
+            logger.info(f"✅ Confidence is good, using specialized assistant: {document_type}")
         
+        logger.info(f"⏳ Sending to assistant: {document_type.upper()}")
+        
+        assistant_result = await analyze_with_assistant(
+            file_path=file_path,
+            document_type=document_type,
+            lang=lang,
+            patient_context=patient_context
+        )
+        
+        logger.info("📊 Assistant response received!")
+        logger.info(f"   ├─ Success: {assistant_result.get('success')}")
+        logger.info(f"   └─ Analysis length: {len(assistant_result.get('analysis', ''))} characters")
+        
+        if not assistant_result.get('success', False):
+            logger.error("❌ Assistant analysis FAILED!")
+            logger.error(f"Error: {assistant_result.get('error')}")
+            logger.info("=" * 80)
+            return {
+                "success": False,
+                "error_type": "assistant_failed",
+                "message": t("document_processing_error", lang)
+            }
+        
+        assistant_analysis = assistant_result.get('analysis', '')
+        
+        if not assistant_analysis:
+            logger.error("❌ Assistant returned EMPTY analysis!")
+            logger.info("=" * 80)
+            return {
+                "success": False,
+                "error_type": "empty_assistant_analysis",
+                "message": t("document_processing_error", lang)
+            }
+        
+        logger.info(f"✅ Assistant analysis complete: {len(assistant_analysis)} chars")
+        
+        # ==========================================
+        # ШАГ 5: АНАЛИЗ СПЕЦИАЛИСТОМ
+        # ==========================================
+        
+        logger.info("")
+        logger.info("🩺 STEP 5/6: SPECIALIST ANALYSIS (Gemini 3 Pro Preview)")
+        logger.info("-" * 80)
         logger.info(f"⏳ Sending to specialist: {document_type.upper()}")
         logger.info(f"   ├─ Model: gemini-3-pro-preview")
         logger.info(f"   ├─ Temperature: 1.0")
-        logger.info(f"   └─ Context included: {'Yes' if patient_context else 'No'}")
+        logger.info(f"   ├─ Context included: {'Yes' if patient_context else 'No'}")
+        logger.info(f"   └─ Assistant findings included: Yes")
         
         specialist_result = await analyze_with_specialist(
             file_path=file_path,
             document_type=document_type,
             lang=lang,
-            patient_context=patient_context
+            patient_context=patient_context,
+            assistant_analysis=assistant_analysis
         )
         
         logger.info("📊 Specialist response received!")
@@ -179,17 +225,17 @@ async def process_document(
         logger.info(f"Analysis preview:\n{vision_text[:300]}...")
         
         # ==========================================
-        # ШАГ 5: GPT ПОСТ-ОБРАБОТКА
+        # ШАГ 6: GPT ПОСТ-ОБРАБОТКА
         # ==========================================
         
         logger.info("")
-        logger.info("🤖 STEP 5/5: GPT POST-PROCESSING (GPT-4o-mini)")
+        logger.info("🤖 STEP 6/6: GPT POST-PROCESSING (GPT-4o-mini)")
         logger.info("-" * 80)
         logger.info("Processing specialist analysis into user-friendly format...")
         
-        # 5.1: Генерируем заголовок
+        # 6.1: Генерируем заголовок
         logger.info("")
-        logger.info("📌 5.1: Generating document title...")
+        logger.info("📌 6.1: Generating document title...")
         logger.info(f"   └─ Input: First 1500 chars of specialist analysis")
         
         title = await generate_title_from_text(
@@ -199,14 +245,16 @@ async def process_document(
         
         logger.info(f"✅ Title generated: '{title}'")
         
-        # 5.2: Создаём структурированный текст (для пользователя)
+        # 6.2: Создаём структурированный текст (для пользователя)
         logger.info("")
-        logger.info("📄 5.2: Creating structured text (raw_text for user)...")
+        logger.info("📄 6.2: Creating structured text (raw_text for user)...")
         logger.info(f"   └─ Input: First 8000 chars of specialist analysis")
         
         raw_text = await ask_structured(
             vision_text[:8000],
-            lang=lang
+            lang=lang,
+            assistant_analysis=assistant_analysis,
+            specialist_analysis=vision_text
         )
         
         logger.info(f"✅ Raw text generated: {len(raw_text)} characters")
@@ -220,9 +268,9 @@ async def process_document(
 
         logger.info(f"📅 Document date: {document_date}")
 
-        # 5.3: Создаём summary (для векторной базы)
+        # 6.3: Создаём summary (для векторной базы)
         logger.info("")
-        logger.info("🔍 5.3: Creating summary (for vector search)...")
+        logger.info("🔍 6.3: Creating summary (for vector search)...")
         logger.info(f"   └─ Input: First 8000 chars of specialist analysis")
         
         summary = await generate_medical_summary(
@@ -232,7 +280,7 @@ async def process_document(
         )
                 
         # ==========================================
-        # ШАГ 6: ВОЗВРАТ РЕЗУЛЬТАТА
+        # ШАГ 7: ВОЗВРАТ РЕЗУЛЬТАТА
         # ==========================================
         
         logger.info("")
@@ -244,6 +292,7 @@ async def process_document(
         logger.info(f"   ├─ Document type: {classification.get('document_type')}")
         logger.info(f"   ├─ Subtype: {classification.get('subtype')}")
         logger.info(f"   ├─ Confidence: {classification.get('confidence')}")
+        logger.info(f"   ├─ Assistant analysis length: {len(assistant_analysis)} chars")
         logger.info(f"   ├─ Raw text length: {len(raw_text)} chars")
         logger.info(f"   ├─ Summary length: {len(summary)} chars")
         logger.info(f"   └─ Full analysis length: {len(vision_text)} chars")
@@ -256,6 +305,7 @@ async def process_document(
             "raw_text": raw_text,
             "summary": summary,
             "full_analysis": vision_text,
+            "first_analysis": assistant_analysis,
             "document_type": classification.get('document_type'),
             "subtype": classification.get('subtype'),
             "confidence": classification.get('confidence'),

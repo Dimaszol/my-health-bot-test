@@ -497,7 +497,7 @@ async def document_detail(
         doc = await conn.fetchrow("""
             SELECT 
                 id, title, file_path, file_type, document_date,
-                raw_text, summary, full_analysis, 
+                raw_text, summary, full_analysis, first_analysis,
                 document_type, subtype, additional_context,
                 uploaded_at, confirmed
             FROM documents
