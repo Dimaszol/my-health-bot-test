@@ -471,3 +471,14 @@ if __name__ == "__main__":
             reload=False,
             log_level="info"
         )
+
+@app.get("/debug/packages")
+async def debug_packages():
+    import subprocess
+    result = subprocess.run(
+        ["pip", "list", "--format=json"],
+        capture_output=True,
+        text=True
+    )
+    import json
+    return json.loads(result.stdout)

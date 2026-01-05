@@ -137,6 +137,7 @@ footer {
 {% endif %}
 
 <!-- 📋 СПИСОК ДОКУМЕНТОВ -->
+ <div id="documents-list">
 {% for doc in documents %}
 <div class="card document-card" data-doc-id="{{ doc.id }}">
     <!-- Заголовок карточки (всегда видимый) -->
@@ -335,6 +336,7 @@ footer {
     </div>
 </div>
 {% endfor %}
+</div>
 
 <!-- 📘 ЛЕГЕНДА ДЛЯ КАРТОЧЕК ДОКУМЕНТОВ -->
 {% if documents %}
