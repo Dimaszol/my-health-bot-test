@@ -921,25 +921,13 @@ TRANSLATIONS = {
         'en': 'My Medical Records',
         'uk': 'Моя медкарта',
         'de': 'Meine Krankenakte'
-    },
-    'page_documents_subtitle': {
-        'ru': 'Загрузите медицинские файлы, чтобы PulseBook знал ваш контекст и отвечал точнее',
-        'en': 'Upload your medical files so PulseBook can understand your context and respond more accurately',
-        'uk': 'Завантажте медичні файли, щоб PulseBook розумів ваш контекст і відповідав точніше',
-        'de': 'Laden Sie Ihre medizinischen Dateien hoch, damit PulseBook Ihren Kontext versteht und genauer antwortet'
-    },
+    },    
     'additional_context_label': {
         'ru': 'Контекст для анализа (по желанию)',
         'en': 'Context for analysis (optional)',
         'uk': 'Контекст для аналізу (за бажанням)',
         'de': 'Kontext für Analyse (optional)'
-    },
-    'additional_context_description': {
-        'ru': 'Укажите информацию, которая может быть важна для интерпретации этого документа (симптомы, цель исследования, контекст).',
-        'en': 'Provide information that may be important for interpreting this document (symptoms, purpose of the study, context).',
-        'uk': 'Вкажіть інформацію, яка може бути важливою для інтерпретації цього документу (симптоми, мета дослідження, контекст).',
-        'de': 'Geben Sie Informationen an, die für die Interpretation dieses Dokuments wichtig sein könnten (Symptome, Zweck der Untersuchung, Kontext).'
-    },
+    },    
     'additional_context_placeholder': {
         'ru': 'Например: кашель 2 недели, без температуры, боль в груди, ЭКГ для контроля...',
         'en': 'Example: cough for 2 weeks, no fever, chest pain, ECG for monitoring...',
@@ -953,10 +941,10 @@ TRANSLATIONS = {
         'de': 'Bei Bildern und EKG beeinflusst der Kontext die Interpretation erheblich.'
     },
     'additional_context_hint_description': {
-        'ru': 'Пожалуйста, укажите симптомы, длительность, причину исследования или контроль лечения. Отсутствие контекста может привести к неточным или избыточным выводам. Если важного контекста нет — оставьте поле пустым.',
-        'en': 'Please specify symptoms, duration, reason for the study, or treatment monitoring. Lack of context may lead to inaccurate or excessive conclusions. If there is no important context — leave the field empty.',
-        'uk': 'Будь ласка, вкажіть симптоми, тривалість, причину дослідження або контроль лікування. Відсутність контексту може призвести до неточних або надлишкових висновків. Якщо важливого контексту немає — залиште поле порожнім.',
-        'de': 'Bitte geben Sie Symptome, Dauer, Grund für die Untersuchung oder Behandlungskontrolle an. Fehlender Kontext kann zu ungenauen oder übermäßigen Schlussfolgerungen führen. Wenn es keinen wichtigen Kontext gibt — lassen Sie das Feld leer.'
+        'ru': 'Отсутствие контекста может привести к неточным или избыточным выводам. Если важного контекста нет — оставьте поле пустым.',
+        'en': 'Lack of context may lead to inaccurate or excessive conclusions. If there is no important context — leave the field empty.',
+        'uk': 'Відсутність контексту може призвести до неточних або надлишкових висновків. Якщо важливого контексту немає — залиште поле порожнім.',
+        'de': 'Fehlender Kontext kann zu ungenauen oder übermäßigen Schlussfolgerungen führen. Wenn es keinen wichtigen Kontext gibt — lassen Sie das Feld leer.'
     },
     'select_file': {
         'ru': 'Выберите файл',
