@@ -1,6 +1,8 @@
 import os
 import logging
 from typing import Dict, Any, Optional
+from datetime import date
+
 from gemini_classifier import classify_document
 from gemini_specialist import analyze_with_assistant, analyze_with_specialist, build_patient_context
 from gpt import generate_title_from_text, ask_structured, generate_medical_summary
@@ -38,108 +40,32 @@ async def process_document(
     """
     
     try:
-        logger.info("=" * 80)
-        logger.info("🚀 DOCUMENT PROCESSING STARTED")
-        logger.info("=" * 80)
-        logger.info(f"📁 File path: {file_path}")
-        logger.info(f"👤 User ID: {user_id}")
-        logger.info(f"🌍 Language: {lang}")
-        logger.info(f"📝 Additional context: {additional_context[:100] if additional_context else 'None'}...")
-        logger.info("=" * 80)
-        
-        # ==========================================
-        # ШАГ 1: КЛАССИФИКАЦИЯ ДОКУМЕНТА
-        # ==========================================
-        
-        logger.info("")
-        logger.info("📋 STEP 1/6: DOCUMENT CLASSIFICATION (Gemini 2.5 Flash)")
-        logger.info("-" * 80)
-        logger.info("⏳ Calling classify_document()...")
-        
+        # Классификация документа
         classification = await classify_document(file_path)
         
-        logger.info("✅ Classification completed!")
-        logger.info(f"   ├─ is_medical: {classification.get('is_medical')}")
-        logger.info(f"   ├─ document_type: {classification.get('document_type')}")
-        logger.info(f"   ├─ subtype: {classification.get('subtype')}")
-        logger.info(f"   └─ confidence: {classification.get('confidence')}")
-        logger.info(f"Full classification result: {classification}")
+        logger.info(f"🩺 Classification: {classification.get('document_type')} (confidence: {classification.get('confidence')})")
         
-        # ==========================================
-        # ШАГ 2: ПРОВЕРКА IS_MEDICAL
-        # ==========================================
-        
-        logger.info("")
-        logger.info("🔍 STEP 2/6: CHECKING IF DOCUMENT IS MEDICAL")
-        logger.info("-" * 80)
-        
+        # Проверка is_medical
         is_medical = classification.get('is_medical', False)
-        logger.info(f"is_medical = {is_medical}")
-        
         if not is_medical:
-            logger.warning("❌ STOP: Document is NOT medical!")
-            logger.warning("⛔ Processing aborted. Returning error to user.")
-            logger.info("=" * 80)
             return {
                 "success": False,
                 "error_type": "not_medical",
                 "message": t("not_medical_doc", lang)
             }
         
-        logger.info("✅ Document IS medical. Proceeding to next step...")
-        
-        # ==========================================
-        # ШАГ 3: ПОДГОТОВКА КОНТЕКСТА ПАЦИЕНТА
-        # ==========================================
-        
-        logger.info("")
-        logger.info("👤 STEP 3/6: BUILDING PATIENT CONTEXT")
-        logger.info("-" * 80)
-        logger.info("⏳ Loading user profile from database...")
-        
+        # Подготовка контекста пациента
         profile = await get_user_profile(user_id)
-        
-        if profile:
-            logger.info("✅ Profile loaded successfully!")
-            logger.info(f"   ├─ Gender: {profile.get('gender', 'N/A')}")
-            logger.info(f"   ├─ Birth year: {profile.get('birth_year', 'N/A')}")
-            logger.info(f"   ├─ Height: {profile.get('height_cm', 'N/A')} cm")
-            logger.info(f"   └─ Weight: {profile.get('weight_kg', 'N/A')} kg")
-        else:
-            logger.info("⚠️ No profile found for this user")
-        
-        logger.info("⏳ Building patient context string...")
         patient_context = build_patient_context(profile, additional_context)
         
-        logger.info(f"✅ Patient context built! Length: {len(patient_context)} characters")
-        if patient_context:
-            logger.info(f"Context preview:\n{patient_context[:200]}...")
-        else:
-            logger.info("Context is empty (no profile data or additional context)")
-        
-        # ==========================================
-        # ШАГ 4: АНАЛИЗ АССИСТЕНТОМ
-        # ==========================================
-        
-        logger.info("")
-        logger.info("🩺 STEP 4/6: ASSISTANT ANALYSIS (Gemini 3 Pro Preview)")
-        logger.info("-" * 80)
-        
+        # Определяем тип для специалиста
         document_type = classification.get('document_type', 'generic')
         confidence = classification.get('confidence', 0.5)
         
-        logger.info(f"Original document_type: {document_type}")
-        logger.info(f"Confidence level: {confidence}")
-        
         if confidence < 0.85:
-            logger.info(f"⚠️ Confidence is below 0.85 threshold")
-            logger.info(f"🔄 Switching to GENERIC assistant for safety")
             document_type = 'generic'
-        else:
-            logger.info(f"✅ Confidence is good, using specialized assistant: {document_type}")
         
-        logger.info(f"⏳ Sending to assistant: {document_type.upper()}")
-        
+        # Анализ ассистентом
         assistant_result = await analyze_with_assistant(
             file_path=file_path,
             document_type=document_type,
@@ -147,14 +73,7 @@ async def process_document(
             patient_context=patient_context
         )
         
-        logger.info("📊 Assistant response received!")
-        logger.info(f"   ├─ Success: {assistant_result.get('success')}")
-        logger.info(f"   └─ Analysis length: {len(assistant_result.get('analysis', ''))} characters")
-        
         if not assistant_result.get('success', False):
-            logger.error("❌ Assistant analysis FAILED!")
-            logger.error(f"Error: {assistant_result.get('error')}")
-            logger.info("=" * 80)
             return {
                 "success": False,
                 "error_type": "assistant_failed",
@@ -164,29 +83,13 @@ async def process_document(
         assistant_analysis = assistant_result.get('analysis', '')
         
         if not assistant_analysis:
-            logger.error("❌ Assistant returned EMPTY analysis!")
-            logger.info("=" * 80)
             return {
                 "success": False,
                 "error_type": "empty_assistant_analysis",
                 "message": t("document_processing_error", lang)
             }
         
-        logger.info(f"✅ Assistant analysis complete: {len(assistant_analysis)} chars")
-        
-        # ==========================================
-        # ШАГ 5: АНАЛИЗ СПЕЦИАЛИСТОМ
-        # ==========================================
-        
-        logger.info("")
-        logger.info("🩺 STEP 5/6: SPECIALIST ANALYSIS (Gemini 3 Pro Preview)")
-        logger.info("-" * 80)
-        logger.info(f"⏳ Sending to specialist: {document_type.upper()}")
-        logger.info(f"   ├─ Model: gemini-3-pro-preview")
-        logger.info(f"   ├─ Temperature: 1.0")
-        logger.info(f"   ├─ Context included: {'Yes' if patient_context else 'No'}")
-        logger.info(f"   └─ Assistant findings included: Yes")
-        
+        # Анализ специалистом
         specialist_result = await analyze_with_specialist(
             file_path=file_path,
             document_type=document_type,
@@ -195,15 +98,7 @@ async def process_document(
             assistant_analysis=assistant_analysis
         )
         
-        logger.info("📊 Specialist response received!")
-        logger.info(f"   ├─ Success: {specialist_result.get('success')}")
-        logger.info(f"   ├─ Specialist type: {specialist_result.get('specialist_type')}")
-        logger.info(f"   └─ Analysis length: {len(specialist_result.get('analysis', ''))} characters")
-        
         if not specialist_result.get('success', False):
-            logger.error("❌ Specialist analysis FAILED!")
-            logger.error(f"Error: {specialist_result.get('error')}")
-            logger.info("=" * 80)
             return {
                 "success": False,
                 "error_type": "specialist_failed",
@@ -213,42 +108,17 @@ async def process_document(
         vision_text = specialist_result.get('analysis', '')
         
         if not vision_text:
-            logger.error("❌ Specialist returned EMPTY analysis!")
-            logger.info("=" * 80)
             return {
                 "success": False,
                 "error_type": "empty_analysis",
                 "message": t("document_processing_error", lang)
             }
         
-        logger.info(f"✅ Specialist analysis complete: {len(vision_text)} chars")
-        logger.info(f"Analysis preview:\n{vision_text[:300]}...")
-        
-        # ==========================================
-        # ШАГ 6: GPT ПОСТ-ОБРАБОТКА
-        # ==========================================
-        
-        logger.info("")
-        logger.info("🤖 STEP 6/6: GPT POST-PROCESSING (GPT-4o-mini)")
-        logger.info("-" * 80)
-        logger.info("Processing specialist analysis into user-friendly format...")
-        
-        # 6.1: Генерируем заголовок
-        logger.info("")
-        logger.info("📌 6.1: Generating document title...")
-        logger.info(f"   └─ Input: First 1500 chars of specialist analysis")
-        
+        # GPT пост-обработка
         title = await generate_title_from_text(
             text=vision_text[:1500],
             lang=lang
         )
-        
-        logger.info(f"✅ Title generated: '{title}'")
-        
-        # 6.2: Создаём структурированный текст (для пользователя)
-        logger.info("")
-        logger.info("📄 6.2: Creating structured text (raw_text for user)...")
-        logger.info(f"   └─ Input: First 8000 chars of specialist analysis")
         
         raw_text = await ask_structured(
             vision_text[:8000],
@@ -257,48 +127,17 @@ async def process_document(
             specialist_analysis=vision_text
         )
         
-        logger.info(f"✅ Raw text generated: {len(raw_text)} characters")
-        logger.info(f"Raw text preview:\n{raw_text[:200]}...")
-
-        # Получаем дату из классификации или используем текущую дату
-        from datetime import date
+        # Получаем дату из классификации или используем текущую
         document_date = classification.get('document_date')
         if not document_date or str(document_date).strip() in ["", "null", "None"]:
-            document_date = date.today().isoformat()  # YYYY-MM-DD
-
-        logger.info(f"📅 Document date: {document_date}")
-
-        # 6.3: Создаём summary (для векторной базы)
-        logger.info("")
-        logger.info("🔍 6.3: Creating summary (for vector search)...")
-        logger.info(f"   └─ Input: First 8000 chars of specialist analysis")
+            document_date = date.today().isoformat()
         
         summary = await generate_medical_summary(
             vision_text[:8000],
             lang,
             document_date
         )
-                
-        # ==========================================
-        # ШАГ 7: ВОЗВРАТ РЕЗУЛЬТАТА
-        # ==========================================
         
-        logger.info("")
-        logger.info("=" * 80)
-        logger.info("✅ DOCUMENT PROCESSING COMPLETED SUCCESSFULLY!")
-        logger.info("=" * 80)
-        logger.info("📊 FINAL RESULTS:")
-        logger.info(f"   ├─ Title: {title}")
-        logger.info(f"   ├─ Document type: {classification.get('document_type')}")
-        logger.info(f"   ├─ Subtype: {classification.get('subtype')}")
-        logger.info(f"   ├─ Confidence: {classification.get('confidence')}")
-        logger.info(f"   ├─ Assistant analysis length: {len(assistant_analysis)} chars")
-        logger.info(f"   ├─ Raw text length: {len(raw_text)} chars")
-        logger.info(f"   ├─ Summary length: {len(summary)} chars")
-        logger.info(f"   └─ Full analysis length: {len(vision_text)} chars")
-        logger.info("=" * 80)
-        logger.info("")             
-
         return {
             "success": True,
             "title": title,
@@ -313,15 +152,7 @@ async def process_document(
         }
         
     except Exception as e:
-        logger.error("")
-        logger.error("=" * 80)
-        logger.error("💥 CRITICAL ERROR IN DOCUMENT PROCESSING")
-        logger.error("=" * 80)
-        logger.error(f"Error type: {type(e).__name__}")
-        logger.error(f"Error message: {str(e)}")
-        logger.error("Full traceback:", exc_info=True)
-        logger.error("=" * 80)
-        logger.error("")
+        logger.error(f"Critical error in document processing: {str(e)}", exc_info=True)
         
         return {
             "success": False,
