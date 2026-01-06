@@ -840,16 +840,17 @@ TRANSLATIONS = {
         "de": "⬆️ Dokument wird für die Analyse vorbereitet…"
     },
     "progress_extract": {
-        "ru": "🔍 Строим медицинскую модель документа…",
-        "en": "🔍 Building the medical model of the document…",
-        "uk": "🔍 Створюємо медичну модель документа…",
-        "de": "🔍 Medizinisches Modell des Dokuments wird erstellt…"
+        "ru": "🔍 Проводим анализ документа по его типу…",
+        "en": "🔍 Analyzing the document based on its type…",
+        "uk": "🔍 Аналізуємо документ відповідно до його типу…",
+        "de": "🔍 Analyse des Dokuments nach seinem Typ…"
     },
+
     "progress_analyze": {
-        "ru": "⚙️ Анализируем документ несколькими AI-моделями…",
-        "en": "⚙️ Analyzing the document using multiple AI models…",
-        "uk": "⚙️ Аналізуємо документ за допомогою кількох AI-моделей…",
-        "de": "⚙️ Analyse des Dokuments mit mehreren KI-Modellen…"
+        "ru": "⚙️ Уточняем возможные интерпретации данных…",
+        "en": "⚙️ Refining possible interpretations of the data…",
+        "uk": "⚙️ Уточнюємо можливі інтерпретації даних…",
+        "de": "⚙️ Mögliche Interpretationen der Daten werden präzisiert…"
     },
     "progress_save": {
         "ru": "📁 Формируем сводку и сохраняем результаты…",
@@ -863,37 +864,35 @@ TRANSLATIONS = {
         'uk': '✅ Документ успішно оброблено!',
         'de': '✅ Dokument erfolgreich verarbeitet!'
     },
-    'progress_step_upload': {
-        'ru': 'Загрузка файла',
-        'en': 'File upload',
-        'uk': 'Завантаження файлу',
-        'de': 'Datei-Upload'
+    "progress_step_upload": {
+        "ru": "Загрузка файла и извлечение данных",
+        "en": "File upload and data extraction",
+        "uk": "Завантаження файлу та витяг даних",
+        "de": "Datei-Upload und Datenextraktion"
     },
-    'progress_step_extract': {
-        'ru': 'Извлечение данных',
-        'en': 'Data extraction',
-        'uk': 'Витяг даних',
-        'de': 'Datenauszug'
+    "progress_step_extract": {
+        "ru": "Первичный разбор",
+        "en": "Initial review",
+        "uk": "Первинний розбір",
+        "de": "Erste Analyse"
     },
-
-    'progress_step_analyze': {
-        'ru': 'Анализ AI-моделями',
-        'en': 'AI models analysis',
-        'uk': 'Аналіз AI-моделями',
-        'de': 'Analyse durch KI-Modelle'
+    "progress_step_analyze": {
+        "ru": "Детальный анализ",
+        "en": "Detailed analysis",
+        "uk": "Детальний аналіз",
+        "de": "Detaillierte Analyse"
     },
-
     'progress_step_save': {
         'ru': 'Формирование сводки',
         'en': 'Summary generation',
         'uk': 'Формування зведення',
         'de': 'Erstellung der Zusammenfassung'
     },
-    'progress_please_wait': {
-        'ru': 'Пожалуйста, подождите... Анализ занимает до 1 минуты на каждую страницу',
-        'en': 'Please wait... Analysis takes up to 1 minute per page',
-        'uk': 'Будь ласка, зачекайте... Аналіз займає до 1 хвилини на кожну сторінку',
-        'de': 'Bitte warten... Die Analyse dauert bis zu 1 Minute pro Seite'
+    "progress_please_wait": {
+        "ru": "Пожалуйста, подождите... Анализ занимает несколько минут",
+        "en": "Please wait... The analysis may take a few minutes",
+        "uk": "Будь ласка, зачекайте... Аналіз може зайняти кілька хвилин",
+        "de": "Bitte warten... Die Analyse kann einige Minuten dauern"
     },
     # ============================================
     # 📄 СТРАНИЦА ДОКУМЕНТОВ

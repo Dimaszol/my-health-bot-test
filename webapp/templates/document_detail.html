@@ -83,19 +83,6 @@ footer {
         {% endif %}
     </div>
     
-    <!-- Первичный анализ -->
-    {% if doc.first_analysis %}
-    <div class="card" style="margin-bottom: 2rem;">
-        <h3 style="color: #667eea; margin-bottom: 0.5rem;">🔍 {{ t('first_analysis_title', lang) }}</h3>
-        <p style="color: #999; font-size: 0.85rem; line-height: 1.5; margin-bottom: 1.5rem;">
-            {{ t('first_analysis_description', lang) }}
-        </p>
-        <div style="line-height: 1.8; color: #444; font-size: 0.95rem;">
-            {{ doc.first_analysis | markdown | safe }}
-        </div>
-    </div>
-    {% endif %}
-
     <!-- Детальный анализ -->
     {% if doc.full_analysis %}
     <div class="card" style="margin-bottom: 2rem;">

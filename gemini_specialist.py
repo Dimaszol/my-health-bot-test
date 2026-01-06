@@ -1142,7 +1142,7 @@ async def analyze_with_assistant(
         }.get(lang, "Russian")
 
         # ✅ Языковая инструкция добавляется в system_prompt
-        system_prompt_with_language = f"IMPORTANT: You MUST respond in {response_language} language.\n\n{system_prompt}"
+        system_prompt_with_language = f"IMPORTANT: You MUST respond in {response_language} language. Do NOT discuss or comment on document dates in your analysis.\n\n{system_prompt}"
         
         # ✅ Формируем user_prompt БЕЗ дублирования system_prompt
         user_prompt_parts = []
@@ -1230,7 +1230,7 @@ async def analyze_with_specialist(
         }.get(lang, "Russian")
 
         # ✅ Языковая инструкция добавляется в system_prompt
-        system_prompt_with_language = f"IMPORTANT: You MUST respond in {response_language} language.\n\n{system_prompt}"
+        system_prompt_with_language = f"IMPORTANT: You MUST respond in {response_language} language. Do NOT discuss or comment on document dates in your analysis.\n\n{system_prompt}"
         
         # ✅ Формируем user_prompt БЕЗ дублирования system_prompt
         user_prompt_parts = []
