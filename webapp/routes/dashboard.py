@@ -314,7 +314,14 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
             
             # Добавляем записи в документ
             doc['timeline_entries'] = timeline_entries
-               
+            
+        user = await conn.fetchrow(
+            "SELECT birth_year FROM users WHERE user_id = $1",
+            user_id
+        )
+        
+        # Показываем подсказку если нет документов И нет года рождения
+        show_birth_year_tip = (len(docs_list) == 0) and (not user or not user['birth_year'])       
         
     finally:
         await release_db_connection(conn)
@@ -323,6 +330,7 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
     context = get_template_context(request)
     context['documents'] = docs_list
     context['has_document_limits'] = has_document_limits
+    context['show_birth_year_tip'] = show_birth_year_tip
     
     return templates.TemplateResponse("documents.html", context)
 

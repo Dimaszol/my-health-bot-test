@@ -34,6 +34,12 @@ footer {
 <div class="card" style="margin-bottom: 1rem;" id="upload-card">
         
     <form id="upload-form">
+        <!-- Подсказка про год рождения (только для новых пользователей) -->
+        {% if show_birth_year_tip %}
+        <p style="margin: 0 0 1.5rem 0; color: #666; font-size: 0.9rem; line-height: 1.5;">
+            💡 {{ t('upload_birth_year_tip', lang) }}
+        </p>
+        {% endif %}
         <div class="form-group">
             <label>{{ t('select_file', lang) }}</label>
             <input 
@@ -306,6 +312,10 @@ footer {
             <div style="background: #f8f9ff; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem;">
                 <div style="color: #374151; line-height: 1.7;">
                     {{ doc.raw_text | markdown | safe }}
+                    
+                    <p style="margin-top: 1.5rem; font-size: 0.85rem; color: #6b7280; line-height: 1.6; font-style: italic;">
+                        {{ t('analysis_context_note', lang) }}
+                    </p>
                 </div>
             </div>
             {% else %}

@@ -1023,6 +1023,18 @@ TRANSLATIONS = {
         'uk': 'Документ видалено',
         'de': 'Dokument gelöscht'
     },
+    'analysis_context_note': {
+        'ru': 'Данный анализ выполнен на основе информации, представленной в загруженном документе, и контекста, указанного при его загрузке. В практике полнота контекста напрямую влияет на точность интерпретации. Если при анализе отсутствует часть данных, их указание при последующей загрузке документа может помочь уточнить клиническую картину и снизить степень неопределённости.',
+        'en': 'This analysis is based on the information provided in the uploaded document and the context specified during upload. In practice, the completeness of context directly affects the accuracy of interpretation. If some data is missing from the analysis, providing it when uploading the document subsequently may help clarify the clinical picture and reduce uncertainty.',
+        'uk': 'Цей аналіз виконано на основі інформації, представленої в завантаженому документі, та контексту, вказаного при його завантаженні. На практиці повнота контексту безпосередньо впливає на точність інтерпретації. Якщо при аналізі відсутня частина даних, їх вказівка при наступному завантаженні документа може допомогти уточнити клінічну картину та знизити ступінь невизначеності.',
+        'de': 'Diese Analyse basiert auf den im hochgeladenen Dokument enthaltenen Informationen und dem beim Hochladen angegebenen Kontext. In der Praxis wirkt sich die Vollständigkeit des Kontexts direkt auf die Genauigkeit der Interpretation aus. Wenn bei der Analyse Daten fehlen, kann deren Angabe beim nachfolgenden Hochladen des Dokuments helfen, das klinische Bild zu klären und die Unsicherheit zu verringern.'
+    },
+    'upload_birth_year_tip': {
+        'ru': 'Рекомендация: год рождения и пол влияют на интерпретацию медицинских данных. Эти данные можно указать в профиле — они, как и контекст, влияют на точность анализа.',
+        'en': 'Recommendation: birth year and gender affect the interpretation of medical data. This information can be specified in your profile — it, like context, affects the accuracy of analysis.',
+        'uk': 'Рекомендація: рік народження та стать впливають на інтерпретацію медичних даних. Ці дані можна вказати в профілі — вони, як і контекст, впливають на точність аналізу.',
+        'de': 'Empfehlung: Geburtsjahr und Geschlecht beeinflussen die Interpretation medizinischer Daten. Diese Informationen können in Ihrem Profil angegeben werden — sie beeinflussen, wie der Kontext, die Genauigkeit der Analyse.'
+    },
 
     # ============================================
     # 📘 ЛЕГЕНДА ДОКУМЕНТОВ
