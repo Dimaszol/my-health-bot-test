@@ -164,8 +164,89 @@
     }
 
     .document-card ul li {
+        margin-bottom: 0rem !important;
+        padding-left: 0rem !important;
+    }
+
+    /* ✅ ФИКС: Timeline на странице деталей документа (одинаковый шрифт везде) */
+    div[style*="border-left: 4px solid #667eea"] ul {
+        font-size: 0.8rem !important;
+        line-height: 1.3 !important;
+    }
+
+    div[style*="border-left: 4px solid #667eea"] ul li {
+        font-size: 0.8rem !important;
+        line-height: 1.3 !important;
         margin-bottom: 0.25rem !important;
+    }
+
+    /* ✅ ФИКС: Markdown контент в раскрывающейся сводке - единый шрифт */
+    .document-body-wrapper h1,
+    .document-body-wrapper h2,
+    .document-body-wrapper h3,
+    .document-body-wrapper h4,
+    .document-body-wrapper h5,
+    .document-body-wrapper h6 {
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;
+        line-height: 1.4 !important;
+        margin: 0.75rem 0 0.5rem 0 !important;
+    }
+
+    .document-body-wrapper p {
+        font-size: 0.85rem !important;
+        line-height: 1.5 !important;
+        margin: 0.5rem 0 !important;
+    }
+
+    .document-body-wrapper ul,
+    .document-body-wrapper ol {
+        font-size: 0.85rem !important;
+        line-height: 1.5 !important;
+        margin: 0 !important; /* Убираем margin у списка */
+        margin-bottom: 0.5rem !important; /* Только отступ снизу */
         padding-left: 0.25rem !important;
+    }
+
+    .document-body-wrapper li {
+        font-size: 0.85rem !important;
+        line-height: 1.5 !important;
+        margin: 0 !important; /* Убираем все отступы */
+        margin-bottom: 0.25rem !important; /* Только нижний отступ между пунктами */
+        padding: 0 !important;
+    }
+
+    .document-body-wrapper ul li p,
+    .document-body-wrapper ol li p {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: inherit !important;
+        line-height: inherit !important;
+    }
+
+    /* Добавляем небольшой отступ между параграфами если их несколько */
+    .document-body-wrapper ul li p + p,
+    .document-body-wrapper ol li p + p {
+        display: inline !important;
+        margin-left: 0.25rem !important;
+    }
+
+    /* Дополнительный фикс для первого параграфа */
+    .document-body-wrapper ul li p:first-child,
+    .document-body-wrapper ol li p:first-child {
+        margin-top: 0 !important;
+    }
+
+    .document-body-wrapper strong,
+    .document-body-wrapper b {
+        font-size: inherit !important;
+        font-weight: 700 !important;
+    }
+
+    .document-body-wrapper em,
+    .document-body-wrapper i {
+        font-size: inherit !important;
     }
 
     /* ========== КНОПКИ ДЕЙСТВИЙ - КОМПАКТНО В РЯД ========== */

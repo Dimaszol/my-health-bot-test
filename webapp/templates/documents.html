@@ -5,7 +5,7 @@
 {% block extra_styles %}
 <!-- 📄 СТИЛИ СТРАНИЦЫ ДОКУМЕНТОВ -->
 <link rel="stylesheet" href="/static/css/documents.css?v=1">
-<link rel="stylesheet" href="/static/css/documents-mobile.css?v=3">
+<link rel="stylesheet" href="/static/css/documents-mobile.css?v=13">
 <style>
 footer {
     display: none !important;
@@ -278,8 +278,7 @@ footer {
                 <label class="toggle-switch-compact" 
                     title="{{ t('toggle_document_in_chat', lang) }}">
                     <input type="checkbox" 
-                        data-doc-id="{{ doc.id }}"
-                        onchange="toggleDocumentConfirmed('{{ doc.id }}', this.checked)"
+                        data-doc-id="{{ doc.id }}"                        
                         {% if doc.confirmed %}checked{% endif %}>
                     <span class="toggle-slider-compact"></span>
                 </label>
@@ -310,7 +309,7 @@ footer {
             <!-- AI-АНАЛИЗ ДОКУМЕНТА -->
             {% if doc.raw_text %}
             <div style="background: #f8f9ff; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem;">
-                <div style="color: #374151; line-height: 1.7;">
+                <div style="color: #374151;">
                     {{ doc.raw_text | markdown | safe }}
                     
                     <p style="margin-top: 1.5rem; font-size: 0.85rem; color: #6b7280; line-height: 1.6; font-style: italic;">
@@ -996,5 +995,47 @@ async function saveDocumentEdit(docId) {
         showFlashMessage('{{ t("error_save_failed", lang) }}', 'error');
     }
 }
+
+// ========================================
+// 🔄 ОБРАБОТКА ВОЗВРАТА ИЗ SUSPEND
+// ========================================
+
+let pageStateBeforeSuspend = null;
+
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        // Экран выключается - сохраняем состояние
+        const progressCard = document.getElementById('progress-card');
+        const uploadCard = document.getElementById('upload-card');
+        
+        pageStateBeforeSuspend = {
+            progressVisible: progressCard && progressCard.style.display !== 'none',
+            uploadVisible: uploadCard && uploadCard.style.display !== 'none',
+            timestamp: Date.now()
+        };
+        
+        console.log('📱 Экран выключен, сохранено состояние:', pageStateBeforeSuspend);
+        
+    } else {
+        // Экран включается
+        console.log('📱 Экран включён');
+        
+        if (pageStateBeforeSuspend) {
+            const suspendDuration = Date.now() - pageStateBeforeSuspend.timestamp;
+            
+            // Если экран был выключен дольше 3 секунд - обновляем страницу
+            if (suspendDuration > 3000) {
+                console.log('🔄 Экран был выключен ' + (suspendDuration/1000) + ' сек, обновляем страницу');
+                
+                // Небольшая задержка чтобы пользователь успел понять что происходит
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            }
+            
+            pageStateBeforeSuspend = null;
+        }
+    }
+});
 </script>
 {% endblock %}
