@@ -267,7 +267,6 @@ try:
 except ImportError as e:
     print("Ошибка импорта роутеров")
 
-
 # ==========================================
 # 📍 БАЗОВЫЕ МАРШРУТЫ
 # ==========================================
@@ -275,18 +274,16 @@ except ImportError as e:
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     """
-    Главная страница
-    
-    Логика:
-    - Если пользователь уже вошёл → редирект в dashboard
-    - Если не вошёл → показываем главную страницу
+    Главная страница (английская версия)
     """
     if request.session.get('user_id'):
         return RedirectResponse(url='/dashboard', status_code=302)
     
+    # Устанавливаем английский язык
+    request.session['language'] = 'en'
+    
     context = get_template_context(request)
     return templates.TemplateResponse('index.html', context)
-
 
 @app.get("/login", response_class=HTMLResponse)
 async def login(request: Request):
@@ -317,27 +314,110 @@ async def google_verification():
 @app.get("/set-language/{lang}")
 async def set_language_route(request: Request, lang: str):
     """
-    Смена языка интерфейса
+    Смена языка с сохранением текущей страницы
     
-    ✅ СМОТРИ КАК ЧИСТО! Никаких psycopg2!
-    Просто используем готовую async функцию из db_postgresql.py
+    Теперь учитывает текущую страницу и добавляет языковой префикс
     """
-    if lang in ['ru', 'uk', 'en', 'de']:
-        request.session['language'] = lang
-        
-        # Если пользователь авторизован - сохраняем в БД
-        user_id = request.session.get('user_id')
-        if user_id:
-            try:
-                # ✅ ПРОСТО AWAIT! Используем готовую функцию!
-                await update_user_profile(user_id, 'language', lang)
-            except Exception as e:
-                print("Ошибка сохранения языка")
+    if lang not in ['ru', 'uk', 'en', 'de']:
+        return RedirectResponse(url='/', status_code=302)
     
-    # Редиректим обратно на предыдущую страницу
+    request.session['language'] = lang
+    
+    # Если пользователь авторизован - сохраняем в БД
+    user_id = request.session.get('user_id')
+    if user_id:
+        try:
+            await update_user_profile(user_id, 'language', lang)
+        except Exception as e:
+            print("Ошибка сохранения языка")
+    
+    # Получаем текущую страницу
     referer = request.headers.get('referer', '/')
-    return RedirectResponse(url=referer, status_code=302)
+    
+    # Парсим путь из referer
+    from urllib.parse import urlparse
+    parsed = urlparse(referer)
+    current_path = parsed.path
+    
+    # Убираем старый языковой префикс если есть
+    if current_path.startswith('/de/') or current_path.startswith('/ru/') or current_path.startswith('/uk/'):
+        current_path = current_path[3:]  # Убираем /de, /ru, /uk
+    elif current_path in ['/de', '/ru', '/uk']:
+        current_path = '/'
+    
+    # Добавляем новый языковой префикс
+    if lang == 'en':
+        new_path = current_path
+    else:
+        new_path = f'/{lang}{current_path}'
+    
+    return RedirectResponse(url=new_path, status_code=302)
 
+@app.get("/sitemap.xml")
+async def sitemap():
+    """
+    Sitemap для Google Search Console
+    Включает все языковые версии страниц
+    """
+    from fastapi.responses import Response
+    
+    domain = "https://pulsebook.health"
+    
+    pages = ['/', '/faq', '/privacy', '/terms', '/medical-disclaimer']
+    langs = ['en', 'de']  # Пока только EN и DE для продвижения
+    
+    urls = []
+    
+    for page in pages:
+        # Английская версия (без префикса)
+        urls.append({
+            "loc": f"{domain}{page}",
+            "priority": "1.0" if page == '/' else "0.7",
+            "changefreq": "monthly"
+        })
+        
+        # Немецкая версия (с префиксом /de)
+        if 'de' in langs:
+            urls.append({
+                "loc": f"{domain}/de{page}",
+                "priority": "0.9" if page == '/' else "0.6",
+                "changefreq": "monthly"
+            })
+    
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    
+    for url in urls:
+        xml += f'  <url>\n'
+        xml += f'    <loc>{url["loc"]}</loc>\n'
+        xml += f'    <priority>{url["priority"]}</priority>\n'
+        xml += f'    <changefreq>{url["changefreq"]}</changefreq>\n'
+        xml += f'  </url>\n'
+    
+    xml += '</urlset>'
+    
+    return Response(content=xml, media_type="application/xml")
+
+
+@app.get("/robots.txt")
+async def robots():
+    """
+    robots.txt для поисковиков
+    """
+    from fastapi.responses import Response
+    
+    domain = "https://pulsebook.health" 
+    
+    content = f"""User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /api/
+Disallow: /auth/
+Disallow: /webhook/
+
+Sitemap: {domain}/sitemap.xml
+"""
+    return Response(content=content, media_type="text/plain")
 
 # ==========================================
 # 🧪 ТЕСТОВЫЕ РОУТЫ
@@ -385,6 +465,30 @@ async def version():
     return {
         "version": "1.0.1"        
     }
+
+@app.get("/{lang}", response_class=HTMLResponse)
+async def index_with_language(request: Request, lang: str):
+    """
+    Главная страница с языковым префиксом (/de, /ru, /uk)
+    
+    Примеры:
+    /de → немецкая версия
+    /ru → русская версия
+    /uk → украинская версия
+    """
+    # Проверяем что это язык
+    if lang in ['de', 'ru', 'uk']:
+        if request.session.get('user_id'):
+            return RedirectResponse(url='/dashboard', status_code=302)
+        
+        # Устанавливаем выбранный язык
+        request.session['language'] = lang
+        
+        context = get_template_context(request)
+        return templates.TemplateResponse('index.html', context)
+    
+    # Если не язык — пропускаем дальше (это может быть /login, /faq и т.д.)
+    raise HTTPException(status_code=404)
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -471,14 +575,3 @@ if __name__ == "__main__":
             reload=False,
             log_level="info"
         )
-
-@app.get("/debug/packages")
-async def debug_packages():
-    import subprocess
-    result = subprocess.run(
-        ["pip", "list", "--format=json"],
-        capture_output=True,
-        text=True
-    )
-    import json
-    return json.loads(result.stdout)

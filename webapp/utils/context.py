@@ -12,7 +12,26 @@ def get_template_context(request: Request) -> dict:
     Возвращает базовый контекст для всех шаблонов
     (аналог context_processor в Flask)
     """
-    lang = request.session.get('language', 'en')
+    # ✅ ОПРЕДЕЛЯЕМ ЯЗЫК ПО URL (для SEO-страниц)
+    path = request.url.path
+    
+    if path.startswith('/de/') or path == '/de':
+        lang = 'de'
+    elif path.startswith('/ru/') or path == '/ru':
+        lang = 'ru'
+    elif path.startswith('/uk/') or path == '/uk':
+        lang = 'uk'
+    else:
+        # ⚠️ ДЛЯ СЛУЖЕБНЫХ СТРАНИЦ (login, dashboard) - берём из session
+        lang = request.session.get('language', 'en')
+    
+    # ✅ ВЫЧИСЛЯЕМ base_path (путь без языкового префикса)
+    if path.startswith('/de/') or path.startswith('/ru/') or path.startswith('/uk/'):
+        base_path = path[3:]  # Убираем "/de", "/ru", "/uk"
+    elif path in ['/de', '/ru', '/uk']:
+        base_path = '/'
+    else:
+        base_path = path
     
     # ✅ ПРАВИЛЬНАЯ РЕАЛИЗАЦИЯ get_flashed_messages
     def _get_flashed_messages(**kwargs):
@@ -23,6 +42,7 @@ def get_template_context(request: Request) -> dict:
         'request': request,
         'session': request.session,
         'lang': lang,
+        'base_path': base_path,
         't': t,
         'supported_languages': get_supported_languages(),
         'get_flashed_messages': _get_flashed_messages

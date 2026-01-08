@@ -11,6 +11,14 @@
     <meta name="apple-mobile-web-app-title" content="PulseBook">
     <title>{% block title %}{{ t('site_title', lang) }} - {{ t('hero_subtitle', lang) }}{% endblock %}</title>
     
+    <!-- 🌍 HREFLANG для мультиязычности (для Google) -->
+    <link rel="alternate" hreflang="en" href="https://pulsebook.health{{ base_path }}" />
+    <link rel="alternate" hreflang="de" href="https://pulsebook.health/de{{ base_path }}" />
+    <link rel="alternate" hreflang="x-default" href="https://pulsebook.health{{ base_path }}" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://pulsebook.health{% if lang == 'de' %}/de{% endif %}{{ base_path }}" />
+    
     <!-- 🎨 СТИЛИ -->
     <link rel="stylesheet" href="/static/css/style.css?v=13">
     <link rel="stylesheet" href="/static/css/mobile.css?v=30">
@@ -21,10 +29,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- 📱 META ТЕГИ ДЛЯ PWA -->
-    <meta name="description" content="{{ t('hero_subtitle', lang) }}">
-    <meta name="keywords" content="медицина, AI, здоровье, телемедицина, консультация">
+    <meta name="description" content="{% block meta_description %}{{ t('hero_subtitle', lang) }}{% endblock %}">
     <meta name="author" content="Medical Assistant">
     <meta name="theme-color" content="#00C9A7">
+    
+    <!-- Open Graph (Facebook, LinkedIn) -->
+    <meta property="og:title" content="{% block og_title %}PulseBook - Medical Document Understanding{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Health information support with AI-powered document analysis{% endblock %}">
+    <meta property="og:image" content="https://pulsebook.health/static/og-image.png">
+    <meta property="og:url" content="https://pulsebook.health{% if lang == 'de' %}/de{% endif %}{{ base_path }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="PulseBook">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}PulseBook - Medical Document Understanding{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Health information support{% endblock %}">
+    <meta name="twitter:image" content="https://pulsebook.health/static/og-image.png">
     
     <!-- SVG в конец, ICO в начало -->
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico?v=1">
@@ -32,6 +53,23 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=1">
     <link rel="manifest" href="/static/site.webmanifest">
+    
+    <!-- Structured Data для Google -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "PulseBook",
+      "description": "Health information support through structured medical document analysis",
+      "applicationCategory": "HealthApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
     
     {% block extra_styles %}{% endblock %}
 </head>
@@ -41,7 +79,7 @@
         <div class="container">
             <div class="header-content">
                 <!-- Логотип (слева) -->
-                <a href="/" class="logo">
+                <a href="{% if lang != 'en' %}/{{ lang }}{% else %}/{% endif %}" class="logo">
                     <img src="/static/favicon.svg" alt="Logo" class="logo-icon" style="width: 32px; height: 32px;">
                     <span class="logo-text">PulseBook</span>
                 </a>
@@ -155,10 +193,10 @@
     <nav id="mobile-menu" class="mobile-menu">
         <!-- Шапка мобильного меню -->
         <div class="mobile-menu-header">
-            <div class="mobile-menu-logo">
+            <a href="{% if lang != 'en' %}/{{ lang }}{% else %}/{% endif %}" class="mobile-menu-logo" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 12px;">
                 <img src="/static/favicon.svg" alt="Logo" style="width: 32px; height: 32px;">
                 <span>PulseBook</span>
-            </div>
+            </a>
             <button id="mobile-menu-close" class="mobile-menu-close" aria-label="Закрыть">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -209,7 +247,7 @@
                 </li>
                 <li class="menu-divider"></li>
                 <li>
-                    <a href="/faq">
+                    <a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/faq">
                         <span class="menu-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M9.5 8.5c0-1.5 1.5-2.5 3-2.5s3 1 3 2.5-1.5 2.5-3 2.5v2"></path>
@@ -251,7 +289,7 @@
                         <span>{{ t('menu_security', lang) }}</span>
                     </a>
                 </li>
-                    <a href="/faq">
+                    <a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/faq">
                         <span class="menu-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M9.5 8.5c0-1.5 1.5-2.5 3-2.5s3 1 3 2.5-1.5 2.5-3 2.5v2"></path>
@@ -322,7 +360,7 @@
                 <div class="footer-section">
                     <h4>{{ t('footer_navigation', lang) }}</h4>
                     <ul>
-                        <li><a href="/">{{ t('menu_home', lang) }}</a></li>
+                        <li><a href="{% if lang != 'en' %}/{{ lang }}{% else %}/{% endif %}">{{ t('menu_home', lang) }}</a></li>
                         {% if session.get('user_id') %}
                             <li><a href="/dashboard/chat">{{ t('menu_chat', lang) }}</a></li>
                             <li><a href="/dashboard/documents">{{ t('menu_documents', lang) }}</a></li>
@@ -337,9 +375,10 @@
                 <div class="footer-section">
                     <h4>{{ t('footer_information', lang) }}</h4>
                     <ul>
-                        <li><a href="/faq">FAQ</a></li>
-                        <li><a href="/privacy">Privacy Policy</a></li>
-                        <li><a href="/terms">Terms of Service</a></li>                        
+                        <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/faq">FAQ</a></li>
+                        <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/privacy">Privacy Policy</a></li>
+                        <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/terms">Terms of Service</a></li>
+                        <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/medical-disclaimer">Medical Disclaimer</a></li>                        
                     </ul>
                 </div>
                 

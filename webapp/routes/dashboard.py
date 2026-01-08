@@ -204,6 +204,7 @@ async def get_current_user(request: Request) -> int:
 # 📍 МАРШРУТЫ ЛИЧНОГО КАБИНЕТА
 # ==========================================
 
+@router.get("", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
     """
@@ -314,7 +315,7 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
             
             # Добавляем записи в документ
             doc['timeline_entries'] = timeline_entries
-            
+
         user = await conn.fetchrow(
             "SELECT birth_year FROM users WHERE user_id = $1",
             user_id

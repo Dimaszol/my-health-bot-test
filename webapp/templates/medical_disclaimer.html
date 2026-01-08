@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}{{ md_t('page_title', lang) }} - PulseBook{% endblock %}
+
+{% block meta_description %}Medical disclaimer and terms of use for PulseBook health information service{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 3rem auto; padding: 0 1.5rem;">
+    
+    <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; color: #1a1a1a;">
+        {{ md_t('page_title', lang) }}
+    </h1>
+    
+    <p style="font-size: 0.9rem; color: #666; margin-bottom: 2rem;">
+        {{ md_t('last_updated', lang) }}
+    </p>
+    
+    <!-- Important Notice -->
+    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 1.5rem; margin: 2rem 0; border-radius: 8px;">
+        <h3 style="margin-top: 0; color: #856404;">{{ md_t('important_notice_title', lang) }}</h3>
+        <p style="margin: 0; color: #856404;">
+            {{ md_t('important_notice_text', lang) }}
+        </p>
+    </div>
+    
+    <div style="line-height: 1.8; color: #333;">
+        
+        <!-- Purpose of the Service -->
+        <h2 style="font-size: 1.75rem; margin: 2.5rem 0 1rem; color: #1a1a1a;">
+            {{ md_t('purpose_title', lang) }}
+        </h2>
+        
+        <p>{{ md_t('purpose_intro', lang) }}</p>
+        
+        <ul style="margin: 1rem 0; padding-left: 2rem;">
+            <li style="margin: 0.5rem 0;">{{ md_t('purpose_bullet_1', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('purpose_bullet_2', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('purpose_bullet_3', lang) }}</li>
+        </ul>
+        
+        <p>{{ md_t('purpose_footer', lang) }}</p>
+        
+        <!-- No Medical Advice -->
+        <h2 style="font-size: 1.75rem; margin: 2.5rem 0 1rem; color: #1a1a1a;">
+            {{ md_t('no_advice_title', lang) }}
+        </h2>
+        
+        <p>{{ md_t('no_advice_intro', lang) }}</p>
+        
+        <ul style="margin: 1rem 0; padding-left: 2rem;">
+            <li style="margin: 0.5rem 0;">{{ md_t('no_advice_bullet_1', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('no_advice_bullet_2', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('no_advice_bullet_3', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('no_advice_bullet_4', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('no_advice_bullet_5', lang) }}</li>
+        </ul>
+        
+        <p>{{ md_t('no_advice_footer', lang) }}</p>
+        
+        <!-- Always Consult Healthcare Professionals -->
+        <h2 style="font-size: 1.75rem; margin: 2.5rem 0 1rem; color: #1a1a1a;">
+            {{ md_t('consult_title', lang) }}
+        </h2>
+        
+        <p>{{ md_t('consult_intro', lang) }}</p>
+        
+        <ul style="margin: 1rem 0; padding-left: 2rem;">
+            <li style="margin: 0.5rem 0;">{{ md_t('consult_bullet_1', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('consult_bullet_2', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('consult_bullet_3', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('consult_bullet_4', lang) }}</li>
+        </ul>
+        
+        <p><strong>{{ md_t('consult_footer', lang) }}</strong></p>
+        
+        <!-- Emergency Situations -->
+        <h2 style="font-size: 1.75rem; margin: 2.5rem 0 1rem; color: #1a1a1a;">
+            {{ md_t('emergency_title', lang) }}
+        </h2>
+        
+        <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 1.5rem; margin: 1.5rem 0; border-radius: 8px;">
+            <p style="margin: 0; font-weight: 600; color: #721c24;">
+                {{ md_t('emergency_text', lang) }}
+            </p>
+        </div>
+        
+        <!-- No Doctor-Patient Relationship -->
+        <h2 style="font-size: 1.75rem; margin: 2.5rem 0 1rem; color: #1a1a1a;">
+            {{ md_t('no_relationship_title', lang) }}
+        </h2>
+        
+        <p>{{ md_t('no_relationship_text', lang) }}</p>
+        
+        <!-- Accuracy, Limitations, and Use of AI -->
+        <h2 style="font-size: 1.75rem; margin: 2.5rem 0 1rem; color: #1a1a1a;">
+            {{ md_t('accuracy_title', lang) }}
+        </h2>
+        
+        <p>{{ md_t('accuracy_intro', lang) }}</p>
+        
+        <ul style="margin: 1rem 0; padding-left: 2rem;">
+            <li style="margin: 0.5rem 0;">{{ md_t('accuracy_bullet_1', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('accuracy_bullet_2', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('accuracy_bullet_3', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('accuracy_bullet_4', lang) }}</li>
+        </ul>
+        
+        <p>{{ md_t('accuracy_footer', lang) }}</p>
+        
+        <!-- Limitation of Liability -->
+        <h2 style="font-size: 1.75rem; margin: 2.5rem 0 1rem; color: #1a1a1a;">
+            {{ md_t('liability_title', lang) }}
+        </h2>
+        
+        <p>{{ md_t('liability_text', lang) }}</p>
+        
+        <p><strong>{{ md_t('liability_footer', lang) }}</strong></p>
+        
+        <!-- User Responsibility -->
+        <h2 style="font-size: 1.75rem; margin: 2.5rem 0 1rem; color: #1a1a1a;">
+            {{ md_t('responsibility_title', lang) }}
+        </h2>
+        
+        <p>{{ md_t('responsibility_intro', lang) }}</p>
+        
+        <ul style="margin: 1rem 0; padding-left: 2rem;">
+            <li style="margin: 0.5rem 0;">{{ md_t('responsibility_bullet_1', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('responsibility_bullet_2', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('responsibility_bullet_3', lang) }}</li>
+            <li style="margin: 0.5rem 0;">{{ md_t('responsibility_bullet_4', lang) }}</li>
+        </ul>
+        
+        <!-- Additional Information -->
+        <h2 style="font-size: 1.75rem; margin: 2.5rem 0 1rem; color: #1a1a1a;">
+            {{ md_t('additional_title', lang) }}
+        </h2>
+
+        <p>
+            {% set privacy_link = '/privacy' if lang == 'en' else '/' + lang + '/privacy' %}
+            {% set terms_link = '/terms' if lang == 'en' else '/' + lang + '/terms' %}
+            {{ md_t('additional_text', lang, privacy_url=privacy_link, terms_url=terms_link)|safe }}
+        </p>
+
+        <p>{{ md_t('contact_text', lang) }}</p>
+        
+    </div>
+    
+</div>
+{% endblock %}
