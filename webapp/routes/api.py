@@ -706,6 +706,35 @@ async def analyze_photo_with_question(
             }
         )
 
+@router.get("/check-latest-document")
+async def check_latest_document(user_id: int = Depends(get_current_user)):
+    """
+    Проверка последнего загруженного документа
+    Используется для polling во время загрузки на мобильных устройствах
+    """
+    from db_postgresql import get_db_connection, release_db_connection
+    
+    conn = await get_db_connection()
+    try:
+        # Получаем ID последнего документа пользователя
+        latest = await conn.fetchrow(
+            "SELECT id FROM documents WHERE user_id = $1 ORDER BY uploaded_at DESC LIMIT 1",
+            user_id
+        )
+        
+        if latest:
+            return {
+                'success': True,
+                'latest_document_id': latest['id']
+            }
+        else:
+            return {
+                'success': True,
+                'latest_document_id': None
+            }
+    finally:
+        await release_db_connection(conn)
+
 @router.post("/upload")
 async def upload_document(
     request: Request,
