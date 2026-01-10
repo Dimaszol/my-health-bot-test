@@ -345,10 +345,18 @@ async def set_language_route(request: Request, lang: str):
     elif current_path in ['/de', '/ru', '/uk']:
         current_path = '/'
     
+    # 🔹 Список страниц БЕЗ языкового префикса (внутренние страницы)
+    internal_pages = ['/dashboard', '/login', '/logout', '/auth', '/api', '/webhook', '/account-linking']
+
+    # Проверяем является ли это внутренней страницей
+    is_internal = any(current_path.startswith(prefix) for prefix in internal_pages)
+
     # Добавляем новый языковой префикс
-    if lang == 'en':
+    if is_internal or lang == 'en':
+        # Для внутренних страниц и английского - префикс не нужен
         new_path = current_path
     else:
+        # Для публичных SEO-страниц добавляем префикс
         new_path = f'/{lang}{current_path}'
     
     return RedirectResponse(url=new_path, status_code=302)
@@ -414,6 +422,7 @@ Disallow: /dashboard
 Disallow: /api/
 Disallow: /auth/
 Disallow: /webhook/
+Disallow: /set-language/
 
 Sitemap: {domain}/sitemap.xml
 """

@@ -1003,6 +1003,14 @@ async function saveDocumentEdit(docId) {
 let pageStateBeforeSuspend = null;
 
 document.addEventListener('visibilitychange', function() {
+    // ✅ Проверяем что это мобильное устройство
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    // Если десктоп - вообще не обрабатываем
+    if (!isMobile) {
+        return;
+    }
+    
     if (document.hidden) {
         // Экран выключается - сохраняем состояние
         const progressCard = document.getElementById('progress-card');
@@ -1014,17 +1022,22 @@ document.addEventListener('visibilitychange', function() {
             timestamp: Date.now()
         };
         
-        console.log('📱 Экран выключен, сохранено состояние:', pageStateBeforeSuspend);
+        console.log('📱 Экран выключен (мобильное устройство), сохранено состояние:', pageStateBeforeSuspend);
         
     } else {
         // Экран включается
-        console.log('📱 Экран включён');
+        console.log('📱 Экран включён (мобильное устройство)');
         
         if (pageStateBeforeSuspend) {
             const suspendDuration = Date.now() - pageStateBeforeSuspend.timestamp;
             
-            // Если экран был выключен дольше 3 секунд - обновляем страницу
-            if (suspendDuration > 3000) {
+            // ✅ НЕ ПЕРЕЗАГРУЖАЕМ если идёт загрузка документа или есть new_doc_id
+            const progressCard = document.getElementById('progress-card');
+            const isUploading = progressCard && progressCard.style.display !== 'none';
+            const hasNewDocParam = window.location.search.includes('new_doc_id');
+            
+            // Если экран был выключен дольше 3 секунд И не идёт загрузка
+            if (suspendDuration > 3000 && !isUploading && !hasNewDocParam) {
                 console.log('🔄 Экран был выключен ' + (suspendDuration/1000) + ' сек, обновляем страницу');
                 
                 // Небольшая задержка чтобы пользователь успел понять что происходит
