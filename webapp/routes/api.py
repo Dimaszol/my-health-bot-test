@@ -710,7 +710,7 @@ async def analyze_photo_with_question(
 async def check_latest_document(user_id: int = Depends(get_current_user)):
     """
     Проверка последнего загруженного документа
-    Используется для polling во время загрузки на мобильных устройствах
+    Используется для polling во время загрузки
     """
     from db_postgresql import get_db_connection, release_db_connection
     

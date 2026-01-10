@@ -894,6 +894,24 @@ TRANSLATIONS = {
         "uk": "Будь ласка, зачекайте... Аналіз може зайняти кілька хвилин",
         "de": "Bitte warten... Die Analyse kann einige Minuten dauern"
     },
+    'notification_document_ready_title': {
+        'ru': 'Документ готов!',
+        'en': 'Document ready!',
+        'uk': 'Документ готовий!',
+        'de': 'Dokument bereit!'
+    },
+    'notification_document_ready_body': {
+        'ru': 'Анализ завершён. Нажмите чтобы посмотреть результат.',
+        'en': 'Analysis complete. Tap to view the result.',
+        'uk': 'Аналіз завершено. Натисніть щоб переглянути результат.',
+        'de': 'Analyse abgeschlossen. Tippen Sie, um das Ergebnis anzuzeigen.'
+    },
+    'notification_action_open': {
+        'ru': 'Открыть документ',
+        'en': 'Open document',
+        'uk': 'Відкрити документ',
+        'de': 'Dokument öffnen'
+    },
     # ============================================
     # 📄 СТРАНИЦА ДОКУМЕНТОВ
     # ============================================

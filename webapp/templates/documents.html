@@ -786,7 +786,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Запускаем симуляцию этапов
             simulateProgressSteps();
             
-            // ✅ ДОБАВЬ ЭТУ СТРОКУ - запускаем проверку статуса (только на мобильных)
+            // ✅ ДОБАВЬ ЭТУ СТРОКУ СЮДА
             startUploadStatusCheck();
             
             try {
@@ -797,7 +797,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const data = await response.json();
                 
-                // ✅ ДОБАВЬ ЭТУ СТРОКУ - останавливаем проверку
+                // ✅ ДОБАВЬ ЭТУ СТРОКУ СЮДА
                 stopUploadStatusCheck();
                 
                 if (data.success) {
@@ -815,7 +815,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
             } catch (error) {
-                // ✅ ДОБАВЬ ЭТУ СТРОКУ - останавливаем проверку при ошибке
+                // ✅ ДОБАВЬ ЭТУ СТРОКУ СЮДА
                 stopUploadStatusCheck();
                 
                 alert('❌ {{ t("error_server", lang) }}');
@@ -1013,7 +1013,6 @@ let uploadCheckInterval = null;
 function startUploadStatusCheck() {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     
-    // ❌ Если десктоп - не запускаем проверку
     if (!isMobile) {
         console.log('💻 Десктоп: проверка статуса не требуется');
         return;
@@ -1021,20 +1020,34 @@ function startUploadStatusCheck() {
     
     console.log('📱 Мобильное устройство: запускаем проверку статуса загрузки');
     
-    // Проверяем каждые 5 секунд
     uploadCheckInterval = setInterval(async () => {
         try {
             const response = await fetch('/api/check-latest-document');
             const data = await response.json();
             
             if (data.success && data.latest_document_id) {
-                // Проверяем что этого документа ещё нет на странице
                 const existingDoc = document.querySelector(`[data-doc-id="${data.latest_document_id}"]`);
                 
                 if (!existingDoc) {
-                    console.log('✅ Новый документ загружен, обновляем страницу');
+                    console.log('✅ Новый документ загружен');
                     clearInterval(uploadCheckInterval);
-                    window.location.href = '/dashboard/documents?new_doc_id=' + data.latest_document_id;
+                    
+                    // ✅ Отправляем сообщение Service Worker с переведёнными текстами
+                    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({
+                            type: 'DOCUMENT_UPLOAD_COMPLETE',
+                            documentId: data.latest_document_id,
+                            title: '✅ {{ t("notification_document_ready_title", lang) }}',
+                            body: '{{ t("notification_document_ready_body", lang) }}',
+                            actionTitle: '{{ t("notification_action_open", lang) }}'
+                        });
+                    }
+                    
+                    // Если приложение активно - просто делаем редирект
+                    if (!document.hidden) {
+                        window.location.href = '/dashboard/documents?new_doc_id=' + data.latest_document_id;
+                    }
+                    // Если в suspend - Service Worker покажет уведомление
                 }
             }
         } catch (error) {
@@ -1050,28 +1063,5 @@ function stopUploadStatusCheck() {
         console.log('⏹️ Проверка статуса остановлена');
     }
 }
-
-// ========================================
-// 📱 ВОЗВРАТ В ПРИЛОЖЕНИЕ (только мобильные)
-// ========================================
-
-document.addEventListener('visibilitychange', function() {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    // ❌ Если десктоп - игнорируем
-    if (!isMobile) return;
-    
-    // Если вернулись на страницу
-    if (!document.hidden) {
-        const progressCard = document.getElementById('progress-card');
-        const isUploading = progressCard && progressCard.style.display !== 'none';
-        
-        // Если загрузка идёт, но проверка не запущена - запускаем
-        if (isUploading && !uploadCheckInterval) {
-            console.log('📱 Возврат в приложение во время загрузки, запускаем проверку');
-            startUploadStatusCheck();
-        }
-    }
-});
 </script>
 {% endblock %}
