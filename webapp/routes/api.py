@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import uuid
+import asyncio
 from datetime import datetime
 from fastapi import APIRouter, Request, Depends, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
@@ -1001,7 +1002,14 @@ async def upload_document(
             'message': t('document_uploaded_successfully', lang, title=title)
         }
     
-    # ❌ ЕДИНСТВЕННЫЙ except для всех ошибок
+    # ✅ Обработка отключения клиента (экран выключился)
+    except asyncio.CancelledError:
+        # Клиент отключился, но документ уже сохранён - это нормально
+        safe_log_warning("Клиент отключился во время обработки документа", user_id=user_id if 'user_id' in locals() else None)
+        # НЕ возвращаем ответ - соединения уже нет
+        pass
+    
+    # ❌ Обработка настоящих ошибок
     except Exception as e:
         safe_log_error("Критическая ошибка загрузки документа", error=e, user_id=user_id if 'user_id' in locals() else None)
         

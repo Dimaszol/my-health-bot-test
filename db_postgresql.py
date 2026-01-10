@@ -51,7 +51,7 @@ async def initialize_db_pool(max_connections: int = 10):
             database_url,
             min_size=2,
             max_size=max_connections,
-            command_timeout=60,
+            command_timeout=180,
             statement_cache_size=0
         )
         
