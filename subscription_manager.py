@@ -550,15 +550,15 @@ class SubscriptionManager:
         ✅ С защитой от дублирования первого invoice
         """
         try:
-            # Находим user_id и дату создания подписки
+            # ✅ ИСПРАВЛЕНО: Находим user_id через subscription_id ИЛИ customer_id
             result = await fetch_one("""
                 SELECT user_id, created_at FROM user_subscriptions 
-                WHERE stripe_subscription_id = $1 
+                WHERE stripe_subscription_id = $1 OR stripe_customer_id = $2
                 ORDER BY created_at DESC LIMIT 1
-            """, (subscription_id,))
-            
+            """, (subscription_id, customer_id))
+
             if not result:
-                logger.error(f"❌ User not found for subscription {subscription_id}")
+                logger.error(f"❌ User not found for subscription {subscription_id} or customer {customer_id}")
                 return False
             
             user_id, created_at = result
