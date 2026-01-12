@@ -785,10 +785,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Запускаем симуляцию этапов
             simulateProgressSteps();
-            
-            // ✅ ДОБАВЬ ЭТУ СТРОКУ СЮДА
-            startUploadStatusCheck();
-            
+                       
             try {
                 const response = await fetch('/api/upload', {
                     method: 'POST',
@@ -796,10 +793,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 const data = await response.json();
-                
-                // ✅ ДОБАВЬ ЭТУ СТРОКУ СЮДА
-                stopUploadStatusCheck();
-                
+                              
                 if (data.success) {
                     // Показываем финальный этап
                     updateProgressStep('save', 'completed', '✓');
@@ -815,9 +809,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
             } catch (error) {
-                // ✅ ДОБАВЬ ЭТУ СТРОКУ СЮДА
-                stopUploadStatusCheck();
-                
+                                
                 alert('❌ {{ t("error_server", lang) }}');
                 console.error('Error:', error);
                 resetUploadForm();
@@ -1002,65 +994,6 @@ async function saveDocumentEdit(docId) {
     } catch (error) {
         console.error('Ошибка сохранения:', error);
         showFlashMessage('{{ t("error_save_failed", lang) }}', 'error');
-    }
-}
-// ========================================
-// 🔄 ПРОВЕРКА СТАТУСА ЗАГРУЗКИ (только мобильные)
-// ========================================
-
-let uploadCheckInterval = null;
-
-function startUploadStatusCheck() {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    if (!isMobile) {
-        console.log('💻 Десктоп: проверка статуса не требуется');
-        return;
-    }
-    
-    console.log('📱 Мобильное устройство: запускаем проверку статуса загрузки');
-    
-    uploadCheckInterval = setInterval(async () => {
-        try {
-            const response = await fetch('/api/check-latest-document');
-            const data = await response.json();
-            
-            if (data.success && data.latest_document_id) {
-                const existingDoc = document.querySelector(`[data-doc-id="${data.latest_document_id}"]`);
-                
-                if (!existingDoc) {
-                    console.log('✅ Новый документ загружен');
-                    clearInterval(uploadCheckInterval);
-                    
-                    // ✅ Отправляем сообщение Service Worker с переведёнными текстами
-                    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                        navigator.serviceWorker.controller.postMessage({
-                            type: 'DOCUMENT_UPLOAD_COMPLETE',
-                            documentId: data.latest_document_id,
-                            title: '✅ {{ t("notification_document_ready_title", lang) }}',
-                            body: '{{ t("notification_document_ready_body", lang) }}',
-                            actionTitle: '{{ t("notification_action_open", lang) }}'
-                        });
-                    }
-                    
-                    // Если приложение активно - просто делаем редирект
-                    if (!document.hidden) {
-                        window.location.href = '/dashboard/documents?new_doc_id=' + data.latest_document_id;
-                    }
-                    // Если в suspend - Service Worker покажет уведомление
-                }
-            }
-        } catch (error) {
-            console.error('Ошибка проверки статуса:', error);
-        }
-    }, 5000);
-}
-
-function stopUploadStatusCheck() {
-    if (uploadCheckInterval) {
-        clearInterval(uploadCheckInterval);
-        uploadCheckInterval = null;
-        console.log('⏹️ Проверка статуса остановлена');
     }
 }
 </script>

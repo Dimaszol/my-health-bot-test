@@ -894,24 +894,6 @@ TRANSLATIONS = {
         "uk": "Будь ласка, зачекайте... Аналіз може зайняти кілька хвилин",
         "de": "Bitte warten... Die Analyse kann einige Minuten dauern"
     },
-    'notification_document_ready_title': {
-        'ru': 'Документ готов!',
-        'en': 'Document ready!',
-        'uk': 'Документ готовий!',
-        'de': 'Dokument bereit!'
-    },
-    'notification_document_ready_body': {
-        'ru': 'Анализ завершён. Нажмите чтобы посмотреть результат.',
-        'en': 'Analysis complete. Tap to view the result.',
-        'uk': 'Аналіз завершено. Натисніть щоб переглянути результат.',
-        'de': 'Analyse abgeschlossen. Tippen Sie, um das Ergebnis anzuzeigen.'
-    },
-    'notification_action_open': {
-        'ru': 'Открыть документ',
-        'en': 'Open document',
-        'uk': 'Відкрити документ',
-        'de': 'Dokument öffnen'
-    },
     # ============================================
     # 📄 СТРАНИЦА ДОКУМЕНТОВ
     # ============================================
@@ -1958,7 +1940,7 @@ TRANSLATIONS = {
     'de': 'Kostenloses Limit erreicht'
 },
 'free_limit_reached_text': {
-    'ru': 'Вы использовали доступные бесплатные возможности.\n\nС активным планом вы продолжите получать:\n✓ персональные рекомендации AI-ассистента\n✓ разборы медицинских документов\n✓ расширенные возможности чата',
+    'ru': 'Вы использовали доступные бесплатные возможности.\n\nС активным планом вы продолжите получать:\n✓ персональные рекомендации AI ассистента\n✓ разборы медицинских документов\n✓ расширенные возможности чата',
     'en': 'You have used all available free features.\n\nWith an active plan you will continue to receive:\n✓ personalized AI assistant recommendations\n✓ medical document analysis\n✓ advanced chat features',
     'uk': 'Ви використали доступні безкоштовні можливості.\n\nЗ активним планом ви продовжите отримувати:\n✓ персональні рекомендації AI-асистента\n✓ розбір медичних документів\n✓ розширені можливості чату',
     'de': 'Sie haben alle verfügbaren kostenlosen Funktionen genutzt.\n\nMit einem aktiven Plan erhalten Sie weiterhin:\n✓ personalisierte KI-Assistent-Empfehlungen\n✓ medizinische Dokumentenanalyse\n✓ erweiterte Chat-Funktionen'
