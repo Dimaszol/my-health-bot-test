@@ -49,7 +49,14 @@ class SubscriptionWebhookHandler:
             if event_type == 'invoice.payment_succeeded':
                 # Извлекаем данные из invoice
                 invoice_data = event.get('data', {}).get('object', {})
-                subscription_id = invoice_data.get('subscription')
+                
+                # ✅ ПРАВИЛЬНО: Извлекаем subscription_id из parent.subscription_details
+                subscription_id = None
+                parent = invoice_data.get('parent', {})
+                if parent.get('type') == 'subscription_details':
+                    subscription_details = parent.get('subscription_details', {})
+                    subscription_id = subscription_details.get('subscription')
+                
                 amount = invoice_data.get('amount_paid', 0)
                 
                 if not subscription_id:

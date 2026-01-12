@@ -52,7 +52,14 @@ async def stripe_webhook(request: Request):
             from subscription_manager import SubscriptionManager
             
             invoice = event['data']['object']
-            subscription_id = invoice.get('subscription')
+            
+            # ✅ ПРАВИЛЬНО: Извлекаем subscription_id из parent.subscription_details
+            subscription_id = None
+            parent = invoice.get('parent', {})
+            if parent.get('type') == 'subscription_details':
+                subscription_details = parent.get('subscription_details', {})
+                subscription_id = subscription_details.get('subscription')
+            
             customer_id = invoice.get('customer')
             
             if subscription_id and customer_id:
