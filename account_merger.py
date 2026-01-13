@@ -144,16 +144,22 @@ class AccountMerger:
             old_web_id
         )
         
-        # 2. Отключаем FK проверки (работает внутри транзакции)
+        # 2. СРАЗУ получаем старые лимиты (ДО удаления!)
+        old_limits = await conn.fetchrow(
+            "SELECT * FROM user_limits WHERE user_id = $1",
+            old_web_id
+        )
+        
+        # 3. Отключаем FK проверки (работает внутри транзакции)
         await conn.execute("SET CONSTRAINTS ALL DEFERRED")
         
-        # 3. Удаляем старого веб-пользователя (освобождаем google_id и email)
+        # 4. Удаляем старого веб-пользователя (CASCADE удалит user_limits!)
         await conn.execute(
             "DELETE FROM users WHERE user_id = $1",
             old_web_id
         )
         
-        # 4. Создаём нового пользователя с telegram_id
+        # 5. Создаём нового пользователя с telegram_id
         await conn.execute("""
             INSERT INTO users (
                 user_id, name, google_id, email, registration_source,
@@ -194,9 +200,26 @@ class AccountMerger:
             web_user.get('created_at')
         )
         
-        # 5. Переносим данные из всех связанных таблиц
+        # 6. Создаём новые лимиты из сохранённых данных
+        if old_limits:
+            await conn.execute("""
+                INSERT INTO user_limits 
+                (user_id, google_id, email, documents_left, gpt4o_queries_left, 
+                subscription_type, subscription_expires_at, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+            """, 
+                new_telegram_id,
+                google_id,
+                email,
+                old_limits['documents_left'],
+                old_limits['gpt4o_queries_left'],
+                old_limits['subscription_type'],
+                old_limits['subscription_expires_at'],
+                old_limits['created_at']
+            )
+        
+        # 7. Переносим данные из остальных таблиц
         tables_to_update = [
-            'user_limits',
             'documents',
             'document_vectors',
             'chat_history',
