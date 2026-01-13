@@ -147,40 +147,13 @@ class AccountMerger:
         # 2. Отключаем FK проверки (работает внутри транзакции)
         await conn.execute("SET CONSTRAINTS ALL DEFERRED")
         
-        # 3. Переносим данные из всех связанных таблиц
-        tables_to_update = [
-            'user_limits',
-            'documents',
-            'document_vectors',
-            'chat_history',
-            'medications',
-            'notification_settings',
-            'notification_history',
-            'transactions',
-            'user_subscriptions',
-            'medical_timeline',
-            'analytics_events',
-            'garmin_connections',
-            'garmin_daily_data',
-            'garmin_analysis_history'
-        ]
-        
-        for table in tables_to_update:
-            try:
-                await conn.execute(
-                    f"UPDATE {table} SET user_id = $1 WHERE user_id = $2",
-                    new_telegram_id, old_web_id
-                )
-            except Exception as e:
-                logger.debug(f"   ⚠ {table}: {e}")
-        
-        # 4. Удаляем старого веб-пользователя
+        # 3. Удаляем старого веб-пользователя (освобождаем google_id и email)
         await conn.execute(
             "DELETE FROM users WHERE user_id = $1",
             old_web_id
         )
         
-        # 5. Создаём нового пользователя с telegram_id
+        # 4. Создаём нового пользователя с telegram_id
         await conn.execute("""
             INSERT INTO users (
                 user_id, name, google_id, email, registration_source,
@@ -221,7 +194,32 @@ class AccountMerger:
             web_user.get('created_at')
         )
         
-        # 6. FK проверки выполнятся при COMMIT транзакции
+        # 5. Переносим данные из всех связанных таблиц
+        tables_to_update = [
+            'user_limits',
+            'documents',
+            'document_vectors',
+            'chat_history',
+            'medications',
+            'notification_settings',
+            'notification_history',
+            'transactions',
+            'user_subscriptions',
+            'medical_timeline',
+            'analytics_events',
+            'garmin_connections',
+            'garmin_daily_data',
+            'garmin_analysis_history'
+        ]
+        
+        for table in tables_to_update:
+            try:
+                await conn.execute(
+                    f"UPDATE {table} SET user_id = $1 WHERE user_id = $2",
+                    new_telegram_id, old_web_id
+                )
+            except Exception as e:
+                logger.debug(f"   ⚠ {table}: {e}")
     
     @staticmethod
     async def _full_merge(conn, primary_id: int, secondary_id: int, 
