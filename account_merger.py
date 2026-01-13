@@ -42,84 +42,85 @@ class AccountMerger:
         conn = await get_db_connection()
         
         try:
-            # ====================================
-            # ПРОВЕРКА 1: Существует ли Telegram аккаунт?
-            # ====================================
-            telegram_user = await conn.fetchrow(
-                "SELECT * FROM users WHERE user_id = $1",
-                telegram_id
-            )
-            
-            # ====================================
-            # ПРОВЕРКА 2: Существует ли Web аккаунт?
-            # ====================================
-            web_user = await conn.fetchrow(
-                "SELECT * FROM users WHERE user_id = $1",
-                web_user_id
-            )
-            
-            # ====================================
-            # СЦЕНАРИЙ 1: Telegram аккаунта НЕТ (новый пользователь)
-            # ====================================
-            if not telegram_user:
-                # Обновляем web аккаунт: меняем user_id на telegram_id
-                await AccountMerger._convert_web_to_telegram(
-                    conn, web_user_id, telegram_id, google_id, email
+            async with conn.transaction():
+                # ====================================
+                # ПРОВЕРКА 1: Существует ли Telegram аккаунт?
+                # ====================================
+                telegram_user = await conn.fetchrow(
+                    "SELECT * FROM users WHERE user_id = $1",
+                    telegram_id
                 )
+                
+                # ====================================
+                # ПРОВЕРКА 2: Существует ли Web аккаунт?
+                # ====================================
+                web_user = await conn.fetchrow(
+                    "SELECT * FROM users WHERE user_id = $1",
+                    web_user_id
+                )
+                
+                # ====================================
+                # СЦЕНАРИЙ 1: Telegram аккаунта НЕТ (новый пользователь)
+                # ====================================
+                if not telegram_user:
+                    # Обновляем web аккаунт: меняем user_id на telegram_id
+                    await AccountMerger._convert_web_to_telegram(
+                        conn, web_user_id, telegram_id, google_id, email
+                    )
+                    
+                    return {
+                        'success': True,
+                        'action': 'linked',
+                        'primary_user_id': telegram_id,
+                        'message': 'Telegram успешно подключен к вашему аккаунту'
+                    }
+                
+                # ====================================
+                # СЦЕНАРИЙ 2: Оба аккаунта существуют → СЛИЯНИЕ
+                # ====================================
+                if telegram_user and web_user:
+                    
+                    # Выполняем полное слияние
+                    await AccountMerger._full_merge(
+                        conn, 
+                        telegram_id,  # PRIMARY
+                        web_user_id,  # SECONDARY (удалится)
+                        telegram_user,
+                        web_user,
+                        google_id,
+                        email
+                    )
+                    
+                    return {
+                        'success': True,
+                        'action': 'merged',
+                        'primary_user_id': telegram_id,
+                        'message': 'Аккаунты успешно объединены! Все данные сохранены'
+                    }
+                
+                # ====================================
+                # СЦЕНАРИЙ 3: Есть только Telegram аккаунт
+                # ====================================
+                            
+                await conn.execute("""
+                    UPDATE users 
+                    SET 
+                        google_id = $1,
+                        email = $2,
+                        registration_source = 'both',
+                        last_updated = NOW()
+                    WHERE user_id = $3
+                """, google_id, email, telegram_id)
                 
                 return {
                     'success': True,
                     'action': 'linked',
                     'primary_user_id': telegram_id,
-                    'message': 'Telegram успешно подключен к вашему аккаунту'
+                    'message': 'Веб-версия успешно подключена к вашему Telegram аккаунту'
                 }
-            
-            # ====================================
-            # СЦЕНАРИЙ 2: Оба аккаунта существуют → СЛИЯНИЕ
-            # ====================================
-            if telegram_user and web_user:
-                
-                # Выполняем полное слияние
-                await AccountMerger._full_merge(
-                    conn, 
-                    telegram_id,  # PRIMARY
-                    web_user_id,  # SECONDARY (удалится)
-                    telegram_user,
-                    web_user,
-                    google_id,
-                    email
-                )
-                
-                return {
-                    'success': True,
-                    'action': 'merged',
-                    'primary_user_id': telegram_id,
-                    'message': 'Аккаунты успешно объединены! Все данные сохранены'
-                }
-            
-            # ====================================
-            # СЦЕНАРИЙ 3: Есть только Telegram аккаунт
-            # ====================================
-                        
-            await conn.execute("""
-                UPDATE users 
-                SET 
-                    google_id = $1,
-                    email = $2,
-                    registration_source = 'both',
-                    last_updated = NOW()
-                WHERE user_id = $3
-            """, google_id, email, telegram_id)
-            
-            return {
-                'success': True,
-                'action': 'linked',
-                'primary_user_id': telegram_id,
-                'message': 'Веб-версия успешно подключена к вашему Telegram аккаунту'
-            }
             
         except Exception as e:
-            logger.error("Ошибка при слиянии аккаунтов")
+            logger.error(f"Ошибка при слиянии аккаунтов: {str(e)}", exc_info=True)
             return {
                 'success': False,
                 'action': 'error',
@@ -131,13 +132,22 @@ class AccountMerger:
     
     @staticmethod
     async def _convert_web_to_telegram(conn, old_web_id: int, new_telegram_id: int, 
-                                       google_id: str, email: str):
+                                    google_id: str, email: str):
         """
         Конвертирует веб аккаунт в телеграм аккаунт
-        Просто меняем user_id везде на telegram_id
+        Создаём нового пользователя с telegram_id и переносим все данные
         """
-               
-        # 1. Обновляем все связанные таблицы (меняем user_id)
+        
+        # 1. Получаем данные старого веб-пользователя
+        web_user = await conn.fetchrow(
+            "SELECT * FROM users WHERE user_id = $1",
+            old_web_id
+        )
+        
+        # 2. Отключаем FK проверки (работает внутри транзакции)
+        await conn.execute("SET CONSTRAINTS ALL DEFERRED")
+        
+        # 3. Переносим данные из всех связанных таблиц
         tables_to_update = [
             'user_limits',
             'documents',
@@ -147,6 +157,7 @@ class AccountMerger:
             'notification_settings',
             'notification_history',
             'transactions',
+            'user_subscriptions',
             'medical_timeline',
             'analytics_events',
             'garmin_connections',
@@ -160,19 +171,57 @@ class AccountMerger:
                     f"UPDATE {table} SET user_id = $1 WHERE user_id = $2",
                     new_telegram_id, old_web_id
                 )
-                
             except Exception as e:
-                # Таблица может не существовать - это нормально
                 logger.debug(f"   ⚠ {table}: {e}")
         
-        # 2. Обновляем основную таблицу users
+        # 4. Удаляем старого веб-пользователя
+        await conn.execute(
+            "DELETE FROM users WHERE user_id = $1",
+            old_web_id
+        )
+        
+        # 5. Создаём нового пользователя с telegram_id
         await conn.execute("""
-            UPDATE users 
-            SET 
-                user_id = $1,
-                registration_source = 'both'
-            WHERE user_id = $2
-        """, new_telegram_id, old_web_id)
+            INSERT INTO users (
+                user_id, name, google_id, email, registration_source,
+                birth_year, gender, height_cm, weight_kg, 
+                chronic_conditions, medications, allergies,
+                smoking, alcohol, physical_activity, family_history,
+                language, gdpr_consent, gdpr_consent_time,
+                total_messages_count, username, created_at, last_updated
+            ) VALUES (
+                $1, $2, $3, $4, 'both',
+                $5, $6, $7, $8,
+                $9, $10, $11,
+                $12, $13, $14, $15,
+                $16, $17, $18,
+                $19, $20, $21, NOW()
+            )
+        """, 
+            new_telegram_id, 
+            web_user.get('name'),
+            google_id,
+            email,
+            web_user.get('birth_year'),
+            web_user.get('gender'),
+            web_user.get('height_cm'),
+            web_user.get('weight_kg'),
+            web_user.get('chronic_conditions'),
+            web_user.get('medications'),
+            web_user.get('allergies'),
+            web_user.get('smoking'),
+            web_user.get('alcohol'),
+            web_user.get('physical_activity'),
+            web_user.get('family_history'),
+            web_user.get('language', 'en'),
+            web_user.get('gdpr_consent', False),
+            web_user.get('gdpr_consent_time'),
+            web_user.get('total_messages_count', 0),
+            web_user.get('username'),
+            web_user.get('created_at')
+        )
+        
+        # 6. FK проверки выполнятся при COMMIT транзакции
     
     @staticmethod
     async def _full_merge(conn, primary_id: int, secondary_id: int, 

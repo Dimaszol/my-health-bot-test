@@ -12,7 +12,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 from aiogram.client.default import DefaultBotProperties
 
 from db_postgresql import (
-    get_user, save_document, update_document_title, is_fully_registered, get_user_name,
+    get_user, save_document, get_db_connection, release_db_connection, update_document_title, is_fully_registered, get_user_name,
     get_document_by_id, delete_document, save_message, get_last_messages, get_conversation_summary,
     get_user_language, t, get_all_values_for_key, initialize_db_pool, close_db_pool, set_user_language, save_user
 )
@@ -508,6 +508,25 @@ async def handle_delete_profile_data(callback: types.CallbackQuery):
     """Первое предупреждение об удалении данных"""
     user_id = callback.from_user.id
     lang = await get_user_language(user_id)
+
+    # 🔥 ПРОВЕРЯЕМ: объединённый ли аккаунт
+    conn = await get_db_connection()
+    try:
+        user_data = await conn.fetchrow(
+            "SELECT registration_source FROM users WHERE user_id = $1",
+            user_id
+        )
+        
+        if user_data and user_data['registration_source'] == 'both':
+            await callback.message.edit_text(
+                t("delete_account_merged_error", lang),
+                parse_mode="HTML"
+            )
+            await callback.answer()
+            return
+            
+    finally:
+        await release_db_connection(conn)
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(

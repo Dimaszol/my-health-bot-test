@@ -894,10 +894,45 @@ async def set_user_language(user_id: int, language: str, telegram_user=None) -> 
         )
         
         # СОЗДАЕМ лимиты для нового пользователя
-        await conn.execute(
-            "INSERT INTO user_limits (user_id, email) VALUES ($1, NULL) ON CONFLICT (user_id) DO NOTHING",
+        # 🔥 ПРОВЕРЯЕМ: был ли пользователь удалён раньше
+        deleted_limits = await conn.fetchrow(
+            "SELECT * FROM deleted_users_limits WHERE user_id = $1", 
             user_id
         )
+
+        if deleted_limits:
+            # Восстанавливаем старые лимиты
+            await conn.execute("""
+                INSERT INTO user_limits 
+                (user_id, google_id, email, documents_left, gpt4o_queries_left, 
+                subscription_type, subscription_expires_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    documents_left = EXCLUDED.documents_left,
+                    gpt4o_queries_left = EXCLUDED.gpt4o_queries_left,
+                    subscription_type = EXCLUDED.subscription_type,
+                    subscription_expires_at = EXCLUDED.subscription_expires_at
+            """, 
+                user_id,
+                deleted_limits['google_id'],
+                deleted_limits['email'],
+                deleted_limits['documents_left'],
+                deleted_limits['gpt4o_queries_left'],
+                deleted_limits['subscription_type'],
+                deleted_limits['subscription_expires_at']
+            )
+            # 🔥 Удаляем запись из deleted_users_limits
+            await conn.execute(
+                "DELETE FROM deleted_users_limits WHERE user_id = $1",
+                user_id
+            )
+        else:
+            # Новый пользователь - даём бесплатные лимиты
+            await conn.execute("""
+                INSERT INTO user_limits (user_id, documents_left, gpt4o_queries_left, subscription_type, email)
+                VALUES ($1, 1, 5, 'free', NULL)
+                ON CONFLICT (user_id) DO NOTHING
+            """, user_id)
         
         # НОВОЕ: Создаем настройки уведомлений с часовым поясом по языку
         default_timezones = {
@@ -1002,7 +1037,50 @@ async def delete_user_completely(user_id: int) -> bool:
         except Exception as e:
             pass
         
-        # 4. Удаляем из базы данных (в правильном порядке)
+        # 4. 🔥 НОВОЕ: Сохраняем лимиты в deleted_users_limits
+        try:
+            # Получаем данные пользователя
+            user_data = await conn.fetchrow(
+                "SELECT google_id, email, registration_source FROM users WHERE user_id = $1", 
+                user_id
+            )
+            
+            # Получаем лимиты
+            limits = await conn.fetchrow(
+                "SELECT * FROM user_limits WHERE user_id = $1", 
+                user_id
+            )
+            
+            if limits:
+                await conn.execute("""
+                    INSERT INTO deleted_users_limits 
+                    (user_id, google_id, email, documents_left, gpt4o_queries_left, 
+                     subscription_type, subscription_expires_at, registration_source)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    ON CONFLICT (user_id) DO UPDATE SET
+                        google_id = COALESCE(EXCLUDED.google_id, deleted_users_limits.google_id),
+                        email = COALESCE(EXCLUDED.email, deleted_users_limits.email),
+                        documents_left = EXCLUDED.documents_left,
+                        gpt4o_queries_left = EXCLUDED.gpt4o_queries_left,
+                        subscription_type = EXCLUDED.subscription_type,
+                        subscription_expires_at = EXCLUDED.subscription_expires_at,
+                        registration_source = EXCLUDED.registration_source,
+                        deleted_at = CURRENT_TIMESTAMP
+                """, 
+                    user_id, 
+                    user_data['google_id'] if user_data else None,
+                    user_data['email'] if user_data else None,
+                    limits['documents_left'],
+                    limits['gpt4o_queries_left'],
+                    limits['subscription_type'],
+                    limits['subscription_expires_at'],
+                    user_data['registration_source'] if user_data else 'telegram'
+                )
+        except Exception as e:
+            logger.error(f"Ошибка сохранения лимитов в deleted_users_limits: {e}")
+        
+
+        # 5. Удаляем из базы данных (в правильном порядке)
         tables_to_clear = [
             "chat_history",
             "conversation_summary", 
@@ -1021,14 +1099,14 @@ async def delete_user_completely(user_id: int) -> bool:
             except Exception as e:
                 pass
         
-        # 5. Удаляем векторы
+        # 6. Удаляем векторы
         try:
             from vector_db_postgresql import delete_all_chunks_by_user
             await delete_all_chunks_by_user(user_id)
         except Exception as e:
             pass
         
-        # 6. Логируем удаление в аналитику (в самом конце)
+        # 7. Логируем удаление в аналитику (в самом конце)
         try:
             from analytics_system import Analytics
             await Analytics.track(user_id, "user_data_deleted_gdpr", {

@@ -80,42 +80,79 @@ async def find_or_create_web_user(google_id: str, email: str, name: str, session
             }
         
         # 2. Создаём нового пользователя
-               
+       
         # Генерируем ID
         temp_user_id = await conn.fetchval("SELECT generate_temp_web_user_id()")
-        
+
         # Создаём пользователя с языком из сессии
         await conn.execute("""
             INSERT INTO users (
                 user_id, name, google_id, email, 
                 registration_source, language, 
-                gdpr_consent, gdpr_consent_time,  -- ← ДОБАВИЛИ ЭТИ ПОЛЯ
+                gdpr_consent, gdpr_consent_time,
                 created_at
             )
             VALUES ($1, $2, $3, $4, 'web', $5, TRUE, NOW(), NOW())
             ON CONFLICT (user_id) DO NOTHING
         """, temp_user_id, name, google_id, email, session_language)
-        
-        # Проверяем по email напрямую
-        existing_limits = await conn.fetchrow("""
-            SELECT user_id, documents_left, gpt4o_queries_left, subscription_type, subscription_expires_at
-            FROM user_limits
-            WHERE email = $1
-        """, email)
 
-        if existing_limits:
-            # Переносим старые лимиты + обновляем email
+        # 🔥 ПРОВЕРЯЕМ: был ли пользователь удалён раньше
+        deleted_limits = await conn.fetchrow("""
+            SELECT * FROM deleted_users_limits 
+            WHERE google_id = $1 OR email = $2
+            ORDER BY deleted_at DESC
+            LIMIT 1
+        """, google_id, email)
+
+        if deleted_limits:
+            # Восстанавливаем старые лимиты с новым user_id
             await conn.execute("""
-                UPDATE user_limits 
-                SET user_id = $1, email = $2, updated_at = NOW()
-                WHERE email = $2
-            """, temp_user_id, email)
+                INSERT INTO user_limits 
+                (user_id, google_id, email, documents_left, gpt4o_queries_left, 
+                subscription_type, subscription_expires_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    google_id = EXCLUDED.google_id,
+                    email = EXCLUDED.email,
+                    documents_left = EXCLUDED.documents_left,
+                    gpt4o_queries_left = EXCLUDED.gpt4o_queries_left,
+                    subscription_type = EXCLUDED.subscription_type,
+                    subscription_expires_at = EXCLUDED.subscription_expires_at
+            """, 
+                temp_user_id,
+                google_id,
+                email,
+                deleted_limits['documents_left'],
+                deleted_limits['gpt4o_queries_left'],
+                deleted_limits['subscription_type'],
+                deleted_limits['subscription_expires_at']
+            )
+            # 🔥 Удаляем запись из deleted_users_limits
+            await conn.execute("""
+                DELETE FROM deleted_users_limits 
+                WHERE google_id = $1 OR email = $2
+            """, google_id, email)
         else:
-            # Создаём новые лимиты с email
-            await conn.execute("""
-                INSERT INTO user_limits (user_id, email, documents_left, gpt4o_queries_left, subscription_type)
-                VALUES ($1, $2, 1, 5, 'free')
-            """, temp_user_id, email)
+            # Проверяем есть ли старые лимиты по email (из старой логики)
+            existing_limits = await conn.fetchrow("""
+                SELECT user_id, documents_left, gpt4o_queries_left, subscription_type, subscription_expires_at
+                FROM user_limits
+                WHERE email = $1
+            """, email)
+
+            if existing_limits:
+                # Переносим старые лимиты + обновляем google_id
+                await conn.execute("""
+                    UPDATE user_limits 
+                    SET user_id = $1, google_id = $2, email = $3, updated_at = NOW()
+                    WHERE email = $3
+                """, temp_user_id, google_id, email)
+            else:
+                # Создаём новые лимиты
+                await conn.execute("""
+                    INSERT INTO user_limits (user_id, google_id, email, documents_left, gpt4o_queries_left, subscription_type)
+                    VALUES ($1, $2, $3, 1, 5, 'free')
+                """, temp_user_id, google_id, email)
         
         return {
             'user_id': temp_user_id,
