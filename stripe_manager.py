@@ -109,7 +109,7 @@ class StripeManager:
         """
         try:
             # Цена в центах
-            amount_cents = 50  # $2.49
+            amount_cents = 249  # $2.49
             
             # Определяем URL в зависимости от языка
             success_url = f"{StripeConfig.WEB_SUCCESS_URL.split('?')[0]}/documents?doc_id={document_id}"
