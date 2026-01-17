@@ -29,6 +29,20 @@
 /* ========================================
    👁️ МИНИМАЛИСТИЧНАЯ КНОПКА "ПОКАЗАТЬ"
    ======================================== */
+.btn.btn-subscribe {
+    background: #e2e8f0 !important;
+    color: #475569 !important;
+}
+
+.btn.btn-subscribe:hover {
+    background: #cbd5e1 !important;
+    transform: none !important;
+}
+
+.btn.btn-subscribe:active {
+    transform: none !important;
+    box-shadow: none !important;
+}
 
 .btn-show-minimal {
     display: flex;
@@ -475,4 +489,31 @@ input:checked + .toggle-slider-compact:before {
     .btn-icon {
         font-size: 1rem;
     }
+}
+
+/* Убираем все эффекты для серой кнопки подписки */
+a.btn[href="/dashboard/subscription"] {
+    transition: none !important;
+    transform: none !important;
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+a.btn[href="/dashboard/subscription"]:hover {
+    background: #cbd5e1 !important;
+    transform: none !important;
+    outline: none !important;
+}
+
+a.btn[href="/dashboard/subscription"]:active {
+    transform: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    padding: 0.75rem 1.5rem !important;
+    background: #cbd5e1 !important;
+}
+
+a.btn[href="/dashboard/subscription"]:focus {
+    outline: none !important;
+    transform: none !important;
 }

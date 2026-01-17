@@ -7,7 +7,7 @@ import sys
 import tempfile
 import uuid
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Request, Depends, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
@@ -936,7 +936,8 @@ async def upload_document(
             medical_timeline_success = await update_medical_timeline_on_document_upload(
                 user_id=user_id,
                 document_id=document_id,
-                document_text=raw_text,  # Используем исходный текст
+                document_text=raw_text,
+                document_date=document_date,
                 use_gemini=False  # По умолчанию GPT
             )
                             
@@ -2031,13 +2032,225 @@ async def update_document(
         
         return {"success": True, "message": t("document_updated", lang)}
         
-    except Exception as e:
-        from error_handler import safe_log_error
+    except Exception as e:        
         safe_log_error("Ошибка обновления документа", error=e, user_id=user_id, document_id=document_id)
         return JSONResponse(
             status_code=500,
             content={"success": False, "message": t("error_save_failed", lang)}
         )
+        
+    finally:
+        await release_db_connection(conn)
+
+async def cleanup_old_pending_documents(user_id: int):
+    """Удаляет pending документы старше 24ч"""
+    from db_postgresql import get_db_connection, release_db_connection
+    from file_storage import get_file_storage
+    
+    conn = await get_db_connection()
+    try:
+        cutoff_time = datetime.now() - timedelta(hours=24)
+        
+        # Находим старые pending документы
+        old_docs = await conn.fetch("""
+            SELECT id, file_path 
+            FROM documents 
+            WHERE user_id = $1 
+            AND confirmed = false 
+            AND full_analysis IS NULL 
+            AND uploaded_at < $2
+        """, user_id, cutoff_time)
+        
+        storage = get_file_storage()
+        
+        for doc in old_docs:
+            # Удаляем файл
+            if doc['file_path']:
+                try:
+                    if doc['file_path'].startswith("users/"):
+                        from supabase_storage import get_storage_manager
+                        supabase_storage = get_storage_manager()
+                        await supabase_storage.delete_file(doc['file_path'])
+                    else:
+                        import os
+                        if os.path.exists(doc['file_path']):
+                            os.remove(doc['file_path'])
+                except:
+                    pass
+            
+            # Удаляем запись
+            await conn.execute("DELETE FROM documents WHERE id = $1", doc['id'])
+        
+    finally:
+        await release_db_connection(conn)
+
+@router.post("/create-one-time-document-checkout")
+async def create_one_time_document_checkout(
+    request: Request,
+    file: UploadFile = File(...),
+    additional_context: str = Form(""),
+    user_id: int = Depends(get_current_user)
+):
+    """
+    Создаёт pending документ и Stripe checkout для разовой оплаты
+    """
+    from db_postgresql import get_user_language, get_db_connection, release_db_connection
+    from file_storage import get_file_storage
+    from stripe_manager import StripeManager
+    
+    lang = await get_user_language(user_id)
+    
+    # 0. Cleanup старых pending
+    await cleanup_old_pending_documents(user_id)
+    
+    try:
+        # 1. Валидация файла
+        if not file.filename:
+            return JSONResponse(
+                status_code=400,
+                content={'success': False, 'error': t('file_not_selected', lang)}
+            )
+        
+        filename = file.filename
+        file_ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+        
+        allowed_exts = ['pdf', 'jpg', 'jpeg', 'png', 'heic']
+        if file_ext not in allowed_exts:
+            return JSONResponse(
+                status_code=400,
+                content={'success': False, 'error': t('invalid_file_format', lang)}
+            )
+        
+        # 2. Сохраняем файл во временную директорию
+        temp_dir = tempfile.gettempdir()
+        temp_file_path = os.path.join(temp_dir, f"temp_{user_id}_{int(datetime.now().timestamp())}_{filename}")
+        
+        content = await file.read()
+        with open(temp_file_path, 'wb') as f:
+            f.write(content)
+        
+        # 3. Сохраняем в Storage
+        storage = get_file_storage()
+        success, permanent_path = storage.save_file(
+            user_id=user_id,
+            filename=filename,
+            source_path=temp_file_path
+        )
+        
+        # Удаляем временный файл
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        
+        if not success:
+            return JSONResponse(
+                status_code=500,
+                content={'success': False, 'error': t('file_storage_error', lang)}
+            )
+        
+        # 4. Создаём pending документ в БД
+        file_type = "pdf" if file_ext == "pdf" else "image"
+        
+        conn = await get_db_connection()
+        try:
+            document_id = await conn.fetchval("""
+                INSERT INTO documents 
+                (user_id, file_path, file_type, additional_context, confirmed)
+                VALUES ($1, $2, $3, $4, false)
+                RETURNING id
+            """, user_id, permanent_path, file_type, additional_context)
+        finally:
+            await release_db_connection(conn)
+        
+        # 5. Создаём Stripe checkout session
+        result = await StripeManager.create_one_time_document_checkout(
+            user_id=user_id,
+            document_id=document_id,
+            lang=lang
+        )
+        
+        success, url_or_error = result
+        
+        if not success:
+            # Откатываем - удаляем документ и файл
+            conn = await get_db_connection()
+            try:
+                await conn.execute("DELETE FROM documents WHERE id = $1", document_id)
+            finally:
+                await release_db_connection(conn)
+            
+            storage.delete_file(permanent_path)
+            
+            return JSONResponse(
+                status_code=500,
+                content={'success': False, 'error': url_or_error}
+            )
+                
+        return {
+            'success': True,
+            'checkout_url': url_or_error,
+            'document_id': document_id
+        }
+        
+    except Exception as e:        
+        safe_log_error("Ошибка создания one-time checkout", error=e, user_id=user_id)
+        
+        return JSONResponse(
+            status_code=500,
+            content={'success': False, 'error': t('stripe_session_creation_error', lang)}
+        )
+    
+@router.get("/check-document-status/{document_id}")
+async def check_document_status(
+    document_id: int,
+    request: Request,
+    user_id: int = Depends(get_current_user)
+):
+    """
+    Проверяет статус обработки документа
+    Возвращает: processing | completed | failed
+    """
+    from db_postgresql import get_db_connection, release_db_connection
+    
+    conn = await get_db_connection()
+    try:
+        doc = await conn.fetchrow("""
+            SELECT id, confirmed, full_analysis, title
+            FROM documents
+            WHERE id = $1 AND user_id = $2
+        """, document_id, user_id)
+        
+        if not doc:
+            return JSONResponse(
+                status_code=404,
+                content={'success': False, 'status': 'not_found'}
+            )
+        
+        # Определяем статус
+        if doc['full_analysis']:
+            status = 'completed'
+        elif doc['confirmed'] is False and doc['title'] and '⚠️' in doc['title']:
+            # Если confirmed=false и в title есть сообщение об ошибке
+            status = 'failed'
+            error_message = doc['title']
+        elif doc['full_analysis'] is None:
+            status = 'processing'
+        else:
+            status = 'failed'
+
+        return {
+            'success': True,
+            'status': status,
+            'document_id': document_id,
+            'title': doc['title'],
+            'error_message': error_message if status == 'failed' else None
+        }
+        
+        return {
+            'success': True,
+            'status': status,
+            'document_id': document_id,
+            'title': doc['title']
+        }
         
     finally:
         await release_db_connection(conn)

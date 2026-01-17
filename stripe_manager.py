@@ -103,6 +103,71 @@ class StripeManager:
             return False, error_msg
     
     @staticmethod
+    async def create_one_time_document_checkout(user_id: int, document_id: int, lang: str = "ru"):
+        """
+        Создаёт Stripe checkout для разовой оплаты анализа документа ($2.49)
+        """
+        try:
+            # Цена в центах
+            amount_cents = 50  # $2.49
+            
+            # Определяем URL в зависимости от языка
+            success_url = f"{StripeConfig.WEB_SUCCESS_URL.split('?')[0]}/documents?doc_id={document_id}"
+            cancel_url = f"{StripeConfig.WEB_CANCEL_URL.split('?')[0]}/documents"
+            
+            # Локализованные названия
+            product_names = {
+                'ru': 'Разовый AI-разбор документа',
+                'en': 'One-Time Document AI Analysis',
+                'uk': 'Разовий AI-розбір документа',
+                'de': 'Einmalige KI-Dokumentenanalyse'
+            }
+            
+            product_descriptions = {
+                'ru': 'Полный медицинский AI-анализ вашего документа',
+                'en': 'Complete medical AI analysis of your document',
+                'uk': 'Повний медичний AI-аналіз вашого документа',
+                'de': 'Vollständige medizinische KI-Analyse Ihres Dokuments'
+            }
+            
+            product_name = product_names.get(lang, product_names['en'])
+            product_description = product_descriptions.get(lang, product_descriptions['en'])
+            
+            # Создаём Stripe session
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'unit_amount': amount_cents,
+                        'product_data': {
+                            'name': product_name,
+                            'description': product_description,
+                        },
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',  # Разовый платёж
+                success_url=success_url,
+                cancel_url=cancel_url,
+                metadata={
+                    'type': 'one_time_document',  # ВАЖНО!
+                    'user_id': str(user_id),
+                    'document_id': str(document_id),
+                    'lang': lang
+                }
+            )
+            
+            logger.info(f"✅ One-time document checkout создан: session={session.id}, user={user_id}, doc={document_id}")
+            
+            return True, session.url
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка создания one-time checkout: {e}")
+            error_msg = t("stripe_session_creation_error", lang)
+            return False, error_msg
+
+    @staticmethod
     async def _save_payment_session(user_id: int, session_id: str, package_id: str, amount_cents: int):
         """Сохраняет информацию о сессии оплаты в БД"""
         try:

@@ -6,6 +6,7 @@ from datetime import datetime
 from aiohttp import web
 from subscription_manager import SubscriptionManager
 from db_postgresql import get_user_language, t, get_db_connection, release_db_connection
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +85,22 @@ class SubscriptionWebhookHandler:
                     )
                 
                 try:
+                    # ✅ ИСПРАВЛЕНО: Используем session из webhook payload, НЕ делаем retrieve
+                    payment_type = session_data.get('metadata', {}).get('type')
+                    
+                    # ✅ ОБРАБОТКА ONE-TIME DOCUMENT
+                    if payment_type == 'one_time_document':
+                        result = await self._handle_one_time_document_payment(session_data)
+                        # Сразу возвращаем результат, не идём дальше
+                        return web.json_response({
+                            "status": "success",
+                            "message": "Webhook processed successfully",
+                            "event_type": event_type,
+                            "result": result,
+                            "processed_at": datetime.now().isoformat()
+                        })
+                    
+                    # Стандартная обработка подписок и пакетов
                     from stripe_manager import StripeManager
                     success, message = await StripeManager.handle_successful_payment(session_id)
                     
@@ -93,16 +110,7 @@ class SubscriptionWebhookHandler:
                             "message": f"Payment processed: {message}",
                             "session_id": session_id
                         }
-                        
-                        # Отправляем уведомление пользователю
-                        try:
-                            session = stripe.checkout.Session.retrieve(session_id)
-                            user_id = int(session.metadata.get('user_id'))
-                            lang = await get_user_language(user_id)
-                            localized_message = t("webhook_payment_processed_auto", lang, message=message)
-                            await self.bot.send_message(user_id, localized_message, parse_mode="HTML")
-                        except Exception:
-                            pass  # Игнорируем ошибки уведомления
+                        # ✅ УБРАЛИ отправку Telegram-сообщений
                     else:
                         result = {
                             "status": "error",
@@ -266,6 +274,257 @@ class SubscriptionWebhookHandler:
             await self.bot.send_message(user_id, message)
         except Exception:
             pass  # ⚠️ Не логируем детали ошибки уведомления
+
+    async def _handle_one_time_document_payment(self, session_data):
+        """
+        Обрабатывает оплату разового анализа документа
+        ✅ БЕЗ тяжёлой логики - только идемпотентная запись
+        ✅ Использует session из webhook payload
+        ✅ НЕ отправляет Telegram-сообщения
+        """
+        try:
+            from db_postgresql import execute_query, fetch_one
+            
+            # Извлекаем данные из session payload
+            session_id = session_data.get('id')
+            metadata = session_data.get('metadata', {})
+            user_id = int(metadata.get('user_id'))
+            document_id = int(metadata.get('document_id'))
+            
+            logger.info(f"💳 One-time document payment: user={user_id}, doc={document_id}")
+            
+            # 1. Проверка идемпотентности
+            existing = await fetch_one("""
+                SELECT id FROM transactions 
+                WHERE stripe_session_id = $1 AND status = 'completed'
+            """, (session_id,))
+            
+            if existing:
+                logger.info(f"⚠️ Payment already processed: {session_id}")
+                return {
+                    "status": "success",
+                    "message": "Payment already processed",
+                    "document_id": document_id
+                }
+            
+            # 2. Сохраняем транзакцию
+            await execute_query("""
+                INSERT INTO transactions 
+                (user_id, stripe_session_id, amount_usd, package_type, 
+                 payment_method, status, documents_granted, completed_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+            """, (
+                user_id,
+                session_id,
+                2.49,
+                'one_time_document',
+                'stripe',
+                'completed',
+                1
+            ))
+            
+            # 3. Добавляем 1 document credit
+            conn = await get_db_connection()
+            try:
+                await conn.execute("""
+                    UPDATE user_limits 
+                    SET documents_left = documents_left + 1,
+                        updated_at = NOW()
+                    WHERE user_id = $1
+                """, user_id)
+            finally:
+                await release_db_connection(conn)
+            
+            logger.info(f"✅ Added +1 document credit to user {user_id}")
+            
+            # 4. Запускаем обработку в фоне
+            asyncio.create_task(self._process_document_background(document_id, user_id))
+            logger.info(f"📋 Started background processing for document {document_id}")
+            
+            return {
+                "status": "success",
+                "message": "One-time document payment processed",
+                "document_id": document_id,
+                "user_id": user_id
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Error processing one-time document payment: {e}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+        
+    async def _process_document_background(self, document_id: int, user_id: int):
+        """
+        Фоновая обработка документа после one-time оплаты
+        ✅ Не блокирует webhook
+        ✅ Использует существующий process_document
+        ✅ Автоматически списывает лимиты
+        """
+        try:
+            from document_processor import process_document
+            from subscription_manager import spend_document_limit
+            
+            logger.info(f"🔄 Starting background processing for document {document_id}")
+            
+            # Получаем данные документа
+            conn = await get_db_connection()
+            try:
+                doc = await conn.fetchrow("""
+                    SELECT file_path, additional_context, file_type 
+                    FROM documents 
+                    WHERE id = $1 AND user_id = $2
+                """, document_id, user_id)
+                
+                if not doc:
+                    logger.error(f"❌ Document {document_id} not found for processing")
+                    return
+                
+                file_path = doc['file_path']
+                additional_context = doc['additional_context'] or ''
+                
+                # Получаем язык пользователя
+                from db_postgresql import get_user_language
+                lang = await get_user_language(user_id)
+                
+            finally:
+                await release_db_connection(conn)
+            
+            # Если файл в Supabase - скачиваем локально
+            import tempfile
+            import os
+
+            if file_path.startswith("users/"):
+                # Скачиваем из Supabase Storage
+                from supabase_storage import get_storage_manager
+                storage = get_storage_manager()
+                
+                # Создаём временный файл
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file_path)[1])
+                local_file_path = temp_file.name
+                temp_file.close()
+                
+                # Скачиваем
+                success = await storage.download_file(
+                    storage_path=file_path,
+                    local_path=local_file_path
+                )
+                
+                if not success:
+                    logger.error(f"❌ Failed to download file from Supabase: {file_path}")
+                    return
+            else:
+                # Локальный файл - используем как есть
+                local_file_path = file_path
+
+            try:
+                # Обрабатываем документ (существующая функция)
+                result = await process_document(
+                    file_path=local_file_path,
+                    user_id=user_id,
+                    lang=lang,
+                    additional_context=additional_context
+                )
+                                
+            finally:
+                # Удаляем временный файл если был скачан из Supabase
+                if file_path.startswith("users/") and os.path.exists(local_file_path):
+                    try:
+                        os.remove(local_file_path)
+                    except:
+                        pass
+            
+            if not result.get('success'):
+                error_message = result.get('message', 'Processing failed')
+                logger.error(f"❌ Document {document_id} processing failed: {error_message}")
+                
+                # Сохраняем ошибку в БД чтобы polling увидел
+                conn = await get_db_connection()
+                try:
+                    await conn.execute("""
+                        UPDATE documents 
+                        SET title = $1,
+                            confirmed = false
+                        WHERE id = $2
+                    """, error_message[:200], document_id)  # Ограничиваем длину сообщения
+                finally:
+                    await release_db_connection(conn)
+                
+                return
+            
+            # Сохраняем результаты в БД
+            conn = await get_db_connection()
+            try:                                
+                # Добавляем в векторную базу
+                try:
+                    from vector_db_postgresql import split_into_chunks, add_chunks_to_vector_db
+                    summary = result.get('summary', '')
+                    if summary:
+                        chunks = await split_into_chunks(summary, document_id, user_id)
+                        await add_chunks_to_vector_db(document_id, user_id, chunks)
+                except Exception as e:
+                    logger.warning(f"⚠️ Vector DB error (non-critical): {e}")
+                
+                # ✅ НОВОЕ: Извлекаем медицинские события в timeline
+                try:
+                    from medical_timeline import update_medical_timeline_on_document_upload
+                    await update_medical_timeline_on_document_upload(
+                        user_id=user_id,
+                        document_id=document_id,
+                        document_text=result.get('raw_text', ''),
+                        use_gemini=False
+                    )
+                    logger.info(f"✅ Medical timeline updated for document {document_id}")
+                except Exception as e:
+                    logger.warning(f"⚠️ Medical timeline error (non-critical): {e}")
+
+                # Списываем лимит документов
+                await spend_document_limit(user_id)
+                
+                # Обновляем документ
+                from datetime import datetime as dt
+                document_date_str = result.get('document_date')
+                document_date_obj = None
+                if document_date_str:
+                    try:
+                        document_date_obj = dt.strptime(document_date_str, '%Y-%m-%d').date()
+                    except:
+                        pass
+
+                await conn.execute("""
+                    UPDATE documents 
+                    SET full_analysis = $1,
+                        title = $2,
+                        confirmed = true,
+                        raw_text = $3,
+                        summary = $4,
+                        document_type = $5,
+                        subtype = $6,
+                        first_analysis = $7,
+                        document_date = $8
+                    WHERE id = $9
+                """, 
+                    result.get('full_analysis'),
+                    result.get('title', 'Document'),
+                    result.get('raw_text', ''),
+                    result.get('summary', ''),
+                    result.get('document_type'),
+                    result.get('subtype'),
+                    result.get('first_analysis'),
+                    document_date_obj,  # <-- ТЕПЕРЬ date объект
+                    document_id
+                )
+
+                logger.info(f"✅ Document {document_id} processed and saved successfully")
+                
+            finally:
+                await release_db_connection(conn)
+            
+        except Exception as e:
+            logger.error(f"❌ Critical error in background processing for document {document_id}: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
 
 # Функция для создания веб-приложения
 def create_webhook_app(bot):

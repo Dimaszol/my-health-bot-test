@@ -55,6 +55,13 @@
         font-weight: 600 !important;
     }
 
+    /* Мобильная версия - кнопки друг под другом */
+    @media (max-width: 768px) {
+        .one-time-buttons {
+            flex-direction: column !important;
+        }
+    }
+
     /* ========== КАРТОЧКА ПРОГРЕССА ========== */
     #progress-card {
         padding: 1.25rem !important;

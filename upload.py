@@ -212,7 +212,8 @@ async def handle_document_upload(message: types.Message, bot):
             medical_timeline_success = await update_medical_timeline_on_document_upload(
                 user_id=user_id,
                 document_id=document_id,
-                document_text=raw_text,  # Используем исходный текст
+                document_text=raw_text,
+                document_date=document_date,
                 use_gemini=False  # По умолчанию GPT, можно переключить для тестирования
             )
 

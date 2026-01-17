@@ -656,12 +656,6 @@ TRANSLATIONS = {
         'uk': 'Поточний тариф',
         'de': 'Aktueller Tarif'
     },
-    'btn_upload_document': {
-        'ru': 'Загрузить документ',
-        'en': 'Upload Document',
-        'uk': 'Завантажити документ',
-        'de': 'Dokument hochladen'
-    },
     'btn_open_chat': {
         'ru': 'Открыть чат',
         'en': 'Open Chat',
@@ -963,6 +957,18 @@ TRANSLATIONS = {
         'uk': 'Завантажені документи',
         'de': 'Hochgeladene Dokumente'
     },
+    'btn_analyze_document': {
+        'ru': 'Разобрать документ',
+        'en': 'Analyze document',
+        'uk': 'Розібрати документ',
+        'de': 'Dokument analysieren'
+    },
+    'stripe_payment_note': {
+        'ru': 'Оплата через Stripe · можно отменить на следующем шаге',
+        'en': 'Payment via Stripe · can cancel on next step',
+        'uk': 'Оплата через Stripe · можна скасувати на наступному кроці',
+        'de': 'Zahlung über Stripe · auf nächstem Schritt kündbar'
+    },
     'document_uploaded': {
         'ru': 'Загружен',
         'en': 'Uploaded',
@@ -1034,6 +1040,37 @@ TRANSLATIONS = {
         'en': 'Recommendation: birth year and gender affect the interpretation of medical data. This information can be specified in your profile — it, like context, affects the accuracy of analysis.',
         'uk': 'Рекомендація: рік народження та стать впливають на інтерпретацію медичних даних. Ці дані можна вказати в профілі — вони, як і контекст, впливають на точність аналізу.',
         'de': 'Empfehlung: Geburtsjahr und Geschlecht beeinflussen die Interpretation medizinischer Daten. Diese Informationen können in Ihrem Profil angegeben werden — sie beeinflussen, wie der Kontext, die Genauigkeit der Analyse.'
+    },
+
+    'document_limit_reached_title': {
+        'ru': 'Лимит документов в текущем плане достигнут',
+        'en': 'Document limit in current plan reached',
+        'uk': 'Ліміт документів у поточному плані досягнуто',
+        'de': 'Dokumentenlimit im aktuellen Plan erreicht'
+    },    
+    'one_time_document_button': {
+        'ru': 'Разобрать документ — $2.49',
+        'en': 'Analyze document — $2.49',
+        'uk': 'Розібрати документ — $2.49',
+        'de': 'Dokument analysieren — $2.49'
+    },
+    'one_time_payment_note': {
+        'ru': 'Разовый платёж · без подписки',
+        'en': 'One-time payment · no subscription',
+        'uk': 'Разовий платіж · без підписки',
+        'de': 'Einmalige Zahlung · kein Abonnement'
+    },
+    'subscribe_button': {
+        'ru': 'Оформить подписку',
+        'en': 'Subscribe',
+        'uk': 'Оформити підписку',
+        'de': 'Abonnieren'
+    },
+    'subscribe_lite_price': {
+        'ru': 'Lite — $3.99/мес',
+        'en': 'Lite — $3.99/mo',
+        'uk': 'Lite — $3.99/міс',
+        'de': 'Lite — $3.99/Monat'
     },
 
     # ============================================

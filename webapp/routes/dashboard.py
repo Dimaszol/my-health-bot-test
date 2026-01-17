@@ -143,8 +143,8 @@ async def get_user_stats(user_id: int) -> dict:
         return {
             'total_documents': total_docs or 0,
             'total_messages': total_messages or 0,
-            'documents_left': limits['documents_left'] if limits else 2,
-            'queries_left': limits['gpt4o_queries_left'] if limits else 10,
+            'documents_left': limits['documents_left'] if limits else 0,
+            'queries_left': limits['gpt4o_queries_left'] if limits else 0,
             'subscription_type': subscription_type  # ✅ ДОБАВИЛИ
         }
         
@@ -302,6 +302,7 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
                 document_date
             FROM documents
             WHERE user_id = $1
+            AND full_analysis IS NOT NULL
             ORDER BY uploaded_at DESC
         """, user_id)
         

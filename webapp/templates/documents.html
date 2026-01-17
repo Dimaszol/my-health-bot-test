@@ -4,8 +4,8 @@
 
 {% block extra_styles %}
 <!-- 📄 СТИЛИ СТРАНИЦЫ ДОКУМЕНТОВ -->
-<link rel="stylesheet" href="/static/css/documents.css?v=1">
-<link rel="stylesheet" href="/static/css/documents-mobile.css?v=13">
+<link rel="stylesheet" href="/static/css/documents.css?v=4">
+<link rel="stylesheet" href="/static/css/documents-mobile.css?v=14">
 <style>
 footer {
     display: none !important;
@@ -78,20 +78,85 @@ footer {
 </div>
         </div>
         
-        <button type="submit" class="btn">
-            {{ t('btn_upload_document', lang) }} 📤
-        </button>
+        <div style="display: flex; margin-top: 1.5rem;">
+            <button type="submit" class="btn" style="min-width: 300px; width: auto; padding: 1rem 2.5rem;">
+                {{ t('btn_analyze_document', lang) }}
+            </button>
+        </div>
     </form>
 </div>
 {% else %}
-<div class="card" style="margin-bottom: 2rem; border: 2px solid #f59e0b; background: #fffbeb;">
-    <h3 style="color: #f59e0b;">⚠️ {{ t('no_document_limits_title', lang) }}</h3>
-    <p style="margin: 1rem 0; color: #92400e;">
-        {{ t('no_document_limits_message', lang) }}
+<!-- 💳 ФОРМА С ONE-TIME PAYMENT -->
+<div class="card" style="margin-bottom: 1rem;" id="upload-card">
+    <form id="upload-form-onetime">
+        <div class="form-group">
+            <label>{{ t('select_file', lang) }}</label>
+            <input 
+                type="file" 
+                id="doc-file-onetime" 
+                accept=".pdf,.docx,.txt,.jpg,.jpeg,.png"
+                required
+                style="width: 100%; padding: 1rem; border: 2px dashed #667eea; border-radius: 8px; background: #f8f9fa; cursor: pointer;"
+            />
+            <p style="color: #999; font-size: 0.9rem; margin-top: 0.5rem;">
+                {{ t('supported_formats', lang) }}
+            </p>
+        </div>
+        
+        <div class="form-group" style="margin-top: 1.5rem;">
+            <label style="font-weight: 600; color: #333; margin-bottom: 0.5rem; display: block;">
+                {{ t('additional_context_label', lang) }}
+            </label>            
+            <textarea 
+                id="doc-context-onetime" 
+                maxlength="400"
+                rows="2"
+                placeholder="{{ t('additional_context_placeholder', lang) }}"
+                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; font-family: inherit; resize: none; overflow: hidden;"
+            ></textarea>
+            <div style="margin-top: 0.5rem;">
+                <p style="color: #666; font-size: 0.9rem; font-weight: 600; margin: 0 0 0.5rem 0;">
+                    {{ t('additional_context_hint_title', lang) }}
+                </p>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                    <p style="color: #999; font-size: 0.85rem; margin: 0; flex: 1;">
+                        {{ t('additional_context_hint_description', lang) }}
+                    </p>
+                    <span id="char-counter-onetime" style="color: #999; font-size: 0.85rem; white-space: nowrap;">0/400</span>
+                </div>
+            </div>
+        </div>
+        <!-- ⚠️ Информация о лимитах (перед кнопкой) -->
+        <div style="margin: 1.5rem 0 1rem 0; padding: 0.75rem; background: #f8f9fa; border-radius: 6px;">
+            <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.9rem; font-weight: 600;">
+                {{ t('document_limit_reached_title', lang) }}
+            </p>            
+        </div>        
+    <!-- Две кнопки -->
+    <div class="one-time-buttons" style="display: flex; gap: 1rem; margin-top: 1.5rem; align-items: center;">
+        <button type="submit" class="btn" style="min-width: 300px; width: auto; padding: 1rem 2.5rem;">
+            <span style="font-size: 1rem; font-weight: 600;">
+                {{ t('one_time_document_button', lang) }}
+            </span>
+            <span style="display: block; font-size: 0.75rem; opacity: 0.9; margin-top: 0.25rem;">
+                {{ t('one_time_payment_note', lang) }}
+            </span>
+        </button>
+        
+        <a href="/dashboard/subscription" style="text-decoration: none; color: #6b7280;">
+            <span style="font-size: 1rem; font-weight: 600; display: block;">
+                {{ t('subscribe_button', lang) }}
+            </span>
+            <span style="display: block; font-size: 0.75rem; opacity: 0.8; margin-top: 0.25rem;">
+                {{ t('subscribe_lite_price', lang) }}
+            </span>
+        </a>        
+    </div>
+    <!-- Микротекст про Stripe -->
+    <p style="margin-top: 0.75rem; margin-bottom: 0; color: #999; font-size: 0.7rem;">
+        {{ t('stripe_payment_note', lang) }}
     </p>
-    <a href="/dashboard/subscription" class="btn" style="background: #f59e0b; display: inline-block; margin-top: 1rem;">
-        ✨ {{ t('btn_upgrade_plan', lang) }}
-    </a>
+    </form>
 </div>
 {% endif %}
 
@@ -820,6 +885,94 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.log('ℹ️ Форма загрузки не найдена (лимит исчерпан)');
     }
+
+    // ========================================
+    // 💳 ФОРМА ONE-TIME PAYMENT
+    // ========================================
+    
+    const uploadFormOnetime = document.getElementById('upload-form-onetime');
+    
+    if (uploadFormOnetime) {
+        // Счетчик символов
+        const contextInputOnetime = document.getElementById('doc-context-onetime');
+        const charCounterOnetime = document.getElementById('char-counter-onetime');
+
+        if (contextInputOnetime && charCounterOnetime) {
+            const autoResize = () => {
+                contextInputOnetime.style.height = 'auto';
+                contextInputOnetime.style.height = contextInputOnetime.scrollHeight + 'px';
+            };
+            
+            contextInputOnetime.addEventListener('input', () => {
+                const length = contextInputOnetime.value.length;
+                charCounterOnetime.textContent = `${length}/400`;
+                
+                if (length > 350) {
+                    charCounterOnetime.style.color = '#ef4444';
+                } else if (length > 300) {
+                    charCounterOnetime.style.color = '#f59e0b';
+                } else {
+                    charCounterOnetime.style.color = '#999';
+                }
+                
+                autoResize();
+            });
+        }
+        
+        uploadFormOnetime.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('doc-file-onetime');
+            
+            if (!fileInput.files[0]) {
+                alert('{{ t("please_select_file", lang) }}');
+                return;
+            }
+            
+            // ✅ НОВОЕ: Показываем индикатор загрузки
+            const submitBtn = uploadFormOnetime.querySelector('button[type="submit"]');
+            const originalHTML = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span style="font-size: 1.1rem; font-weight: 600;">⏳ Загрузка...</span>';
+            
+            // Создаём FormData
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('additional_context', contextInputOnetime.value || '');
+            
+            try {
+                // Отправляем на создание checkout
+                const response = await fetch('/api/create-one-time-document-checkout', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.checkout_url) {
+                    // Меняем текст на "Перенаправление..."
+                    submitBtn.innerHTML = '<span style="font-size: 1.1rem; font-weight: 600;">✓ Перенаправление на оплату...</span>';
+                    
+                    // Перенаправляем на Stripe checkout
+                    window.location.href = data.checkout_url;
+                } else {
+                    alert('❌ {{ t("error", lang) }}: ' + (data.error || 'Unknown error'));
+                    // Восстанавливаем кнопку
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHTML;
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ {{ t("error_server", lang) }}');
+                // Восстанавливаем кнопку
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHTML;
+            }
+        });
+        
+        console.log('✅ Форма one-time payment инициализирована');
+    }
     
     // 5️⃣ Конвертация времени
     convertToLocalTime();
@@ -996,5 +1149,78 @@ async function saveDocumentEdit(docId) {
         showFlashMessage('{{ t("error_save_failed", lang) }}', 'error');
     }
 }
+
+// ========================================
+// 📊 POLLING СТАТУСА ДОКУМЕНТА
+// ========================================
+
+async function checkDocumentStatus(docId) {
+    try {
+        const response = await fetch(`/api/check-document-status/${docId}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+            console.error('Ошибка проверки статуса');
+            return 'failed';
+        }
+        
+        return data.status;
+    } catch (error) {
+        console.error('Ошибка polling:', error);
+        return 'failed';
+    }
+}
+
+async function startDocumentPolling(docId) {
+    const uploadCard = document.getElementById('upload-card');
+    const progressCard = document.getElementById('progress-card');
+    
+    // Показываем прогресс
+    if (uploadCard) uploadCard.style.display = 'none';
+    if (progressCard) progressCard.style.display = 'block';
+    
+    // Запускаем симуляцию этапов
+    simulateProgressSteps();
+    
+    // Polling каждые 3 секунды
+    const pollInterval = setInterval(async () => {
+        const status = await checkDocumentStatus(docId);
+        
+        if (status === 'completed') {
+            clearInterval(pollInterval);
+            
+            // Показываем завершение
+            updateProgressStep('save', 'completed', '✓');
+            updateProgressTitle(progressTranslations.completed);
+            
+            // Перезагружаем через 1.5 сек
+            setTimeout(() => {
+                window.location.href = window.location.pathname + '?new_doc_id=' + docId;
+            }, 1500);
+            
+        } else if (status === 'failed') {
+            clearInterval(pollInterval);
+            
+            // Показываем ошибку из ответа API
+            const errorMsg = await checkDocumentStatus(docId);
+            const errorText = errorMsg.error_message || '{{ t("document_processing_error", lang) }}';
+            alert('❌ ' + errorText);
+            
+            window.location.href = window.location.pathname;
+        }
+        // Если 'processing' - продолжаем ждать
+    }, 4000);
+}
+
+// При загрузке страницы проверяем URL параметры
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const docId = urlParams.get('doc_id');
+    
+    if (docId) {
+        console.log('🔍 Найден doc_id в URL, запускаем polling:', docId);
+        startDocumentPolling(docId);
+    }
+});
 </script>
 {% endblock %}

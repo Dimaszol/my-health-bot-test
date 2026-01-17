@@ -372,7 +372,7 @@ async def extract_medical_events_gemini(document_text: str, existing_timeline: L
 # УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ИЗВЛЕЧЕНИЯ МЕДИЦИНСКИХ ДАННЫХ
 # ==========================================
 
-async def update_medical_timeline_on_document_upload(user_id: int, document_id: int, document_text: str, use_gemini: bool = False) -> bool:
+async def update_medical_timeline_on_document_upload(user_id: int, document_id: int, document_text: str, document_date: date = None, use_gemini: bool = False) -> bool:
     """
     Универсальная функция обновления медкарты - добавляет ОДНУ сжатую запись с самыми важными данными
     """
@@ -389,8 +389,8 @@ async def update_medical_timeline_on_document_upload(user_id: int, document_id: 
         
         if not medical_summary:
             return True
-        # Сохраняем одну запись
-        success = await save_single_medical_entry(user_id, medical_summary, document_id)
+        # Сохраняем одну запись с датой из классификатора
+        success = await save_single_medical_entry(user_id, medical_summary, document_id, document_date)
         return success
         
     except Exception as e:
@@ -419,18 +419,25 @@ UNIVERSAL APPROACH: Works with any medical document - reports, lab results, imag
 APPROACH: If multiple important findings exist, combine them into one concise entry. Prioritize the most critical, but include other significant findings if space allows.
 
 IMPORTANCE LEVELS:
-🔴 CRITICAL: New diagnoses, surgeries, emergency conditions, life-threatening findings
-🟡 IMPORTANT: Chronic conditions, abnormal results, new treatments, significant recommendations
-⚪ NORMAL: Routine findings, minor issues, general advice
+🔴 CRITICAL: Life-threatening conditions, emergency situations, severe abnormalities
+🟡 IMPORTANT: Significant abnormalities, chronic conditions, notable findings
+⚪ NORMAL: Routine findings, values within normal ranges
 
-IMPORTANT RULES:
-- ALWAYS include specific numerical values when available (glucose 5.76, cholesterol 6.95, etc.)
-- Record ONLY what was found/done/reported, do NOT add your own recommendations
-- Extract ONLY factual findings from the document
+CRITICAL RULES:
+- Extract ONLY objective measurements and observations from the document
+- ALWAYS include specific numerical values (glucose 5.76, cholesterol 6.95, pH 5.5, etc.)
+- DO NOT add interpretations, conclusions, or diagnoses unless explicitly stated in the document
+- Record what was measured/observed, not what it might indicate
+- Keep descriptions factual and data-focused
+
+IMPORTANCE CLASSIFICATION:
+- Base importance on severity of measured values, not on potential diagnoses
+- Critical: Extremely abnormal measurements requiring immediate attention
+- Important: Significantly abnormal measurements or new notable findings  
+- Normal: Measurements within or near reference ranges
 
 RESPONSE FORMAT (JSON only):
 {{
-    "event_date": "DD.MM.YYYY",
     "category": "ONE OF: diagnosis, treatment, test, procedure, general",
     "importance": "critical|important|normal",
     "description": "Combined summary with specific values in {response_lang} (max 20 words)"
@@ -439,16 +446,17 @@ RESPONSE FORMAT (JSON only):
 If no important medical info found, return: {{"no_data": true}}
 
 EXAMPLES:
-- Critical finding: "New serious medical condition identified" → critical/diagnosis
-- Multiple results: "Several test values outside normal range" → important/test
-- Procedure with outcome: "Medical procedure completed successfully" → important/procedure
+- Lab results with abnormal values → important/test
+- Multiple significant measurements → important/test
+- Surgical procedure performed → important/procedure
+- Routine check with normal values → normal/test
 
 Adapt format and language to match the document content and user's language."""
 
     user_prompt = f"""MEDICAL DOCUMENT:
-{document_text}
+        {document_text}
 
-Create ONE comprehensive timeline entry combining all important medical findings. Max 20 words. Return JSON:"""
+        Create ONE comprehensive timeline entry combining all important medical findings. Max 20 words. Return JSON:"""
 
     try:
         async with OPENAI_SEMAPHORE:
@@ -470,7 +478,7 @@ Create ONE comprehensive timeline entry combining all important medical findings
                 if data.get("no_data"):
                     return None
                 
-                required_fields = ['event_date', 'category', 'importance', 'description']
+                required_fields = ['category', 'importance', 'description']
                 if all(field in data for field in required_fields):
                     return data
                 else:
@@ -604,7 +612,7 @@ Create ONE comprehensive entry combining all important findings with specific va
         log_error_with_context(e, {"function": "extract_medical_summary_universal_gemini"})
         return None
 
-async def save_single_medical_entry(user_id: int, entry_data: Dict, source_document_id: int) -> bool:
+async def save_single_medical_entry(user_id: int, entry_data: Dict, source_document_id: int, document_date: date = None) -> bool:
     """
     Сохраняет одну запись в медицинскую карту
     """
@@ -618,19 +626,24 @@ async def save_single_medical_entry(user_id: int, entry_data: Dict, source_docum
         VALUES ($1, $2, $3, $4, $5, $6)
         """
         
-        # Парсим дату
+        # Используем дату из классификатора или текущую дату как fallback
         event_date = datetime.now().date()
-        if 'event_date' in entry_data and entry_data['event_date']:
-            try:
-                date_str = entry_data['event_date']
-                for fmt in ('%d.%m.%Y', '%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y'):
-                    try:
-                        event_date = datetime.strptime(date_str, fmt).date()
-                        break
-                    except ValueError:
-                        continue
-            except:
-                pass
+        
+        if document_date:
+            # Если document_date - строка, парсим её
+            if isinstance(document_date, str):
+                try:
+                    event_date = datetime.strptime(document_date, '%Y-%m-%d').date()
+                except ValueError:
+                    # Пробуем другие форматы
+                    for fmt in ('%d.%m.%Y', '%d/%m/%Y', '%d-%m-%Y'):
+                        try:
+                            event_date = datetime.strptime(document_date, fmt).date()
+                            break
+                        except ValueError:
+                            continue
+            elif isinstance(document_date, date):
+                event_date = document_date
         
         await conn.execute(
             query,

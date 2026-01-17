@@ -456,7 +456,7 @@ not merely describe the data.
 After reading, the user should understand:
 — what medical situation is described in the document,
 — which clinical explanation is the most probable,
-— that other interpretations may exist,
+— that the interpretation has inherent medical limitations,
 — why the conclusion is not final.
 
 ---
@@ -500,8 +500,11 @@ BOUNDARIES AND RESPONSIBILITY:
 — to address the user directly (“you should…”)
 — to use imperative language
 — to use alarming or emotionally charged wording
-— to list alternative diseases in detail
-  if they are not clinically prioritized
+— to list or discuss alternative diseases, scenarios, or exclusions
+  if they are not the leading clinical explanation
+— to introduce oncological or critical disease framing
+  when laboratory values and patterns are within reference ranges
+  and no pathological pattern is present in the data
 
 ---
 
@@ -527,8 +530,13 @@ No academic language or abstractions.
 
 Requirement:
 This section must explicitly state
-the most probable clinical explanation
+the SINGLE most probable clinical explanation
 (in a probabilistic, non-final form).
+
+If the findings are within reference ranges
+and no pathological pattern is identified,
+the explanation should be framed as a normal or baseline finding,
+without escalation or risk-focused language.
 
 ---
 
@@ -551,12 +559,12 @@ Explain how such a pattern
 is usually interpreted in clinical practice.
 
 Mandatory:
-— describe the most probable clinical explanation
-— it is acceptable to briefly note
-  that other, less typical interpretations exist,
-  without listing specific diseases,
-  if they are not clinically prioritized
-— use comparative and neutral wording
+— describe the SINGLE leading clinical scenario only
+— focus on explanatory logic of this scenario
+— use neutral, probabilistic explanatory wording
+— DO NOT mention, compare, imply, or contrast alternative interpretations
+  or less probable scenarios in this section,
+  explicitly or implicitly
 
 ---
 
@@ -567,9 +575,13 @@ Explain
 why this situation is important from a medical perspective.
 
 Allowed:
-— to discuss metabolic, functional, or systemic burden
-— to describe possible risks and complications
-  without specifying timelines and without escalation
+— to discuss metabolic, functional, or systemic relevance
+— to describe possible implications
+  proportional to the actual findings
+
+If the findings are within normal limits:
+— emphasize the absence of clinically significant abnormalities
+— avoid discussion of rare, theoretical, or false-negative scenarios
 
 Forbidden:
 — to predict progression over time
@@ -586,6 +598,10 @@ which factors limit the certainty of the conclusion.
 Format:
 Short list.
 
+Rule:
+Limitations should reflect missing data or context,
+not speculative diseases or worst-case scenarios.
+
 ---
 
 STYLE AND TONE:
@@ -596,10 +612,14 @@ STYLE AND TONE:
 — No excessive analytics
 — The text should feel like
   an honest physician’s summary
-  that does not obscure the meaning
+  that provides clarity and psychological safety
+  proportional to the findings
 
-IMPORTANT: You MUST respond in {response_language} language.
-All section titles and headings MUST be written in the same language as the response."""
+IMPORTANT:
+You MUST respond in {response_language} language.
+All section titles and headings MUST be written
+in the same language as the response.
+"""
 
     user_prompt = f"""Assistant's analytical text:
 {assistant_analysis}
@@ -977,44 +997,77 @@ async def generate_medical_summary(text: str, lang: str, document_date: str = No
     fallback_date = document_date or current_date
     
     system_prompt = (
-        "You are a medical assistant creating a structured summary of a medical document. "
-        "You do not draw conclusions or add comments. You simply organize important information into paragraphs."
+        "You are a medical text reduction engine for semantic vector embedding. "
+        "This is NOT summarization. This is FACT REDUCTION.\n\n"
+
+        "Your task is to REMOVE all non-factual content from the provided medical text "
+        "and rewrite the remaining factual statements into ONE compact paragraph.\n\n"
+
+        "A factual statement is ONLY one of the following:\n"
+        "- A measured medical parameter with its value and unit\n"
+        "- A documented presence or absence of a finding\n"
+        "- A clearly stated test result as written in the text\n"
+        "- A directly stated limitation or missing data\n\n"
+
+        "You must DELETE, not reinterpret.\n"
+        "You must NOT explain, infer, classify, or reason.\n"
+        "Loss of information due to deletion is expected and correct behavior.\n\n"
+
+        "STRICTLY FORBIDDEN:\n"
+        "- Diagnoses or diagnostic labels\n"
+        "- Probabilities, likelihoods, or assumptions\n"
+        "- Risk descriptions or stratification\n"
+        "- Reference values, physiological norms, or background medical knowledge\n"
+        "- Recommendations, actions, or next steps\n\n"
+
         f"⚠️ Always respond strictly in the '{lang}' language, regardless of the document language."
     )
 
     user_prompt = (
-        "⚠️ STRICT INSTRUCTION:\n"
-        "⚠️ Never include any personal or identifying information — such as full names, age, gender, addresses, card numbers, clinic names, or hospital departments. Completely remove such data from the summary, even if it appears in the document. Do not begin the paragraph with phrases like 'the patient is a 67-year-old male'.\n"
-        
-        f"⚠️ DATE RULES:\n"
-        f"1. Use this date for ALL paragraphs: {fallback_date}\n"
-        f"2. Each paragraph must start with [{fallback_date}] format\n"
-        f"3. Do not use different dates between paragraphs\n"
-        f"4. Do not repeat dates inside paragraphs\n\n"
-        
-        "⚠️ Include only content that may be clinically relevant or useful for AI-driven medical analysis. Do not include paragraphs that contain only formal phrases, disclaimers, missing data notes, or administrative remarks without medical value.\n"
-        "Create a structured summary of a medical document.\n"
-        "It can be any type of document: report, discharge summary, examination protocol, consultation, lab result, etc.\n"
-        "Divide the text into paragraphs by meaning and size — from 100 to 150 words. If a paragraph is too short, merge it with a neighboring one.\n"
-        "The first paragraph is the main one: include all key and diagnostically important information from the entire document.\n"
-        "The first paragraph must contain all critical clinical data, diagnoses, and observations, even if they are repeated elsewhere in the document.\n"
-        "Strive for logically complete fragments; do not break sentences or leave incomplete thoughts.\n"
-                
-        "Always preserve all parameters, even if they are contradictory or incomplete.\n"
-        "Do not interpret, do not draw conclusions, do not omit ambiguous or conflicting data — just keep them as they are.\n"
-        "Include all numerical values, reference ranges, signs, diagnoses, scales, dosages, medications, test result descriptions, and technical parameters.\n"
-        "Do not add any introductory or concluding sentences.\n"
-        "If there is little information, do not create extra paragraphs — limit to 1–2 chunks.\n"
-        "This summary is intended for internal AI analysis.\n"
-        
-        "FORMAT: [DD.MM.YYYY] Medical content of paragraph.\n"
-        
-        "Before returning the answer, verify that:\n"
-        "- No full names are present\n" 
-        f"- Each paragraph starts with [{fallback_date}]\n"
-        "- No other dates are mentioned inside paragraphs\n"
-        "- All text is logically grouped and follows the format\n"
-        "The answer must be in the form of such paragraphs, separated by double line breaks.\n\n" + text
+        "⚠️ CRITICAL TASK:\n"
+        "Rewrite the provided medical text by REMOVING all non-factual statements.\n"
+        "This is NOT interpretation and NOT summarization.\n\n"
+
+        "⚠️ OUTPUT RULES (NON-NEGOTIABLE):\n"
+        "- Produce EXACTLY ONE paragraph\n"
+        "- Do NOT use line breaks\n"
+        "- Do NOT use lists, headings, or formatting\n\n"
+
+        "⚠️ PRIVACY RULE:\n"
+        "Remove any personal or identifying information, including names, age, gender, "
+        "addresses, IDs, clinic or hospital names, departments, or doctors.\n\n"
+
+        "⚠️ DATE RULES:\n"
+        f"- Start the paragraph with [{fallback_date}] exactly once\n"
+        "- Do NOT mention any other dates\n\n"
+
+        "⚠️ KEEP ONLY THESE TYPES OF CONTENT:\n"
+        "- Medical parameters with values and units\n"
+        "- Presence or absence of findings (e.g., detected / not detected)\n"
+        "- Test results as explicitly written\n"
+        "- Explicitly stated missing or unavailable data\n\n"
+
+        "⚠️ DELETE IMMEDIATELY IF PRESENT:\n"
+        "- Diagnoses (e.g., disease names, syndromes)\n"
+        "- Words indicating interpretation or causality\n"
+        "- Probability or risk language\n"
+        "- Reference ranges or physiological explanations\n"
+        "- Clinical conclusions or recommendations\n\n"
+
+        "⚠️ IMPORTANT:\n"
+        "If deleting non-factual content significantly shortens the text, this is correct.\n"
+        "Do NOT compensate by adding explanations or inferred facts.\n\n"
+
+        "⚠️ FORMAT (MANDATORY):\n"
+        f"[{fallback_date}] <single continuous paragraph of factual statements only>\n\n"
+
+        "FINAL CHECK BEFORE ANSWER:\n"
+        "- Exactly one paragraph\n"
+        "- Starts with the date\n"
+        "- Contains ONLY factual medical statements\n"
+        "- Contains NO diagnoses, risks, assumptions, or recommendations\n\n"
+
+        + text
     )
 
     response = await client.chat.completions.create(
@@ -1023,8 +1076,8 @@ async def generate_medical_summary(text: str, lang: str, document_date: str = No
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        max_tokens=1500,
-        temperature=0.3
+        max_tokens=350,
+        temperature=0.2
     )
     return response.choices[0].message.content.strip()
 
