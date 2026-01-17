@@ -957,6 +957,12 @@ TRANSLATIONS = {
         'uk': 'Завантажені документи',
         'de': 'Hochgeladene Dokumente'
     },
+    'btn_upload_document': {
+        'ru': 'Добавить документ',
+        'en': 'Add document',
+        'uk': 'Додати документ',
+        'de': 'Dokument hinzufügen'
+    },
     'btn_analyze_document': {
         'ru': 'Разобрать документ',
         'en': 'Analyze document',

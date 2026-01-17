@@ -37,9 +37,9 @@ Your role is to categorize uploaded images or PDFs into specific medical domains
 ### CLASSIFICATION TAXONOMY:
 - "ecg": Graphs with wave patterns (P, QRS, T), cardiac stress tests.
 - "lab_results": Tables with biomarkers (e.g., Blood, Urine), reference ranges, and units.
-- "imaging": Radiology reports (X-ray, MRI, CT, Ultrasound) or actual medical scans.
+- "imaging": Radiology images or scans (X-ray, MRI, CT, Ultrasound) where the image itself is the primary clinical content, with minimal or no descriptive text.
 - "pathology": Biopsy, histology, or cytology reports (look for "macroscopic/microscopic description").
-- "clinical_report": Discharge summaries, consultation notes, medical history, physical exams.
+- "clinical_report": Text-based medical reports describing findings, procedures, or examinations, including procedural protocols (e.g., endoscopy, colonoscopy) even if images are attached.
 - "prescription": Doctor's prescriptions with medication names, dosages, and signatures.
 - "generic": Any medical document that doesn't fit the above (e.g., certificates, vaccination cards).
 
