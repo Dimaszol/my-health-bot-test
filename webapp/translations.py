@@ -927,17 +927,11 @@ TRANSLATIONS = {
         'uk': 'Наприклад: кашель 2 тижні, без температури, біль у грудях, ЕКГ для контролю...',
         'de': 'Beispiel: Husten seit 2 Wochen, kein Fieber, Brustschmerzen, EKG zur Kontrolle...'
     },
-    'additional_context_hint_title': {
-        'ru': 'Для изображений и ЭКГ контекст существенно влияет на интерпретацию.',
-        'en': 'For images and ECG, context significantly affects interpretation.',
-        'uk': 'Для зображень та ЕКГ контекст суттєво впливає на інтерпретацію.',
-        'de': 'Bei Bildern und EKG beeinflusst der Kontext die Interpretation erheblich.'
-    },
     'additional_context_hint_description': {
-        'ru': 'Отсутствие контекста может привести к неточным или избыточным выводам. Если важного контекста нет — оставьте поле пустым.',
-        'en': 'Lack of context may lead to inaccurate or excessive conclusions. If there is no important context — leave the field empty.',
-        'uk': 'Відсутність контексту може призвести до неточних або надлишкових висновків. Якщо важливого контексту немає — залиште поле порожнім.',
-        'de': 'Fehlender Kontext kann zu ungenauen oder übermäßigen Schlussfolgerungen führen. Wenn es keinen wichtigen Kontext gibt — lassen Sie das Feld leer.'
+        'ru': 'Контекст помогает точнее интерпретировать документ. Для изображений и ЭКГ он особенно полезен. Если важного контекста нет — оставьте поле пустым.',
+        'en': 'Context helps interpret the document more accurately. It is especially useful for images and ECGs. If there is no important context, leave the field empty.',
+        'uk': 'Контекст допомагає точніше інтерпретувати документ. Для зображень і ЕКГ він особливо корисний. Якщо важливого контексту немає — залиште поле порожнім.',
+        'de': 'Kontext hilft, das Dokument genauer zu interpretieren. Er ist besonders bei Bildern und EKGs hilfreich. Wenn es keinen wichtigen Kontext gibt, lassen Sie das Feld leer.'
     },
     'select_file': {
         'ru': 'Выберите файл',
@@ -1042,12 +1036,11 @@ TRANSLATIONS = {
         'de': 'Diese Analyse basiert auf den im hochgeladenen Dokument enthaltenen Informationen und dem beim Hochladen angegebenen Kontext. In der Praxis wirkt sich die Vollständigkeit des Kontexts direkt auf die Genauigkeit der Interpretation aus. Wenn bei der Analyse Daten fehlen, kann deren Angabe beim nachfolgenden Hochladen des Dokuments helfen, das klinische Bild zu klären und die Unsicherheit zu verringern.'
     },
     'upload_birth_year_tip': {
-        'ru': 'Рекомендация: год рождения и пол влияют на интерпретацию медицинских данных. Эти данные можно указать в профиле — они, как и контекст, влияют на точность анализа.',
-        'en': 'Recommendation: birth year and gender affect the interpretation of medical data. This information can be specified in your profile — it, like context, affects the accuracy of analysis.',
-        'uk': 'Рекомендація: рік народження та стать впливають на інтерпретацію медичних даних. Ці дані можна вказати в профілі — вони, як і контекст, впливають на точність аналізу.',
-        'de': 'Empfehlung: Geburtsjahr und Geschlecht beeinflussen die Interpretation medizinischer Daten. Diese Informationen können in Ihrem Profil angegeben werden — sie beeinflussen, wie der Kontext, die Genauigkeit der Analyse.'
+        'ru': 'Возраст и пол влияют на анализ медицинских данных. Эти данные можно указать в профиле.',
+        'en': 'Age and gender affect the analysis of medical data. This information can be specified in your profile.',
+        'uk': 'Вік і стать впливають на аналіз медичних даних. Ці дані можна вказати в профілі.',
+        'de': 'Alter und Geschlecht beeinflussen die Analyse medizinischer Daten. Diese Angaben können im Profil hinterlegt werden.'
     },
-
     'document_limit_reached_title': {
         'ru': 'Лимит документов в текущем плане достигнут',
         'en': 'Document limit in current plan reached',

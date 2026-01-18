@@ -28,18 +28,17 @@ footer {
         {{ t('page_documents_title', lang) }}
     </h1>    
 </div>
-
+<!-- Подсказка про год рождения (только для новых пользователей) -->
+        {% if show_birth_year_tip %}
+        <p style="margin: 0 0 1.0rem 0; color: #666; font-size: 0.9rem; line-height: 1.0;">
+            💡 {{ t('upload_birth_year_tip', lang) }}
+        </p>
+        {% endif %}
 <!-- 📤 ФОРМА ЗАГРУЗКИ ИЛИ СООБЩЕНИЕ О ЛИМИТАХ -->
 {% if has_document_limits %}
 <div class="card" style="margin-bottom: 1rem;" id="upload-card">
         
-    <form id="upload-form">
-        <!-- Подсказка про год рождения (только для новых пользователей) -->
-        {% if show_birth_year_tip %}
-        <p style="margin: 0 0 1.5rem 0; color: #666; font-size: 0.9rem; line-height: 1.5;">
-            💡 {{ t('upload_birth_year_tip', lang) }}
-        </p>
-        {% endif %}
+    <form id="upload-form">        
         <div class="form-group">
             <label>{{ t('select_file', lang) }}</label>
             <input 
@@ -65,17 +64,14 @@ footer {
                 placeholder="{{ t('additional_context_placeholder', lang) }}"
                 style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; font-family: inherit; resize: none; overflow: hidden;"
             ></textarea>
-            <div style="margin-top: 0.5rem;">
-            <p style="color: #666; font-size: 0.9rem; font-weight: 600; margin: 0 0 0.5rem 0;">
-                {{ t('additional_context_hint_title', lang) }}
-            </p>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
-                <p style="color: #999; font-size: 0.85rem; margin: 0; flex: 1;">
-                    {{ t('additional_context_hint_description', lang) }}
-                </p>
-                <span id="char-counter" style="color: #999; font-size: 0.85rem; white-space: nowrap;">0/400</span>
-            </div>
-</div>
+            
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                    <p style="color: #999; font-size: 0.85rem; margin: 0; flex: 1;">
+                        {{ t('additional_context_hint_description', lang) }}
+                    </p>
+                    <span id="char-counter" style="color: #999; font-size: 0.85rem; white-space: nowrap;">0/400</span>
+                </div>
+            
         </div>
         
         <div style="display: flex; margin-top: 1.5rem;">
@@ -86,6 +82,10 @@ footer {
     </form>
 </div>
 {% else %}
+<!-- ⚠️ Информация о лимитах (перед кнопкой) -->
+        <p style="margin: 0 0 1.0rem 0; color: #666; font-size: 0.9rem; font-weight: 600; line-height: 1.0;">
+            ℹ️ {{ t('document_limit_reached_title', lang) }}
+        </p>        
 <!-- 💳 ФОРМА С ONE-TIME PAYMENT -->
 <div class="card" style="margin-bottom: 1rem;" id="upload-card">
     <form id="upload-form-onetime">
@@ -114,24 +114,14 @@ footer {
                 placeholder="{{ t('additional_context_placeholder', lang) }}"
                 style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; font-family: inherit; resize: none; overflow: hidden;"
             ></textarea>
-            <div style="margin-top: 0.5rem;">
-                <p style="color: #666; font-size: 0.9rem; font-weight: 600; margin: 0 0 0.5rem 0;">
-                    {{ t('additional_context_hint_title', lang) }}
-                </p>
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
                     <p style="color: #999; font-size: 0.85rem; margin: 0; flex: 1;">
                         {{ t('additional_context_hint_description', lang) }}
                     </p>
                     <span id="char-counter-onetime" style="color: #999; font-size: 0.85rem; white-space: nowrap;">0/400</span>
                 </div>
-            </div>
-        </div>
-        <!-- ⚠️ Информация о лимитах (перед кнопкой) -->
-        <div style="margin: 1.5rem 0 1rem 0; padding: 0.75rem; background: #f8f9fa; border-radius: 6px;">
-            <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.9rem; font-weight: 600;">
-                {{ t('document_limit_reached_title', lang) }}
-            </p>            
-        </div>        
+            
+        </div>                
     <!-- Две кнопки -->
     <div class="one-time-buttons" style="display: flex; gap: 1rem; margin-top: 1.5rem; align-items: center;">
         <button type="submit" class="btn" style="min-width: 300px; width: auto; padding: 1rem 2.5rem;">
