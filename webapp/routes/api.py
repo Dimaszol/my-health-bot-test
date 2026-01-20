@@ -2099,6 +2099,16 @@ async def create_one_time_document_checkout(
     from stripe_manager import StripeManager
     
     lang = await get_user_language(user_id)
+
+    # 🔔 ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ АДМИНУ (безопасно)
+    try:
+        from webapp.utils.telegram_notifications import notify_paid_analysis_attempt
+        user_profile = await get_user_profile(user_id)
+        user_email = user_profile.get('email')
+        await notify_paid_analysis_attempt(user_id, user_email)
+    except Exception as e:
+        # Ошибка уведомления не должна блокировать оплату
+        safe_log_warning("Не удалось отправить уведомление админу", error=e)
     
     # 0. Cleanup старых pending
     await cleanup_old_pending_documents(user_id)

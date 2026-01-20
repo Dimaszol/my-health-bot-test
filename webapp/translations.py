@@ -940,10 +940,10 @@ TRANSLATIONS = {
         'de': 'Datei auswählen'
     },
     'supported_formats': {
-        'ru': 'Поддерживаемые форматы: PDF, DOCX, TXT, JPG, PNG (макс. 10 МБ)',
-        'en': 'Supported formats: PDF, DOCX, TXT, JPG, PNG (max. 10 MB)',
-        'uk': 'Підтримувані формати: PDF, DOCX, TXT, JPG, PNG (макс. 10 МБ)',
-        'de': 'Unterstützte Formate: PDF, DOCX, TXT, JPG, PNG (max. 10 MB)'
+        'ru': 'Форматы: PDF, JPG, PNG (до 10 МБ)',
+        'en': 'Formats: PDF, JPG, PNG (up to 10 MB)',
+        'uk': 'Формати: PDF, JPG, PNG (до 10 МБ)',
+        'de': 'Formate: PDF, JPG, PNG (bis 10 MB)'
     },
     'uploaded_documents': {
         'ru': 'Загруженные документы',
