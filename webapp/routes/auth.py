@@ -277,6 +277,9 @@ async def google_callback(request: Request):
                     request.session['name'] = name
                     request.session['google_id'] = google_id
                     request.session['language'] = current_session_lang
+
+                    # 🎯 ФЛАГ ДЛЯ GOOGLE ADS: это новая регистрация
+                    request.session['just_registered'] = True
                     
                     return RedirectResponse(url='/dashboard', status_code=302)
                 else:

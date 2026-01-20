@@ -267,8 +267,11 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
         'show_telegram_connect': show_telegram_connect,
         'current_plan_name': current_plan_name,
         'profile_completion': calculate_profile_completion(profile),
-        'random_tip': random_tip  # ← ДОБАВЬ ЭТУ СТРОКУ
+        'random_tip': random_tip 
     })
+
+    # 🧹 ОЧИЩАЕМ ФЛАГ РЕГИСТРАЦИИ после первого показа
+    request.session.pop('just_registered', None)
     
     return templates.TemplateResponse('dashboard.html', context)
 
