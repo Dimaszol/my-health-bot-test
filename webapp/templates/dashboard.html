@@ -415,18 +415,14 @@ function closePaymentModal() {
         };
     }
 })();
-// 🎯 GOOGLE ADS КОНВЕРСИЯ РЕГИСТРАЦИИ
-const isJustRegistered = {{ 'true' if session.get('just_registered') else 'false' }};
+// 🎯 GOOGLE ADS КОНВЕРСИЯ РЕГИСТРАЦИИ (one-time)
+const isJustRegistered = {{ 'true' if just_registered else 'false' }};
 
-if (isJustRegistered) {
-  if (localStorage.getItem('registration_completed_sent')) {
-    // Уже отправляли — пропускаем
-  } else if (typeof gtag === 'function') {
-    gtag('event', 'conversion', {
-      'send_to': 'AW-17861454069/d81xCNCOiOkbEPXRgMVC'
-    });
-    localStorage.setItem('registration_completed_sent', '1');
-  }
+if (isJustRegistered && typeof gtag === 'function') {
+  gtag('event', 'conversion', {
+    'send_to': 'AW-17861454069/d81xCNCOiOkbEPXRgMVC'
+  });
+  console.log('✅ Google Ads conversion sent');
 }
 </script>
 {% endblock %}

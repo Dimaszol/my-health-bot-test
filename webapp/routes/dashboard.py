@@ -257,6 +257,9 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
         lang=lang
     )
 
+    # Сбрасываем флаг регистрации после первого показа
+    just_registered = request.session.pop('just_registered', False)
+
     # Формируем контекст
     context = get_template_context(request)
     context.update({
@@ -267,7 +270,8 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
         'show_telegram_connect': show_telegram_connect,
         'current_plan_name': current_plan_name,
         'profile_completion': calculate_profile_completion(profile),
-        'random_tip': random_tip 
+        'random_tip': random_tip,
+        'just_registered': just_registered
     })
     
     return templates.TemplateResponse('dashboard.html', context)
