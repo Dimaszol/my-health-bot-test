@@ -3,6 +3,7 @@
 
 import os
 import logging
+import html
 
 logger = logging.getLogger(__name__)
 
@@ -68,4 +69,22 @@ async def notify_document_upload_attempt(user_id: int, user_email: str = None):
         user_info += f"\nEmail: {user_email}"
     
     message = f"📄 <b>Попытка загрузки документа без лимита</b>\n\n{user_info}"
+    return await send_admin_notification(message)
+
+async def notify_new_registration(user_id: int, email: str, name: str, source: str = None):
+    """Уведомление о новой регистрации (с защитой от HTML-инъекций)"""
+    # Экранируем пользовательские данные
+    safe_email = html.escape(email or "")
+    safe_name = html.escape(name or "")
+    safe_source = html.escape(source or "Direct / Organic")
+    
+    source_line = f"\n🎯 <b>Источник:</b> {safe_source}" if source else ""
+    
+    message = (
+        f"🆕 <b>Новая регистрация</b>\n\n"
+        f"👤 User ID: <code>{user_id}</code>\n"
+        f"📧 Email: {safe_email}\n"
+        f"📝 Имя: {safe_name}"
+        f"{source_line}"
+    )
     return await send_admin_notification(message)

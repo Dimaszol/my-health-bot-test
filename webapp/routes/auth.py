@@ -3,7 +3,7 @@
 
 import os
 import sys
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, BackgroundTasks
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 from webapp.utils.logger import safe_log_info, safe_log_error
@@ -193,7 +193,7 @@ async def google_login(request: Request):
 # ==========================================
 
 @router.get("/google/callback")
-async def google_callback(request: Request):
+async def google_callback(request: Request, background_tasks: BackgroundTasks):
     """
     Google возвращает пользователя сюда после успешного входа
     
@@ -280,7 +280,44 @@ async def google_callback(request: Request):
 
                     # 🎯 ФЛАГ ДЛЯ GOOGLE ADS: это новая регистрация
                     request.session['just_registered'] = True
-                    
+
+                    # 🔔 БЕЗОПАСНОЕ уведомление админу о регистрации
+                    try:
+                        from webapp.utils.telegram_notifications import notify_new_registration
+                        from webapp.utils.logger import safe_log_warning
+                        
+                        # Собираем источник
+                        source_parts = []
+                        
+                        if request.session.get('gclid'):
+                            gclid_short = request.session.get('gclid')[:10]
+                            source_parts.append(f"Google Ads (GCLID: {gclid_short}...)")
+                        
+                        if request.session.get('utm_source'):
+                            utm_info = request.session.get('utm_source')
+                            if request.session.get('utm_campaign'):
+                                utm_info += f" / {request.session.get('utm_campaign')}"
+                            source_parts.append(utm_info)
+                        
+                        if request.session.get('fbclid'):
+                            source_parts.append("Facebook Ads")
+                        
+                        # Если нет UTM - пишем "Direct"
+                        source = " | ".join(source_parts) if source_parts else None
+                        
+                        # ✅ Используем BackgroundTasks вместо create_task
+                        background_tasks.add_task(
+                            notify_new_registration,
+                            new_user['user_id'],  # или temp_user_id
+                            email,
+                            name,
+                            source
+                        )
+                        
+                    except Exception as e:
+                        # ✅ Логируем ошибку (но не ломаем регистрацию)
+                        safe_log_warning("Не удалось отправить уведомление о регистрации", error=e)
+
                     return RedirectResponse(url='/dashboard', status_code=302)
                 else:
                     print("❌ Не удалось создать пользователя")

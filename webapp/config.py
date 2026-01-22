@@ -118,7 +118,7 @@ class Config:
     DEBUG = False if IS_PRODUCTION else os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     
     # 📝 ЛОГИРОВАНИЕ
-    LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO' if IS_PRODUCTION else 'DEBUG')
+    LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
     LOG_SENSITIVE_DATA = False  # НИКОГДА не логируем пароли, токены и т.д.
     
     # 🔐 Дополнительные заголовки безопасности

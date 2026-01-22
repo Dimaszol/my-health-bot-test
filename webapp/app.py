@@ -209,6 +209,44 @@ if Config.IS_PRODUCTION:
     
     print("✅ HTTPS redirect включён (production режим, исключая /health)")
 
+# ==========================================
+# 🎯 UTM TRACKING: Отслеживание источников трафика (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+# ==========================================
+class UTMTrackingMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware для отслеживания UTM параметров
+    Сохраняет только для главной страницы и только для новых пользователей
+    """
+    async def dispatch(self, request: Request, call_next):
+        # ✅ БЕЗОПАСНАЯ ПРОВЕРКА: сначала проверяем что сессия существует
+        try:
+            # Проверяем только для главной страницы
+            if request.url.path == "/":
+                # Безопасная проверка наличия сессии
+                has_session = "session" in request.scope
+                
+                if has_session and 'user_id' not in request.session:
+                    # Сохраняем UTM параметры в сессию
+                    utm_params = {}
+                    for key in ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'gclid', 'fbclid']:
+                        value = request.query_params.get(key)
+                        if value:
+                            utm_params[key] = value
+                    
+                    # Сохраняем в сессию если есть хоть один параметр
+                    if utm_params:
+                        for key, value in utm_params.items():
+                            request.session[key] = value
+        except Exception:
+            # Если что-то пошло не так - просто пропускаем
+            pass
+        
+        response = await call_next(request)
+        return response
+
+# Применяем UTM tracking middleware В САМОМ КОНЦЕ
+app.add_middleware(UTMTrackingMiddleware)
+
 # 📁 НАСТРОЙКА ШАБЛОНОВ И СТАТИКИ
 # Используем те же папки что были в Flask
 templates = Jinja2Templates(directory="webapp/templates")

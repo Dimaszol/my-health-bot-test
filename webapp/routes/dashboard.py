@@ -258,7 +258,7 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
     )
 
     # Сбрасываем флаг регистрации после первого показа
-    just_registered = request.session.pop('just_registered', False)
+    just_registered = request.session.get('just_registered', False)
 
     # Формируем контекст
     context = get_template_context(request)
@@ -273,6 +273,10 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
         'random_tip': random_tip,
         'just_registered': just_registered
     })
+
+    # ✅ Удаляем флаг ПОСЛЕ формирования контекста
+    if just_registered:
+        request.session.pop('just_registered', None)
     
     return templates.TemplateResponse('dashboard.html', context)
 
