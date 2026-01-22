@@ -883,10 +883,10 @@ TRANSLATIONS = {
         'de': 'Erstellung der Zusammenfassung'
     },
     "progress_please_wait": {
-        "ru": "Пожалуйста, подождите... Анализ занимает несколько минут",
-        "en": "Please wait... The analysis may take a few minutes",
-        "uk": "Будь ласка, зачекайте... Аналіз може зайняти кілька хвилин",
-        "de": "Bitte warten... Die Analyse kann einige Minuten dauern"
+        "ru": "Анализ занимает несколько минут. Пожалуйста, не закрывайте эту страницу.",
+        "en": "The analysis may take a few minutes. Please do not close this page.",
+        "uk": "Аналіз може зайняти кілька хвилин. Будь ласка, не закривайте цю сторінку.",
+        "de": "Die Analyse kann einige Minuten dauern. Bitte schließen Sie diese Seite nicht."
     },
     # ============================================
     # 📄 СТРАНИЦА ДОКУМЕНТОВ
@@ -1028,13 +1028,7 @@ TRANSLATIONS = {
         'en': 'Document deleted',
         'uk': 'Документ видалено',
         'de': 'Dokument gelöscht'
-    },
-    'analysis_context_note': {
-        'ru': 'Данный анализ выполнен на основе информации, представленной в загруженном документе, и контекста, указанного при его загрузке. В практике полнота контекста напрямую влияет на точность интерпретации. Если при анализе отсутствует часть данных, их указание при последующей загрузке документа может помочь уточнить клиническую картину и снизить степень неопределённости.',
-        'en': 'This analysis is based on the information provided in the uploaded document and the context specified during upload. In practice, the completeness of context directly affects the accuracy of interpretation. If some data is missing from the analysis, providing it when uploading the document subsequently may help clarify the clinical picture and reduce uncertainty.',
-        'uk': 'Цей аналіз виконано на основі інформації, представленої в завантаженому документі, та контексту, вказаного при його завантаженні. На практиці повнота контексту безпосередньо впливає на точність інтерпретації. Якщо при аналізі відсутня частина даних, їх вказівка при наступному завантаженні документа може допомогти уточнити клінічну картину та знизити ступінь невизначеності.',
-        'de': 'Diese Analyse basiert auf den im hochgeladenen Dokument enthaltenen Informationen und dem beim Hochladen angegebenen Kontext. In der Praxis wirkt sich die Vollständigkeit des Kontexts direkt auf die Genauigkeit der Interpretation aus. Wenn bei der Analyse Daten fehlen, kann deren Angabe beim nachfolgenden Hochladen des Dokuments helfen, das klinische Bild zu klären und die Unsicherheit zu verringern.'
-    },
+    },    
     'upload_birth_year_tip': {
         'ru': 'Возраст и пол влияют на анализ медицинских данных. Эти данные можно указать в профиле.',
         'en': 'Age and gender affect the analysis of medical data. This information can be specified in your profile.',
@@ -2277,10 +2271,10 @@ TRANSLATIONS = {
     'de': '⭐ Fotoanalyse ist nur mit einem Abonnement für detaillierte Beratungen verfügbar'
 },
 'ai_disclaimer': {
-    'ru': 'Этот AI-анализ носит информационный характер и может содержать ошибки. Не является диагнозом или назначением. Перед принятием решений проконсультируйтесь с врачом.',
-    'en': 'This AI-generated analysis is for informational purposes only and may contain errors. It is not a diagnosis or prescription. Please consult a doctor before making any decisions.',
-    'uk': 'Цей AI-аналіз носить інформаційний характер і може містити помилки. Не є діагнозом або призначенням. Перед прийняттям рішень проконсультуйтеся з лікарем.',
-    'de': 'Diese KI-Analyse dient nur zu Informationszwecken und kann Fehler enthalten. Es ist keine Diagnose oder Verschreibung. Bitte konsultieren Sie einen Arzt, bevor Sie Entscheidungen treffen.'
+    "ru": "AI-анализ носит информационный характер и не является диагнозом или медицинским назначением. Выводы основаны только на загруженных данных и контексте, полнота которых влияет на точность интерпретации. Перед принятием медицинских решений проконсультируйтесь с врачом.",
+    "en": "This AI-generated analysis is for informational purposes only and is not a diagnosis or medical prescription. Conclusions are based solely on the uploaded data and context, the completeness of which affects interpretation accuracy. Please consult a doctor before making medical decisions.",
+    "ua": "AI-аналіз має інформаційний характер і не є діагнозом або медичним призначенням. Висновки ґрунтуються лише на завантажених даних і контексті, повнота яких впливає на точність інтерпретації. Перед прийняттям медичних рішень проконсультуйтеся з лікарем.",
+    "de": "Diese KI-Analyse dient ausschließlich Informationszwecken und stellt keine Diagnose oder medizinische Verschreibung dar. Die Schlussfolgerungen basieren ausschließlich auf den hochgeladenen Daten und dem angegebenen Kontext, dessen Vollständigkeit die Genauigkeit der Interpretation beeinflusst. Bitte konsultieren Sie vor medizinischen Entscheidungen einen Arzt."
 },
 'btn_delete_document': {
     'ru': 'Удалить',

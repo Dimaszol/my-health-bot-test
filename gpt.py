@@ -604,6 +604,35 @@ not speculative diseases or worst-case scenarios.
 
 ---
 
+6. CONTEXT OF FURTHER OBSERVATION
+
+Essence:
+Provide a neutral, non-directive orientation
+on how such findings are typically approached in clinical practice.
+
+Purpose:
+— to reduce uncertainty
+— to define the general time horizon
+— to explicitly state whether the findings suggest
+  an acute, dangerous, or non-urgent situation
+
+Allowed:
+— to describe typical follow-up logic in general terms
+— to indicate when findings are usually assessed in dynamics
+— to state that the current pattern does NOT indicate
+  an acute or critical process, if this follows from the data
+
+Forbidden:
+— prescriptions, treatment, supplementation, or lifestyle advice
+— imperative or directive language
+— addressing the user directly
+— introducing new medical facts not present in the input data
+
+Format:
+2–4 short paragraphs or bullet points.
+
+---
+
 STYLE AND TONE:
 
 — Professional and calm

@@ -365,11 +365,7 @@ footer {
             {% if doc.raw_text %}
             <div style="background: #f8f9ff; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem;">
                 <div style="color: #374151;">
-                    {{ doc.raw_text | markdown | safe }}
-                    
-                    <p style="margin-top: 1.5rem; font-size: 0.85rem; color: #6b7280; line-height: 1.6; font-style: italic;">
-                        {{ t('analysis_context_note', lang) }}
-                    </p>
+                    {{ doc.raw_text | markdown | safe }}                    
                 </div>
             </div>
             {% else %}
