@@ -133,6 +133,7 @@ class Config:
                 "https://www.googletagmanager.com "
                 "https://www.google-analytics.com "
                 "https://www.googleadservices.com "
+                "https://googleads.g.doubleclick.net "
                 "https://*.doubleclick.net "
                 "https://apis.google.com "
                 "https://cdn.jsdelivr.net; "
@@ -140,21 +141,28 @@ class Config:
                 "https://www.google-analytics.com "
                 "https://www.googleadservices.com "
                 "https://*.google.com "
-                "https://*.google.co.uk "  # ← ДОБАВЛЕНО
-                "https://*.doubleclick.net; "
+                "https://*.google.co.uk "
+                "https://googleads.g.doubleclick.net "
+                "https://*.doubleclick.net "
+                "https://region1.google-analytics.com "
+                "https://region1.analytics.google.com; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' data: "
                 "https://*.google.com "
-                "https://*.google.co.uk "  # ← ДОБАВЛЕНО
+                "https://www.google.com "
+                "https://*.google.co.uk "
                 "https://*.google-analytics.com "
+                "https://www.googletagmanager.com "
+                "https://googleads.g.doubleclick.net "
                 "https://*.doubleclick.net; "
             "frame-src 'self' "
                 "https://www.google.com "
                 "https://www.googletagmanager.com "
                 "https://www.googleadservices.com "
+                "https://bid.g.doubleclick.net "
                 "https://td.doubleclick.net;"
-            ),
+        ),
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'
     }

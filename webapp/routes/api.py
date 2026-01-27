@@ -1737,6 +1737,16 @@ async def cancel_subscription_endpoint(
 # ============================================
 # 🧪 ТЕСТОВЫЙ ENDPOINT (удалить после отладки)
 # ============================================
+
+@router.get("/test-gpt5-form")
+async def test_gpt5_form(request: Request):
+    """GET страница с формой"""
+    from webapp.app import templates
+    from webapp.utils.context import get_template_context
+    
+    context = get_template_context(request)
+    return templates.TemplateResponse("test_gpt5.html", context)
+
 from pydantic import BaseModel
 import time
 

@@ -3005,6 +3005,109 @@ TRANSLATIONS = {
     'uk': 'Очікування підключення Telegram...',
     'de': 'Warten auf Telegram-Verbindung...'
 },
+ # ============================================
+    # 🩺 ИНТЕНТ-СТРАНИЦА: АНАЛИЗ КРОВИ
+    # ============================================
+    'blood_test_hero_title': {
+        'ru': 'Профессиональный разбор анализа крови',
+        'en': 'Professional Blood Test Interpretation',
+        'uk': 'Професійний розбір аналізу крові',
+        'de': 'Professionelle Analyse von Blutuntersuchungen'
+    },
+    'blood_test_hero_subtitle_part1': {
+        'ru': 'PulseBook превращает лабораторные цифры',
+        'en': 'PulseBook turns lab numbers',
+        'uk': 'PulseBook перетворює лабораторні цифри',
+        'de': 'PulseBook verwandelt Laborwerte'
+    },
+    'blood_test_hero_subtitle_part2': {
+        'ru': 'в понятный и структурированный разбор',
+        'en': 'into a clear and structured analysis',
+        'uk': 'у зрозумілий та структурований розбір',
+        'de': 'in eine klare und strukturierte Analyse'
+    },
+    'blood_test_btn_continue_google': {
+        'ru': 'Продолжить с Google',
+        'en': 'Continue with Google',
+        'uk': 'Продовжити з Google',
+        'de': 'Mit Google fortfahren'
+    },
+    'blood_test_btn_subtitle': {
+        'ru': 'Без карты · Первый анализ — бесплатно',
+        'en': 'No card · First analysis free',
+        'uk': 'Без картки · Перший аналіз — безкоштовно',
+        'de': 'Keine Karte · Erste Analyse kostenlos'
+    },
+    # ============================================
+    # 🔬 VALUE PROOF БЛОК (ДО/ПОСЛЕ)
+    # ============================================
+    'value_proof_title': {
+        'ru': 'Из лабораторного бланка — в понятный разбор',
+        'en': 'From Lab Report — to Clear Analysis',
+        'uk': 'З лабораторного бланку — у зрозумілий розбір',
+        'de': 'Vom Laborbefund — zur verständlichen Analyse'
+    },    
+    'value_before_title': {
+        'ru': 'Лабораторный бланк',
+        'en': 'Lab Report',
+        'uk': 'Лабораторний бланк',
+        'de': 'Laborbefund'
+    },    
+    'value_before_caption': {
+        'ru': 'Цифры, референсы и термины — без пояснений',
+        'en': 'Numbers, ranges and terms — no explanations',
+        'uk': 'Цифри, референси і терміни — без пояснень',
+        'de': 'Zahlen, Bereiche und Begriffe — ohne Erklärungen'
+    },    
+    'value_after_title': {
+        'ru': 'Клиническое объяснение',
+        'en': 'Clinical Explanation',
+        'uk': 'Клінічне пояснення',
+        'de': 'Klinische Erklärung'
+    },    
+    'value_after_caption': {
+        'ru': 'Структурированный разбор с фокусом на важное',
+        'en': 'Structured analysis focused on what matters',
+        'uk': 'Структурований розбір з фокусом на важливе',
+        'de': 'Strukturierte Analyse mit Fokus auf das Wesentliche'
+    },        
+    'value_transformation_title': {
+        'ru': 'Из цифр — в понимание анализа',
+        'en': 'From numbers — to understanding your results',
+        'uk': 'З цифр — у розуміння аналізу',
+        'de': 'Von Zahlen — zum Verständnis Ihrer Ergebnisse'
+    },    
+    'value_benefit_1': {
+        'ru': 'какие показатели выходят за пределы нормы',
+        'en': 'which values are outside normal range',
+        'uk': 'які показники виходять за межі норми',
+        'de': 'welche Werte außerhalb des Normalbereichs liegen'
+    },    
+    'value_benefit_2': {
+        'ru': 'как они связаны между собой',
+        'en': 'how they relate to each other',
+        'uk': 'як вони пов\'язані між собою',
+        'de': 'wie sie miteinander zusammenhängen'
+    },    
+    'value_benefit_3': {
+        'ru': 'на что обычно обращают внимание врачи',
+        'en': 'what doctors typically focus on',
+        'uk': 'на що зазвичай звертають увагу лікарі',
+        'de': 'worauf Ärzte typischerweise achten'
+    },    
+    'value_benefit_4': {
+        'ru': 'каких данных не хватает для полной картины',
+        'en': 'what data is missing for complete picture',
+        'uk': 'яких даних не вистачає для повної картини',
+        'de': 'welche Daten für ein vollständiges Bild fehlen'
+    },    
+    'value_cta_button': {
+        'ru': 'Получить мой разбор',
+        'en': 'Get My Analysis',
+        'uk': 'Отримати мій розбір',
+        'de': 'Meine Analyse erhalten'
+    },    
+    
 }
 
 

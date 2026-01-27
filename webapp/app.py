@@ -334,6 +334,48 @@ async def login(request: Request):
     context = get_template_context(request)
     return templates.TemplateResponse('login.html', context)
 
+# Добавь этот маршрут в webapp/app.py после маршрута "/login"
+
+@app.get("/lab-test-analysis", response_class=HTMLResponse)
+async def lab_test_landing(request: Request):   
+    
+    # Если пользователь уже авторизован → редирект в dashboard
+    if request.session.get('user_id'):
+        return RedirectResponse(url='/dashboard', status_code=302)
+    
+    # Устанавливаем язык (по умолчанию английский для рекламы)
+    if 'language' not in request.session:
+        request.session['language'] = 'en'
+    
+    # 📊 Трекинг: пользователь пришёл с рекламы
+    request.session['utm_source'] = 'google_ads'
+    request.session['utm_campaign'] = 'lab_test_intent'
+    request.session['landing_page'] = 'lab_test_analysis'
+    
+    context = get_template_context(request)
+    return templates.TemplateResponse('lab_test_landing.html', context)
+
+@app.get("/{lang}/lab-test-analysis", response_class=HTMLResponse)
+async def lab_test_landing_lang(request: Request, lang: str):
+    """
+    🩺 ИНТЕНТ-СТРАНИЦА: Лабораторные анализы (с языковым префиксом)
+    """
+    # Валидация языка
+    if lang not in ['ru', 'uk', 'en', 'de']:
+        return RedirectResponse(url='/lab-test-analysis', status_code=302)
+    
+    if request.session.get('user_id'):
+        return RedirectResponse(url=f'/{lang}/dashboard', status_code=302)
+    
+    # Устанавливаем язык из URL
+    request.session['language'] = lang
+    
+    request.session['utm_source'] = 'google_ads'
+    request.session['utm_campaign'] = 'lab_test_intent'
+    request.session['landing_page'] = 'lab_test_analysis'
+    
+    context = get_template_context(request)
+    return templates.TemplateResponse('lab_test_landing.html', context)
 
 @app.get("/logout")
 async def logout(request: Request):

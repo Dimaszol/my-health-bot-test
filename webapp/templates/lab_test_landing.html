@@ -1,0 +1,613 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('blood_test_hero_title', lang) }} - {{ t('site_title', lang) }}{% endblock %}
+
+{% block content %}
+
+<!-- 🩺 HERO СЕКЦИЯ - Лабораторные анализы -->
+<section class="hero lab-test-hero">
+    <div class="container">
+        <div class="hero-content">
+            <!-- 📝 Текстовая часть слева -->
+            <div class="hero-text">
+                <h1>
+                    {{ t('blood_test_hero_title', lang) }}
+                </h1>
+                
+                <h2 class="hero-subtitle">
+                    {{ t('blood_test_hero_subtitle_part1', lang) }}<br>
+                    {{ t('blood_test_hero_subtitle_part2', lang) }}
+                </h2>
+                
+                <div class="hero-buttons">
+                    <a href="/auth/google?utm_source=lab_test_landing" class="btn btn-primary btn-large" style="display: inline-flex; align-items: center; gap: 10px;">
+                        <!-- Google иконка -->
+                        <svg width="20" height="20" viewBox="0 0 18 18">
+                            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                            <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+                            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+                        </svg>
+                        <span>{{ t('blood_test_btn_continue_google', lang) }}</span>
+                    </a>
+                    
+                    <p class="btn-subtitle">
+                        {{ t('blood_test_btn_subtitle', lang) }}
+                    </p>
+                </div>
+            </div>
+            
+            <!-- 🖼️ Изображение справа -->
+            <div class="hero-image">
+                <img src="/static/images/hero-lab.jpg" 
+                     alt="Laboratory test analysis" 
+                     class="hero-illustration"
+                     loading="eager">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 🔬 VALUE PROOF БЛОК - ДО/ПОСЛЕ -->
+<section class="value-proof-section">
+    <div class="container">
+        <!-- Заголовок блока -->
+        <h3 class="value-proof-title">
+            {{ t('value_proof_title', lang) }}
+        </h3>
+        
+        <!-- Сравнение ДО/ПОСЛЕ -->
+        <div class="comparison-grid">
+            <!-- Левая колонка: ДО -->
+            <div class="before-card fade-in-element">
+                <span class="badge badge-before">{{ t('value_before_title', lang) }}</span>
+                
+                <div class="report-mockup">
+                    <!-- Скриншот лабораторного бланка -->
+                    <img src="/static/images/lab-report-before.jpg" 
+                         alt="Laboratory report before" 
+                         class="report-image"
+                         loading="lazy">
+                    
+                    <!-- Confusion overlay (показывает непонятность) -->
+                    <div class="confusion-overlay">
+                        <span class="confusion-mark">?</span>
+                        <span class="confusion-mark">?</span>
+                        <span class="confusion-mark">?</span>
+                    </div>
+                </div>
+                
+                <p class="card-caption">
+                    {{ t('value_before_caption', lang) }}
+                </p>
+            </div>
+            
+            <!-- Разделитель с анимацией -->
+            <div class="arrow-separator fade-in-element">
+                <div class="arrow-icon">→</div>                
+            </div>
+            
+            <!-- Правая колонка: ПОСЛЕ -->
+            <div class="after-card fade-in-element">
+                <span class="badge badge-after">{{ t('value_after_title', lang) }}</span>
+                
+                <div class="report-mockup">
+                    <!-- Скриншот клинического объяснения -->
+                    <img src="/static/images/lab-report-after.jpg" 
+                         alt="Clinical analysis after" 
+                         class="report-image"
+                         loading="lazy">
+                    
+                    <!-- Fade overlay с CTA -->
+                    <div class="fade-overlay">
+                        <a href="/auth/google?utm_source=lab_test_cta" class="btn btn-cta">
+                            {{ t('value_cta_button', lang) }}
+                        </a>                        
+                    </div>
+                </div>
+                
+                <p class="card-caption">
+                    {{ t('value_after_caption', lang) }}
+                </p>
+            </div>
+        </div>
+        
+        <!-- Трансформация: ключевое сообщение -->
+        <div class="transformation-message fade-in-element">
+            <h4>{{ t('value_transformation_title', lang) }}</h4>
+        </div>
+        
+        <!-- Список преимуществ -->
+        <ul class="benefits-list fade-in-element">
+            <li>• {{ t('value_benefit_1', lang) }}</li>
+            <li>• {{ t('value_benefit_2', lang) }}</li>
+            <li>• {{ t('value_benefit_3', lang) }}</li>
+            <li>• {{ t('value_benefit_4', lang) }}</li>
+        </ul>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+/* ============================================
+   🩺 LAB TEST HERO SECTION
+   ============================================ */
+
+.lab-test-hero {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+}
+
+.lab-test-hero .hero-text h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.lab-test-hero .hero-subtitle {
+    font-size: 1.3rem;
+    font-weight: 500;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.lab-test-hero .hero-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.lab-test-hero .btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 18px 45px;
+    font-size: 1.15rem;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 15px rgba(0, 201, 167, 0.3);
+    transition: all 0.3s ease;
+}
+
+.lab-test-hero .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 201, 167, 0.4);
+}
+
+.lab-test-hero .btn-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin: 0;
+    padding-left: 0.5rem;
+}
+
+.lab-test-hero .hero-image {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.lab-test-hero .hero-illustration {
+    width: 100%;
+    max-width: 550px;
+    height: auto;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+/* ============================================
+   🔬 VALUE PROOF SECTION (ДО/ПОСЛЕ)
+   ============================================ */
+
+.value-proof-section {
+    padding: 3rem 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.value-proof-title {
+    text-align: center;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2rem;
+}
+
+/* Сетка сравнения: 45% / 10% / 45% */
+.comparison-grid {
+    display: grid;
+    grid-template-columns: 45% 10% 45%;
+    gap: 0;
+    align-items: start;
+    margin-bottom: 2rem;
+}
+
+/* Общие стили для карточек */
+.before-card,
+.after-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    position: relative;
+    
+    /* Аккуратная анимация появления */
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.before-card.visible,
+.after-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Бейджи */
+.badge {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.badge-before {
+    background: #f1f3f5;
+    color: #495057;
+}
+
+.badge-after {
+    background: #d3f9d8;
+    color: #2b8a3e;
+}
+
+/* Общий контейнер для обоих скриншотов */
+.report-mockup {
+    position: relative;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-bottom: 1rem;
+    min-height: 400px; /* минимальная высота */
+}
+
+.report-image {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Confusion overlay - только на "ДО" */
+.before-card .confusion-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.02);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    pointer-events: none;
+}
+
+.confusion-mark {
+    font-size: 2.5rem;
+    color: rgba(220, 53, 69, 0.3);
+    animation: pulse-confusion 2s ease-in-out infinite;
+}
+
+.confusion-mark:nth-child(2) {
+    animation-delay: 0.3s;
+}
+
+.confusion-mark:nth-child(3) {
+    animation-delay: 0.6s;
+}
+
+@keyframes pulse-confusion {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+/* Fade overlay с CTA - только на "ПОСЛЕ" */
+.after-card .fade-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 180px;
+    background: linear-gradient(to bottom, 
+        rgba(255, 255, 255, 0) 0%, 
+        rgba(255, 255, 255, 0.85) 40%,
+        rgba(255, 255, 255, 0.95) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 2rem;
+}
+
+.btn-cta {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 14px 35px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 15px rgba(0, 201, 167, 0.3);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 201, 167, 0.4);
+}
+
+.cta-note {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 0.75rem;
+    text-align: center;
+}
+
+/* Подписи под карточками */
+.card-caption {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    text-align: center;
+    margin: 0;
+}
+
+/* Разделитель со стрелкой */
+.arrow-separator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.25s ease 0.15s, transform 0.25s ease 0.15s;
+}
+
+.arrow-separator.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.arrow-icon {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    font-weight: 300;
+}
+
+.arrow-text {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+/* Трансформация: ключевое сообщение */
+.transformation-message {
+    text-align: center;
+    margin: 2rem 0 1.5rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #e3f9f6 0%, #f0f9ff 100%);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--primary-color);
+}
+
+.transformation-message h4 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Список преимуществ */
+/* Список преимуществ - две колонки */
+.benefits-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 auto;
+    max-width: 900px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem 2rem;
+}
+
+.benefits-list li {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    padding: 0.5rem 0;
+    line-height: 1.6;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Анимация появления при скролле */
+.fade-in-element {
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.fade-in-element.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ============================================
+   📱 МОБИЛЬНАЯ АДАПТАЦИЯ
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Hero */
+    .lab-test-hero {
+        min-height: auto;
+        padding: 3rem 1rem !important;
+    }
+    
+    .lab-test-hero .hero-content {
+        grid-template-columns: 1fr !important;
+        gap: 2.5rem;
+        text-align: center;
+    }
+    
+    .lab-test-hero .hero-text h1 {
+        font-size: 2rem !important;
+        line-height: 1.3 !important;
+    }
+    
+    .lab-test-hero .hero-subtitle {
+        font-size: 1.1rem !important;
+        line-height: 1.5 !important;
+        margin-bottom: 2rem !important;
+    }
+    
+    .lab-test-hero .hero-buttons {
+        align-items: center;
+        width: 100%;
+    }
+    
+    .lab-test-hero .btn-primary {
+        width: 100%;
+        justify-content: center;
+        padding: 16px 30px;
+        font-size: 1.05rem;
+    }
+    
+    .lab-test-hero .btn-subtitle {
+        text-align: center;
+        padding: 0;
+    }
+    
+    .lab-test-hero .hero-image {
+        order: -1;
+    }
+    
+    .lab-test-hero .hero-illustration {
+        max-width: 100%;
+    }
+    
+    /* Value Proof - вертикальная компоновка */
+    .value-proof-section {
+        padding: 3rem 0;
+    }
+    
+    .value-proof-title {
+        font-size: 1.6rem;
+        margin-bottom: 1.5rem;
+        padding: 0 1rem;
+    }
+    
+    .comparison-grid {
+        grid-template-columns: 1fr !important;
+        gap: 2rem;
+        padding: 0 1rem;
+    }
+    
+    .before-card,
+    .after-card {
+        padding: 1.5rem;
+    }
+    
+    .report-mockup {
+        min-height: 350px;
+    }
+    
+    /* Стрелка вертикальная */
+    .arrow-separator {
+        flex-direction: row;
+        gap: 0.75rem;
+        padding: 1rem 0;
+    }
+    
+    .arrow-icon {
+        transform: rotate(90deg);
+        font-size: 2rem;
+    }
+    
+    .arrow-text {
+        font-size: 0.8rem;
+    }
+    
+    .transformation-message {
+        margin: 2rem 1rem 1.5rem;
+        padding: 1.25rem;
+    }
+    
+    .transformation-message h4 {
+        font-size: 1.1rem;
+    }
+    
+    .benefits-list {
+        grid-template-columns: 1fr; /* На мобильных одна колонка */
+        padding: 0 1rem;
+    }
+    
+    .benefits-list li {
+        font-size: 0.95rem;
+        padding: 0.6rem 0;
+    }
+
+
+
+
+
+
+
+
+}
+</style>
+
+<script>
+// ✅ Аккуратная анимация появления при скролле (без перегруза)
+document.addEventListener('DOMContentLoaded', function() {
+    const observerOptions = {
+        threshold: 0.15,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+    
+    // Наблюдаем за элементами
+    document.querySelectorAll('.fade-in-element, .before-card, .after-card, .arrow-separator').forEach(el => {
+        observer.observe(el);
+    });
+});
+</script>
+{% endblock %}
