@@ -3046,12 +3046,18 @@ TRANSLATIONS = {
         'uk': 'Від лабораторних результатів — до зрозумілих медичних висновків',
         'de': 'Von Laborergebnissen zu klaren medizinischen Erkenntnissen'
     },    
+    'value_proof_subtitle': {
+        'ru': 'Пример: результаты анализа крови',
+        'en': 'Example shown: blood test results',
+        'uk': 'Приклад: результати аналізу крові',
+        'de': 'Beispiel: Ergebnisse der Blutuntersuchung'
+    },
     'value_before_title': {
-        'ru': 'Лабораторный бланк',
-        'en': 'Lab Report',
-        'uk': 'Лабораторний бланк',
-        'de': 'Laborbefund'
-    },    
+        'ru': 'Бланк анализа крови',
+        'en': 'Blood Test Lab Report',
+        'uk': 'Бланк аналізу крові',
+        'de': 'Bluttest-Laborbericht'
+    },
     'value_before_caption': {
         'ru': 'Цифры, референсы и термины — без пояснений',
         'en': 'Numbers, ranges and terms — no explanations',

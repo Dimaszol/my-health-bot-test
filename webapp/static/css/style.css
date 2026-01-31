@@ -1044,6 +1044,13 @@ footer {
 }
 
 /* Fade overlay с CTA - только на "ПОСЛЕ" */
+.value-proof-subtitle {
+    text-align: center;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-top: -1.2rem;
+    margin-bottom: 2rem;
+}
 .after-card .fade-overlay {
     position: absolute;
     bottom: 0;
