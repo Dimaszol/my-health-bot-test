@@ -937,3 +937,247 @@ footer {
     color: var(--primary-color);
     font-weight: 600;
 }
+
+/* ============================================
+   🔬 VALUE PROOF SECTION (ДО/ПОСЛЕ)
+   ============================================ */
+
+.value-proof-section {
+    padding: 3rem 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.value-proof-title {
+    text-align: center;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2rem;
+}
+
+/* Сетка сравнения: 45% / 10% / 45% */
+.comparison-grid {
+    display: grid;
+    grid-template-columns: 45% 10% 45%;
+    gap: 0;
+    align-items: start;
+    margin-bottom: 2rem;
+}
+
+/* Общие стили для карточек */
+.before-card,
+.after-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    position: relative;    
+}
+
+/* Бейджи */
+.badge {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.badge-before {
+    background: #f1f3f5;
+    color: #495057;
+}
+
+.badge-after {
+    background: #d3f9d8;
+    color: #2b8a3e;
+}
+
+/* Общий контейнер для обоих скриншотов */
+.report-mockup {
+    position: relative;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-bottom: 1rem;
+    min-height: 400px; /* минимальная высота */
+}
+
+.report-image {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Confusion overlay - только на "ДО" */
+.before-card .confusion-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.02);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    pointer-events: none;
+}
+
+.confusion-mark {
+    font-size: 2.5rem;
+    color: rgba(220, 53, 69, 0.3);
+    animation: pulse-confusion 2s ease-in-out infinite;
+}
+
+.confusion-mark:nth-child(2) {
+    animation-delay: 0.3s;
+}
+
+.confusion-mark:nth-child(3) {
+    animation-delay: 0.6s;
+}
+
+@keyframes pulse-confusion {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+/* Fade overlay с CTA - только на "ПОСЛЕ" */
+.after-card .fade-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(to bottom, 
+        rgba(255, 255, 255, 0) 0%, 
+        rgba(255, 255, 255, 0.85) 40%,
+        rgba(255, 255, 255, 0.95) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 0rem;
+}
+
+.btn-cta {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 14px 35px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 15px rgba(0, 201, 167, 0.3);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 201, 167, 0.4);
+}
+
+.cta-note {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 0.75rem;
+    text-align: center;
+}
+
+/* Подписи под карточками */
+.card-caption {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    text-align: center;
+    margin: 0;
+}
+
+/* Разделитель со стрелкой */
+.arrow-separator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.arrow-icon {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    font-weight: 300;
+}
+
+.arrow-text {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+/* Трансформация: ключевое сообщение */
+.transformation-message {
+    text-align: center;
+    margin: 2rem 0 1.5rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #e3f9f6 0%, #f0f9ff 100%);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--primary-color);
+}
+
+.transformation-message h4 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Секция "Что вы получаете" */
+.what-you-get-section {
+    margin: 2rem 0;
+}
+
+.what-you-get-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    max-width: 900px;
+    margin: 0 auto 1.5rem;
+}
+
+.get-column h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.get-column ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.get-column ul li {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    padding: 0.4rem 0;
+    line-height: 1.5;
+}
+
+.get-column ul li:before {
+    content: "• ";
+    color: var(--primary-color);
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+.get-disclaimer {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin: 0;
+}

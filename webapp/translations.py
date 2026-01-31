@@ -169,10 +169,10 @@ TRANSLATIONS = {
     },
 
     'hero_main_title_highlight': {
-        'ru': 'получите итоговое AI-заключение',
-        'en': 'get AI-reviewed conclusion',
-        'uk': 'отримайте підсумковий AI-висновок',
-        'de': 'erhalten Sie eine KI-geprüfte Schlussfolgerung'
+        'ru': 'получите понятные, многоуровневые медицинские выводы',
+        'en': 'get clear, multi-layered medical insights',
+        'uk': 'отримайте зрозумілі, багаторівневі медичні висновки',
+        'de': 'erhalten Sie klare, mehrschichtige medizinische Einblicke'
     },
     'hero_main_title_part2': {
         'ru': '',
@@ -180,12 +180,11 @@ TRANSLATIONS = {
         'uk': '',
         'de': ''
     },
-
     'hero_description': {
-        'ru': 'Несколько AI-моделей анализируют документ вместе и формируют единое заключение. Также можете задать любые вопросы о здоровье 24/7.',
-        'en': 'Multiple AI models analyze your document together and produce one consolidated result. You can also ask anything about your health 24/7.',
-        'uk': 'Декілька AI-моделей аналізують документ разом та формують єдиний висновок. Також можете поставити будь-які питання про здоров\'я 24/7.',
-        'de': 'Mehrere KI-Modelle analysieren Ihr Dokument gemeinsam und erstellen ein einheitliches Ergebnis. Sie können auch jederzeit Fragen zu Ihrer Gesundheit stellen 24/7.'
+        'ru': 'Несколько ИИ-моделей совместно анализируют ваши медицинские данные, перепроверяя результаты и контекст, чтобы сформировать понятную и целостную сводку.',
+        'en': 'Multiple AI models analyze your medical data together, cross-checking findings and context to produce a clear, consolidated summary.',
+        'uk': 'Кілька ІІ-моделей спільно аналізують ваші медичні дані, звіряючи результати та контекст, щоб сформувати зрозумілу й цілісну зведену сводку.',
+        'de': 'Mehrere KI-Modelle analysieren gemeinsam Ihre medizinischen Daten, gleichen Befunde und Kontext ab und erstellen eine klare, zusammengefasste Übersicht.'
     },
     'btn_try_free': {
         'ru': 'Войти через Google',
@@ -3042,10 +3041,10 @@ TRANSLATIONS = {
     # 🔬 VALUE PROOF БЛОК (ДО/ПОСЛЕ)
     # ============================================
     'value_proof_title': {
-        'ru': 'Из лабораторного бланка — в понятный разбор',
-        'en': 'From Lab Report — to Clear Analysis',
-        'uk': 'З лабораторного бланку — у зрозумілий розбір',
-        'de': 'Vom Laborbefund — zur verständlichen Analyse'
+        'ru': 'От лабораторных результатов — к понятным медицинским выводам',
+        'en': 'From lab results to clear medical insights',
+        'uk': 'Від лабораторних результатів — до зрозумілих медичних висновків',
+        'de': 'Von Laborergebnissen zu klaren medizinischen Erkenntnissen'
     },    
     'value_before_title': {
         'ru': 'Лабораторный бланк',
@@ -3072,34 +3071,72 @@ TRANSLATIONS = {
         'de': 'Strukturierte Analyse mit Fokus auf das Wesentliche'
     },        
     'value_transformation_title': {
-        'ru': 'Из цифр — в понимание анализа',
-        'en': 'From numbers — to understanding your results',
-        'uk': 'З цифр — у розуміння аналізу',
-        'de': 'Von Zahlen — zum Verständnis Ihrer Ergebnisse'
+        'ru': 'Что вы получите*',
+        'en': 'What you get*',
+        'uk': 'Що ви отримаєте*',
+        'de': 'Was Sie erhalten*'
     },    
-    'value_benefit_1': {
-        'ru': 'какие показатели выходят за пределы нормы',
-        'en': 'which values are outside normal range',
-        'uk': 'які показники виходять за межі норми',
-        'de': 'welche Werte außerhalb des Normalbereichs liegen'
-    },    
-    'value_benefit_2': {
-        'ru': 'как они связаны между собой',
-        'en': 'how they relate to each other',
-        'uk': 'як вони пов\'язані між собою',
-        'de': 'wie sie miteinander zusammenhängen'
-    },    
-    'value_benefit_3': {
-        'ru': 'на что обычно обращают внимание врачи',
-        'en': 'what doctors typically focus on',
-        'uk': 'на що зазвичай звертають увагу лікарі',
-        'de': 'worauf Ärzte typischerweise achten'
-    },    
-    'value_benefit_4': {
-        'ru': 'каких данных не хватает для полной картины',
-        'en': 'what data is missing for complete picture',
-        'uk': 'яких даних не вистачає для повної картини',
-        'de': 'welche Daten für ein vollständiges Bild fehlen'
+    'what_you_get_summary_title': {
+        'ru': 'Summary',
+        'en': 'Summary',
+        'uk': 'Summary',
+        'de': 'Summary'
+    },
+
+    'what_you_get_summary_1': {
+        'ru': 'Clinical overview and key findings',
+        'en': 'Clinical overview and key findings',
+        'uk': 'Clinical overview and key findings',
+        'de': 'Clinical overview and key findings'
+    },
+
+    'what_you_get_summary_2': {
+        'ru': 'Interpretation and practical meaning',
+        'en': 'Interpretation and practical meaning',
+        'uk': 'Interpretation and practical meaning',
+        'de': 'Interpretation and practical meaning'
+    },
+
+    'what_you_get_summary_3': {
+        'ru': 'Limitations and follow-up context',
+        'en': 'Limitations and follow-up context',
+        'uk': 'Limitations and follow-up context',
+        'de': 'Limitations and follow-up context'
+    },
+
+    'what_you_get_detailed_title': {
+        'ru': 'Detailed analysis',
+        'en': 'Detailed analysis',
+        'uk': 'Detailed analysis',
+        'de': 'Detailed analysis'
+    },
+
+    'what_you_get_detailed_1': {
+        'ru': 'Expert-level clinical reasoning',
+        'en': 'Expert-level clinical reasoning',
+        'uk': 'Expert-level clinical reasoning',
+        'de': 'Expert-level clinical reasoning'
+    },
+
+    'what_you_get_detailed_2': {
+        'ru': 'Possible interpretations and patterns',
+        'en': 'Possible interpretations and patterns',
+        'uk': 'Possible interpretations and patterns',
+        'de': 'Possible interpretations and patterns'
+    },
+
+    'what_you_get_detailed_3': {
+        'ru': 'Deeper context for complex cases',
+        'en': 'Deeper context for complex cases',
+        'uk': 'Deeper context for complex cases',
+        'de': 'Deeper context for complex cases'
+    },
+
+    'what_you_get_disclaimer': {
+        'ru': '(*) Not a diagnosis or medical decision.',
+        'en': '(*) Not a diagnosis or medical decision.',
+        'uk': '(*) Not a diagnosis or medical decision.',
+        'de': '(*) Not a diagnosis or medical decision.'
     },    
     'value_cta_button': {
         'ru': 'Получить мой разбор',

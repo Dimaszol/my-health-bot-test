@@ -845,6 +845,67 @@
         -webkit-overflow-scrolling: touch;
     }
 
+    /* Value Proof - вертикальная компоновка */
+    .value-proof-section {
+        padding: 3rem 0;
+    }
+    
+    .value-proof-title {
+        font-size: 1.6rem;
+        margin-bottom: 1.5rem;
+        padding: 0 1rem;
+    }
+    
+    .comparison-grid {
+        grid-template-columns: 1fr !important;
+        gap: 2rem;
+        padding: 0 1rem;
+    }
+    
+    .before-card,
+    .after-card {
+        padding: 1.5rem;
+    }
+    
+    .report-mockup {
+        min-height: 350px;
+    }
+    
+    /* Стрелка вертикальная */
+    .arrow-separator {
+        flex-direction: row;
+        gap: 0.75rem;
+        padding: 1rem 0;
+    }
+    
+    .arrow-icon {
+        transform: rotate(90deg);
+        font-size: 2rem;
+    }
+    
+    .arrow-text {
+        font-size: 0.8rem;
+    }
+    
+    .transformation-message {
+        margin: 2rem 1rem 1.5rem;
+        padding: 1.25rem;
+    }
+    
+    .transformation-message h4 {
+        font-size: 1.1rem;
+    }
+    
+    .what-you-get-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        padding: 0 1rem;
+    }
+    
+    .get-disclaimer {
+        padding: 0 1rem;
+    }
+
     /* ========================================
        ПРИНУДИТЕЛЬНАЯ СВЕТЛАЯ ТЕМА ДЛЯ МЕНЮ
        ======================================== */

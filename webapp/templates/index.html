@@ -275,6 +275,107 @@
         </div>
 </section>
 
+<!-- 🔬 VALUE PROOF БЛОК - ДО/ПОСЛЕ -->
+<section class="value-proof-section">
+    <div class="container">
+        <!-- Заголовок блока -->
+        <h3 class="value-proof-title">
+            {{ t('value_proof_title', lang) }}
+        </h3>
+        
+        <!-- Сравнение ДО/ПОСЛЕ -->
+        <div class="comparison-grid">
+            <!-- Левая колонка: ДО -->
+            <div class="before-card">
+                <span class="badge badge-before">{{ t('value_before_title', lang) }}</span>
+                
+                <div class="report-mockup">
+                    <!-- Скриншот лабораторного бланка -->
+                    <img src="/static/images/lab-report-before.jpg" 
+                         alt="Laboratory report before" 
+                         class="report-image"
+                         loading="lazy">
+                    
+                    <!-- Confusion overlay (показывает непонятность) -->
+                    <div class="confusion-overlay">
+                        <span class="confusion-mark">?</span>
+                        <span class="confusion-mark">?</span>
+                        <span class="confusion-mark">?</span>
+                    </div>
+                </div>
+                
+                <p class="card-caption">
+                    {{ t('value_before_caption', lang) }}
+                </p>
+            </div>
+            
+            <!-- Разделитель с анимацией -->
+            <div class="arrow-separator">
+                <div class="arrow-icon">→</div>                
+            </div>
+            
+            <!-- Правая колонка: ПОСЛЕ -->
+            <div class="after-card">
+                <span class="badge badge-after">{{ t('value_after_title', lang) }}</span>
+                
+                <div class="report-mockup">
+                    <!-- Скриншот клинического объяснения -->
+                    <img src="/static/images/lab-report-after.jpg" 
+                         alt="Clinical analysis after" 
+                         class="report-image"
+                         loading="lazy">
+                    
+                    <!-- Fade overlay с CTA -->
+                    <div class="fade-overlay">
+                        <a href="/login" class="btn btn-cta">
+                            {{ t('value_cta_button', lang) }}
+                        </a>                        
+                    </div>
+                </div>
+                
+                <p class="card-caption">
+                    {{ t('value_after_caption', lang) }}
+                </p>
+            </div>
+        </div>
+        
+        <!-- Трансформация: ключевое сообщение -->
+        <div class="transformation-message">
+            <h4>{{ t('value_transformation_title', lang) }}</h4>
+        </div>
+
+        <!-- Что вы получаете - две колонки -->
+        <div class="what-you-get-section">
+            <div class="what-you-get-grid">
+                <!-- Колонка 1: Summary -->
+                <div class="get-column">
+                    <h5><span style="color: #667eea;">▼</span> {{ t('what_you_get_summary_title', lang) }}</h5>
+                    <ul>
+                        <li>{{ t('what_you_get_summary_1', lang) }}</li>
+                        <li>{{ t('what_you_get_summary_2', lang) }}</li>
+                        <li>{{ t('what_you_get_summary_3', lang) }}</li>
+                    </ul>
+                </div>
+                
+                <!-- Колонка 2: Detailed analysis -->
+                <div class="get-column">
+                    <h5>🔍 {{ t('what_you_get_detailed_title', lang) }}</h5>
+                    <ul>
+                        <li>{{ t('what_you_get_detailed_1', lang) }}</li>
+                        <li>{{ t('what_you_get_detailed_2', lang) }}</li>
+                        <li>{{ t('what_you_get_detailed_3', lang) }}</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Дисклеймер -->
+            <p class="get-disclaimer">
+                {{ t('what_you_get_disclaimer', lang) }}
+            </p>
+        </div>
+    </div>
+</section>
+
 <!-- 🔍 КАК ЭТО РАБОТАЕТ -->
 <section id="how-it-works" style="margin: 4rem 0;">
     <div class="container">
@@ -493,5 +594,4 @@
         </p>
     </div>
 </section>
-
 {% endblock %}
