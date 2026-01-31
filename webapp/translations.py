@@ -3069,13 +3069,7 @@ TRANSLATIONS = {
         'en': 'Structured analysis focused on what matters',
         'uk': 'Структурований розбір з фокусом на важливе',
         'de': 'Strukturierte Analyse mit Fokus auf das Wesentliche'
-    },        
-    'value_cta_subtitle': {
-        'ru': 'Без регистрации — вход через Google',
-        'en': 'No registration — sign in with Google',
-        'uk': 'Без реєстрації — вхід через Google',
-        'de': 'Keine Registrierung — mit Google anmelden'
-    },
+    },  
     'value_transformation_title': {
         'ru': 'Что вы получите*',
         'en': 'What you get*',
