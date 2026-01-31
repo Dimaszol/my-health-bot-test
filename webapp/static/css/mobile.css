@@ -859,12 +859,12 @@
     .comparison-grid {
         grid-template-columns: 1fr !important;
         gap: 2rem;
-        padding: 0 1rem;
+        padding: 0;
     }
     
     .before-card,
     .after-card {
-        padding: 1.5rem;
+        padding: 0.5rem;
     }
     
     .report-mockup {

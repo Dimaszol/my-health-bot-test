@@ -3070,6 +3070,12 @@ TRANSLATIONS = {
         'uk': 'Структурований розбір з фокусом на важливе',
         'de': 'Strukturierte Analyse mit Fokus auf das Wesentliche'
     },        
+    'value_cta_subtitle': {
+        'ru': 'Без регистрации — вход через Google',
+        'en': 'No registration — sign in with Google',
+        'uk': 'Без реєстрації — вхід через Google',
+        'de': 'Keine Registrierung — mit Google anmelden'
+    },
     'value_transformation_title': {
         'ru': 'Что вы получите*',
         'en': 'What you get*',
@@ -3077,67 +3083,67 @@ TRANSLATIONS = {
         'de': 'Was Sie erhalten*'
     },    
     'what_you_get_summary_title': {
-        'ru': 'Summary',
+        'ru': 'Краткое резюме',
         'en': 'Summary',
-        'uk': 'Summary',
-        'de': 'Summary'
+        'uk': 'Коротке резюме',
+        'de': 'Zusammenfassung'
     },
 
     'what_you_get_summary_1': {
-        'ru': 'Clinical overview and key findings',
+        'ru': 'Клинический обзор и ключевые находки',
         'en': 'Clinical overview and key findings',
-        'uk': 'Clinical overview and key findings',
-        'de': 'Clinical overview and key findings'
+        'uk': 'Клінічний огляд та ключові знахідки',
+        'de': 'Klinischer Überblick und wichtige Befunde'
     },
 
     'what_you_get_summary_2': {
-        'ru': 'Interpretation and practical meaning',
+        'ru': 'Интерпретация и практическое значение',
         'en': 'Interpretation and practical meaning',
-        'uk': 'Interpretation and practical meaning',
-        'de': 'Interpretation and practical meaning'
+        'uk': 'Інтерпретація та практичне значення',
+        'de': 'Interpretation und praktische Bedeutung'
     },
 
     'what_you_get_summary_3': {
-        'ru': 'Limitations and follow-up context',
+        'ru': 'Ограничения и контекст для наблюдения',
         'en': 'Limitations and follow-up context',
-        'uk': 'Limitations and follow-up context',
-        'de': 'Limitations and follow-up context'
+        'uk': 'Обмеження та контекст для спостереження',
+        'de': 'Einschränkungen und Follow-up-Kontext'
     },
 
     'what_you_get_detailed_title': {
-        'ru': 'Detailed analysis',
+        'ru': 'Детальный анализ',
         'en': 'Detailed analysis',
-        'uk': 'Detailed analysis',
-        'de': 'Detailed analysis'
+        'uk': 'Детальний аналіз',
+        'de': 'Detaillierte Analyse'
     },
 
     'what_you_get_detailed_1': {
-        'ru': 'Expert-level clinical reasoning',
+        'ru': 'Клиническое рассуждение экспертного уровня',
         'en': 'Expert-level clinical reasoning',
-        'uk': 'Expert-level clinical reasoning',
-        'de': 'Expert-level clinical reasoning'
+        'uk': 'Клінічне міркування експертного рівня',
+        'de': 'Klinische Argumentation auf Expertenebene'
     },
 
     'what_you_get_detailed_2': {
-        'ru': 'Possible interpretations and patterns',
+        'ru': 'Возможные интерпретации и паттерны',
         'en': 'Possible interpretations and patterns',
-        'uk': 'Possible interpretations and patterns',
-        'de': 'Possible interpretations and patterns'
+        'uk': 'Можливі інтерпретації та патерни',
+        'de': 'Mögliche Interpretationen und Muster'
     },
 
     'what_you_get_detailed_3': {
-        'ru': 'Deeper context for complex cases',
+        'ru': 'Углубленный контекст для сложных случаев',
         'en': 'Deeper context for complex cases',
-        'uk': 'Deeper context for complex cases',
-        'de': 'Deeper context for complex cases'
+        'uk': 'Поглиблений контекст для складних випадків',
+        'de': 'Tieferer Kontext für komplexe Fälle'
     },
 
     'what_you_get_disclaimer': {
-        'ru': '(*) Not a diagnosis or medical decision.',
+        'ru': '(*) Не является диагнозом или медицинским решением.',
         'en': '(*) Not a diagnosis or medical decision.',
-        'uk': '(*) Not a diagnosis or medical decision.',
-        'de': '(*) Not a diagnosis or medical decision.'
-    },    
+        'uk': '(*) Не є діагнозом або медичним рішенням.',
+        'de': '(*) Keine Diagnose oder medizinische Entscheidung.'
+    },  
     'value_cta_button': {
         'ru': 'Получить мой разбор',
         'en': 'Get My Analysis',
