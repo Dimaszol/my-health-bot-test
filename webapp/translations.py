@@ -2273,7 +2273,7 @@ TRANSLATIONS = {
 'ai_disclaimer': {
     "ru": "AI-анализ носит информационный характер и не является диагнозом или медицинским назначением. Выводы основаны только на загруженных данных и контексте, полнота которых влияет на точность интерпретации. Перед принятием медицинских решений проконсультируйтесь с врачом.",
     "en": "This AI-generated analysis is for informational purposes only and is not a diagnosis or medical prescription. Conclusions are based solely on the uploaded data and context, the completeness of which affects interpretation accuracy. Please consult a doctor before making medical decisions.",
-    "ua": "AI-аналіз має інформаційний характер і не є діагнозом або медичним призначенням. Висновки ґрунтуються лише на завантажених даних і контексті, повнота яких впливає на точність інтерпретації. Перед прийняттям медичних рішень проконсультуйтеся з лікарем.",
+    "uk": "AI-аналіз має інформаційний характер і не є діагнозом або медичним призначенням. Висновки ґрунтуються лише на завантажених даних і контексті, повнота яких впливає на точність інтерпретації. Перед прийняттям медичних рішень проконсультуйтеся з лікарем.",
     "de": "Diese KI-Analyse dient ausschließlich Informationszwecken und stellt keine Diagnose oder medizinische Verschreibung dar. Die Schlussfolgerungen basieren ausschließlich auf den hochgeladenen Daten und dem angegebenen Kontext, dessen Vollständigkeit die Genauigkeit der Interpretation beeinflusst. Bitte konsultieren Sie vor medizinischen Entscheidungen einen Arzt."
 },
 'btn_delete_document': {
@@ -3009,22 +3009,22 @@ TRANSLATIONS = {
     # 🩺 ИНТЕНТ-СТРАНИЦА: АНАЛИЗ КРОВИ
     # ============================================
     'blood_test_hero_title': {
-        'ru': 'Профессиональный разбор анализа крови',
-        'en': 'Professional Blood Test Interpretation',
-        'uk': 'Професійний розбір аналізу крові',
-        'de': 'Professionelle Analyse von Blutuntersuchungen'
+        'ru': 'Поймите, что означают ваши анализы крови',
+        'en': 'Understand What Your Blood Test Results Mean',
+        'uk': 'Зрозумійте, що означають ваші аналізи крові',
+        'de': 'Verstehen Sie, was Ihre Bluttestergebnisse bedeuten'
     },
     'blood_test_hero_subtitle_part1': {
-        'ru': 'PulseBook превращает лабораторные цифры',
-        'en': 'PulseBook turns lab numbers',
-        'uk': 'PulseBook перетворює лабораторні цифри',
-        'de': 'PulseBook verwandelt Laborwerte'
+        'ru': 'Загрузите анализ и получите чёткое объяснение',
+        'en': 'Upload your blood test and get a clear explanation',
+        'uk': 'Завантажте аналіз і отримайте чітке пояснення',
+        'de': 'Laden Sie Ihren Bluttest hoch und erhalten Sie eine klare Erklärung'
     },
     'blood_test_hero_subtitle_part2': {
-        'ru': 'в понятный и структурированный разбор',
-        'en': 'into a clear and structured analysis',
-        'uk': 'у зрозумілий та структурований розбір',
-        'de': 'in eine klare und strukturierte Analyse'
+        'ru': 'что в норме, что нет и на что стоит обратить внимание',
+        'en': 'of what’s normal, what’s not, and what matters',
+        'uk': 'що в нормі, що ні та на що варто звернути увагу',
+        'de': 'was normal ist, was nicht und worauf es ankommt'
     },
     'blood_test_btn_continue_google': {
         'ru': 'Продолжить с Google',

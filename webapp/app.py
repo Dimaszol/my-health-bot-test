@@ -337,6 +337,7 @@ async def login(request: Request):
 # Добавь этот маршрут в webapp/app.py после маршрута "/login"
 
 @app.get("/lab-test-analysis", response_class=HTMLResponse)
+@app.get("/blood-test", response_class=HTMLResponse)
 async def lab_test_landing(request: Request):   
     
     # Если пользователь уже авторизован → редирект в dashboard
@@ -356,6 +357,7 @@ async def lab_test_landing(request: Request):
     return templates.TemplateResponse('lab_test_landing.html', context)
 
 @app.get("/{lang}/lab-test-analysis", response_class=HTMLResponse)
+@app.get("/{lang}/blood-test", response_class=HTMLResponse)
 async def lab_test_landing_lang(request: Request, lang: str):
     """
     🩺 ИНТЕНТ-СТРАНИЦА: Лабораторные анализы (с языковым префиксом)
