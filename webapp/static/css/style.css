@@ -318,7 +318,7 @@ main {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
-    justify-content: flex-start;
+    justify-content: center;
 }
 
 .hero-image {

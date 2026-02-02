@@ -167,12 +167,11 @@ TRANSLATIONS = {
         'uk': 'Завантажте аналіз —',
         'de': 'Testergebnisse hochladen —'
     },
-
     'hero_main_title_highlight': {
-        'ru': 'получите понятные, многоуровневые медицинские выводы',
-        'en': 'get clear, multi-layered medical insights',
-        'uk': 'отримайте зрозумілі, багаторівневі медичні висновки',
-        'de': 'erhalten Sie klare, mehrschichtige medizinische Einblicke'
+        'ru': 'получите понятные медицинские выводы',
+        'en': 'get clear medical insights',
+        'uk': 'отримайте зрозумілі медичні висновки',
+        'de': 'erhalten Sie klare medizinische Einblicke'
     },
     'hero_main_title_part2': {
         'ru': '',
@@ -181,18 +180,17 @@ TRANSLATIONS = {
         'de': ''
     },
     'hero_description': {
-        'ru': 'Несколько ИИ-моделей совместно анализируют ваши медицинские данные, перепроверяя результаты и контекст, чтобы сформировать понятную и целостную сводку.',
-        'en': 'Multiple AI models analyze your medical data together, cross-checking findings and context to produce a clear, consolidated summary.',
-        'uk': 'Кілька ІІ-моделей спільно аналізують ваші медичні дані, звіряючи результати та контекст, щоб сформувати зрозумілу й цілісну зведену сводку.',
-        'de': 'Mehrere KI-Modelle analysieren gemeinsam Ihre medizinischen Daten, gleichen Befunde und Kontext ab und erstellen eine klare, zusammengefasste Übersicht.'
+        'ru': 'Несколько AI-моделей анализируют документ вместе и формируют единую структурированную сводку. Вы также можете задавать уточняющие вопросы о здоровье в любое время.',
+        'en': 'Multiple AI models analyze your document together to produce a single, consolidated summary. You can also ask follow-up questions about your health anytime.',
+        'uk': 'Кілька AI-моделей аналізують документ разом і формують єдину структуровану зведену інформацію. Ви також можете ставити уточнювальні питання про здоровʼя у будь-який час.',
+        'de': 'Mehrere KI-Modelle analysieren Ihr Dokument gemeinsam und erstellen eine einheitliche, strukturierte Zusammenfassung. Sie können außerdem jederzeit Anschlussfragen zu Ihrer Gesundheit stellen.'
     },
     'btn_try_free': {
-        'ru': 'Войти через Google',
-        'en': 'Login with Google',
-        'uk': 'Увійти через Google',
-        'de': 'Mit Google anmelden'
+        'ru': 'Попробовать сейчас',
+        'en': 'Try it now',
+        'uk': 'Спробувати зараз',
+        'de': 'Jetzt ausprobieren'
     },
-
     'btn_learn_more': {
         'ru': 'Как это работает',
         'en': 'How it works',
@@ -200,10 +198,10 @@ TRANSLATIONS = {
         'de': 'Wie funktioniert es'
     },
     'btn_google_subtitle': {
-        'ru': 'Быстро • Без регистрации • Бесплатно',
-        'en': 'Fast • No registration • Free',
-        'uk': 'Швидко • Без реєстрації • Безкоштовно',
-        'de': 'Schnell • Keine Registrierung • Kostenlos'
+        'ru': 'Быстро • Вход через Google • Бесплатно',
+        'en': 'Fast • Sign in with Google • Free',
+        'uk': 'Швидко • Вхід через Google • Безкоштовно',
+        'de': 'Schnell • Anmeldung mit Google • Kostenlos'
     },
     'trustpilot_excellent': {
         'ru': 'Отлично',
