@@ -414,7 +414,7 @@
        ======================================== */
     
     .hero {
-        padding: 2.5rem 1rem !important;
+        padding: 2rem 0.5rem !important;
         margin-bottom: 2rem;
         border-radius: 12px !important;
     }
@@ -458,6 +458,31 @@
 
     .hero-image {
         display: none;
+    }
+
+    /* ========================================
+    СЕКЦИИ С ИНЛАЙН-СТИЛЯМИ (Privacy, и т.д.)
+    ======================================== */
+
+    section[style*="padding"] {
+        padding-left: 0.35rem !important;
+        padding-right: 0.35rem !important;
+    }
+
+    section[style*="padding"] .container {
+        padding-left: 0.35rem !important;
+        padding-right: 0.35rem !important;
+    }
+
+    /* Value Proof секция */
+    .value-proof-section {
+        padding-left: 0.35rem !important;
+        padding-right: 0.35rem !important;
+    }
+
+    .value-proof-section .container {
+        padding-left: 0.35rem !important;
+        padding-right: 0.35rem !important;
     }
 
     /* ========================================
@@ -507,7 +532,7 @@
     ======================================== */
 
     main {
-        padding: 0.5rem !important;
+        padding: 0.25rem !important;
         padding-top: 20px !important; /* Отступ от шапки - уменьшил */
     }
 
@@ -516,7 +541,7 @@
     }
 
     .card {
-        padding: 1rem !important;
+        padding: 0.75rem !important;
         margin-bottom: 1.5rem !important; /* Увеличил отступ между карточками */
     }
 
