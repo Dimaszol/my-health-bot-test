@@ -497,34 +497,7 @@ TRANSLATIONS = {
         'en': 'FAQ',
         'uk': 'FAQ',
         'de': 'FAQ'
-    },
-    # ============================================
-    # 🔒 БЕЗОПАСНОСТЬ
-    # ============================================
-    'security_title': {
-        'ru': 'Ваши данные в полной безопасности',
-        'en': 'Your data is completely secure',
-        'uk': 'Ваші дані в повній безпеці',
-        'de': 'Ihre Daten sind vollständig sicher'
-    },
-    'security_description': {
-        'ru': 'Мы используем шифрование данных, безопасную авторизацию через Google и храним информацию на защищённых серверах. Ваша медицинская информация доступна только вам.',
-        'en': 'We use data encryption, secure Google authentication and store information on protected servers. Your medical information is accessible only to you.',
-        'uk': 'Ми використовуємо шифрування даних, безпечну авторизацію через Google і зберігаємо інформацію на захищених серверах. Ваша медична інформація доступна тільки вам.',
-        'de': 'Wir verwenden Datenverschlüsselung, sichere Google-Authentifizierung und speichern Informationen auf geschützten Servern. Ihre medizinischen Informationen sind nur für Sie zugänglich.'
-    },
-    'security_note_title': {
-        'ru': 'Примечание о конфиденциальности',
-        'en': 'Privacy Note',
-        'uk': 'Примітка про конфіденційність',
-        'de': 'Datenschutzhinweis'
-    },
-    'security_note_text': {
-        'ru': 'Ваши данные защищены шифрованием и соответствуют стандартам GDPR.',
-        'en': 'Your data is protected by encryption and complies with GDPR standards.',
-        'uk': 'Ваші дані захищені шифруванням та відповідають стандартам GDPR.',
-        'de': 'Ihre Daten sind durch Verschlüsselung geschützt und entsprechen den GDPR-Standards.'
-    },      
+    },    
     
     # ============================================
     # 🚀 ПРИЗЫВ К ДЕЙСТВИЮ
@@ -3075,10 +3048,10 @@ TRANSLATIONS = {
         'de': 'Strukturierte Analyse mit Fokus auf das Wesentliche'
     },  
     'value_transformation_title': {
-        'ru': 'Что вы получите*',
-        'en': 'What you get*',
-        'uk': 'Що ви отримаєте*',
-        'de': 'Was Sie erhalten*'
+        'ru': 'Что вы получите',
+        'en': 'What you get',
+        'uk': 'Що ви отримаєте',
+        'de': 'Was Sie erhalten'
     },    
     'what_you_get_summary_title': {
         'ru': 'Краткое резюме',
@@ -3134,20 +3107,41 @@ TRANSLATIONS = {
         'en': 'Deeper context for complex cases',
         'uk': 'Поглиблений контекст для складних випадків',
         'de': 'Tieferer Kontext für komplexe Fälle'
-    },
-
-    'what_you_get_disclaimer': {
-        'ru': '(*) Не является диагнозом или медицинским решением.',
-        'en': '(*) Not a diagnosis or medical decision.',
-        'uk': '(*) Не є діагнозом або медичним рішенням.',
-        'de': '(*) Keine Diagnose oder medizinische Entscheidung.'
-    },  
+    },    
     'value_cta_button': {
         'ru': 'Получить мой разбор',
         'en': 'Get My Analysis',
         'uk': 'Отримати мій розбір',
         'de': 'Meine Analyse erhalten'
     },    
+    'privacy_block_title': {
+        'ru': 'Конфиденциальность данных и безопасная обработка',
+        'en': 'Data Privacy and Secure Processing',
+        'uk': 'Конфіденційність даних та безпечна обробка',
+        'de': 'Datenschutz und sichere Verarbeitung'
+    },
+
+    'privacy_block_text': {
+        'ru': 'Ваши документы приватны по умолчанию и доступны только вам.',
+        'en': 'Your documents are private by default and accessible only to you.',
+        'uk': 'Ваші документи приватні за замовчуванням і доступні лише вам.',
+        'de': 'Ihre Dokumente sind standardmäßig privat und nur für Sie zugänglich.'
+    },
+
+    'privacy_block_note_title': {
+        'ru': 'Примечание о конфиденциальности',
+        'en': 'Privacy note',
+        'uk': 'Примітка про конфіденційність',
+        'de': 'Datenschutzhinweis'
+    },
+    'privacy_block_note_text': {
+        'ru': 'Ваши данные обрабатываются в соответствии с принципами защиты данных GDPR и хранятся на инфраструктуре, предоставляемой сервисами, прошедшими аудит SOC 2.',
+        'en': 'Your data is handled in line with GDPR data protection principles and stored on infrastructure provided by SOC 2 audited service providers.',
+        'uk': 'Ваші дані обробляються відповідно до принципів захисту даних GDPR та зберігаються на інфраструктурі, що надається сервісами, які пройшли аудит SOC 2.',
+        'de': 'Ihre Daten werden gemäß den Datenschutzgrundsätzen der DSGVO verarbeitet und auf einer Infrastruktur gespeichert, die von SOC 2-auditierten Dienstleistern bereitgestellt wird.'
+    }
+
+    
     
 }
 
