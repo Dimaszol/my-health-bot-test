@@ -186,10 +186,10 @@ TRANSLATIONS = {
         'de': 'Mehrere KI-Modelle analysieren Ihr Dokument gemeinsam und erstellen eine einheitliche, strukturierte Zusammenfassung. Sie können außerdem jederzeit Anschlussfragen zu Ihrer Gesundheit stellen.'
     },
     'btn_try_free': {
-        'ru': 'Попробовать сейчас',
-        'en': 'Try it now',
-        'uk': 'Спробувати зараз',
-        'de': 'Jetzt ausprobieren'
+        'ru': 'Попробовать бесплатно',
+        'en': 'Try it now for free',
+        'uk': 'Спробувати безкоштовно',
+        'de': 'Jetzt kostenlos ausprobieren'
     },
     'btn_learn_more': {
         'ru': 'Как это работает',
@@ -509,10 +509,10 @@ TRANSLATIONS = {
         'de': 'Bereit, sich um Ihre Gesundheit zu kümmern?'
     },
     'cta_description': {
-        'ru': 'Присоединяйтесь к тысячам пользователей, которые уже управляют своим здоровьем с помощью AI',
-        'en': 'Join thousands of users who are already managing their health with AI',
-        'uk': 'Приєднуйтесь до тисяч користувачів, які вже керують своїм здоров\'ям за допомогою AI',
-        'de': 'Schließen Sie sich Tausenden von Benutzern an, die ihre Gesundheit bereits mit KI verwalten'
+        'ru': 'Присоединяйтесь к людям, которые уже используют AI, чтобы лучше понимать свои медицинские данные',
+        'en': 'Join people who are already using AI to better understand their medical data',
+        'uk': 'Приєднуйтесь до людей, які вже використовують AI, щоб краще розуміти свої медичні дані',
+        'de': 'Schließen Sie sich Menschen an, die bereits KI nutzen, um ihre medizinischen Daten besser zu verstehen'
     },
     'payment_success_heading': {
         'ru': 'Оплата прошла успешно!',
@@ -3127,7 +3127,30 @@ TRANSLATIONS = {
         'uk': 'Ваші документи приватні за замовчуванням і доступні лише вам.',
         'de': 'Ihre Dokumente sind standardmäßig privat und nur für Sie zugänglich.'
     },
-
+    'stats_live_indicator': {
+        'ru': 'Статистика в реальном времени',
+        'en': 'Live service statistics',
+        'uk': 'Статистика в реальному часі',
+        'de': 'Live-Servicestatistik'
+    },
+    'stats_users_label': {
+        'ru': 'пользователей',
+        'en': 'users joined',
+        'uk': 'користувачів',
+        'de': 'Benutzer beigetreten'
+    },
+    'stats_reports_label': {
+        'ru': 'отчётов проанализировано',
+        'en': 'reports analyzed',
+        'uk': 'звітів проаналізовано',
+        'de': 'Berichte analysiert'
+    },
+    'stats_ai_answers_label': {
+        'ru': 'ответов ИИ',
+        'en': 'AI answers',
+        'uk': 'відповідей ШІ',
+        'de': 'KI-Antworten'
+    },
     'privacy_block_note_title': {
         'ru': 'Примечание о конфиденциальности',
         'en': 'Privacy note',
@@ -3139,9 +3162,7 @@ TRANSLATIONS = {
         'en': 'Your data is handled in line with GDPR data protection principles and stored on infrastructure provided by SOC 2 audited service providers.',
         'uk': 'Ваші дані обробляються відповідно до принципів захисту даних GDPR та зберігаються на інфраструктурі, що надається сервісами, які пройшли аудит SOC 2.',
         'de': 'Ihre Daten werden gemäß den Datenschutzgrundsätzen der DSGVO verarbeitet und auf einer Infrastruktur gespeichert, die von SOC 2-auditierten Dienstleistern bereitgestellt wird.'
-    }
-
-    
+    },
     
 }
 

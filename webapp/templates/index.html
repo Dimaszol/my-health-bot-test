@@ -618,6 +618,39 @@
     </div>
 </section>
 
+<!-- 📊 Live Statistics Block -->
+<section class="stats-section">
+    <div class="stats-container">
+        
+        <!-- Live Pulse Indicator -->
+        <div class="live-indicator">
+            <span class="pulse-dot"></span>
+            <span class="live-text">{{ t('stats_live_indicator', lang) }}</span>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <!-- Card 1: Users -->
+            <div class="stat-card">
+                <div class="stat-number" data-target="0" data-stat="users">0</div>
+                <div class="stat-label">{{ t('stats_users_label', lang) }}</div>
+            </div>
+            
+            <!-- Card 2: Documents -->
+            <div class="stat-card">
+                <div class="stat-number" data-target="0" data-stat="documents">0</div>
+                <div class="stat-label">{{ t('stats_reports_label', lang) }}</div>
+            </div>
+            
+            <!-- Card 3: Questions -->
+            <div class="stat-card">
+                <div class="stat-number" data-target="0" data-stat="questions">0</div>
+                <div class="stat-label">{{ t('stats_ai_answers_label', lang) }}</div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- 🚀 ПРИЗЫВ К ДЕЙСТВИЮ -->
 <section style="background: var(--gradient-hero); padding: 2rem 1rem; border-radius: var(--radius-lg); margin: 1rem 0; text-align: center;">
     <div class="container">
@@ -649,6 +682,48 @@ function trackButton(buttonId) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({button_id: buttonId})
     });
+}
+</script>
+<script>
+// 📊 Live Statistics Loader
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        const response = await fetch('/api/stats');
+        const data = await response.json();
+        
+        // Анимация чисел (старт с 90% от реального значения)
+        animateNumber('users', data.users, 700);
+        animateNumber('documents', data.documents, 700);
+        animateNumber('questions', data.questions, 700);
+        
+    } catch (error) {
+        console.error('Failed to load stats:', error);
+        // В случае ошибки показываем нули
+        document.querySelectorAll('.stat-number').forEach(el => {
+            el.textContent = '—';
+        });
+    }
+});
+
+function animateNumber(statName, targetValue, duration) {
+    const element = document.querySelector(`[data-stat="${statName}"]`);
+    if (!element) return;
+    
+    // Старт с 90% от целевого значения
+    const startValue = Math.floor(targetValue * 0.9);
+    const increment = (targetValue - startValue) / (duration / 16);
+    let currentValue = startValue;
+    
+    const timer = setInterval(() => {
+        currentValue += increment;
+        if (currentValue >= targetValue) {
+            currentValue = targetValue;
+            clearInterval(timer);
+        }
+        
+        // Форматирование с запятыми для всех
+        element.textContent = Math.floor(currentValue).toLocaleString('en-US');
+    }, 16);
 }
 </script>
 {% endblock %}
