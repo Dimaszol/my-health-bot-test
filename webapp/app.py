@@ -35,6 +35,8 @@ from utils.flash import get_flashed_messages, flash, redirect_with_flash
 
 from utils.context import get_template_context
 
+from utils.telegram_notifications import send_admin_notification
+
 
 """
 🎯 ЧТО ДЕЛАЕТ ЭТО ПРИЛОЖЕНИЕ:
@@ -556,6 +558,29 @@ async def version():
     return {
         "version": "1.0.1"        
     }
+
+# ==========================================
+# 🖱️ ТРЕКИНГ КЛИКОВ НА КНОПКИ
+# ==========================================
+@app.post("/api/track-button")
+async def track_button_click(request: Request):
+    from webapp.utils.telegram_notifications import send_admin_notification
+    
+    data = await request.json()
+    button_id = data.get("button_id")
+    
+    button_names = {
+        "header": "🔝 Header",
+        "hero": "⭐ Hero",
+        "features": "✨ Features",
+        "cta": "🎯 CTA"
+    }
+    
+    message = f"🖱 <b>Клик на кнопку:</b> {button_names.get(button_id, button_id)}"
+    
+    await send_admin_notification(message)
+    
+    return {"status": "ok"}
 
 @app.get("/{lang}", response_class=HTMLResponse)
 async def index_with_language(request: Request, lang: str):

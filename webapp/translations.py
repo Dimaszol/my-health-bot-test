@@ -3024,23 +3024,23 @@ TRANSLATIONS = {
         'de': 'Beispiel: Ergebnisse der Blutuntersuchung'
     },
     'value_before_title': {
-        'ru': 'Бланк анализа крови',
-        'en': 'Blood Test Lab Report',
-        'uk': 'Бланк аналізу крові',
-        'de': 'Bluttest-Laborbericht'
+        'ru': 'До: бланк анализа крови',
+        'en': 'Before: Blood Test Lab Report',
+        'uk': 'До: бланк аналізу крові',
+        'de': 'Vorher: Bluttest-Laborbericht'
+    },
+    'value_after_title': {
+        'ru': 'После: клиническое объяснение',
+        'en': 'After: Clinical Explanation',
+        'uk': 'Після: клінічне пояснення',
+        'de': 'Nachher: Klinische Erklärung'
     },
     'value_before_caption': {
         'ru': 'Цифры, референсы и термины — без пояснений',
         'en': 'Numbers, ranges and terms — no explanations',
         'uk': 'Цифри, референси і терміни — без пояснень',
         'de': 'Zahlen, Bereiche und Begriffe — ohne Erklärungen'
-    },    
-    'value_after_title': {
-        'ru': 'Клиническое объяснение',
-        'en': 'Clinical Explanation',
-        'uk': 'Клінічне пояснення',
-        'de': 'Klinische Erklärung'
-    },    
+    },        
     'value_after_caption': {
         'ru': 'Структурированный разбор с фокусом на важное',
         'en': 'Structured analysis focused on what matters',
