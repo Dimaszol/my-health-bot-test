@@ -383,9 +383,7 @@
                 <div class="footer-section">
                     <h4>{{ t('footer_information', lang) }}</h4>
                     <ul>
-                        <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/faq">FAQ</a></li>
-                        <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/privacy">Privacy Policy</a></li>
-                        <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/terms">Terms of Service</a></li>
+                        <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/faq">FAQ</a></li>                        
                         <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/medical-disclaimer">Medical Disclaimer</a></li>                        
                     </ul>
                 </div>
@@ -394,8 +392,8 @@
                 <div class="footer-section">
                     <h4>{{ t('footer_powered', lang) }}</h4>
                     <ul>
-                        <li>🤖 OpenAI, Gemini, Claude</li>
-                        <li>🔒 GDPR</li>
+                        <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/privacy">Privacy Policy</a></li>
+                        <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/terms">Terms of Service</a></li>
                     </ul>
                 </div>
             </div>

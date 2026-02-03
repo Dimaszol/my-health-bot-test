@@ -618,6 +618,124 @@
     </div>
 </section>
 
+<!-- ❓ FAQ PREVIEW SECTION -->
+<section style="padding: 4rem 1rem; background: linear-gradient(135deg, #F8FBFA 0%, #FFFFFF 100%);">
+    <div style="max-width: 900px; margin: 0 auto;">
+        
+        <!-- Заголовок -->
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h2 class="section-title">{{ t('faq_preview_title', lang) }}</h2>
+        </div>
+
+        <!-- FAQ Аккордеон -->
+        <div class="faq-container">
+            
+            <!-- Question 1 -->
+            <details class="faq-item">
+                <summary class="faq-header">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="faq-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 16v-4"/>
+                                <path d="M12 8h.01"/>
+                            </svg>
+                        </div>
+                        <h3>{{ t('faq_preview_q1', lang) }}</h3>
+                    </div>
+                    <svg class="faq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </summary>
+                <div class="faq-content">
+                    <div class="faq-text">
+                        {{ t('faq_preview_a1', lang) | safe }}
+                    </div>
+                </div>
+            </details>
+
+            <!-- Question 2 -->
+            <details class="faq-item">
+                <summary class="faq-header">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="faq-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                            </svg>
+                        </div>
+                        <h3>{{ t('faq_preview_q2', lang) }}</h3>
+                    </div>
+                    <svg class="faq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </summary>
+                <div class="faq-content">
+                    <div class="faq-text">
+                        {{ t('faq_preview_a2', lang) }}
+                    </div>
+                </div>
+            </details>
+
+            <!-- Question 3 -->
+            <details class="faq-item">
+                <summary class="faq-header">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="faq-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                        </div>
+                        <h3>{{ t('faq_preview_q3', lang) }}</h3>
+                    </div>
+                    <svg class="faq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </summary>
+                <div class="faq-content">
+                    <div class="faq-text">
+                        {{ t('faq_preview_a3', lang) }}
+                    </div>
+                </div>
+            </details>
+
+            <!-- Question 4 -->
+            <details class="faq-item">
+                <summary class="faq-header">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="faq-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </div>
+                        <h3>{{ t('faq_preview_q4', lang) }}</h3>
+                    </div>
+                    <svg class="faq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </summary>
+                <div class="faq-content">
+                    <div class="faq-text">
+                        {{ t('faq_preview_a4', lang) }}
+                    </div>
+                </div>
+            </details>
+
+        </div>
+
+        <!-- Link to full FAQ -->
+        <div style="text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #E5E7EB;">
+            <p style="color: var(--text-secondary); font-size: 1rem;">
+                {{ t('faq_preview_more', lang) }} 
+                <a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/faq" style="color: var(--primary); font-weight: 600; text-decoration: none;">
+                    {{ t('menu_faq', lang) }}
+                </a>
+            </p>
+        </div>
+    </div>
+</section>
+
 <!-- 📊 Live Statistics Block -->
 <section class="stats-section">
     <div class="stats-container">

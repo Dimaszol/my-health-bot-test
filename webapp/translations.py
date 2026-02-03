@@ -498,6 +498,70 @@ TRANSLATIONS = {
         'uk': 'FAQ',
         'de': 'FAQ'
     },    
+
+    # ============================================
+    # ❓ FAQ PREVIEW (ГЛАВНАЯ СТРАНИЦА)
+    # ============================================
+    'faq_preview_title': {
+        'ru': 'Часто задаваемые вопросы',
+        'en': 'Frequently Asked Questions',
+        'uk': 'Часті запитання',
+        'de': 'Häufig gestellte Fragen'
+    },
+    'faq_preview_q1': {
+        'ru': 'Чем PulseBook отличается от обычного AI?',
+        'en': 'How is PulseBook different from regular AI?',
+        'uk': 'Чим PulseBook відрізняється від звичайного AI?',
+        'de': 'Wie unterscheidet sich PulseBook von normaler KI?'
+    },
+    'faq_preview_a1': {
+        'ru': 'PulseBook не ограничивается одной языковой моделью.<br><br>Система сначала определяет тип медицинского документа и подбирает специально обученные профильные AI-модели. Затем несколько моделей независимо анализируют данные и сверяют выводы. После этого формируется единое итоговое заключение, которое помогает снизить риск пропущенных деталей.',
+        'en': 'PulseBook is not limited to one language model.<br><br>The system first identifies the type of medical document and selects specially trained AI models. Then multiple models independently analyze the data and cross-check conclusions. Finally, a unified report is formed that helps reduce the risk of missed details.',
+        'uk': 'PulseBook не обмежується однією мовною моделлю.<br><br>Система спочатку визначає тип медичного документа та підбирає спеціально навчені профільні AI-моделі. Потім кілька моделей незалежно аналізують дані та звіряють висновки. Після цього формується єдиний підсумковий висновок, який допомагає знизити ризик пропущених деталей.',
+        'de': 'PulseBook ist nicht auf ein Sprachmodell beschränkt.<br><br>Das System identifiziert zunächst die Art des medizinischen Dokuments und wählt speziell trainierte KI-Modelle aus. Dann analysieren mehrere Modelle unabhängig die Daten und vergleichen die Ergebnisse. Schließlich wird ein einheitlicher Bericht erstellt, der dazu beiträgt, das Risiko übersehener Details zu verringern.'
+    },
+    'faq_preview_q2': {
+        'ru': 'Заменяет ли PulseBook врача и ставит ли диагнозы?',
+        'en': 'Does PulseBook replace a doctor or make diagnoses?',
+        'uk': 'Чи замінює PulseBook лікаря та чи ставить діагнози?',
+        'de': 'Ersetzt PulseBook einen Arzt oder stellt Diagnosen?'
+    },
+    'faq_preview_a2': {
+        'ru': 'Нет. PulseBook помогает понять анализы и медицинские документы, объясняет показатели и возможные интерпретации. Сервис не заменяет врача и не ставит диагнозы, но помогает подготовиться к консультации и задать правильные вопросы.',
+        'en': 'No. PulseBook helps understand tests and medical documents, explains indicators and possible interpretations. The service does not replace a doctor and does not make diagnoses, but helps prepare for a consultation and ask the right questions.',
+        'uk': 'Ні. PulseBook допомагає зрозуміти аналізи та медичні документи, пояснює показники та можливі інтерпретації. Сервіс не замінює лікаря та не ставить діагнози, але допомагає підготуватися до консультації та задати правильні питання.',
+        'de': 'Nein. PulseBook hilft, Tests und medizinische Dokumente zu verstehen, erklärt Indikatoren und mögliche Interpretationen. Der Service ersetzt keinen Arzt und stellt keine Diagnosen, hilft aber bei der Vorbereitung auf eine Konsultation und beim Stellen der richtigen Fragen.'
+    },
+    'faq_preview_q3': {
+        'ru': 'В безопасности ли мои личные данные?',
+        'en': 'Is my personal data safe?',
+        'uk': 'Чи в безпеці мої особисті дані?',
+        'de': 'Sind meine persönlichen Daten sicher?'
+    },
+    'faq_preview_a3': {
+        'ru': 'Да. Данные передаются и хранятся в зашифрованном виде и всегда доступны вам в личном кабинете. Вы можете в любой момент просмотреть, скачать или удалить отдельный документ, а также полностью удалить аккаунт со всеми данными. Мы соблюдаем требования GDPR, вход осуществляется через защищённый Google-аккаунт.',
+        'en': 'Yes. Data is transmitted and stored in encrypted form and is always available to you in your personal account. You can view, download or delete individual documents at any time, as well as completely delete your account with all data. We comply with GDPR requirements, login is via secure Google account.',
+        'uk': 'Так. Дані передаються та зберігаються в зашифрованому вигляді та завжди доступні вам в особистому кабінеті. Ви можете в будь-який момент переглянути, завантажити або видалити окремий документ, а також повністю видалити акаунт з усіма даними. Ми дотримуємося вимог GDPR, вхід здійснюється через захищений Google-акаунт.',
+        'de': 'Ja. Daten werden verschlüsselt übertragen und gespeichert und sind Ihnen in Ihrem persönlichen Konto jederzeit zugänglich. Sie können jederzeit einzelne Dokumente anzeigen, herunterladen oder löschen sowie Ihr Konto mit allen Daten vollständig löschen. Wir entsprechen den GDPR-Anforderungen, die Anmeldung erfolgt über ein sicheres Google-Konto.'
+    },
+    'faq_preview_q4': {
+        'ru': 'Нужно ли долго регистрироваться и заполнять формы?',
+        'en': 'Do I need to register and fill out long forms?',
+        'uk': 'Чи потрібно довго реєструватися та заповнювати форми?',
+        'de': 'Muss ich mich lange registrieren und Formulare ausfüllen?'
+    },
+    'faq_preview_a4': {
+        'ru': 'Нет. Вход через Google обеспечивает безопасную авторизацию без паролей. Вы можете сразу загрузить документ — сервис готов к работе без длинных форм и анкет.',
+        'en': 'No. Google login provides secure passwordless authorization. You can upload a document right away — the service is ready to work without long forms and questionnaires.',
+        'uk': 'Ні. Вхід через Google забезпечує безпечну авторизацію без паролів. Ви можете одразу завантажити документ — сервіс готовий до роботи без довгих форм та анкет.',
+        'de': 'Nein. Die Google-Anmeldung bietet sichere passwortlose Autorisierung. Sie können sofort ein Dokument hochladen — der Service ist ohne lange Formulare und Fragebögen einsatzbereit.'
+    },
+    'faq_preview_more': {
+        'ru': 'Остались вопросы? Подробные ответы в разделе',
+        'en': 'Have more questions? Detailed answers in the',
+        'uk': 'Залишилися питання? Детальні відповіді в розділі',
+        'de': 'Haben Sie weitere Fragen? Detaillierte Antworten im'
+    },
     
     # ============================================
     # 🚀 ПРИЗЫВ К ДЕЙСТВИЮ
@@ -1743,10 +1807,10 @@ TRANSLATIONS = {
         'de': 'Ihre Gesundheit ist unsere Priorität.'
     },
     'footer_powered': {
-        'ru': 'Работает на',
-        'en': 'Powered by',
-        'uk': 'Працює на',
-        'de': 'Betrieben von'
+        'ru': 'Правовая информация',
+        'en': 'Legal',
+        'uk': 'Правова інформація',
+        'de': 'Rechtliches'
     },
     
     # ============================================

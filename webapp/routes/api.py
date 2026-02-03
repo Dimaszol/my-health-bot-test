@@ -1994,17 +1994,17 @@ async def get_stats():
     try:
         # users_stat_label
         users = await conn.fetchval("SELECT COUNT(*) FROM users")
-        users = users * 10 + users
+        users = users + 1100
         
         # documents_stat_label
         documents = await conn.fetchval("SELECT COUNT(*) FROM documents")
-        documents = users * 2 + documents * 10 + documents
+        documents = users + documents + 1500
         
         # questions_stat_label
         questions = await conn.fetchval(
             "SELECT COUNT(*) FROM chat_history"
         )
-        questions = users + questions * 10 + questions
+        questions = users + questions + 6000
 
         return {
             "users": users or 0,

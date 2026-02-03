@@ -1280,3 +1280,137 @@ footer {
         font-size: 2rem;
     }
 }
+
+/* ============================================
+   ❓ FAQ СТИЛИ (общие для главной и FAQ страницы)
+   ============================================ */
+.faq-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.faq-item {
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--border-color);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.faq-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-md);
+}
+
+.faq-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+    list-style: none;
+}
+
+.faq-header::-webkit-details-marker {
+    display: none;
+}
+
+.faq-header:hover {
+    background: var(--background);
+}
+
+.faq-header h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.faq-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #00C9A7 0%, #00D4B5 100%);
+    border-radius: 12px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.faq-icon svg {
+    width: 24px;
+    height: 24px;
+    stroke: white;
+}
+
+.faq-arrow {
+    width: 24px;
+    height: 24px;
+    stroke: var(--text-secondary);
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+}
+
+.faq-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.4s ease;
+}
+
+.faq-text {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    font-size: 1rem;
+}
+
+/* Для <details> элементов (главная страница) */
+details[open] .faq-content {
+    max-height: 5000px;
+}
+.faq-item[open] {
+    border-color: var(--primary-color);
+}
+
+.faq-item[open] .faq-arrow {
+    transform: rotate(180deg);
+    stroke: var(--primary-color);
+}
+
+/* Для JS активации (страница FAQ) */
+.faq-item.active {
+    border-color: var(--primary-color);
+}
+
+.faq-item.active .faq-arrow {
+    transform: rotate(180deg);
+    stroke: var(--primary-color);
+}
+
+.faq-item.active .faq-content {
+    max-height: 5000px;
+}
+
+.faq-item.active {
+    scroll-margin-top: 100px;
+}
+
+@media (max-width: 768px) {
+    .faq-header h3 {
+        font-size: 1rem;
+    }
+    
+    .faq-icon {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .faq-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+}
