@@ -133,29 +133,34 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# 🔐 ДОБАВЛЯЕМ ПОДДЕРЖКУ СЕССИЙ (как в Flask)
-app.add_middleware(SessionMiddleware, secret_key=Config.SECRET_KEY)
+# 🔐 ДОБАВЛЯЕМ ПОДДЕРЖКУ СЕССИЙ (ПЕРВЫМ!)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=Config.SECRET_KEY,
+    same_site="lax",
+    https_only=os.getenv('HTTPS_ONLY', 'true').lower() == 'true',  # По умолчанию True
+    max_age=3600 * 24 * 7
+)
 
 # 🛡️ Rate Limiting - защита от DoS/DDoS атак
 add_rate_limit_middleware(app)
 
-# 🛡️ ДОБАВЛЯЕМ CSRF ЗАЩИТУ
-from starlette_csrf import CSRFMiddleware
-
+# 🛡️ ДОБАВЛЯЕМ CSRF ЗАЩИТУ (ПОСЛЕ SessionMiddleware!)
 app.add_middleware(
     CSRFMiddleware,
-    secret=Config.SECRET_KEY,  # Используем тот же ключ что и для сессий
+    secret=Config.SECRET_KEY,
     cookie_name="csrf_token",
     cookie_path="/",
     cookie_domain=None,
-    cookie_secure=False,  # ⚠️ Поставь True когда будет HTTPS!
-    cookie_httponly=True,
+    cookie_secure=os.getenv('HTTPS_ONLY', 'true').lower() == 'true',  # По умолчанию True
+    cookie_httponly=False,
     cookie_samesite="lax",
     header_name="X-CSRF-Token",
-    safe_methods={"GET", "HEAD", "OPTIONS", "TRACE"},  # Эти методы не проверяются
+    safe_methods={"GET", "HEAD", "OPTIONS"},
     exempt_urls={
-        re.compile(r"^/api/.*"),  # Исключаем все API эндпоинты
-        re.compile(r"^/webhook/.*")  # Исключаем вебхуки
+        re.compile(r"^/api/.*"),
+        re.compile(r"^/webhook/.*"),
+        re.compile(r"^/auth/.*")
     }
 )
 
@@ -558,29 +563,6 @@ async def version():
     return {
         "version": "1.0.1"        
     }
-
-# ==========================================
-# 🖱️ ТРЕКИНГ КЛИКОВ НА КНОПКИ
-# ==========================================
-@app.post("/api/track-button")
-async def track_button_click(request: Request):
-    from webapp.utils.telegram_notifications import send_admin_notification
-    
-    data = await request.json()
-    button_id = data.get("button_id")
-    
-    button_names = {
-        "header": "🔝 Header",
-        "hero": "⭐ Hero",
-        "features": "✨ Features",
-        "cta": "🎯 CTA"
-    }
-    
-    message = f"🖱 <b>Клик на кнопку:</b> {button_names.get(button_id, button_id)}"
-    
-    await send_admin_notification(message)
-    
-    return {"status": "ok"}
 
 @app.get("/{lang}", response_class=HTMLResponse)
 async def index_with_language(request: Request, lang: str):
