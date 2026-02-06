@@ -56,7 +56,7 @@ google = oauth.register(
 # 🔧 ASYNC ФУНКЦИЯ: Найти или создать пользователя
 # ==========================================
 
-async def find_or_create_web_user(google_id: str, email: str, name: str, session_language: str = 'en') -> dict:
+async def find_or_create_web_user(google_id: str, email: str, name: str, session_language: str = 'en', country: str = None) -> dict:
     """
     Находит существующего пользователя или создаёт нового
     
@@ -88,13 +88,13 @@ async def find_or_create_web_user(google_id: str, email: str, name: str, session
         await conn.execute("""
             INSERT INTO users (
                 user_id, name, google_id, email, 
-                registration_source, language, 
+                registration_source, language, country,
                 gdpr_consent, gdpr_consent_time,
                 created_at
             )
-            VALUES ($1, $2, $3, $4, 'web', $5, TRUE, NOW(), NOW())
+            VALUES ($1, $2, $3, $4, 'web', $5, $6, TRUE, NOW(), NOW())
             ON CONFLICT (user_id) DO NOTHING
-        """, temp_user_id, name, google_id, email, session_language)
+        """, temp_user_id, name, google_id, email, session_language, country)
 
         # 🔥 ПРОВЕРЯЕМ: был ли пользователь удалён раньше
         deleted_limits = await conn.fetchrow("""
@@ -213,7 +213,10 @@ async def google_callback(request: Request, background_tasks: BackgroundTasks):
         # Извлекаем данные
         google_id = user_info.get('sub')
         email = user_info.get('email')
-        name = user_info.get('given_name', user_info.get('name', 'User'))       
+        name = user_info.get('given_name', user_info.get('name', 'User'))   
+        country_code = request.headers.get('CF-IPCountry')
+        if not country_code or country_code == 'XX':
+            country_code = None
         
         # ✅ НОВАЯ ЛОГИКА: Ищем пользователя по google_id
         conn = await get_db_connection()
@@ -265,7 +268,7 @@ async def google_callback(request: Request, background_tasks: BackgroundTasks):
                 current_session_lang = request.session.get('language', 'en')
                 
                 # Создаём пользователя через старую функцию
-                new_user = await find_or_create_web_user(google_id, email, name, current_session_lang)
+                new_user = await find_or_create_web_user(google_id, email, name, current_session_lang, country_code)
                 
                 if new_user:
                     # 🔒 ЗАЩИТА ОТ SESSION FIXATION: Пересоздаём сессию для нового пользователя
