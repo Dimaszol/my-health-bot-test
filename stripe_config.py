@@ -22,10 +22,31 @@ class StripeConfig:
     # ✅ НОВОЕ: Price ID из переменных окружения (БЕЗ fallback)
     BASIC_PRICE_ID = os.getenv("STRIPE_BASIC_PRICE_ID")
     PREMIUM_PRICE_ID = os.getenv("STRIPE_PREMIUM_PRICE_ID")
+    BASIC_EUR_PRICE_ID = os.getenv("STRIPE_BASIC_EUR_PRICE_ID")
+    BASIC_GBP_PRICE_ID = os.getenv("STRIPE_BASIC_GBP_PRICE_ID")
+    PREMIUM_EUR_PRICE_ID = os.getenv("STRIPE_PREMIUM_EUR_PRICE_ID")
+    PREMIUM_GBP_PRICE_ID = os.getenv("STRIPE_PREMIUM_GBP_PRICE_ID")
 
     # Проверка что переменные заданы
     if not BASIC_PRICE_ID or not PREMIUM_PRICE_ID:
         raise ValueError("❌ STRIPE_BASIC_PRICE_ID и STRIPE_PREMIUM_PRICE_ID должны быть заданы в .env")
+
+    if not BASIC_EUR_PRICE_ID or not BASIC_GBP_PRICE_ID or not PREMIUM_EUR_PRICE_ID or not PREMIUM_GBP_PRICE_ID:
+        raise ValueError("❌ Все мультивалютные Price ID должны быть заданы в .env")
+    
+    # 💱 МАППИНГ: plan → currency → price_id  
+    STRIPE_PRICES = {
+        "basic_sub": {
+            "USD": BASIC_PRICE_ID,
+            "EUR": BASIC_EUR_PRICE_ID,
+            "GBP": BASIC_GBP_PRICE_ID,
+        },
+        "premium_sub": {
+            "USD": PREMIUM_PRICE_ID,
+            "EUR": PREMIUM_EUR_PRICE_ID,
+            "GBP": PREMIUM_GBP_PRICE_ID,
+        }
+    }
     # URL для возврата после оплаты
     # Telegram URLs
     TELEGRAM_SUCCESS_URL = os.getenv("TELEGRAM_SUCCESS_URL", "https://t.me/PulsebookBot")
@@ -202,6 +223,20 @@ class StripeConfig:
             if package_info:
                 return f"{package_info['name']} — {package_info['price_display']}"
             return "Package information unavailable"
+        
+    @classmethod
+    def get_price_id_for_currency(cls, package_id: str, currency: str) -> Optional[str]:
+        """
+        Получает Price ID для конкретной валюты
+        
+        Args:
+            package_id: 'basic_sub' или 'premium_sub'
+            currency: 'USD', 'EUR', 'GBP'
+            
+        Returns:
+            Price ID из Stripe или None
+        """
+        return cls.STRIPE_PRICES.get(package_id, {}).get(currency)
 
 # Функция для проверки при запуске
 def check_stripe_setup() -> bool:

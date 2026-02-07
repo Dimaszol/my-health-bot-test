@@ -341,6 +341,10 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
     context['documents'] = docs_list
     context['has_document_limits'] = has_document_limits
     context['show_birth_year_tip'] = show_birth_year_tip
+    # Формируем цены с символом валюты из context
+    currency_symbol = context.get('currency_symbol', '$')
+    context['one_time_price'] = f"{currency_symbol}2.49"
+    context['basic_price'] = f"{currency_symbol}3.99"
     
     return templates.TemplateResponse("documents.html", context)
 

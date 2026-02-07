@@ -1076,10 +1076,10 @@ TRANSLATIONS = {
         'de': 'Dokumentenlimit im aktuellen Plan erreicht'
     },    
     'one_time_document_button': {
-        'ru': 'Разобрать документ — $2.49',
-        'en': 'Analyze document — $2.49',
-        'uk': 'Розібрати документ — $2.49',
-        'de': 'Dokument analysieren — $2.49'
+        'ru': 'Разобрать документ — ',
+        'en': 'Analyze document — ',
+        'uk': 'Розібрати документ — ',
+        'de': 'Dokument analysieren — '
     },
     'one_time_payment_note': {
         'ru': 'Разовый платёж · без подписки',
@@ -1093,11 +1093,11 @@ TRANSLATIONS = {
         'uk': 'Оформити підписку',
         'de': 'Abonnieren'
     },
-    'subscribe_lite_price': {
-        'ru': 'Lite — $3.99/мес',
-        'en': 'Lite — $3.99/mo',
-        'uk': 'Lite — $3.99/міс',
-        'de': 'Lite — $3.99/Monat'
+    'month_short': {
+        'ru': 'мес',
+        'en': 'mo',
+        'uk': 'міс',
+        'de': 'Monat'
     },
 
     # ============================================

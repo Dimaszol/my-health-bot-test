@@ -224,7 +224,7 @@ async def google_callback(request: Request, background_tasks: BackgroundTasks):
         try:
             # Проверяем существует ли пользователь с таким google_id
             user = await conn.fetchrow("""
-                SELECT user_id, name, email, registration_source
+                SELECT user_id, name, email, registration_source, country
                 FROM users 
                 WHERE google_id = $1
             """, google_id)
@@ -244,6 +244,7 @@ async def google_callback(request: Request, background_tasks: BackgroundTasks):
                 request.session['email'] = user['email']
                 request.session['name'] = user['name']
                 request.session['google_id'] = google_id
+                request.session['country'] = user.get('country')
                 
                 # Загружаем язык
                 lang_result = await conn.fetchrow(
@@ -280,6 +281,7 @@ async def google_callback(request: Request, background_tasks: BackgroundTasks):
                     request.session['name'] = name
                     request.session['google_id'] = google_id
                     request.session['language'] = current_session_lang
+                    request.session['country'] = country_code
 
                     # 🎯 ФЛАГ ДЛЯ GOOGLE ADS: это новая регистрация
                     request.session['just_registered'] = True

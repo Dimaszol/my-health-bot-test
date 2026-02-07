@@ -126,7 +126,7 @@ footer {
     <div class="one-time-buttons" style="display: flex; gap: 1rem; margin-top: 1.5rem; align-items: center;">
         <button type="submit" class="btn" style="min-width: 300px; width: auto; padding: 1rem 2.5rem;">
             <span style="font-size: 1rem; font-weight: 600;">
-                {{ t('one_time_document_button', lang) }}
+                {{ t('one_time_document_button', lang) }} {{ one_time_price }}
             </span>
             <span style="display: block; font-size: 0.75rem; opacity: 0.9; margin-top: 0.25rem;">
                 {{ t('one_time_payment_note', lang) }}
@@ -138,7 +138,7 @@ footer {
                 {{ t('subscribe_button', lang) }}
             </span>
             <span style="display: block; font-size: 0.75rem; opacity: 0.8; margin-top: 0.25rem;">
-                {{ t('subscribe_lite_price', lang) }}
+                Lite — {{ basic_price }}/{{ t('month_short', lang) }}
             </span>
         </a>        
     </div>

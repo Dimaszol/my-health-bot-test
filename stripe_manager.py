@@ -30,14 +30,38 @@ class StripeManager:
             
             # ✅ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Определяем тип оплаты
             if package_info['type'] == 'subscription':
+                # 💱 Определяем валюту на основе страны пользователя
+                from webapp.utils.currency import get_ui_currency
+                from db_postgresql import get_db_connection, release_db_connection
+                
+                # Получаем страну пользователя из БД
+                conn = await get_db_connection()
+                try:
+                    user_data = await conn.fetchrow(
+                        "SELECT country FROM users WHERE user_id = $1", 
+                        user_id
+                    )
+                    country = user_data['country'] if user_data else None
+                finally:
+                    await release_db_connection(conn)
+                
+                currency = get_ui_currency(country)
+                
+                # Получаем правильный Price ID для валюты
+                price_id = StripeConfig.get_price_id_for_currency(package_id, currency)
+                
+                if not price_id:
+                    # Fallback на USD если что-то пошло не так
+                    price_id = package_info['stripe_price_id']
+                
                 # ✅ ПОДПИСКА - автосписание каждый месяц
                 session = stripe.checkout.Session.create(
                     payment_method_types=['card'],
                     line_items=[{
-                        'price': package_info['stripe_price_id'],  # Готовый Price ID
+                        'price': price_id,  # ✅ ИЗМЕНЕНО: динамический Price ID
                         'quantity': 1,
                     }],
-                    mode='subscription',  # ✅ ПОДПИСКА
+                    mode='subscription',
                     success_url=(StripeConfig.WEB_SUCCESS_URL if source == "web" else StripeConfig.TELEGRAM_SUCCESS_URL) + f"&session_id={{CHECKOUT_SESSION_ID}}",
                     cancel_url=StripeConfig.WEB_CANCEL_URL if source == "web" else StripeConfig.TELEGRAM_CANCEL_URL,
                     allow_promotion_codes=True,
@@ -51,16 +75,33 @@ class StripeManager:
                         'user_id': str(user_id),
                         'package_id': package_id,
                         'user_name': user_name,
-                        'subscription_type': 'recurring'
+                        'subscription_type': 'recurring',
+                        'currency': currency
                     }
                 )
             else:
                 # ✅ РАЗОВАЯ ПОКУПКА (только Extra Pack)
+                # 💱 Определяем валюту для Extra Pack
+                from webapp.utils.currency import get_ui_currency
+                from db_postgresql import get_db_connection, release_db_connection
+                
+                conn = await get_db_connection()
+                try:
+                    user_data = await conn.fetchrow(
+                        "SELECT country FROM users WHERE user_id = $1", 
+                        user_id
+                    )
+                    country = user_data['country'] if user_data else None
+                finally:
+                    await release_db_connection(conn)
+                
+                currency = get_ui_currency(country)
+                
                 session = stripe.checkout.Session.create(
                     payment_method_types=['card'],
                     line_items=[{
                         'price_data': {
-                            'currency': 'usd',
+                            'currency': currency.lower(),  # ✅ ИЗМЕНЕНО
                             'unit_amount': package_info['price_cents'],
                             'product_data': {
                                 'name': package_info['name'],
@@ -76,7 +117,8 @@ class StripeManager:
                         'user_id': str(user_id),
                         'package_id': package_id,
                         'user_name': user_name,
-                        'subscription_type': 'one_time'
+                        'subscription_type': 'one_time',
+                        'currency': currency  # ✅ ДОБАВЛЕНО
                     }
                 )
             
@@ -108,6 +150,23 @@ class StripeManager:
         Создаёт Stripe checkout для разовой оплаты анализа документа ($2.49)
         """
         try:
+            # 💱 Определяем валюту на основе страны пользователя
+            from webapp.utils.currency import get_ui_currency
+            from db_postgresql import get_db_connection, release_db_connection
+
+            # Получаем страну пользователя из БД
+            conn = await get_db_connection()
+            try:
+                user_data = await conn.fetchrow(
+                    "SELECT country FROM users WHERE user_id = $1", 
+                    user_id
+                )
+                country = user_data['country'] if user_data else None
+            finally:
+                await release_db_connection(conn)
+
+            currency = get_ui_currency(country)
+            
             # Цена в центах
             amount_cents = 249  # $2.49
             
@@ -119,7 +178,7 @@ class StripeManager:
             product_names = {
                 'ru': 'Разовый AI-разбор документа',
                 'en': 'One-Time Document AI Analysis',
-                'uk': 'Разовий AI-розбір документа',
+                'uk': 'Разовій AI-розбір документа',
                 'de': 'Einmalige KI-Dokumentenanalyse'
             }
             
@@ -138,7 +197,7 @@ class StripeManager:
                 payment_method_types=['card'],
                 line_items=[{
                     'price_data': {
-                        'currency': 'usd',
+                        'currency': currency.lower(),  # ✅ ИЗМЕНЕНО: динамическая валюта
                         'unit_amount': amount_cents,
                         'product_data': {
                             'name': product_name,
@@ -154,7 +213,8 @@ class StripeManager:
                     'type': 'one_time_document',  # ВАЖНО!
                     'user_id': str(user_id),
                     'document_id': str(document_id),
-                    'lang': lang
+                    'lang': lang,
+                    'currency': currency  # ✅ ДОБАВЛЕНО: сохраняем валюту
                 }
             )
             

@@ -571,7 +571,7 @@ main {
                 </div>
                 
                 <div class="plan-price">
-                    <span class="amount">${{ package.price.replace('$', '') }}</span>
+                    <span class="amount">{{ currency_symbol }}{{ package.price.replace('$', '') }}</span>
                     <span class="period">
                         {% if package.type == 'subscription' %}
                             /{{ t('month_short', lang) }}

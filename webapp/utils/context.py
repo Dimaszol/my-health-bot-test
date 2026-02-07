@@ -25,6 +25,14 @@ def get_template_context(request: Request) -> dict:
         # ⚠️ ДЛЯ СЛУЖЕБНЫХ СТРАНИЦ (login, dashboard) - берём из session
         lang = request.session.get('language', 'en')
     
+    # 💱 Определяем валюту пользователя
+    from webapp.utils.currency import get_ui_currency, get_currency_symbol
+    
+    # Получаем country из сессии (устанавливается при логине)
+    user_country = request.session.get('country', None)
+    currency = get_ui_currency(user_country)
+    currency_symbol = get_currency_symbol(currency)
+
     # ✅ ВЫЧИСЛЯЕМ base_path (путь без языкового префикса)
     if path.startswith('/de/') or path.startswith('/ru/') or path.startswith('/uk/'):
         base_path = path[3:]  # Убираем "/de", "/ru", "/uk"
@@ -45,5 +53,7 @@ def get_template_context(request: Request) -> dict:
         'base_path': base_path,
         't': t,
         'supported_languages': get_supported_languages(),
-        'get_flashed_messages': _get_flashed_messages
+        'get_flashed_messages': _get_flashed_messages,
+        'currency': currency,
+        'currency_symbol': currency_symbol
     }
