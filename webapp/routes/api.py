@@ -362,6 +362,145 @@ async def chat_message(
             }
         )
 
+# ==========================================
+# 💬 МАРШРУТ: ЧАТ С ИИ ПО ДОКУМЕНТУ
+# ==========================================
+
+class DocumentChatMessage(BaseModel):
+    """Модель для сообщения в чате документа"""
+    document_id: int
+    message: str
+
+@router.post("/document-chat")
+async def document_chat_message(
+    chat_data: DocumentChatMessage,
+    request: Request,
+    user_id: int = Depends(get_current_user)
+):
+    """
+    📄 ЧАТ ПО ДОКУМЕНТУ
+    
+    Логика:
+    1. Проверка лимитов
+    2. Сохранение вопроса
+    3. Обработка контекста (через document_chat_processor)
+    4. Генерация ответа (GPT-5.2)
+    5. Сохранение ответа
+    6. Списание лимита
+    """
+    
+    try:
+        # Валидация
+        user_message = chat_data.message.strip()
+        document_id = chat_data.document_id
+        
+        if not user_message:
+            return JSONResponse(
+                status_code=400,
+                content={'success': False, 'error': 'Пустое сообщение'}
+            )
+        
+        # Получаем язык
+        lang = await get_user_language(user_id)
+        
+        # Проверяем наличие детальных консультаций
+        from subscription_manager import check_gpt4o_limit
+        has_limits = await check_gpt4o_limit(user_id)
+        
+        if not has_limits:
+            return JSONResponse(
+                status_code=403,
+                content={
+                    'success': False,
+                    'error': t('document_chat_requires_premium', lang),
+                    'show_upgrade': True
+                }
+            )
+        
+        # Сохраняем сообщение пользователя
+        conn = await get_db_connection()
+        try:
+            # Проверяем что документ принадлежит пользователю
+            doc_exists = await conn.fetchval(
+                "SELECT EXISTS(SELECT 1 FROM documents WHERE id = $1 AND user_id = $2)",
+                document_id, user_id
+            )
+            
+            if not doc_exists:
+                return JSONResponse(
+                    status_code=404,
+                    content={'success': False, 'error': 'Документ не найден'}
+                )
+            
+            await conn.execute(
+                """INSERT INTO document_chat_history (document_id, user_id, role, message)
+                   VALUES ($1, $2, 'user', $3)""",
+                document_id, user_id, user_message
+            )
+        finally:
+            await release_db_connection(conn)
+        
+        # Обрабатываем контекст (вся логика вынесена)
+        from document_chat_processor import process_document_chat_question, generate_document_chat_response
+        
+        context_data = await process_document_chat_question(
+            user_id=user_id,
+            document_id=document_id,
+            user_message=user_message,
+            lang=lang
+        )
+        
+        if not context_data:
+            return JSONResponse(
+                status_code=404,
+                content={'success': False, 'error': 'Документ не найден'}
+            )
+        
+        # Генерируем ответ
+        ai_response = await generate_document_chat_response(
+            context_data=context_data,
+            user_message=user_message,
+            lang=lang
+        )
+        
+        # Сохраняем ответ
+        conn = await get_db_connection()
+        try:
+            await conn.execute(
+                """INSERT INTO document_chat_history (document_id, user_id, role, message)
+                   VALUES ($1, $2, 'assistant', $3)""",
+                document_id, user_id, ai_response
+            )
+        finally:
+            await release_db_connection(conn)
+        
+        # Списываем лимит
+        from subscription_manager import SubscriptionManager
+        await SubscriptionManager.spend_limits(user_id, queries=1)
+        
+        # Форматируем для веба
+        from webapp.utils.text_formatter import format_for_web
+        formatted_response = format_for_web(ai_response)
+        
+        return JSONResponse(content={
+            'success': True,
+            'response': formatted_response
+        })
+        
+    except Exception as e:
+        safe_log_error("Ошибка в document-chat", error=e, user_id=user_id)
+        
+        try:
+            lang = await get_user_language(user_id)
+            error_msg = t('error_server', lang)
+        except:
+            error_msg = 'Ошибка сервера'
+        
+        return JSONResponse(
+            status_code=500,
+            content={'success': False, 'error': error_msg}
+        )
+
 @router.get("/check-auth")
 async def check_auth_status(request: Request):
     """
@@ -944,6 +1083,24 @@ async def upload_document(
         except Exception as timeline_error:
             # Не прерываем загрузку документа если timeline не сохранился
             safe_log_warning("Ошибка обновления medical timeline", error=timeline_error)
+
+        # Генерируем первое сообщение в document-chat
+        try:
+            from document_questions import generate_and_save_first_message
+            from medical_timeline import get_document_importance
+            
+            importance = await get_document_importance(document_id, user_id)
+            
+            await generate_and_save_first_message(
+                document_id=document_id,
+                user_id=user_id,
+                full_analysis=vision_text,
+                importance=importance,
+                lang=lang
+            )
+                        
+        except Exception as e:
+            safe_log_warning("Ошибка генерации первого сообщения", error=e, document_id=document_id)
 
         # STEP 8: Удаляем временные файлы
         try:

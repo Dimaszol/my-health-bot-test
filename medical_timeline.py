@@ -169,6 +169,37 @@ async def get_timeline_by_document(document_id: int, user_id: int) -> List[Dict]
     finally:
         await release_db_connection(conn)
 
+async def get_document_importance(document_id: int, user_id: int) -> str:
+    """
+    Получить importance первой записи medical_timeline для документа
+    
+    Возвращает: "normal" | "important" | "critical" | "normal" (по умолчанию)
+    """
+    conn = await get_db_connection()
+    
+    try:
+        row = await conn.fetchrow("""
+            SELECT mt.importance
+            FROM medical_timeline mt
+            INNER JOIN documents d ON mt.source_document_id = d.id
+            WHERE mt.source_document_id = $1 
+                AND d.user_id = $2
+            ORDER BY mt.created_at ASC
+            LIMIT 1
+        """, document_id, user_id)
+        
+        return row['importance'] if row else 'normal'
+        
+    except Exception as e:
+        log_error_with_context(e, {
+            "function": "get_document_importance",
+            "document_id": document_id
+        })
+        return 'normal'
+        
+    finally:
+        await release_db_connection(conn)
+        
 # ==========================================
 # ФУНКЦИИ ИЗВЛЕЧЕНИЯ ЧЕРЕЗ GPT И GEMINI
 # ==========================================

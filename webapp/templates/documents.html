@@ -375,19 +375,29 @@ footer {
             </div>
             {% endif %}
 
-            <!-- Disclaimer + Кнопка удаления -->
+           <!-- Disclaimer + Кнопки -->
             <div class="disclaimer-delete-container">
                 <p style="margin: 0; font-size: 0.8rem; color: #6b7280; line-height: 1.4; flex: 1;">
                     {{ t('ai_disclaimer', lang) }}
                 </p>
                 
-                <button 
-                    class="btn-action btn-delete delete-btn"
-                    data-doc-id="{{ doc.id }}"
-                    type="button">
-                    <span class="btn-icon">🗑️</span>
-                    <span>{{ t('btn_delete_document', lang) }}</span>
-                </button>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <a href="/dashboard/document/{{ doc.id }}/chat" 
+                    class="btn-action"
+                    style="background: #1abc9c; color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500; transition: all 0.2s; white-space: nowrap;">
+                        <span class="btn-icon">💬</span>
+                        <span>{{ t('btn_discuss', lang) }}</span>
+                    </a>
+                    
+                    <button 
+                        class="btn-action btn-delete delete-btn"
+                        data-doc-id="{{ doc.id }}"
+                        type="button"
+                        style="border-radius: 8px; padding: 0.5rem 1rem;">
+                        <span class="btn-icon">🗑️</span>
+                        <span>{{ t('btn_delete_document', lang) }}</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -467,6 +477,16 @@ footer {
             </div>
             <div>
                 <strong>{{ t('legend_summary', lang) }}</strong> — {{ t('legend_summary_desc', lang) }}
+            </div>
+        </div>
+
+        <!-- Обсудить -->
+        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+            <div style="width: 40px; display: flex; justify-content: center; align-items: flex-start; flex-shrink: 0; padding-top: 0.2rem;">
+                <span>💬</span>
+            </div>
+            <div>
+                <strong>{{ t('legend_discuss', lang) }}</strong> — {{ t('legend_discuss_desc', lang) }}
             </div>
         </div>
         

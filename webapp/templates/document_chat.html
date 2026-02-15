@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('document_discussion', lang) }}: {{ doc.title }} - {{ t('site_title', lang) }}{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="/static/css/chat.css?v=36">
+{% endblock %}
+
+{% block content %}
+<!-- 🎯 НАЗВАНИЕ ДОКУМЕНТА (как бейдж режима консультаций) -->
+<div class="consultation-mode-badge">
+    <div class="mode-indicator detailed" style="display: flex; flex-direction: column; gap: 8px;">
+        <span>{{ doc.title }}</span>        
+    </div>
+</div>
+
+<div class="chat-container-wrapper" 
+     data-has-limits="{% if has_detailed_consultations %}true{% else %}false{% endif %}"
+     data-document-id="{{ doc.id }}">
+    <!-- ОКНО СООБЩЕНИЙ -->
+    <div id="chat-container">
+        <!-- История сообщений -->
+        {% if chat_history %}
+            {% for msg in chat_history %}
+            <div class="message {% if msg.role == 'user' %}user-message{% else %}ai-message{% endif %}">
+                <div class="message-bubble">{% if msg.role == 'assistant' %}{{ msg.message | safe }}{% else %}{{ msg.message }}{% endif %}</div>
+                <div class="message-time">
+                    {{ msg.timestamp.strftime('%H:%M') if msg.timestamp else '' }}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <!-- Пустое состояние - показываем первое сообщение от ИИ если оно есть -->
+            {% if first_ai_message %}
+            <div class="message ai-message">
+                <div class="message-bubble">{{ first_ai_message.message | safe }}</div>
+                <div class="message-time">
+                    {{ first_ai_message.timestamp.strftime('%H:%M') if first_ai_message.timestamp else '' }}
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
+        
+        <!-- Индикатор печатания -->
+        <div id="typing-indicator" style="display: none;">
+            <div class="message ai-message">
+                <div class="message-bubble">
+                    <span class="typing-dots">
+                        <span></span><span></span><span></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ФОРМА ВВОДА - фиксирована внизу -->
+    {% if not has_detailed_consultations %}
+    <!-- Заблокировано - нет детальных консультаций -->
+    <div class="chat-input-wrapper">
+        <a href="/dashboard/subscription" style="display: block; padding: 1rem 1.5rem; text-align: center; background: linear-gradient(135deg, #667eea 0%, #1abc9c 100%); color: white; text-decoration: none; border-radius: 16px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); transition: all 0.2s;">
+            <div style="font-size: 1.05rem; font-weight: 600; margin-bottom: 4px;">
+                {{ t('upgrade_plan', lang) }}
+            </div>            
+        </a>
+        
+        <!-- Медицинский дисклеймер -->
+        <div class="medical-disclaimer">
+            {{ t('medical_disclaimer', lang) }}
+        </div>
+    </div>
+    {% else %}
+    <!-- Активная форма -->
+    <div class="chat-input-wrapper">
+        <form id="chat-form">
+            <div class="input-wrapper">
+                <textarea 
+                    id="message-input" 
+                    placeholder="{{ t('chat_placeholder', lang) }}"
+                    autocomplete="off"
+                    required
+                    rows="1"
+                ></textarea>
+                
+                <button type="submit" class="send-button">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </form>
+        
+        <!-- Медицинский дисклеймер -->
+        <div class="medical-disclaimer">
+            {{ t('medical_disclaimer', lang) }}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Cookie helper
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+const chatContainer = document.getElementById('chat-container');
+const chatForm = document.getElementById('chat-form');
+const messageInput = document.getElementById('message-input');
+const typingIndicator = document.getElementById('typing-indicator');
+
+// Получаем данные из data-атрибутов
+const wrapper = document.querySelector('.chat-container-wrapper');
+const hasDetailedConsultations = wrapper.dataset.hasLimits === 'true';
+const documentId = parseInt(wrapper.dataset.documentId);
+
+let isProcessing = false;
+
+// Автоматическая прокрутка вниз
+function scrollToBottom() {
+    if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+}
+
+// Прокрутка при загрузке
+window.addEventListener('load', scrollToBottom);
+
+// Автоматическое изменение высоты textarea
+if (messageInput) {
+    messageInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+    });
+    
+    // Отправка по Enter (без Shift)
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    });
+}
+
+// Отправка сообщения
+if (chatForm && hasDetailedConsultations) {
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const message = messageInput.value.trim();
+        if (!message || isProcessing) return;
+        
+        isProcessing = true;
+        
+        // Блокируем кнопку
+        const sendButton = document.querySelector('.send-button');
+        if (sendButton) sendButton.disabled = true;
+        
+        // Добавляем сообщение пользователя
+        addMessage(message, 'user');
+        
+        // Очищаем поле
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+        
+        // Показываем индикатор
+        typingIndicator.style.display = 'block';
+        scrollToBottom();
+        
+        try {
+            const response = await fetch('/api/document-chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': getCookie('csrf_token')
+                },
+                body: JSON.stringify({ 
+                    document_id: documentId,
+                    message: message 
+                })
+            });
+            
+            // Проверка аутентификации
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            const data = await response.json();
+            
+            // Скрываем индикатор
+            typingIndicator.style.display = 'none';
+            
+            if (data.success) {
+                addMessage(data.response, 'ai');
+            } else {
+                if (data.show_upgrade) {
+                    // Показываем сообщение с кнопкой
+                    const upgradeMessage = `${data.error}<br><div style="display: flex; justify-content: center;"><a href="/dashboard/subscription" style="display: block; padding: 1rem 1.5rem; text-align: center; background: linear-gradient(135deg, #667eea 0%, #1abc9c 100%); color: white; text-decoration: none; border-radius: 16px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); transition: all 0.2s; margin-top: 1rem; max-width: 300px;">{{ t('btn_upgrade_plan', lang) }}</a></div>`;
+                    addMessage(upgradeMessage, 'ai');
+                } else {
+                    addMessage(data.error || '{{ t("error_server", lang) }}', 'ai');
+                }
+            }
+            
+        } catch (error) {
+            typingIndicator.style.display = 'none';
+            addMessage('{{ t("error_server", lang) }}', 'ai');
+            console.error('Error:', error);
+        } finally {
+            if (sendButton) sendButton.disabled = false;
+            isProcessing = false;
+        }
+    });
+}
+
+// Добавление сообщения в чат
+function addMessage(text, role) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${role}-message`;
+    
+    const now = new Date();
+    const time = now.getHours().toString().padStart(2, '0') + ':' + 
+                 now.getMinutes().toString().padStart(2, '0');
+    
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+    
+    // Для AI используем innerHTML, для пользователя - textContent
+    if (role === 'ai') {
+        const cleanedText = text
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '');
+        bubble.innerHTML = cleanedText;
+    } else {
+        bubble.textContent = text;
+    }
+    
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'message-time';
+    timeDiv.textContent = time;
+    
+    messageDiv.appendChild(bubble);
+    messageDiv.appendChild(timeDiv);
+    chatContainer.insertBefore(messageDiv, typingIndicator);  // ✅ Вставляет перед индикатором
+    
+    scrollToBottom();
+}
+</script>
+{% endblock %}

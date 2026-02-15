@@ -323,13 +323,18 @@ class SubscriptionWebhookHandler:
                 1
             ))
             
-            # 3. Добавляем 1 document credit
+            # 3. Добавляем 1 document credit + 5 детальных консультаций
             conn = await get_db_connection()
             try:
                 await conn.execute("""
                     UPDATE user_limits 
                     SET documents_left = documents_left + 1,
                         updated_at = NOW()
+                    WHERE user_id = $1
+                """, user_id)
+                await conn.execute("""
+                    UPDATE user_limits 
+                    SET gpt4o_queries_left = gpt4o_queries_left + 5 
                     WHERE user_id = $1
                 """, user_id)
             finally:
@@ -478,6 +483,24 @@ class SubscriptionWebhookHandler:
                     logger.info(f"✅ Medical timeline updated for document {document_id}")
                 except Exception as e:
                     logger.warning(f"⚠️ Medical timeline error (non-critical): {e}")
+
+                # Первое сообщение для обсудить
+                try:
+                    from document_questions import generate_and_save_first_message
+                    from medical_timeline import get_document_importance
+                    
+                    importance = await get_document_importance(document_id, user_id)
+                    
+                    await generate_and_save_first_message(
+                        document_id=document_id,
+                        user_id=user_id,
+                        full_analysis=result.get('full_analysis'),
+                        importance=importance,
+                        lang=lang
+                    )
+                    logger.info(f"✅ First message generated for document {document_id}")
+                except Exception as e:
+                    logger.warning(f"⚠️ First message generation error (non-critical): {e}")
 
                 # Списываем лимит документов
                 await spend_document_limit(user_id)

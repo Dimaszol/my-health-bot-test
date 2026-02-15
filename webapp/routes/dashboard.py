@@ -532,6 +532,23 @@ async def document_detail(
         # Получаем медкарту для этого документа
         timeline = await get_timeline_by_document(doc_id, user_id)
         
+        from webapp.utils.text_formatter import format_for_web
+
+        # После получения last_ai_message:
+        last_ai_message = await conn.fetchrow(
+            """SELECT message, timestamp FROM document_chat_history 
+            WHERE document_id = $1 AND user_id = $2 AND role = 'assistant'
+            ORDER BY id DESC
+            LIMIT 1""",
+            doc_id, user_id
+        )
+
+        # Форматируем для веба
+        last_ai_formatted = None
+        if last_ai_message:
+            last_ai_formatted = dict(last_ai_message)
+            last_ai_formatted['message'] = format_for_web(last_ai_formatted['message'])
+        
     finally:
         await release_db_connection(conn)
     
@@ -539,10 +556,73 @@ async def document_detail(
     context = get_template_context(request)
     context.update({
         'doc': dict(doc),
-        'timeline': timeline
+        'timeline': timeline,
+        'first_ai_message': last_ai_formatted,
     })
     
     return templates.TemplateResponse("document_detail.html", context)
+
+@router.get("/document/{doc_id}/chat", response_class=HTMLResponse)
+async def document_chat_page(
+    request: Request,
+    doc_id: int,
+    user_id: int = Depends(get_current_user)
+):
+    """
+    Страница чата по документу
+    """
+    from db_postgresql import get_db_connection, release_db_connection
+    from subscription_manager import check_gpt4o_limit
+    from webapp.utils.text_formatter import format_for_web
+    
+    conn = await get_db_connection()
+    try:
+        # Получаем документ
+        doc = await conn.fetchrow(
+            "SELECT id, title, file_path, file_type, full_analysis FROM documents WHERE id = $1 AND user_id = $2",
+            doc_id, user_id
+        )
+        
+        if not doc:
+            raise HTTPException(status_code=404, detail="Документ не найден")
+        
+        # Получаем историю чата (последние 20 сообщений)
+        chat_history = await conn.fetch(
+            """SELECT role, message, timestamp FROM document_chat_history 
+               WHERE document_id = $1 AND user_id = $2
+               ORDER BY id DESC
+               LIMIT 20""",
+            doc_id, user_id
+        )
+        
+    finally:
+        await release_db_connection(conn)
+    
+    # Проверяем наличие детальных консультаций
+    has_detailed = await check_gpt4o_limit(user_id)
+    
+    # ✅ ФОРМАТИРУЕМ AI СООБЩЕНИЯ для веба
+    chat_history_formatted = []
+    if chat_history:
+        for msg in reversed(chat_history):
+            formatted_msg = dict(msg)
+            # Форматируем только AI сообщения
+            if formatted_msg['role'] == 'assistant':
+                formatted_msg['message'] = format_for_web(formatted_msg['message'])
+            chat_history_formatted.append(formatted_msg)
+    
+    # Формируем контекст
+    from webapp.utils.context import get_template_context
+    from webapp.app import templates
+    
+    context = get_template_context(request)
+    context.update({
+        'doc': dict(doc),
+        'chat_history': chat_history_formatted,
+        'has_detailed_consultations': has_detailed
+    })
+    
+    return templates.TemplateResponse("document_chat.html", context)
 
 @router.get("/test-gpt5")
 async def test_gpt5_page(request: Request):

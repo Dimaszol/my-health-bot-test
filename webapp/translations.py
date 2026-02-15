@@ -1217,6 +1217,18 @@ TRANSLATIONS = {
         'uk': 'Короткий опис ключових спостережень по документу',
         'de': 'Kurze Beschreibung der wichtigsten Beobachtungen aus dem Dokument'
     },
+    'legend_discuss': {
+        'ru': 'Обсудить',
+        'en': 'Discuss',
+        'uk': 'Обговорити',
+        'de': 'Besprechen'
+    },
+    'legend_discuss_desc': {
+        'ru': 'Отдельный чат по документу. Позволяет детально разобрать его показатели и получить ответы на вопросы',
+        'en': 'Separate chat for the document. Allows detailed analysis of its indicators and answers to questions',
+        'uk': 'Окремий чат по документу. Дозволяє детально розібрати його показники та отримати відповіді на питання',
+        'de': 'Separater Chat für das Dokument. Ermöglicht detaillierte Analyse der Indikatoren und Antworten auf Fragen'
+    },
     'legend_indicator_normal': {
         'ru': ' — значимых отклонений не выявлено',
         'en': ' — no significant deviations detected',
@@ -1383,6 +1395,36 @@ TRANSLATIONS = {
         'en': 'Document updated successfully',
         'uk': 'Документ успішно оновлено',
         'de': 'Dokument erfolgreich aktualisiert'
+    },
+    'btn_discuss': {
+        'ru': 'Обсудить',
+        'en': 'Discuss',
+        'uk': 'Обговорити',
+        'de': 'Besprechen'
+    },
+    'document_discussion': {
+        'ru': 'Консультация по документу',
+        'uk': 'Консультація щодо документа',
+        'en': 'Consultation on the document',
+        'de': 'Beratung zum Dokument'
+    },
+    'discuss_document': {
+        'ru': 'Открыть консультацию',
+        'uk': 'Відкрити консультацію',
+        'en': 'Open consultation',
+        'de': 'Beratung öffnen'
+    },
+    'upgrade_plan': {
+        'ru': 'Чтобы продолжить обсуждение документа, обновите план',
+        'en': 'To continue document discussion, upgrade your plan',
+        'uk': 'Щоб продовжити обговорення документа, оновіть план',
+        'de': 'Um die Dokumentendiskussion fortzusetzen, upgraden Sie Ihren Plan'
+    },
+    'document_chat_requires_premium': {
+        'ru': 'Обсуждение документа доступно при наличии детальных консультаций',
+        'en': 'Document discussion available with detailed consultations',
+        'uk': 'Обговорення документа доступне за наявності детальних консультацій',
+        'de': 'Dokumentendiskussion verfügbar mit detaillierten Beratungen'
     },
     
     # ============================================
