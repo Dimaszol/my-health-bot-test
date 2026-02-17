@@ -880,10 +880,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
             } catch (error) {
-                                
-                alert('❌ {{ t("error_server", lang) }}');
-                console.error('Error:', error);
-                resetUploadForm();
+                alert('{{ t("upload_connection_lost", lang) }}');
+                window.location.reload();
             }
         });
         

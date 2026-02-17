@@ -2111,6 +2111,12 @@ TRANSLATIONS = {
         'uk': 'Помилка сервера. Спробуйте пізніше.',
         'de': 'Serverfehler. Bitte versuchen Sie es später erneut.'
     },
+    'upload_connection_lost': {
+        'ru': '⚠️ Требуется перезагрузка страницы для отображения анализа.',
+        'en': '⚠️ Page reload required to display the analysis.',
+        'uk': '⚠️ Потрібне оновлення сторінки для відображення аналізу.',
+        'de': '⚠️ Seite neu laden erforderlich, um die Analyse anzuzeigen.'
+    },
     'error_upload_failed': {
         'ru': 'Не удалось загрузить файл',
         'en': 'Failed to upload file',
