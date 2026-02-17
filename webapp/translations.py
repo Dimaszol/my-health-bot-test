@@ -660,6 +660,97 @@ TRANSLATIONS = {
         'uk': 'Ваш особистий медичний кабінет',
         'de': 'Ihr persönliches medizinisches Dashboard'
     },
+    # Після dashboard_subtitle
+    'onboarding_upload_title': {
+        'ru': 'Начните анализ документа',
+        'en': 'Start document analysis',
+        'uk': 'Почніть аналіз документа',
+        'de': 'Starten Sie die Dokumentenanalyse'
+    },
+    'onboarding_upload_desc': {
+        'ru': 'После загрузки вы получите понятную сводку и ключевые выводы.',
+        'en': 'After uploading, you will receive a clear summary and key findings.',
+        'uk': 'Після завантаження ви отримаєте зрозуміле зведення та ключові висновки.',
+        'de': 'Nach dem Hochladen erhalten Sie eine klare Zusammenfassung und wichtige Erkenntnisse.'
+    },
+    'onboarding_upload_button': {
+        'ru': 'Начать анализ',
+        'en': 'Start analysis',
+        'uk': 'Почати аналіз',
+        'de': 'Analyse starten'
+    },
+    'onboarding_profile_title': {
+        'ru': 'Дополните профиль',
+        'en': 'Complete your profile',
+        'uk': 'Доповніть профіль',
+        'de': 'Profil ergänzen'
+    },
+    'onboarding_profile_desc': {
+        'ru': 'Эти данные учитываются при анализе документов и формировании ответов.',
+        'en': 'This information is taken into account when analyzing documents and generating responses.',
+        'uk': 'Ці дані враховуються під час аналізу документів та формування відповідей.',
+        'de': 'Diese Daten werden bei der Analyse von Dokumenten und der Erstellung von Antworten berücksichtigt.'
+    },
+    'onboarding_tips_title': {
+        'ru': 'Рекомендации для точного анализа',
+        'en': 'Recommendations for accurate analysis',
+        'uk': 'Рекомендації для точного аналізу',
+        'de': 'Empfehlungen für eine präzise Analyse'
+    },
+    'onboarding_tips_desc': {
+        'ru': 'Узнайте, какие факторы влияют на качество анализа и выводов.',
+        'en': 'Learn which factors influence the quality of analysis and conclusions.',
+        'uk': 'Дізнайтеся, які фактори впливають на якість аналізу та висновків.',
+        'de': 'Erfahren Sie, welche Faktoren die Qualität der Analyse und der Schlussfolgerungen beeinflussen.'
+    },
+    'onboarding_tip1_title': {
+        'ru': '1️⃣ Заполненный профиль',
+        'en': '1️⃣ Completed profile',
+        'uk': '1️⃣ Заповнений профіль',
+        'de': '1️⃣ Ausgefülltes Profil'
+    },
+    'onboarding_tip1_text': {
+        'ru': 'Возраст, пол, рост и вес учитываются при интерпретации результатов. Нормальные значения могут отличаться в зависимости от этих параметров. Заполненный профиль позволяет точнее оценивать показатели.',
+        'en': 'Age, sex, height and weight are taken into account when interpreting results. Normal values may vary depending on these parameters. A completed profile allows for more accurate evaluation of indicators.',
+        'uk': 'Вік, стать, зріст і вага враховуються під час інтерпретації результатів. Нормальні значення можуть відрізнятися залежно від цих параметрів. Заповнений профіль дозволяє точніше оцінювати показники.',
+        'de': 'Alter, Geschlecht, Größe und Gewicht werden bei der Interpretation der Ergebnisse berücksichtigt. Normalwerte können je nach diesen Parametern variieren. Ein ausgefülltes Profil ermöglicht eine genauere Bewertung der Werte.'
+    },
+    'onboarding_tip2_title': {
+        'ru': '2️⃣ Качество изображения',
+        'en': '2️⃣ Image quality',
+        'uk': '2️⃣ Якість зображення',
+        'de': '2️⃣ Bildqualität'
+    },
+    'onboarding_tip2_text': {
+        'ru': 'Чёткое изображение без обрезанных фрагментов, бликов и размытия обеспечивает корректное распознавание текста и показателей. Низкое качество может привести к пропуску или искажению данных.',
+        'en': 'A clear image without cropped sections, glare or blur ensures accurate recognition of text and indicators. Low quality may lead to missing or distorted data.',
+        'uk': 'Чітке зображення без обрізаних фрагментів, відблисків і розмиття забезпечує коректне розпізнавання тексту та показників. Низька якість може призвести до пропуску або спотворення даних.',
+        'de': 'Ein klares Bild ohne abgeschnittene Bereiche, Reflexionen oder Unschärfe gewährleistet eine korrekte Erkennung von Text und Werten. Geringe Qualität kann zu fehlenden oder verfälschten Daten führen.'
+    },
+    'onboarding_tip3_title': {
+        'ru': '3️⃣ Правильная ориентация',
+        'en': '3️⃣ Correct orientation',
+        'uk': '3️⃣ Правильна орієнтація',
+        'de': '3️⃣ Richtige Ausrichtung'
+    },
+    'onboarding_tip3_text': {
+        'ru': 'Загружайте документы в правильной ориентации — так, как их обычно читают. Неправильное положение страницы может привести к ошибкам распознавания и искажению выводов.',
+        'en': 'Upload documents in the correct reading orientation. Incorrect page positioning may lead to recognition errors and distorted conclusions.',
+        'uk': 'Завантажуйте документи у правильній орієнтації — так, як їх зазвичай читають. Неправильне положення сторінки може призвести до помилок розпізнавання та спотворення висновків.',
+        'de': 'Laden Sie Dokumente in der korrekten Leseausrichtung hoch. Eine falsche Seitenposition kann zu Erkennungsfehlern und verfälschten Schlussfolgerungen führen.'
+    },
+    'onboarding_tip4_title': {
+        'ru': '4️⃣ Контекст или конкретный вопрос',
+        'en': '4️⃣ Context or specific question',
+        'uk': '4️⃣ Контекст або конкретне питання',
+        'de': '4️⃣ Kontext oder spezifische Frage'
+    },
+    'onboarding_tip4_text': {
+        'ru': 'Если вас интересует конкретный вопрос или есть важный контекст — укажите это при загрузке. Без дополнительной информации документ анализируется изолированно; контекст помогает сосредоточиться на значимых показателях и деталях.',
+        'en': 'If you have a specific question or important context, mention it when uploading. Without additional information, the document is analyzed in isolation; context helps focus on the most relevant indicators and details.',
+        'uk': 'Якщо у вас є конкретне питання або важливий контекст — вкажіть це під час завантаження. Без додаткової інформації документ аналізується ізольовано; контекст допомагає зосередитися на значущих показниках і деталях.',
+        'de': 'Wenn Sie eine konkrete Frage oder wichtigen Kontext haben, geben Sie dies beim Hochladen an. Ohne zusätzliche Informationen wird das Dokument isoliert analysiert; Kontext hilft, sich auf die relevanten Werte und Details zu konzentrieren.'
+    },
     'stats_documents_uploaded': {
         'ru': 'Моя медкарта',
         'en': 'My Medical Records',
@@ -950,11 +1041,11 @@ TRANSLATIONS = {
         'de': 'Meine Krankenakte'
     },    
     'additional_context_label': {
-        'ru': 'Контекст для анализа (по желанию)',
-        'en': 'Context for analysis (optional)',
-        'uk': 'Контекст для аналізу (за бажанням)',
-        'de': 'Kontext für Analyse (optional)'
-    },    
+        'ru': 'Контекст или вопрос для анализа (по желанию)',
+        'en': 'Context or question for analysis (optional)',
+        'uk': 'Контекст або питання для аналізу (за бажанням)',
+        'de': 'Kontext oder Frage zur Analyse (optional)'
+    },  
     'additional_context_placeholder': {
         'ru': 'Например: кашель 2 недели, без температуры, боль в груди, ЭКГ для контроля...',
         'en': 'Example: cough for 2 weeks, no fever, chest pain, ECG for monitoring...',

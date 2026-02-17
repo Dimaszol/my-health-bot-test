@@ -14,6 +14,237 @@
     </p>
 </div>
 
+<!-- Для нового пользователя -->
+
+{% if show_onboarding %}
+<div class="faq-container" style="margin: 24px 0;">
+    
+    <!-- Шаг 1: Загрузка документа -->
+    <div class="faq-item">
+        <div class="faq-header" style="cursor: default; padding: 1.5rem;">
+            <div style="width: 100%;">
+                <h3 style="margin-bottom: 8px;">{{ t('onboarding_upload_title', lang) }}</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.95rem;">
+                    {{ t('onboarding_upload_desc', lang) }}
+                </p>
+                <a href="/dashboard/documents" class="btn" style="display: inline-block; text-decoration: none;">
+                    {{ t('onboarding_upload_button', lang) }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Шаг 2: Заполнение профиля (раскрывающийся) -->
+    <div class="faq-item" id="profile-onboarding">
+        <div class="faq-header" onclick="toggleOnboarding(this)">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="faq-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="8" r="4"/>
+                        <path d="M4 21c0-5 4-8 8-8s8 3 8 8"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3>{{ t('onboarding_profile_title', lang) }}</h3>
+                    <p style="color: var(--text-secondary); margin: 8px 0 0 0; font-size: 0.95rem;">
+                        {{ t('onboarding_profile_desc', lang) }}
+                    </p>
+                </div>
+            </div>
+            <svg class="faq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+            </svg>
+        </div>
+        <div class="faq-content">
+            <div class="faq-text">
+                <form id="quick-profile-form">
+                    <div class="profile-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                        <!-- Год рождения -->
+                        <div>
+                            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_birth_year', lang) }}</strong>
+                            <input 
+                                type="number" 
+                                name="birth_year" 
+                                value="{{ user.birth_year if user and user.birth_year else '' }}"
+                                placeholder="1990"
+                                min="1900"
+                                max="2024"
+                                style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
+                            >
+                        </div>
+                        
+                        <!-- Пол -->
+                        <div>
+                            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_gender', lang) }}</strong>
+                            <select 
+                                name="gender"
+                                style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
+                            >
+                                <option value="">{{ t('profile_not_specified', lang) }}</option>
+                                <option value="{{ t('gender_male', lang) }}" {{ 'selected' if user and user.gender == t('gender_male', lang) else '' }}>{{ t('gender_male', lang) }}</option>
+                                <option value="{{ t('gender_female', lang) }}" {{ 'selected' if user and user.gender == t('gender_female', lang) else '' }}>{{ t('gender_female', lang) }}</option>
+                                <option value="{{ t('gender_other', lang) }}" {{ 'selected' if user and user.gender == t('gender_other', lang) else '' }}>{{ t('gender_other', lang) }}</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Рост -->
+                        <div>
+                            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_height', lang) }}</strong>
+                            <input 
+                                type="number" 
+                                name="height_cm"
+                                value="{{ user.height_cm if user and user.height_cm else '' }}"
+                                placeholder="175"
+                                min="50"
+                                max="250"
+                                style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
+                            >
+                        </div>
+                        
+                        <!-- Вес -->
+                        <div>
+                            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_weight', lang) }}</strong>
+                            <input 
+                                type="number" 
+                                name="weight_kg"
+                                value="{{ user.weight_kg if user and user.weight_kg else '' }}"
+                                placeholder="70.5"
+                                min="20"
+                                max="300"
+                                step="0.1"
+                                style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
+                            >
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn" style="padding: 0.6rem 1.5rem;">
+                        ✅ {{ t('save', lang) }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    /* Адаптация для мобильных (как на странице профиля) */
+    @media (max-width: 768px) {
+        .profile-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+    }
+    </style>
+
+    <!-- Шаг 3: Советы (раскрывающийся) -->
+    <div class="faq-item">
+        <div class="faq-header" onclick="toggleOnboarding(this)">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="faq-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a7 7 0 0 0-4 12c1 1 2 2 2 4h4c0-2 1-3 2-4a7 7 0 0 0-4-12z"/>
+                        <path d="M9 18h6"/>
+                        <path d="M10 22h4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3>{{ t('onboarding_tips_title', lang) }}</h3>
+                    <p style="color: var(--text-secondary); margin: 8px 0 0 0; font-size: 0.95rem;">
+                        {{ t('onboarding_tips_desc', lang) }}
+                    </p>
+                </div>
+            </div>
+            <svg class="faq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+            </svg>
+        </div>
+        <div class="faq-content">
+            <div class="faq-text">
+
+                <!-- Совет 1 -->
+                <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);">
+                    <strong style="display: block; margin-bottom: 0.5rem; color: var(--text-primary);">{{ t('onboarding_tip1_title', lang) }}</strong>
+                    <p style="color: var(--text-secondary); line-height: 1.7; margin: 0;">{{ t('onboarding_tip1_text', lang) }}</p>
+                </div>
+
+                <!-- Совет 2 -->
+                <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);">
+                    <strong style="display: block; margin-bottom: 0.5rem; color: var(--text-primary);">{{ t('onboarding_tip2_title', lang) }}</strong>
+                    <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 0.8rem;">{{ t('onboarding_tip2_text', lang) }}</p>
+                    <img src="/static/images/quality_example.jpg" alt="" style="width: 100%; border-radius: 8px;">
+                </div>
+
+                <!-- Совет 3 -->
+                <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);">
+                    <strong style="display: block; margin-bottom: 0.5rem; color: var(--text-primary);">{{ t('onboarding_tip3_title', lang) }}</strong>
+                    <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 0.8rem;">{{ t('onboarding_tip3_text', lang) }}</p>
+                    <img src="/static/images/orientation_example.jpg" alt="" style="width: 100%; border-radius: 8px;">
+                </div>
+
+                <!-- Совет 4 -->
+                <div>
+                    <strong style="display: block; margin-bottom: 0.5rem; color: var(--text-primary);">{{ t('onboarding_tip4_title', lang) }}</strong>
+                    <p style="color: var(--text-secondary); line-height: 1.7; margin: 0;">{{ t('onboarding_tip4_text', lang) }}</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+<script>
+// Обработка формы профиля через существующий API
+document.getElementById('quick-profile-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    // Формируем данные в формате для /api/profile/update
+    const data = {
+        section: 'medical',
+        birth_year: formData.get('birth_year') || null,
+        gender: formData.get('gender') || null,
+        weight_kg: formData.get('weight_kg') ? parseFloat(formData.get('weight_kg')) : null,
+        height_cm: formData.get('height_cm') ? parseInt(formData.get('height_cm')) : null
+    };
+    
+    try {
+        const response = await fetch('/api/profile/update', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            location.reload();
+        } else {
+            alert(result.message || 'Ошибка сохранения');
+        }
+    } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        alert('Ошибка сохранения данных');
+    }
+});
+// Функция для раскрытия онбординга (аналогично FAQ)
+function toggleOnboarding(header) {
+    const item = header.parentElement;
+    const wasActive = item.classList.contains('active');
+    
+    // Закрываем все остальные
+    document.querySelectorAll('.faq-item').forEach(el => {
+        if (el !== item) el.classList.remove('active');
+    });
+    
+    // Переключаем текущий
+    if (!wasActive) {
+        item.classList.add('active');
+    } else {
+        item.classList.remove('active');
+    }
+}
+</script>
+{% endif %}
+
 <!-- 📈 СТАТИСТИКА (3 карточки в ряд) -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
     

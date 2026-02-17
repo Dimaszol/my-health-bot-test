@@ -518,7 +518,7 @@ DATA LIMITATIONS:
 
 SUMMARY STRUCTURE (MANDATORY):
 
-1. BRIEF CLINICAL OVERVIEW
+1. DOCUMENT OVERVIEW
 
 Essence:
 Clearly and directly describe
@@ -540,7 +540,7 @@ without escalation or risk-focused language.
 
 ---
 
-2. KEY FINDINGS
+2. KEY FINDINGS AND OBSERVATIONS
 
 Essence:
 List the key facts
@@ -552,7 +552,7 @@ From most significant to secondary.
 
 ---
 
-3. CLINICAL INTERPRETATION
+3. INTERPRETATION OF THE FINDINGS
 
 Essence:
 Explain how such a pattern
@@ -568,7 +568,7 @@ Mandatory:
 
 ---
 
-4. CLINICAL SIGNIFICANCE
+4. WHY THIS MATTERS
 
 Essence:
 Explain
@@ -589,7 +589,7 @@ Forbidden:
 
 ---
 
-5. LIMITATIONS AND WHAT REMAINS UNCLEAR
+5. LIMITATIONS AND UNCERTAINTIES
 
 Essence:
 Honestly indicate
@@ -604,7 +604,7 @@ not speculative diseases or worst-case scenarios.
 
 ---
 
-6. CONTEXT OF FURTHER OBSERVATION
+6. FOLLOW-UP CONTEXT
 
 Essence:
 Provide a neutral, non-directive orientation

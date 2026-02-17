@@ -231,6 +231,12 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
     
     stats = await get_user_stats(user_id)
     
+    # Проверяем, нужно ли показывать онбординг
+    show_onboarding = (
+        stats.get('total_documents', 0) == 0 and 
+        stats.get('total_messages', 0) == 0
+    )
+
     # Проверяем источник регистрации
     from db_postgresql import get_db_connection, release_db_connection
     conn = await get_db_connection()
@@ -271,7 +277,8 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
         'current_plan_name': current_plan_name,
         'profile_completion': calculate_profile_completion(profile),
         'random_tip': random_tip,
-        'just_registered': just_registered
+        'just_registered': just_registered,
+        'show_onboarding': show_onboarding
     })
 
     # ✅ Удаляем флаг ПОСЛЕ формирования контекста
