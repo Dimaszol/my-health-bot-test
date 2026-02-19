@@ -515,6 +515,7 @@ footer {
 
 let currentOpenDocId = null;
 let pollingActive = false;
+history.scrollRestoration = 'manual';
 
 const progressTranslations = {
     upload: "{{ t('progress_upload', lang) }}",
@@ -576,16 +577,7 @@ function toggleDocument(docId) {
         body.style.display = 'block';
         if (toggleText) toggleText.textContent = '{{ t("btn_hide", lang) }}';
         currentOpenDocId = docId;
-        card.classList.remove('new');
-        
-        // ✨ НОВОЕ: Плавная прокрутка к началу карточки после раскрытия
-        setTimeout(() => {
-            card.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'start',
-                inline: 'nearest'
-            });
-        }, 100); // Небольшая задержка чтобы контент успел раскрыться
+        card.classList.remove('new');                
     }
 }
 
@@ -717,18 +709,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // 2️⃣ Автооткрытие нового документа
-    const urlParams = new URLSearchParams(window.location.search);
-    const newDocId = urlParams.get('new_doc_id');
     
-    if (newDocId) {
-        const newCard = document.querySelector(`.document-card[data-doc-id="${newDocId}"]`);
-        if (newCard) {
-            newCard.classList.add('new', 'new-animated');
-            toggleDocument(newDocId);
-            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-    }
     
     // 3️⃣ Делегирование для всех кнопок
     const documentsContainer = document.getElementById('documents-list');
@@ -985,20 +966,44 @@ document.addEventListener('DOMContentLoaded', function() {
     // 5️⃣ Polling при загрузке страницы
     const urlParams2 = new URLSearchParams(window.location.search);
     const docId = urlParams2.get('doc_id');
-    
-    if (docId) {
-        startDocumentPolling(docId);
+    const newDocId2 = urlParams2.get('new_doc_id');
+
+    if (!newDocId2) {
+        if (docId) {
+            startDocumentPolling(docId);
+        }
+        {% if processing_document %}
+        else {
+            startDocumentPolling({{ processing_document.id }});
+        }
+        {% endif %}
     }
-    {% if processing_document %}
-    else {
-        startDocumentPolling({{ processing_document.id }});
-    }
-    {% endif %}
 
     // 6️⃣ Конвертация времени
     convertToLocalTime();
     
     console.log('✅ Инициализация завершена!');
+});
+
+window.addEventListener('load', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const newDocId = urlParams.get('new_doc_id');
+
+    if (newDocId) {
+        const newCard = document.querySelector(`.document-card[data-doc-id="${newDocId}"]`);
+        if (newCard) {
+            newCard.classList.add('new', 'new-animated');
+            toggleDocument(newDocId);
+
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 150);
+            });
+
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
 });
 
 // ========================================
