@@ -997,7 +997,9 @@ window.addEventListener('load', function() {
 
             requestAnimationFrame(() => {
                 setTimeout(() => {
-                    newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const headerHeight = document.querySelector('nav') ? document.querySelector('nav').offsetHeight : 70;
+                    const cardTop = newCard.getBoundingClientRect().top + window.scrollY - headerHeight - 20;
+                    window.scrollTo({ top: cardTop, behavior: 'smooth' });
                 }, 150);
             });
 
