@@ -514,6 +514,7 @@ footer {
 // ========================================
 
 let currentOpenDocId = null;
+let pollingActive = false;
 
 const progressTranslations = {
     upload: "{{ t('progress_upload', lang) }}",
@@ -1179,39 +1180,38 @@ async function checkDocumentStatus(docId) {
 }
 
 async function startDocumentPolling(docId) {
+    if (pollingActive) return;
+    pollingActive = true;
+
     const uploadCard = document.getElementById('upload-card');
     const progressCard = document.getElementById('progress-card');
     
-    // Показываем прогресс
     if (uploadCard) uploadCard.style.display = 'none';
     if (progressCard) progressCard.style.display = 'block';
     
-    // Запускаем симуляцию этапов
     simulateProgressSteps();
     
-    // Polling каждые 3 секунды
     const pollInterval = setInterval(async () => {
         const status = await checkDocumentStatus(docId);
         
         if (status === 'completed') {
+            pollingActive = false;
             clearInterval(pollInterval);
             
-            // Показываем завершение
             updateProgressStep('save', 'completed', '✓');
             updateProgressTitle(progressTranslations.completed);
             
-            // Перезагружаем через 1.5 сек
             setTimeout(() => {
                 window.location.href = window.location.pathname + '?new_doc_id=' + docId;
             }, 1500);
             
         } else if (status === 'failed') {
+            pollingActive = false;
             clearInterval(pollInterval);
             
             alert('❌ {{ t("document_processing_error", lang) }}');
             window.location.href = window.location.pathname;
         }
-        // Если 'processing' - продолжаем ждать
     }, 4000);
 }
 

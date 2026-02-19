@@ -863,26 +863,17 @@ async def upload_document(
         error_message = t("document_limit_exceeded", lang,
                          documents_left=limits['documents_left'],
                          gpt4o_queries_left=limits['gpt4o_queries_left'])
-        return JSONResponse(
-            status_code=403,
-            content={'success': False, 'error': error_message}
-        )
+        return JSONResponse(status_code=403, content={'success': False, 'error': error_message})
 
     try:
         if not file.filename:
-            return JSONResponse(
-                status_code=400,
-                content={'success': False, 'error': t('file_not_selected', lang)}
-            )
+            return JSONResponse(status_code=400, content={'success': False, 'error': t('file_not_selected', lang)})
         
         filename = file.filename
         file_ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
         
         if file_ext not in Config.ALLOWED_EXTENSIONS:
-            return JSONResponse(
-                status_code=400,
-                content={'success': False, 'error': t('unsupported_file_type', lang)}
-            )
+            return JSONResponse(status_code=400, content={'success': False, 'error': t('unsupported_file_type', lang)})
         
         # Проверка MIME-type
         try:
@@ -894,33 +885,19 @@ async def upload_document(
             detected_mime = kind.mime if kind else 'application/octet-stream'
             
             if detected_mime not in Config.ALLOWED_MIME_TYPES:
-                safe_log_warning(
-                    "Отклонён файл с недопустимым MIME-type",
-                    user_id=user_id,
-                    filename_length=len(filename),
-                    detected_mime=detected_mime,
-                    file_extension=file_ext
-                )
-                return JSONResponse(
-                    status_code=400,
-                    content={'success': False, 'error': t('file_mime_type_mismatch', lang)}
-                )
+                safe_log_warning("Отклонён файл с недопустимым MIME-type",
+                    user_id=user_id, filename_length=len(filename),
+                    detected_mime=detected_mime, file_extension=file_ext)
+                return JSONResponse(status_code=400, content={'success': False, 'error': t('file_mime_type_mismatch', lang)})
             
-            safe_log_warning(
-                "Файл прошёл проверку MIME-type",
-                user_id=user_id,
-                file_extension=file_ext,
-                detected_mime=detected_mime
-            )
+            safe_log_warning("Файл прошёл проверку MIME-type",
+                user_id=user_id, file_extension=file_ext, detected_mime=detected_mime)
             
         except Exception as e:
             safe_log_error("Ошибка при проверке MIME-type файла", user_id=user_id, error=e)
-            return JSONResponse(
-                status_code=500,
-                content={'success': False, 'error': t('file_validation_error', lang)}
-            )
+            return JSONResponse(status_code=500, content={'success': False, 'error': t('file_validation_error', lang)})
         
-        # Сохраняем временно на диск
+        # Сохраняем файл временно — НЕ удаляем, фоновая задача сделает это сама
         temp_dir = f"temp_{user_id}"
         os.makedirs(temp_dir, exist_ok=True)
         local_file = os.path.join(temp_dir, f"{uuid.uuid4().hex[:8]}_{filename}")
@@ -929,31 +906,7 @@ async def upload_document(
         with open(local_file, 'wb') as f:
             f.write(content)
 
-        # Сразу сохраняем в постоянное хранилище
-        from file_storage import get_file_storage
-        storage = get_file_storage()
-        success, permanent_path = storage.save_file(
-            user_id=user_id,
-            filename=filename,
-            source_path=local_file
-        )
-        
-        # Удаляем временный файл
-        try:
-            if os.path.exists(local_file):
-                os.remove(local_file)
-            if os.path.exists(temp_dir) and not os.listdir(temp_dir):
-                os.rmdir(temp_dir)
-        except Exception as e:
-            safe_log_warning("Ошибка удаления временного файла", error=e)
-        
-        if not success:
-            return JSONResponse(
-                status_code=500,
-                content={'success': False, 'error': t('file_storage_error', lang)}
-            )
-
-        # Создаём запись в БД со статусом processing
+        # Создаём запись в БД со статусом processing (без file_path — добавим после обработки)
         file_type = "pdf" if file_ext == "pdf" else "image"
         conn = await get_db_connection()
         try:
@@ -962,13 +915,13 @@ async def upload_document(
                 (user_id, file_path, file_type, additional_context, confirmed)
                 VALUES ($1, $2, $3, $4, false)
                 RETURNING id
-            """, user_id, permanent_path, file_type, additional_context)
+            """, user_id, '', file_type, additional_context)
         finally:
             await release_db_connection(conn)
 
-        # Запускаем обработку в фоне — не зависит от соединения с клиентом
+        # Запускаем обработку в фоне
         asyncio.create_task(
-            _process_document_background(document_id, user_id, permanent_path, lang, additional_context)
+            _process_document_background(document_id, user_id, local_file, temp_dir, filename, lang, additional_context)
         )
 
         return JSONResponse(content={
@@ -984,23 +937,24 @@ async def upload_document(
                 os.remove(local_file)
         except:
             pass
-        
-        error_message = t('document_processing_error', lang)
-        return JSONResponse(
-            status_code=500,
-            content={'success': False, 'error': error_message}
-        )
+        return JSONResponse(status_code=500, content={'success': False, 'error': t('document_processing_error', lang)})
 
 
-async def _process_document_background(document_id: int, user_id: int, file_path: str, lang: str, additional_context: str):
-    """Фоновая обработка документа — не зависит от соединения с клиентом"""
+async def _process_document_background(document_id: int, user_id: int, local_file: str, temp_dir: str, filename: str, lang: str, additional_context: str):
+    """Фоновая обработка — локальный файл передаётся напрямую как раньше"""
     from document_processor import process_document
     from vector_db_postgresql import split_into_chunks, add_chunks_to_vector_db
+    from file_storage import get_file_storage
     from subscription_manager import SubscriptionManager
+    import shutil
 
     try:
+        file_ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+        file_type = "pdf" if file_ext == "pdf" else "image"
+
+        # Обрабатываем локальный файл
         result = await process_document(
-            file_path=file_path,
+            file_path=local_file,
             user_id=user_id,
             lang=lang,
             additional_context=additional_context
@@ -1018,7 +972,26 @@ async def _process_document_background(document_id: int, user_id: int, file_path
                 await release_db_connection(conn)
             return
 
-        # Сохраняем результаты в БД
+        # Сохраняем файл в постоянное хранилище
+        storage = get_file_storage()
+        success, permanent_path = storage.save_file(
+            user_id=user_id,
+            filename=filename,
+            source_path=local_file
+        )
+
+        if not success:
+            conn = await get_db_connection()
+            try:
+                await conn.execute(
+                    "UPDATE documents SET title = $1 WHERE id = $2",
+                    "⚠️ Ошибка сохранения файла", document_id
+                )
+            finally:
+                await release_db_connection(conn)
+            return
+
+        # Сохраняем результаты в БД — confirmed = false, пользователь ещё ждёт
         conn = await get_db_connection()
         try:
             from datetime import date
@@ -1032,17 +1005,19 @@ async def _process_document_background(document_id: int, user_id: int, file_path
 
             await conn.execute("""
                 UPDATE documents SET
-                    full_analysis = $1,
-                    title = $2,
-                    raw_text = $3,
-                    summary = $4,
-                    document_type = $5,
-                    subtype = $6,
-                    first_analysis = $7,
-                    document_date = $8,
-                    confirmed = true
-                WHERE id = $9
+                    file_path = $1,
+                    full_analysis = $2,
+                    title = $3,
+                    raw_text = $4,
+                    summary = $5,
+                    document_type = $6,
+                    subtype = $7,
+                    first_analysis = $8,
+                    document_date = $9,
+                    confirmed = false
+                WHERE id = $10
             """,
+                permanent_path,
                 result.get('full_analysis'),
                 result.get('title', 'Document'),
                 result.get('raw_text', ''),
@@ -1056,16 +1031,19 @@ async def _process_document_background(document_id: int, user_id: int, file_path
         finally:
             await release_db_connection(conn)
 
-        # Векторная база
-        try:
-            summary = result.get('summary', '')
-            if summary:
-                chunks = await split_into_chunks(summary, document_id, user_id)
-                await add_chunks_to_vector_db(document_id, user_id, chunks)
-        except Exception as e:
-            safe_log_warning("Ошибка векторной базы при фоновой обработке", error=e)
+        # Векторная база — запускаем в фоне, не ждём
+        async def _update_vector_db():
+            try:
+                summary = result.get('summary', '')
+                if summary:
+                    chunks = await split_into_chunks(summary, document_id, user_id)
+                    await add_chunks_to_vector_db(document_id, user_id, chunks)
+            except Exception as e:
+                safe_log_warning("Ошибка векторной базы при фоновой обработке", error=e)
 
-        # Timeline
+        asyncio.create_task(_update_vector_db())
+
+        # Timeline — ждём
         try:
             from medical_timeline import update_medical_timeline_on_document_upload
             await update_medical_timeline_on_document_upload(
@@ -1078,7 +1056,7 @@ async def _process_document_background(document_id: int, user_id: int, file_path
         except Exception as e:
             safe_log_warning("Ошибка timeline при фоновой обработке", error=e)
 
-        # Первое сообщение в document-chat
+        # Первое сообщение — ждём
         try:
             from document_questions import generate_and_save_first_message
             from medical_timeline import get_document_importance
@@ -1093,22 +1071,42 @@ async def _process_document_background(document_id: int, user_id: int, file_path
         except Exception as e:
             safe_log_warning("Ошибка генерации первого сообщения при фоновой обработке", error=e)
 
-        # Списываем лимит
+        # Списываем лимит — ждём
         await SubscriptionManager.spend_limits(user_id, documents=1)
+
+        # Только теперь confirmed = true — polling увидит completed
+        conn = await get_db_connection()
+        try:
+            await conn.execute(
+                "UPDATE documents SET confirmed = true WHERE id = $1",
+                document_id
+            )
+        finally:
+            await release_db_connection(conn)
 
     except Exception as e:
         safe_log_error("Критическая ошибка фоновой обработки документа", error=e, document_id=document_id)
+        conn = await get_db_connection()
         try:
-            conn = await get_db_connection()
-            try:
-                await conn.execute(
-                    "UPDATE documents SET title = $1 WHERE id = $2",
-                    "⚠️ Ошибка обработки", document_id
-                )
-            finally:
-                await release_db_connection(conn)
-        except:
-            pass
+            await conn.execute(
+                "UPDATE documents SET title = $1 WHERE id = $2",
+                "⚠️ Ошибка обработки", document_id
+            )
+        finally:
+            await release_db_connection(conn)
+
+    finally:
+        # Удаляем временные файлы в любом случае
+        try:
+            if os.path.exists(local_file):
+                os.remove(local_file)
+            pages_dir = f"{temp_dir}/pages"
+            if os.path.exists(pages_dir):
+                shutil.rmtree(pages_dir)
+            if os.path.exists(temp_dir) and not os.listdir(temp_dir):
+                os.rmdir(temp_dir)
+        except Exception as e:
+            safe_log_warning("Ошибка удаления временных файлов", error=e)
 
 # ==========================================
 # 🗑️ УДАЛЕНИЕ ДОКУМЕНТА
@@ -2373,16 +2371,13 @@ async def check_document_status(
             )
         
         # Определяем статус
-        if doc['full_analysis']:
+        if doc['confirmed'] is True and doc['full_analysis']:
             status = 'completed'
-        elif doc['confirmed'] is False and doc['title'] and '⚠️' in doc['title']:
-            # Если confirmed=false и в title есть сообщение об ошибке
+        elif doc['title'] and '⚠️' in str(doc['title']):
             status = 'failed'
             error_message = doc['title']
-        elif doc['full_analysis'] is None:
-            status = 'processing'
         else:
-            status = 'failed'
+            status = 'processing'
 
         return {
             'success': True,
@@ -2391,13 +2386,6 @@ async def check_document_status(
             'title': doc['title'],
             'error_message': error_message if status == 'failed' else None
         }
-        
-        return {
-            'success': True,
-            'status': status,
-            'document_id': document_id,
-            'title': doc['title']
-        }
-        
+                
     finally:
         await release_db_connection(conn)

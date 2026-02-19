@@ -52,6 +52,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             ('/api/toggle-document-confirmed/', 100),   # Тумблеры документов
             ('/api/delete-document/', 50),              # Удаление документов
             ('/api/rename-document/', 50),              # Переименование документов
+            ('/api/check-document-status/', 100),
             
             ('/api/', 20),                              # Все остальные API - 20 запросов/мин
             ('/', 200)                                  # Обычные страницы - 200 запросов/мин
