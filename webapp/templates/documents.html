@@ -981,8 +981,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('✅ Форма one-time payment инициализирована');
     }
+
+    // 5️⃣ Polling при загрузке страницы
+    const urlParams2 = new URLSearchParams(window.location.search);
+    const docId = urlParams2.get('doc_id');
     
-    // 5️⃣ Конвертация времени
+    if (docId) {
+        startDocumentPolling(docId);
+    }
+    {% if processing_document %}
+    else {
+        startDocumentPolling({{ processing_document.id }});
+    }
+    {% endif %}
+
+    // 6️⃣ Конвертация времени
     convertToLocalTime();
     
     console.log('✅ Инициализация завершена!');
@@ -1214,20 +1227,5 @@ async function startDocumentPolling(docId) {
         }
     }, 4000);
 }
-
-// При загрузке страницы проверяем URL параметры
-document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const docId = urlParams.get('doc_id');
-    
-    if (docId) {
-        startDocumentPolling(docId);
-    }
-    {% if processing_document %}
-    else {
-        startDocumentPolling({{ processing_document.id }});
-    }
-    {% endif %}
-});
 </script>
 {% endblock %}
