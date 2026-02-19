@@ -366,7 +366,10 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
     context['one_time_price'] = f"{currency_symbol}2.49"
     context['basic_price'] = f"{currency_symbol}3.99"
     
-    return templates.TemplateResponse("documents.html", context)
+    response = templates.TemplateResponse("documents.html", context)
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    return response
 
 @router.get("/chat", response_class=HTMLResponse)
 async def chat(request: Request, user_id: int = Depends(get_current_user)):
