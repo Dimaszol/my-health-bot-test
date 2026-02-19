@@ -989,23 +989,27 @@ window.addEventListener('load', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const newDocId = urlParams.get('new_doc_id');
 
-    if (newDocId) {
+    if (!newDocId) return;
+
+    function tryOpenCard(attempt = 0) {
         const newCard = document.querySelector(`.document-card[data-doc-id="${newDocId}"]`);
+        
         if (newCard) {
-            newCard.classList.add('new', 'new-animated');
             toggleDocument(newDocId);
 
-            requestAnimationFrame(() => {
-                setTimeout(() => {
-                    const headerHeight = document.querySelector('nav') ? document.querySelector('nav').offsetHeight : 70;
-                    const cardTop = newCard.getBoundingClientRect().top + window.scrollY - headerHeight - 20;
-                    window.scrollTo({ top: cardTop, behavior: 'smooth' });
-                }, 150);
-            });
+            setTimeout(() => {
+                const headerHeight = document.querySelector('nav') ? document.querySelector('nav').offsetHeight : 70;
+                const cardTop = newCard.getBoundingClientRect().top + window.scrollY - headerHeight - 20;
+                window.scrollTo({ top: cardTop, behavior: 'smooth' });
+            }, 150);
 
             window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (attempt < 10) {
+            setTimeout(() => tryOpenCard(attempt + 1), 200);
         }
     }
+
+    tryOpenCard();
 });
 
 // ========================================
