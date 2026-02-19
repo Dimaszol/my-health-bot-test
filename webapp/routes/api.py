@@ -853,40 +853,19 @@ async def upload_document(
     additional_context: str = Form(None),
     user_id: int = Depends(get_current_user)
 ):
-    """
-    📤 ЗАГРУЗКА И ОБРАБОТКА ДОКУМЕНТА (ВАРИАНТ 1 - мультиязычный)
-    
-    Копируем логику из upload.py (Telegram бота)
-    """
-    
-    # ✅ СНАЧАЛА получаем язык пользователя
     lang = await get_user_language(user_id)
     
-    # ==========================================
-    # 🔒 БЛОК 1: ПРОВЕРКА ОСНОВНЫХ ЛИМИТОВ
-    # ==========================================
-    
-    # ✅ Проверяем основные лимиты документов (documents_left)
     from subscription_manager import check_document_limit
-    
     has_document_limits = await check_document_limit(user_id)
     
     if not has_document_limits:
-        
-        # Получаем текущие лимиты для сообщения
         limits = await SubscriptionManager.get_user_limits(user_id)
-        
-        # Формируем мультиязычное сообщение
         error_message = t("document_limit_exceeded", lang,
                          documents_left=limits['documents_left'],
                          gpt4o_queries_left=limits['gpt4o_queries_left'])
-        
         return JSONResponse(
-            status_code=403,  # 403 = Forbidden (нет лимитов)
-            content={
-                'success': False,
-                'error': error_message
-            }
+            status_code=403,
+            content={'success': False, 'error': error_message}
         )
 
     try:
@@ -896,20 +875,16 @@ async def upload_document(
                 content={'success': False, 'error': t('file_not_selected', lang)}
             )
         
-        # Проверяем расширение
         filename = file.filename
         file_ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
         
         if file_ext not in Config.ALLOWED_EXTENSIONS:
             return JSONResponse(
                 status_code=400,
-                content={
-                    'success': False,
-                    'error': t('unsupported_file_type', lang)
-                }
+                content={'success': False, 'error': t('unsupported_file_type', lang)}
             )
         
-        # 🛡️ ПРОВЕРКА MIME-type через filetype (без системных зависимостей)
+        # Проверка MIME-type
         try:
             file_content = await file.read(2048)
             await file.seek(0)
@@ -920,7 +895,7 @@ async def upload_document(
             
             if detected_mime not in Config.ALLOWED_MIME_TYPES:
                 safe_log_warning(
-                    f"Отклонён файл с недопустимым MIME-type",
+                    "Отклонён файл с недопустимым MIME-type",
                     user_id=user_id,
                     filename_length=len(filename),
                     detected_mime=detected_mime,
@@ -928,10 +903,7 @@ async def upload_document(
                 )
                 return JSONResponse(
                     status_code=400,
-                    content={
-                        'success': False,
-                        'error': t('file_mime_type_mismatch', lang)
-                    }
+                    content={'success': False, 'error': t('file_mime_type_mismatch', lang)}
                 )
             
             safe_log_warning(
@@ -947,228 +919,196 @@ async def upload_document(
                 status_code=500,
                 content={'success': False, 'error': t('file_validation_error', lang)}
             )
-                
-        # Создаём временную папку для загрузок
+        
+        # Сохраняем временно на диск
         temp_dir = f"temp_{user_id}"
         os.makedirs(temp_dir, exist_ok=True)
+        local_file = os.path.join(temp_dir, f"{uuid.uuid4().hex[:8]}_{filename}")
         
-        # Сохраняем файл ВРЕМЕННО
-        local_file = os.path.join(temp_dir, filename)
-        
-        # ✅ Сохраняем асинхронно
         content = await file.read()
         with open(local_file, 'wb') as f:
             f.write(content)
 
-        # ===================================================
-        # 🔧 КОПИРУЕМ ЛОГИКУ ИЗ upload.py (TELEGRAM БОТА)
-        # ===================================================
-        
-        # Импортируем функции из бота
-        from save_utils import send_to_gpt_vision, convert_pdf_to_images
-        from gpt import (
-            ask_structured, 
-            is_medical_text, 
-            generate_medical_summary, 
-            generate_title_from_text
-        )
-        from db_postgresql import save_document
-        from vector_db_postgresql import split_into_chunks, add_chunks_to_vector_db
+        # Сразу сохраняем в постоянное хранилище
         from file_storage import get_file_storage
-        
-        file_type = "pdf" if file_ext == "pdf" else "image"
-        vision_text = ""
-        
-        # ===================================================
-        # 🆕 НОВАЯ ЛОГИКА: ИСПОЛЬЗУЕМ document_processor.py
-        # ===================================================
-
-        from document_processor import process_document
-
-        # Определяем тип файла (нужен для save_document)
-        file_type = "pdf" if file_ext == "pdf" else "image"
-
-        # Обрабатываем документ через новый пайплайн
-        result = await process_document(
-            file_path=local_file,
-            user_id=user_id,
-            lang=lang,
-            additional_context=additional_context
-        )
-
-        # Проверяем результат
-        if not result.get('success', False):
-            # Удаляем временный файл
-            if os.path.exists(local_file):
-                os.remove(local_file)
-            
-            error_type = result.get('error_type', 'unknown')
-            
-            # Специальная обработка для немедицинских документов
-            if error_type == 'not_medical':
-                return JSONResponse(
-                    status_code=400,
-                    content={
-                        'success': False,
-                        'error': result.get('message', t('not_medical_document', lang))
-                    }
-                )
-            
-            # Общая ошибка обработки
-            return JSONResponse(
-                status_code=500,
-                content={
-                    'success': False,
-                    'error': result.get('message', t('document_processing_error', lang))
-                }
-            )
-
-        # Извлекаем результаты
-        title = result['title']
-        raw_text = result['raw_text']
-        summary = result['summary']
-        vision_text = result['full_analysis']
-        document_type = result.get('document_type')
-        subtype = result.get('subtype')
-        document_date = result.get('document_date')
-        first_analysis = result.get('first_analysis')
-
-        # Сохраняем файл в постоянное хранилище
         storage = get_file_storage()
         success, permanent_path = storage.save_file(
             user_id=user_id,
             filename=filename,
             source_path=local_file
         )
-
+        
+        # Удаляем временный файл
+        try:
+            if os.path.exists(local_file):
+                os.remove(local_file)
+            if os.path.exists(temp_dir) and not os.listdir(temp_dir):
+                os.rmdir(temp_dir)
+        except Exception as e:
+            safe_log_warning("Ошибка удаления временного файла", error=e)
+        
         if not success:
             return JSONResponse(
                 status_code=500,
                 content={'success': False, 'error': t('file_storage_error', lang)}
             )
 
-        # Сохраняем в БД
-        document_id = await save_document(
-            user_id=user_id,
-            file_path=permanent_path,
-            file_type=file_type,
-            raw_text=raw_text,
-            summary=summary,
-            first_analysis=first_analysis,
-            full_analysis=vision_text,
-            title=title,
-            document_type=document_type,
-            subtype=subtype,
-            additional_context=additional_context,
-            document_date=document_date
+        # Создаём запись в БД со статусом processing
+        file_type = "pdf" if file_ext == "pdf" else "image"
+        conn = await get_db_connection()
+        try:
+            document_id = await conn.fetchval("""
+                INSERT INTO documents 
+                (user_id, file_path, file_type, additional_context, confirmed)
+                VALUES ($1, $2, $3, $4, false)
+                RETURNING id
+            """, user_id, permanent_path, file_type, additional_context)
+        finally:
+            await release_db_connection(conn)
+
+        # Запускаем обработку в фоне — не зависит от соединения с клиентом
+        asyncio.create_task(
+            _process_document_background(document_id, user_id, permanent_path, lang, additional_context)
         )
-        
-        # STEP 7: Добавляем в векторную базу
-        chunks = await split_into_chunks(summary, document_id, user_id)
-        await add_chunks_to_vector_db(document_id, user_id, chunks)
-        
-        # ✅ НОВОЕ: Извлекаем и сохраняем medical_timeline
-        try:
-            from medical_timeline import update_medical_timeline_on_document_upload
-            
-            # Используем полный текст документа для извлечения медицинских событий
-            medical_timeline_success = await update_medical_timeline_on_document_upload(
-                user_id=user_id,
-                document_id=document_id,
-                document_text=raw_text,
-                document_date=document_date,
-                use_gemini=False  # По умолчанию GPT
-            )
-                            
-        except Exception as timeline_error:
-            # Не прерываем загрузку документа если timeline не сохранился
-            safe_log_warning("Ошибка обновления medical timeline", error=timeline_error)
 
-        # Генерируем первое сообщение в document-chat
-        try:
-            from document_questions import generate_and_save_first_message
-            from medical_timeline import get_document_importance
-            
-            importance = await get_document_importance(document_id, user_id)
-            
-            await generate_and_save_first_message(
-                document_id=document_id,
-                user_id=user_id,
-                full_analysis=vision_text,
-                importance=importance,
-                lang=lang
-            )
-                        
-        except Exception as e:
-            safe_log_warning("Ошибка генерации первого сообщения", error=e, document_id=document_id)
-
-        # STEP 8: Удаляем временные файлы
-        try:
-            if os.path.exists(local_file):
-                os.remove(local_file)
-            pages_dir = f"{temp_dir}/pages"
-            if os.path.exists(pages_dir):
-                import shutil
-                shutil.rmtree(pages_dir)
-            if os.path.exists(temp_dir) and not os.listdir(temp_dir):
-                os.rmdir(temp_dir)
-        except Exception as cleanup_error:
-            safe_log_warning("Ошибка удаления временных файлов при загрузке", error=cleanup_error)
-        
-        # ==========================================
-        # 💳 БЛОК 2: СПИСАНИЕ ЛИМИТОВ
-        # ==========================================
-
-        # Списываем основной лимит документов
-        await SubscriptionManager.spend_limits(user_id, documents=1)
-
-        # ✅ Возвращаем успех
-        return {
+        return JSONResponse(content={
             'success': True,
             'document_id': document_id,
-            'title': title,
-            'summary': summary[:200] + '...' if len(summary) > 200 else summary,
-            'message': t('document_uploaded_successfully', lang, title=title)
-        }
-    
-    # ✅ Обработка отключения клиента (экран выключился)
-    except asyncio.CancelledError:
-        # Клиент отключился, но документ уже сохранён - это нормально
-        safe_log_warning("Клиент отключился во время обработки документа", user_id=user_id if 'user_id' in locals() else None)
-        # НЕ возвращаем ответ - соединения уже нет
-        pass
-    
-    # ❌ Обработка настоящих ошибок
+            'status': 'processing'
+        })
+
     except Exception as e:
-        safe_log_error("Критическая ошибка загрузки документа", error=e, user_id=user_id if 'user_id' in locals() else None)
-        
-        # Пытаемся удалить временные файлы даже при ошибке
+        safe_log_error("Критическая ошибка загрузки документа", error=e, user_id=user_id)
         try:
             if 'local_file' in locals() and os.path.exists(local_file):
                 os.remove(local_file)
-            if 'temp_dir' in locals():
-                pages_dir = f"{temp_dir}/pages"
-                if os.path.exists(pages_dir):
-                    import shutil
-                    shutil.rmtree(pages_dir)
-                if os.path.exists(temp_dir) and not os.listdir(temp_dir):
-                    os.rmdir(temp_dir)
         except:
-            pass  # Игнорируем ошибки очистки
+            pass
         
-        # Безопасное получение lang и t
-        error_message = 'Error processing document'
-        if 'lang' in locals():
-            from webapp.translations import t as translate_func
-            error_message = translate_func('document_processing_error', lang)
-        
+        error_message = t('document_processing_error', lang)
         return JSONResponse(
             status_code=500,
-            content={
-                'success': False,
-                'error': error_message
-            }
+            content={'success': False, 'error': error_message}
         )
+
+
+async def _process_document_background(document_id: int, user_id: int, file_path: str, lang: str, additional_context: str):
+    """Фоновая обработка документа — не зависит от соединения с клиентом"""
+    from document_processor import process_document
+    from vector_db_postgresql import split_into_chunks, add_chunks_to_vector_db
+    from subscription_manager import SubscriptionManager
+
+    try:
+        result = await process_document(
+            file_path=file_path,
+            user_id=user_id,
+            lang=lang,
+            additional_context=additional_context
+        )
+
+        if not result.get('success', False):
+            error_msg = result.get('message', 'Processing failed')[:200]
+            conn = await get_db_connection()
+            try:
+                await conn.execute(
+                    "UPDATE documents SET title = $1 WHERE id = $2",
+                    f"⚠️ {error_msg}", document_id
+                )
+            finally:
+                await release_db_connection(conn)
+            return
+
+        # Сохраняем результаты в БД
+        conn = await get_db_connection()
+        try:
+            from datetime import date
+            document_date = result.get('document_date')
+            document_date_obj = None
+            if document_date and document_date != 'null':
+                try:
+                    document_date_obj = date.fromisoformat(str(document_date))
+                except:
+                    pass
+
+            await conn.execute("""
+                UPDATE documents SET
+                    full_analysis = $1,
+                    title = $2,
+                    raw_text = $3,
+                    summary = $4,
+                    document_type = $5,
+                    subtype = $6,
+                    first_analysis = $7,
+                    document_date = $8,
+                    confirmed = true
+                WHERE id = $9
+            """,
+                result.get('full_analysis'),
+                result.get('title', 'Document'),
+                result.get('raw_text', ''),
+                result.get('summary', ''),
+                result.get('document_type'),
+                result.get('subtype'),
+                result.get('first_analysis'),
+                document_date_obj,
+                document_id
+            )
+        finally:
+            await release_db_connection(conn)
+
+        # Векторная база
+        try:
+            summary = result.get('summary', '')
+            if summary:
+                chunks = await split_into_chunks(summary, document_id, user_id)
+                await add_chunks_to_vector_db(document_id, user_id, chunks)
+        except Exception as e:
+            safe_log_warning("Ошибка векторной базы при фоновой обработке", error=e)
+
+        # Timeline
+        try:
+            from medical_timeline import update_medical_timeline_on_document_upload
+            await update_medical_timeline_on_document_upload(
+                user_id=user_id,
+                document_id=document_id,
+                document_text=result.get('raw_text', ''),
+                document_date=result.get('document_date'),
+                use_gemini=False
+            )
+        except Exception as e:
+            safe_log_warning("Ошибка timeline при фоновой обработке", error=e)
+
+        # Первое сообщение в document-chat
+        try:
+            from document_questions import generate_and_save_first_message
+            from medical_timeline import get_document_importance
+            importance = await get_document_importance(document_id, user_id)
+            await generate_and_save_first_message(
+                document_id=document_id,
+                user_id=user_id,
+                full_analysis=result.get('full_analysis'),
+                importance=importance,
+                lang=lang
+            )
+        except Exception as e:
+            safe_log_warning("Ошибка генерации первого сообщения при фоновой обработке", error=e)
+
+        # Списываем лимит
+        await SubscriptionManager.spend_limits(user_id, documents=1)
+
+    except Exception as e:
+        safe_log_error("Критическая ошибка фоновой обработки документа", error=e, document_id=document_id)
+        try:
+            conn = await get_db_connection()
+            try:
+                await conn.execute(
+                    "UPDATE documents SET title = $1 WHERE id = $2",
+                    "⚠️ Ошибка обработки", document_id
+                )
+            finally:
+                await release_db_connection(conn)
+        except:
+            pass
 
 # ==========================================
 # 🗑️ УДАЛЕНИЕ ДОКУМЕНТА

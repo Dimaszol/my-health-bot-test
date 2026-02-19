@@ -866,23 +866,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                               
                 if (data.success) {
-                    // Показываем финальный этап
-                    updateProgressStep('save', 'completed', '✓');
-                    updateProgressTitle(progressTranslations.completed);
-                    
-                    // Через секунду перезагружаем с параметром нового документа
-                    setTimeout(() => {
-                        window.location.href = window.location.pathname + '?new_doc_id=' + data.document_id;
-                    }, 1500);
+                    // Сохраняем doc_id в URL — polling подхватится даже после перезагрузки
+                    history.replaceState(null, '', '?doc_id=' + data.document_id);
+                    startDocumentPolling(data.document_id);
                 } else {
                     alert('❌ {{ t("error", lang) }}: ' + data.error);
                     resetUploadForm();
                 }
-                
-            } catch (error) {
-                alert('{{ t("upload_connection_lost", lang) }}');
-                window.location.reload();
-            }
+
+                } catch (error) {
+                    // Не показываем ошибку — возможно файл уже принят сервером
+                    // Проверяем URL на случай если doc_id уже был сохранён
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const existingDocId = urlParams.get('doc_id');
+                    if (existingDocId) {
+                        startDocumentPolling(existingDocId);
+                    } else {
+                        alert('{{ t("upload_connection_lost", lang) }}');
+                        resetUploadForm();
+                    }
+                }
         });
         
         console.log('✅ Форма загрузки инициализирована');
@@ -1062,7 +1065,7 @@ function showFlashMessage(message, type) {
 
 // CSS анимация (добавь в <style>)
 const flashAnimationStyle = document.createElement('style');
-style.textContent = `
+flashAnimationStyle.textContent = `
     @keyframes slideIn {
         from { transform: translateX(100%); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
@@ -1205,11 +1208,7 @@ async function startDocumentPolling(docId) {
         } else if (status === 'failed') {
             clearInterval(pollInterval);
             
-            // Показываем ошибку из ответа API
-            const errorMsg = await checkDocumentStatus(docId);
-            const errorText = errorMsg.error_message || '{{ t("document_processing_error", lang) }}';
-            alert('❌ ' + errorText);
-            
+            alert('❌ {{ t("document_processing_error", lang) }}');
             window.location.href = window.location.pathname;
         }
         // Если 'processing' - продолжаем ждать
