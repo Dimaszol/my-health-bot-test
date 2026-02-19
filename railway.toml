@@ -6,4 +6,4 @@ phases.install.cmds = ["pip install --force-reinstall --no-cache-dir google-gene
 phases.setup.aptPkgs = ["libmagic1", "libmagic-dev", "file"]
 
 [deploy]
-startCommand = "uvicorn webapp.app:app --host 0.0.0.0 --port $PORT"
+startCommand = "uvicorn webapp.app:app --host 0.0.0.0 --port $PORT --workers 2"

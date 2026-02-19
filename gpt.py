@@ -122,7 +122,7 @@ def split_long_message(text: str, max_length: int = 4000) -> list:
     
     return messages
 
-def async_safe_openai_call(max_retries: int = 3, delay: float = 2.0):
+def async_safe_openai_call(max_retries: int = 3, delay: float = 2.0, timeout: float = 90.0):
     """Асинхронный декоратор для безопасных вызовов OpenAI API"""
     def decorator(func):
         async def wrapper(*args, **kwargs):
@@ -131,7 +131,16 @@ def async_safe_openai_call(max_retries: int = 3, delay: float = 2.0):
             async with OPENAI_SEMAPHORE:
                 for attempt in range(max_retries):
                     try:
-                        return await func(*args, **kwargs)
+                        return await asyncio.wait_for(
+                            func(*args, **kwargs),
+                            timeout=timeout
+                        )
+                        
+                    except asyncio.TimeoutError:
+                        last_error = Exception(f"OpenAI timeout after {timeout}s")
+                        logger.warning(f"OpenAI timeout on attempt {attempt + 1}/{max_retries}")
+                        if attempt < max_retries - 1:
+                            await asyncio.sleep(delay * (attempt + 1))
                         
                     except Exception as e:
                         last_error = e

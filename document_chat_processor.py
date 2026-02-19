@@ -99,7 +99,7 @@ def build_document_input(document_base64: str, file_type: str) -> dict:
     Returns:
         dict: Блок контента для responses API или None
     """
-    logger.info(f"🔍 FILE TYPE: '{file_type}'")
+    logger.debug(f"Processing file type: '{file_type}'")
     
     file_type = file_type.lower().strip()
     
@@ -223,62 +223,16 @@ async def generate_document_chat_response(
         context_data['file_type']
     )
     
-    # Формируем user_prompt с контекстом
+   # Формируем user_prompt с контекстом
     user_prompt = f"""{history_context}
 
 [ORIGINAL DOCUMENT IS ATTACHED BELOW]
 
 Patient's question: {user_message}"""
-    
-    # ============================================
-    # 🔍 ПОДРОБНЫЕ ЛОГИ - ПОЛНАЯ ВЕРСИЯ
-    # ============================================
-    logger.info("=" * 100)
-    logger.info("🤖 ЗАПРОС К GPT-5.2 (DOCUMENT CHAT)")
-    logger.info("=" * 100)
-    logger.info(f"📄 Документ: {context_data['document_title']}")
-    logger.info(f"👤 User ID: (скрыт для безопасности)")
-    logger.info(f"🌐 Язык: {lang}")
-    logger.info("")
-    logger.info("📋 SYSTEM PROMPT:")
-    logger.info("-" * 100)
-    logger.info(system_prompt)
-    logger.info("")
-    logger.info("💬 USER PROMPT (ПОЛНАЯ ВЕРСИЯ БЕЗ ОБРЕЗКИ):")
-    logger.info("-" * 100)
-    logger.info("📜 ИСТОРИЯ ДИАЛОГА:")
-    logger.info("")
-
-    # Показываем полную историю
-    if context_data['recent_messages']:
-        for idx, msg in enumerate(context_data['recent_messages'], 1):
-            role_emoji = "👤" if msg['role'] == 'user' else "🤖"
-            role_label = "Patient" if msg['role'] == 'user' else "Assistant"
-            logger.info(f"{role_emoji} {role_label} (сообщение {idx}):")
-            logger.info(f"   {msg['content']}")
-            logger.info("")
-    else:
-        logger.info("   [История пуста]")
-        logger.info("")
-
-    # Показываем последний абзац
-    if context_data['last_bot_paragraph']:
-        logger.info("🔸 ПОСЛЕДНИЙ АБЗАЦ ОТ ASSISTANT (для контекста):")
-        logger.info(f"   {context_data['last_bot_paragraph']}")
-        logger.info("")
-
-    # Текущий вопрос
-    logger.info("❓ ТЕКУЩИЙ ВОПРОС ПОЛЬЗОВАТЕЛЯ:")
-    logger.info(f"   {user_message}")
-    logger.info("")
-
-    logger.info("📎 ВЛОЖЕНИЯ:")
-    logger.info("-" * 100)
 
     # Вызываем GPT-5.2 через responses API с документом
     client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-    # Формируем content blocks для user
     user_content_blocks = [
         {
             "type": "input_text",
@@ -286,35 +240,17 @@ Patient's question: {user_message}"""
         }
     ]
 
-    # Если удалось получить документ - добавляем его
     if document_base64:
         document_block = build_document_input(document_base64, context_data['file_type'])
-        
         if document_block:
             user_content_blocks.append(document_block)
-            logger.info(f"✅ Документ загружен: {context_data['file_type'].upper()}")
-            logger.info(f"   Размер base64: {len(document_base64)} символов")
-    else:
-        logger.info("⚠️ Документ НЕ загружен")
 
-    logger.info("")
-    logger.info("🔧 ПАРАМЕТРЫ ЗАПРОСА:")
-    logger.info(f"   Model: gpt-5.2")
-    logger.info(f"   Max tokens: 2000")
-    logger.info("=" * 100)
-
-    # Отправляем запрос
     response = await client.responses.create(
         model="gpt-5.2",
         input=[
             {
                 "role": "system",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": system_prompt
-                    }
-                ]
+                "content": [{"type": "input_text", "text": system_prompt}]
             },
             {
                 "role": "user",
@@ -325,17 +261,7 @@ Patient's question: {user_message}"""
     )
 
     answer = (response.output_text or "").strip()
-
-    # ============================================
-    # 🔍 ЛОГ ОТВЕТА
-    # ============================================
-    logger.info("")
-    logger.info("✅ ОТВЕТ ОТ GPT-5.2:")
-    logger.info("-" * 100)
-    logger.info(answer)
-    logger.info("=" * 100)
-    logger.info("")
-
+    logger.info("Document chat response generated")
     return answer
 
 
