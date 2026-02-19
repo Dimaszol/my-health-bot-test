@@ -2386,6 +2386,6 @@ async def check_document_status(
             'title': doc['title'],
             'error_message': error_message if status == 'failed' else None
         }
-                
+                    
     finally:
         await release_db_connection(conn)

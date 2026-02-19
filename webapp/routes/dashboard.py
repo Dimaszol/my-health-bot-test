@@ -320,6 +320,18 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
             AND full_analysis IS NOT NULL
             ORDER BY uploaded_at DESC
         """, user_id)
+
+        # Документы в обработке
+        processing_docs = await conn.fetch("""
+            SELECT id, uploaded_at
+            FROM documents
+            WHERE user_id = $1
+            AND confirmed = false
+            AND full_analysis IS NULL
+            AND title NOT LIKE '⚠️%'
+            AND uploaded_at > NOW() - INTERVAL '5 minutes'
+            ORDER BY uploaded_at DESC
+        """, user_id)
         
         # Преобразуем в список словарей
         docs_list = [dict(doc) for doc in documents]
@@ -346,6 +358,7 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
     # ✅ ИСПОЛЬЗУЕМ get_template_context как в старой версии!
     context = get_template_context(request)
     context['documents'] = docs_list
+    context['processing_document'] = dict(processing_docs[0]) if processing_docs else None
     context['has_document_limits'] = has_document_limits
     context['show_birth_year_tip'] = show_birth_year_tip
     # Формируем цены с символом валюты из context

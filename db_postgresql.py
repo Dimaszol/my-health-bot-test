@@ -16,11 +16,10 @@ logger = logging.getLogger(__name__)
 db_pool: Optional[asyncpg.Pool] = None
 
 async def get_db_connection():
-    """Получить соединение с базой данных"""
     global db_pool
     if db_pool is None:
-        raise Exception("❌ База данных не инициализирована")
-    return await db_pool.acquire()
+        raise RuntimeError("❌ База данных не инициализирована")
+    return await db_pool.acquire(timeout=30)
 
 async def release_db_connection(connection):
     """Освободить соединение"""

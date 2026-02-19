@@ -1221,9 +1221,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const docId = urlParams.get('doc_id');
     
     if (docId) {
-        console.log('🔍 Найден doc_id в URL, запускаем polling:', docId);
         startDocumentPolling(docId);
     }
+    {% if processing_document %}
+    else {
+        startDocumentPolling({{ processing_document.id }});
+    }
+    {% endif %}
 });
 </script>
 {% endblock %}
