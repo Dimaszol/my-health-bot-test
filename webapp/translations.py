@@ -1008,10 +1008,10 @@ TRANSLATIONS = {
         'de': 'Erstellung der Zusammenfassung'
     },
     "progress_please_wait": {
-        "ru": "Анализ занимает несколько минут. Пожалуйста, не закрывайте эту страницу.",
-        "en": "The analysis may take a few minutes. Please do not close this page.",
-        "uk": "Аналіз може зайняти кілька хвилин. Будь ласка, не закривайте цю сторінку.",
-        "de": "Die Analyse kann einige Minuten dauern. Bitte schließen Sie diese Seite nicht."
+        "ru": "Анализ занимает несколько минут. Не закрывайте и не обновляйте страницу.",
+        "en": "The analysis takes a few minutes. Do not close or refresh the page.",
+        "uk": "Аналіз займає кілька хвилин. Не закривайте та не оновлюйте сторінку.",
+        "de": "Die Analyse dauert einige Minuten. Bitte schließen oder aktualisieren Sie die Seite nicht."
     },
     # ============================================
     # 📄 СТРАНИЦА ДОКУМЕНТОВ

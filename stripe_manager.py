@@ -172,7 +172,7 @@ class StripeManager:
             
             # Определяем URL в зависимости от языка
             success_url = f"{StripeConfig.WEB_SUCCESS_URL.split('?')[0]}/documents?doc_id={document_id}"
-            cancel_url = f"{StripeConfig.WEB_CANCEL_URL.split('?')[0]}/documents"
+            cancel_url = f"{StripeConfig.WEB_CANCEL_URL.split('?')[0]}/documents?payment_cancelled=true"
             
             # Локализованные названия
             product_names = {

@@ -2299,8 +2299,8 @@ async def create_one_time_document_checkout(
         try:
             document_id = await conn.fetchval("""
                 INSERT INTO documents 
-                (user_id, file_path, file_type, additional_context, confirmed)
-                VALUES ($1, $2, $3, $4, false)
+                (user_id, file_path, file_type, additional_context, confirmed, payment_confirmed)
+                VALUES ($1, $2, $3, $4, false, false)
                 RETURNING id
             """, user_id, permanent_path, file_type, additional_context)
         finally:
@@ -2386,6 +2386,6 @@ async def check_document_status(
             'title': doc['title'],
             'error_message': error_message if status == 'failed' else None
         }
-                    
+
     finally:
         await release_db_connection(conn)

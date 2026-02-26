@@ -337,6 +337,10 @@ class SubscriptionWebhookHandler:
                     SET gpt4o_queries_left = gpt4o_queries_left + 5 
                     WHERE user_id = $1
                 """, user_id)
+                # ✅ Оплата подтверждена — помечаем документ
+                await conn.execute("""
+                    UPDATE documents SET payment_confirmed = true WHERE id = $1
+                """, document_id)
             finally:
                 await release_db_connection(conn)
             

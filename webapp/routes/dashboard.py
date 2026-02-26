@@ -299,6 +299,28 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
     from medical_timeline import get_timeline_by_document  # ✅ НОВЫЙ ИМПОРТ
     from subscription_manager import check_document_limit
     has_document_limits = await check_document_limit(user_id)
+
+    # Очистка pending документа если пользователь отменил оплату
+    if request.query_params.get('payment_cancelled'):
+        conn_cleanup = await get_db_connection()
+        try:
+            pending_docs = await conn_cleanup.fetch("""
+                SELECT id, file_path FROM documents
+                WHERE user_id = $1
+                AND confirmed = false
+                AND full_analysis IS NULL
+            """, user_id)
+            for doc in pending_docs:
+                if doc['file_path']:
+                    try:
+                        from file_storage import get_file_storage
+                        storage = get_file_storage()
+                        storage.delete_file(doc['file_path'])
+                    except:
+                        pass
+                await conn_cleanup.execute("DELETE FROM documents WHERE id = $1", doc['id'])
+        finally:
+            await release_db_connection(conn_cleanup)
     
     conn = await get_db_connection()
     
@@ -328,6 +350,7 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
             WHERE user_id = $1
             AND confirmed = false
             AND full_analysis IS NULL
+            AND payment_confirmed = true
             AND uploaded_at > NOW() - INTERVAL '5 minutes'
             ORDER BY uploaded_at DESC
             LIMIT 1
