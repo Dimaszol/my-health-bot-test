@@ -150,20 +150,14 @@ async def generate_document_chat_response(
 
     CONTEXT:
     - Document title: {context_data['document_title']}
-    - You have access to:
-    1. The ORIGINAL document (image/PDF)
-    2. A previous AI-generated clinical analysis of this document
+    - You have access to a previous AI-generated clinical analysis of this document.
+    - The original document is NOT attached. Base your answers solely on the analysis provided below.
 
     SOURCE FRAMEWORK:
-    - The ORIGINAL document contains the factual data (laboratory values, statements, findings). 
-    These data must be used to verify accuracy.
-    - The previous AI analysis represents an interpretation of those data.
-    It reflects reasoning, not raw facts.
-    You should:
-    - Confirm that key conclusions in the analysis are supported by the document.
-    - Distinguish clearly between factual findings and interpretation.
-    - If discrepancies, omissions, or possible overinterpretations are present, explain them neutrally.
-    - Do not assume that the previous analysis is fully correct.
+    - The AI analysis below represents an interpretation of the original document findings.
+    - Use it as your primary source of factual data.
+    - If something is not mentioned in the analysis, clearly state that the information is not available.
+    - Do not invent or assume findings not present in the analysis.
 
     YOUR ROLE:
     - Help the patient understand what is written in their document.
@@ -218,15 +212,13 @@ async def generate_document_chat_response(
         history_context += f"\n🔸 LAST CONTEXT FROM ASSISTANT:\n{context_data['last_bot_paragraph']}\n"
     
     # Получаем оригинал документа в base64
-    document_base64 = await get_document_as_base64(
-        context_data['file_path'],
-        context_data['file_type']
-    )
+    # document_base64 = await get_document_as_base64(
+    #    context_data['file_path'],
+    #    context_data['file_type']
+    # )
     
    # Формируем user_prompt с контекстом
     user_prompt = f"""{history_context}
-
-[ORIGINAL DOCUMENT IS ATTACHED BELOW]
 
 Patient's question: {user_message}"""
 
@@ -240,10 +232,10 @@ Patient's question: {user_message}"""
         }
     ]
 
-    if document_base64:
-        document_block = build_document_input(document_base64, context_data['file_type'])
-        if document_block:
-            user_content_blocks.append(document_block)
+    #if document_base64:
+    #    document_block = build_document_input(document_base64, context_data['file_type'])
+    #    if document_block:
+    #       user_content_blocks.append(document_block)
 
     response = await client.responses.create(
         model="gpt-5.2",

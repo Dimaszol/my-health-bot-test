@@ -66,52 +66,6 @@ async def delete_medical_timeline_entries(user_id: int, entry_ids: List[int]) ->
     finally:
         await release_db_connection(conn)
 
-async def save_medical_timeline_entries(user_id: int, entries: List[Dict], source_document_id: int) -> bool:
-    """Сохранить новые записи медицинской карты"""
-    if not entries:
-        return True
-        
-    conn = await get_db_connection()
-    try:
-        query = """
-        INSERT INTO medical_timeline (user_id, source_document_id, event_date, category, importance, description)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        """
-        
-        for entry in entries:
-            # Парсим дату
-            event_date = datetime.now().date()  # fallback
-            if 'event_date' in entry and entry['event_date']:
-                try:
-                    # Пробуем разные форматы дат
-                    date_str = entry['event_date']
-                    for fmt in ('%d.%m.%Y', '%Y-%m-%d', '%d/%m/%Y'):
-                        try:
-                            event_date = datetime.strptime(date_str, fmt).date()
-                            break
-                        except ValueError:
-                            continue
-                except:
-                    pass  # Используем текущую дату
-            
-            await conn.execute(
-                query,
-                user_id,
-                source_document_id,
-                event_date,
-                entry.get('category', 'general'),
-                entry.get('importance', 'normal'),
-                entry.get('description', '')
-            )
-        
-        return True
-        
-    except Exception as e:
-        log_error_with_context(e, {"function": "save_medical_timeline_entries", "user_id": user_id})
-        return False
-    finally:
-        await release_db_connection(conn)
-
 async def get_timeline_by_document(document_id: int, user_id: int) -> List[Dict]:
     """
     Получить записи medical_timeline для конкретного документа
@@ -199,7 +153,7 @@ async def get_document_importance(document_id: int, user_id: int) -> str:
         
     finally:
         await release_db_connection(conn)
-        
+
 # ==========================================
 # ФУНКЦИИ ИЗВЛЕЧЕНИЯ ЧЕРЕЗ GPT И GEMINI
 # ==========================================
@@ -447,22 +401,45 @@ TASK: Extract and combine ALL important medical information into ONE timeline en
 
 UNIVERSAL APPROACH: Works with any medical document - reports, lab results, imaging, consultations, prescriptions, etc.
 
-APPROACH: If multiple important findings exist, combine them into one concise entry. Prioritize the most critical, but include other significant findings if space allows.
+APPROACH:
+If multiple important findings exist, combine them into one concise entry for the user.
+Prioritize the most critical, but include other significant findings if space allows.
+
+You must return TWO separate fields:
+- description → user-friendly medical timeline entry
+- objective_data → strict factual extraction for internal AI memory
+
+IMPORTANT: These two fields have DIFFERENT purposes.
 
 IMPORTANCE LEVELS:
 🔴 CRITICAL: Life-threatening conditions, emergency situations, severe abnormalities
 🟡 IMPORTANT: Significant abnormalities, chronic conditions, notable findings
 ⚪ NORMAL: Routine findings, values within normal ranges
 
-CRITICAL RULES:
-- Extract ONLY objective measurements and observations from the document
-- ALWAYS include specific numerical values (glucose 5.76, cholesterol 6.95, pH 5.5, etc.)
-- DO NOT add interpretations, conclusions, or diagnoses unless explicitly stated in the document
-- Record what was measured/observed, not what it might indicate
-- Keep descriptions factual and data-focused
+CRITICAL RULES FOR description:
+- Combine key findings into a readable medical summary
+- ALWAYS include specific numerical values when present
+- May include short contextual phrasing for clarity
+- DO NOT invent diagnoses
+- DO NOT add conclusions unless explicitly stated in the document
+- Max 20 words
+
+CRITICAL RULES FOR objective_data:
+- STRICT factual extraction only
+- Include only measured values and direct observations
+- Preserve original numbers and units exactly as written
+- Start with the study type or examined structure when applicable (e.g., "Blood test —", "Ultrasound —", "X-ray abdomen —")
+- Ensure the entry is self-contained and understandable without additional context
+- Include the examined organ/structure when relevant
+- NO interpretations
+- NO conclusions
+- NO inferred diagnoses
+- NO severity wording unless explicitly written in the document
+- Max 20 words
+- If no measurable or objective findings exist, return null
 
 IMPORTANCE CLASSIFICATION:
-- Base importance on severity of measured values, not on potential diagnoses
+- Base importance on severity of measured values or explicitly stated conditions
 - Critical: Extremely abnormal measurements requiring immediate attention
 - Important: Significantly abnormal measurements or new notable findings  
 - Normal: Measurements within or near reference ranges
@@ -471,7 +448,8 @@ RESPONSE FORMAT (JSON only):
 {{
     "category": "ONE OF: diagnosis, treatment, test, procedure, general",
     "importance": "critical|important|normal",
-    "description": "Combined summary with specific values in {response_lang} (max 20 words)"
+    "description": "User-friendly combined summary in {response_lang} (max 20 words)",
+    "objective_data": "Strict factual measurements only (max 20 words)" | null
 }}
 
 If no important medical info found, return: {{"no_data": true}}
@@ -487,7 +465,21 @@ Adapt format and language to match the document content and user's language."""
     user_prompt = f"""MEDICAL DOCUMENT:
         {document_text}
 
-        Create ONE comprehensive timeline entry combining all important medical findings. Max 20 words. Return JSON:"""
+        INSTRUCTIONS:
+1. Create ONE comprehensive medical timeline entry (max 20 words in description).
+2. Extract ALL important findings.
+3. Always include specific numerical values if present.
+4. Fill BOTH fields correctly:
+   - description → user-friendly combined summary
+   - objective_data → strict factual measurements only (no interpretation)
+
+IMPORTANT:
+- objective_data must contain only raw measurements and direct observations.
+- Do NOT include conclusions or severity wording in objective_data.
+- If no measurable or objective findings exist, set objective_data to null.
+- Return JSON only.
+
+Return the final JSON object."""
 
     try:
         async with OPENAI_SEMAPHORE:
@@ -653,8 +645,8 @@ async def save_single_medical_entry(user_id: int, entry_data: Dict, source_docum
     conn = await get_db_connection()
     try:
         query = """
-        INSERT INTO medical_timeline (user_id, source_document_id, event_date, category, importance, description)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO medical_timeline (user_id, source_document_id, event_date, category, importance, description, objective_data)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         """
         
         # Используем дату из классификатора или текущую дату как fallback
@@ -683,7 +675,8 @@ async def save_single_medical_entry(user_id: int, entry_data: Dict, source_docum
             event_date,
             entry_data.get('category', 'general'),
             entry_data.get('importance', 'normal'),
-            entry_data.get('description', '')
+            entry_data.get('description', ''),
+            entry_data.get('objective_data')
         )
 
         return True
