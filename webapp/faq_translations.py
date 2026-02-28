@@ -247,16 +247,16 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 
 <p><strong>🆓 Бесплатный тариф</strong></p>
 <ul>
-<li>10 детальных консультаций</li>
-<li>2 загрузки и анализа документа</li>
-<li>50 базовых ответов в неделю</li>
+<li>3 детальных консультаций</li>
+<li>1 загрузка и анализ документа</li>
+<li>25 базовых ответов</li>
 <li>Хранение медицинской истории</li>
 <li>Доступ ко всем функциям профиля</li>
 </ul>
 
 <p><strong>⭐ Lite (Базовый)</strong></p>
 <ul>
-<li>100 детальных консультаций</li>
+<li>50 детальных консультаций</li>
 <li>5 загрузки и анализа документа</li>
 <li>100 базовых ответов в день</li>
 <li>Максимальная память в чате</li>
@@ -266,7 +266,7 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 
 <p><strong>💎 Pro (Премиум)</strong></p>
 <ul>
-<li>400 детальных консультаций</li>
+<li>200 детальных консультаций</li>
 <li>До 20 документов</li>
 <li>100 базовых ответов в день</li>
 <li>Максимальная память в чате</li>
@@ -303,18 +303,18 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 
 <p><strong>🆓 Free Plan</strong></p>
 <ul>
-<li>10 detailed consultations</li>
-<li>2 document uploads and analyses</li>
-<li>50 basic answers per week</li>
+<li>3 detailed consultations</li>
+<li>1 document upload and analysis</li>
+<li>25 basic responses</li>
 <li>Medical history storage</li>
 <li>Access to all profile features</li>
 </ul>
 
 <p><strong>⭐ Lite (Basic)</strong></p>
 <ul>
-<li>100 detailed consultations</li>
+<li>50 detailed consultations</li>
 <li>5 document uploads and analyses</li>
-<li>100 basic answers per day</li>
+<li>100 basic responses per day</li>
 <li>Maximum chat memory</li>
 <li>Personalized recommendations based on history</li>
 <li>Priority support and document processing</li>
@@ -322,9 +322,9 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 
 <p><strong>💎 Pro (Premium)</strong></p>
 <ul>
-<li>400 detailed consultations</li>
+<li>200 detailed consultations</li>
 <li>Up to 20 documents</li>
-<li>100 basic answers per day</li>
+<li>100 basic responses per day</li>
 <li>Maximum chat memory</li>
 <li>Personalized recommendations based on history</li>
 <li>Priority support and document processing</li>
@@ -359,29 +359,29 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 
 <p><strong>🆓 Безкоштовний тариф</strong></p>
 <ul>
-<li>10 детальних консультацій</li>
-<li>2 завантаження та аналізу документа</li>
-<li>50 базових відповідей на тиждень</li>
+<li>3 детальні консультації</li>
+<li>1 завантаження та аналіз документа</li>
+<li>25 базових відповідей</li>
 <li>Зберігання медичної історії</li>
 <li>Доступ до всіх функцій профілю</li>
 </ul>
 
 <p><strong>⭐ Lite (Базовий)</strong></p>
 <ul>
-<li>100 детальних консультацій</li>
-<li>5 завантажень та аналізів документа</li>
+<li>50 детальних консультацій</li>
+<li>5 завантажень та аналізів документів</li>
 <li>100 базових відповідей на день</li>
-<li>Максимальна пам'ять в чаті</li>
+<li>Максимальна пам’ять у чаті</li>
 <li>Персональні рекомендації на основі історії</li>
 <li>Пріоритетна підтримка та обробка документів</li>
 </ul>
 
 <p><strong>💎 Pro (Преміум)</strong></p>
 <ul>
-<li>400 детальних консультацій</li>
+<li>200 детальних консультацій</li>
 <li>До 20 документів</li>
 <li>100 базових відповідей на день</li>
-<li>Максимальна пам'ять в чаті</li>
+<li>Максимальна пам’ять у чаті</li>
 <li>Персональні рекомендації на основі історії</li>
 <li>Пріоритетна підтримка та обробка документів</li>
 </ul>
@@ -413,33 +413,33 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 
 <p>PulseBook bietet flexible Preise für jeden Bedarf:</p>
 
-<p><strong>🆓 Kostenloser Plan</strong></p>
+<p><strong>🆓 Kostenloser Tarif</strong></p>
 <ul>
-<li>10 detaillierte Beratungen</li>
-<li>2 Dokument-Uploads und Analysen</li>
-<li>50 Basisantworten pro Woche</li>
-<li>Speicherung der Krankengeschichte</li>
-<li>Zugriff auf alle Profilfunktionen</li>
+<li>3 detaillierte Beratungen</li>
+<li>1 Dokument-Upload und -Analyse</li>
+<li>25 Basisantworten</li>
+<li>Speicherung der medizinischen Vorgeschichte</li>
+<li>Zugang zu allen Profilfunktionen</li>
 </ul>
 
-<p><strong>⭐ Lite (Basic)</strong></p>
+<p><strong>⭐ Lite (Basis)</strong></p>
 <ul>
-<li>100 detaillierte Beratungen</li>
-<li>5 Dokument-Uploads und Analysen</li>
+<li>50 detaillierte Beratungen</li>
+<li>5 Dokument-Uploads und -Analysen</li>
 <li>100 Basisantworten pro Tag</li>
-<li>Maximales Chat-Gedächtnis</li>
-<li>Personalisierte Empfehlungen basierend auf Historie</li>
-<li>Prioritätsunterstützung und Dokumentenverarbeitung</li>
+<li>Maximaler Chat-Speicher</li>
+<li>Personalisierte Empfehlungen basierend auf der Vorgeschichte</li>
+<li>Priorisierter Support und Dokumentenverarbeitung</li>
 </ul>
 
 <p><strong>💎 Pro (Premium)</strong></p>
 <ul>
-<li>400 detaillierte Beratungen</li>
+<li>200 detaillierte Beratungen</li>
 <li>Bis zu 20 Dokumente</li>
 <li>100 Basisantworten pro Tag</li>
-<li>Maximales Chat-Gedächtnis</li>
-<li>Personalisierte Empfehlungen basierend auf Historie</li>
-<li>Prioritätsunterstützung und Dokumentenverarbeitung</li>
+<li>Maximaler Chat-Speicher</li>
+<li>Personalisierte Empfehlungen basierend auf der Vorgeschichte</li>
+<li>Priorisierter Support und Dokumentenverarbeitung</li>
 </ul>
 
 <hr>

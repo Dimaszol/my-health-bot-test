@@ -469,12 +469,17 @@ class SubscriptionManager:
             now = datetime.now()
             
             # ✅ ДАЕМ +1 ДЕНЬ НА АВТОПРОДЛЕНИЕ ПОДПИСКИ
-            grace_period = expiry_date + timedelta(days=1)
+            grace_period = expiry_date + timedelta(days=7)
             
             if now >= grace_period:
-                logger.info("🕒 Лимиты истекли, прошло более 1 дня")
+                logger.info("🕒 Лимиты истекли, прошло более 7 дней")
                 
                 # Обнуляем лимиты для ВСЕХ типов покупок
+                await execute_query("""
+                    UPDATE user_subscriptions 
+                    SET status = 'cancelled', cancelled_at = $1
+                    WHERE user_id = $2 AND status = 'active'
+                """, (datetime.now(), user_id))
                 await execute_query("""
                     UPDATE user_limits SET 
                         documents_left = 0,

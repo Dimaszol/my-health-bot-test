@@ -273,11 +273,11 @@ translations = {
         "promo_premium_plan_name": "Премиум план",
         # Особенности планов
         "promo_basic_feature_1": "5 загруженных документов",
-        "promo_basic_feature_2": "100 детальных консультаций",
+        "promo_basic_feature_2": "50 детальных консультаций",
         "promo_basic_feature_3": "Повышенный лимит на базовые ответы",
         "promo_premium_feature_3": "Неограниченные базовые ответы",
         "promo_premium_feature_1": "20 загруженных документов",
-        "promo_premium_feature_2": "400 детальных консультаций",        
+        "promo_premium_feature_2": "200 детальных консультаций",        
         # Ошибки промокодов
         "promo_invalid_format": "❌ Неверный формат промокода",
         "promo_not_found": "❌ Промокод не найден",   
@@ -318,15 +318,15 @@ translations = {
         "package_extra_name": "Дополнительный пакет",
         # Особенности Basic пакета
         "package_basic_feature_1": "5 загруженных документов или снимков",
-        "package_basic_feature_2": "100 детальных консультаций",
+        "package_basic_feature_2": "50 детальных консультаций",
         "package_basic_feature_3": "100 вопросов в день",
         # Особенности Premium пакета
         "package_premium_feature_1": "20 загруженных документов или снимков",
-        "package_premium_feature_2": "400 детальных консультаций", 
+        "package_premium_feature_2": "200 детальных консультаций", 
         "package_premium_feature_3": "100 вопросов в день",
         # Особенности Extra пакета
-        "package_extra_feature_1": "3 загруженных документа или снимка",
-        "package_extra_feature_2": "30 детальных консультаций",
+        "package_extra_feature_1": "2 загруженных документа или снимка",
+        "package_extra_feature_2": "20 детальных консультаций",
         "package_extra_feature_3": "Действует 30 дней",
         # Вспомогательные ключи
         "subscription_monthly_short": "месяц",
@@ -553,7 +553,7 @@ translations = {
         "how_to_use_1": (
             "🎁 <b>Ваши стартовые возможности:</b>\n\n"
             "📋 1 анализ медицинского документа\n"
-            "⚕️ 5 детальных консультаций, включая вопросы по фото\n"
+            "⚕️ 3 детальных консультаций, включая вопросы по фото\n"
             "💬 Базовые ответы в рамках тарифа\n\n"
             "Подробнее — в ⚙️ <b>Настройки</b>"
         ),
@@ -987,11 +987,11 @@ translations = {
     "promo_premium_plan_name": "Преміум план",
     # Особенности планов
     "promo_basic_feature_1": "5 завантажених документів",
-    "promo_basic_feature_2": "100 детальних консультацій",
+    "promo_basic_feature_2": "50 детальних консультацій",
     "promo_basic_feature_3": "Підвищений ліміт на базові відповіді",
     "promo_premium_feature_3": "Необмежені базові відповіді",
     "promo_premium_feature_1": "20 завантажених документів",
-    "promo_premium_feature_2": "400 детальних консультацій",    
+    "promo_premium_feature_2": "200 детальних консультацій",    
     # Ошибки промокодов
     "promo_invalid_format": "❌ Невірний формат промокоду",
     "promo_not_found": "❌ Промокод не знайдено",   
@@ -1641,11 +1641,11 @@ Garmin analysis requires detailed consultations.
     "promo_premium_plan_name": "Premium plan",
     # Plan features
     "promo_basic_feature_1": "5 uploaded documents",
-    "promo_basic_feature_2": "100 detailed consultations",
+    "promo_basic_feature_2": "50 detailed consultations",
     "promo_basic_feature_3": "Increased limit for basic answers",
     "promo_premium_feature_3": "Unlimited basic answers",
     "promo_premium_feature_1": "20 uploaded documents",
-    "promo_premium_feature_2": "400 detailed consultations",    
+    "promo_premium_feature_2": "200 detailed consultations",    
     # Promo code errors
     "promo_invalid_format": "❌ Invalid promo code format",
     "promo_not_found": "❌ Promo code not found",   
@@ -2317,11 +2317,11 @@ Für die Garmin-Analyse sind detaillierte Beratungen erforderlich.
     "promo_premium_plan_name": "Premium-Plan",
     # Plan-Features
     "promo_basic_feature_1": "5 hochgeladene Dokumente",
-    "promo_basic_feature_2": "100 detaillierte Beratungen",
+    "promo_basic_feature_2": "50 detaillierte Beratungen",
     "promo_basic_feature_3": "Erhöhtes Limit für grundlegende Antworten",
     "promo_premium_feature_3": "Unbegrenzte grundlegende Antworten",
     "promo_premium_feature_1": "20 hochgeladene Dokumente",
-    "promo_premium_feature_2": "400 detaillierte Beratungen",    
+    "promo_premium_feature_2": "200 detaillierte Beratungen",    
     # Promocode-Fehler
     "promo_invalid_format": "❌ Ungültiges Promocode-Format",
     "promo_not_found": "❌ Promocode nicht gefunden",   

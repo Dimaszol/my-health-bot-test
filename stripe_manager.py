@@ -183,10 +183,10 @@ class StripeManager:
             }
             
             product_descriptions = {
-                'ru': 'Полный медицинский AI-анализ вашего документа',
-                'en': 'Complete medical AI analysis of your document',
-                'uk': 'Повний медичний AI-аналіз вашого документа',
-                'de': 'Vollständige medizinische KI-Analyse Ihres Dokuments'
+                'ru': '1 AI-анализ документа + 5 детальных консультаций',
+                'en': '1 AI document analysis + 5 detailed consultations',
+                'uk': '1 AI-аналіз документа + 5 детальних консультацій',
+                'de': '1 KI-Dokumentenanalyse + 5 detaillierte Beratungen'
             }
             
             product_name = product_names.get(lang, product_names['en'])

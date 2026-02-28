@@ -37,23 +37,23 @@ FAQ_TEXTS = {
         "faq_subscriptions_content": """            <b>Выберите подходящий план:</b>
 
 🆓 <b>Бесплатный план</b>
-    - 2 загрузки документов/снимков (разово)
-    - 10 детальных консультаций (разово)
-    - 50 вопросов в неделю (базовые ответы)
+    - 1 загрузка документов/снимков (разово)
+    - 3 детальных консультаций (разово)
+    - 25 базовых ответов (разово)
 
 📦 <b>Базовый план ($3.99/месяц)</b>  
     - 5 загрузок документов/снимков
-    - 100 детальных консультаций
+    - 50 детальных консультаций
     - 100 вопросов в день
 
 ⭐ <b>Премиум план ($9.99/месяц)</b>
     - 20 загрузок документов/снимков  
-    - 400 детальных консультаций
+    - 200 детальных консультаций
     - 100 вопросов в день
 
 💊 <b>Экстра пакет ($1.99)</b>
-    - 3 загрузки документов/снимков
-    - 30 детальных консультаций
+    - 2 загрузки документов/снимков
+    - 20 детальных консультаций
     - Разовая покупка на 30 дней
 
             <b>В чем разница ответов?</b>
@@ -249,23 +249,23 @@ FAQ_TEXTS = {
         "faq_subscriptions_content": """            <b>Оберіть підходящий план:</b>
 
 🆓 <b>Безкоштовний план</b>
-    - 2 завантаження документів/знімків (одноразово)
-    - 10 детальних консультацій (одноразово)
-    - 50 питань на тиждень (базові відповіді)
+    - 1 завантаження документів/знімків (одноразово)
+    - 3 детальні консультації (одноразово)
+    - 25 базових відповідей (одноразово)
 
-📦 <b>Базовий план ($3.99/місяць)</b>  
+📦 <b>Базовий план ($3.99/місяць)</b>
     - 5 завантажень документів/знімків
-    - 100 детальних консультацій
-    - 100 питань на день
+    - 50 детальних консультацій
+    - 100 запитань на день
 
 ⭐ <b>Преміум план ($9.99/місяць)</b>
-    - 20 завантажень документів/знімків  
-    - 400 детальних консультацій
-    - 100 питань на день
+    - 20 завантажень документів/знімків
+    - 200 детальних консультацій
+    - 100 запитань на день
 
 💊 <b>Екстра пакет ($1.99)</b>
-    - 3 завантаження документів/знімків
-    - 30 детальних консультацій
+    - 2 завантаження документів/знімків
+    - 20 детальних консультацій
     - Одноразова покупка на 30 днів
 
             <b>У чому різниця відповідей?</b>
@@ -461,24 +461,24 @@ FAQ_TEXTS = {
         "faq_subscriptions_content": """            <b>Choose the right plan:</b>
 
 🆓 <b>Free Plan</b>
-    - 2 document/image uploads (one-time)
-    - 10 detailed consultations (one-time)
-    - 50 questions per week (basic answers)
+    - 1 document/image upload (one-time)
+    - 3 detailed consultations (one-time)
+    - 25 basic responses (one-time)
 
-📦 <b>Basic Plan ($3.99/month)</b>  
+📦 <b>Basic Plan ($3.99/month)</b>
     - 5 document/image uploads
-    - 100 detailed consultations
+    - 50 detailed consultations
     - 100 questions per day
 
 ⭐ <b>Premium Plan ($9.99/month)</b>
-    - 20 document/image uploads  
-    - 400 detailed consultations
+    - 20 document/image uploads
+    - 200 detailed consultations
     - 100 questions per day
 
 💊 <b>Extra Package ($1.99)</b>
-    - 3 document/image uploads
-    - 30 detailed consultations
-    - One-time purchase for 30 days
+    - 2 document/image uploads
+    - 20 detailed consultations
+    - One-time purchase valid for 30 days
 
             <b>What's the difference in responses?</b>
 💬 <b>Basic answers</b> — model that gives shorter responses
@@ -673,24 +673,24 @@ Click ⚙️ Settings in main menu""",
         "faq_subscriptions_content": """            <b>Wählen Sie den passenden Plan:</b>
 
 🆓 <b>Kostenloser Plan</b>
-    - 2 Dokument-/Bild-Uploads (einmalig)
-    - 10 detaillierte Konsultationen (einmalig)
-    - 50 Fragen pro Woche (einfache Antworten)
+    - 1 Dokument-/Bild-Upload (einmalig)
+    - 3 detaillierte Beratungen (einmalig)
+    - 25 Basisantworten (einmalig)
 
-📦 <b>Basic Plan ($3.99/Monat)</b>  
+📦 <b>Basisplan ($3.99/Monat)</b>
     - 5 Dokument-/Bild-Uploads
-    - 100 detaillierte Konsultationen
+    - 50 detaillierte Beratungen
     - 100 Fragen pro Tag
 
-⭐ <b>Premium Plan ($9.99/Monat)</b>
-    - 20 Dokument-/Bild-Uploads  
-    - 400 detaillierte Konsultationen
+⭐ <b>Premium-Plan ($9.99/Monat)</b>
+    - 20 Dokument-/Bild-Uploads
+    - 200 detaillierte Beratungen
     - 100 Fragen pro Tag
 
 💊 <b>Extra-Paket ($1.99)</b>
-    - 3 Dokument-/Bild-Uploads
-    - 30 detaillierte Konsultationen
-    - Einmaliger Kauf für 30 Tage
+    - 2 Dokument-/Bild-Uploads
+    - 20 detaillierte Beratungen
+    - Einmaliger Kauf für 30 Tage gültig
 
             <b>Was ist der Unterschied bei den Antworten?</b>
 💬 <b>Einfache Antworten</b> — Modell, das kürzere Antworten gibt

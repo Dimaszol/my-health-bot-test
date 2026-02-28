@@ -2292,10 +2292,10 @@ TRANSLATIONS = {
 },
 
 'package_free_feature_2': {
-    'ru': '5 детальных консультаций',
-    'en': '5 detailed consultations',
-    'uk': '5 детальних консультацій',
-    'de': '5 detaillierte Beratungen'
+    'ru': '3 детальных консультаций',
+    'en': '3 detailed consultations',
+    'uk': '3 детальних консультацій',
+    'de': '3 detaillierte Beratungen'
 },
 'package_free_feature_3': {
     'ru': '20 базовых ответов',
@@ -2317,17 +2317,17 @@ TRANSLATIONS = {
 },
 
 'package_extra_feature_1': {
-    'ru': '3 медицинских документа',
-    'en': '3 medical documents',
-    'uk': '3 медичних документи',
-    'de': '3 medizinische Dokumente'
+    'ru': '2 медицинских документа',
+    'en': '2 medical documents',
+    'uk': '2 медичних документи',
+    'de': '2 medizinische Dokumente'
 },
 
 'package_extra_feature_2': {
-    'ru': '30 детальных консультаций',
-    'en': '30 detailed consultations',
-    'uk': '30 детальних консультацій',
-    'de': '30 detaillierte Beratungen'
+    'ru': '20 детальных консультаций',
+    'en': '20 detailed consultations',
+    'uk': '20 детальних консультацій',
+    'de': '20 detaillierte Beratungen'
 },
 
 'package_extra_feature_3': {
@@ -2345,10 +2345,10 @@ TRANSLATIONS = {
 },
 
 'package_basic_feature_2': {
-    'ru': '100 детальных консультаций в месяц',
-    'en': '100 detailed consultations per month',
-    'uk': '100 детальних консультацій на місяць',
-    'de': '100 detaillierte Beratungen pro Monat'
+    'ru': '50 детальных консультаций в месяц',
+    'en': '50 detailed consultations per month',
+    'uk': '50 детальних консультацій на місяць',
+    'de': '50 detaillierte Beratungen pro Monat'
 },
 
 'package_basic_feature_3': {
@@ -2366,10 +2366,10 @@ TRANSLATIONS = {
 },
 
 'package_premium_feature_2': {
-    'ru': '400 детальных консультаций в месяц',
-    'en': '400 detailed consultations per month',
-    'uk': '400 детальних консультацій на місяць',
-    'de': '400 detaillierte Beratungen pro Monat'
+    'ru': '200 детальных консультаций в месяц',
+    'en': '200 detailed consultations per month',
+    'uk': '200 детальних консультацій на місяць',
+    'de': '200 detaillierte Beratungen pro Monat'
 },
 'package_premium_feature_3': {
     'ru': 'Неограниченные базовые ответы',

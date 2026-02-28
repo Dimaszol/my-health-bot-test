@@ -123,6 +123,18 @@ class SubscriptionWebhookHandler:
                         "message": "Exception in checkout processing"
                     }
             
+            # ✅ ОБРАБОТКА invoice.payment_failed
+            elif event_type == 'invoice.payment_failed':
+                invoice_data = event.get('data', {}).get('object', {})
+                stripe_customer_id = invoice_data.get('customer')
+                result = await self._handle_payment_failed(stripe_customer_id)
+
+            # ✅ ОБРАБОТКА customer.subscription.deleted
+            elif event_type == 'customer.subscription.deleted':
+                subscription_data = event.get('data', {}).get('object', {})
+                stripe_customer_id = subscription_data.get('customer')
+                result = await self._handle_subscription_deleted(stripe_customer_id)
+
             # Игнорируем все остальные события
             else:
                 result = {"status": "ignored", "message": f"Event {event_type} ignored"}
@@ -274,6 +286,68 @@ class SubscriptionWebhookHandler:
             await self.bot.send_message(user_id, message)
         except Exception:
             pass  # ⚠️ Не логируем детали ошибки уведомления
+
+    async def _handle_payment_failed(self, stripe_customer_id: str):
+        """Обрабатывает неудачный платёж - только логируем"""
+        try:
+            if not stripe_customer_id:
+                return {"status": "error", "message": "No customer_id"}
+            
+            conn = await get_db_connection()
+            try:
+                user_data = await conn.fetchrow("""
+                    SELECT user_id FROM user_subscriptions 
+                    WHERE stripe_customer_id = $1
+                """, stripe_customer_id)
+                
+                if not user_data:
+                    return {"status": "error", "message": "User not found"}
+                
+                logger.info("⚠️ Payment failed event received")
+                return {"status": "success", "message": "Payment failed logged"}
+            finally:
+                await release_db_connection(conn)
+                
+        except Exception as e:
+            logger.error("❌ Error handling payment_failed")
+            return {"status": "error", "message": "Handler failed"}
+
+    async def _handle_subscription_deleted(self, stripe_customer_id: str):
+        """Обрабатывает удаление подписки - деактивирует в БД"""
+        try:
+            if not stripe_customer_id:
+                return {"status": "error", "message": "No customer_id"}
+            
+            conn = await get_db_connection()
+            try:
+                user_data = await conn.fetchrow("""
+                    SELECT user_id FROM user_subscriptions 
+                    WHERE stripe_customer_id = $1
+                """, stripe_customer_id)
+                
+                if not user_data:
+                    return {"status": "error", "message": "User not found"}
+                
+                user_id = user_data['user_id']
+                
+                # Деактивируем подписку в БД
+                await conn.execute("""
+                    UPDATE user_subscriptions 
+                    SET status = 'cancelled', cancelled_at = $1
+                    WHERE stripe_customer_id = $2
+                """, datetime.now(), stripe_customer_id)
+                
+                # Сбрасываем на free через существующий метод
+                await SubscriptionManager.fix_orphaned_subscription_state(user_id)
+                
+                logger.info("✅ Subscription deactivated")
+                return {"status": "success", "message": "Subscription deactivated"}
+            finally:
+                await release_db_connection(conn)
+                
+        except Exception as e:
+            logger.error("❌ Error handling subscription_deleted")
+            return {"status": "error", "message": "Handler failed"}
 
     async def _handle_one_time_document_payment(self, session_data):
         """
