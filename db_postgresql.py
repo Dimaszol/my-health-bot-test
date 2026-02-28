@@ -579,23 +579,20 @@ async def create_tables():
     """
 
     try:
-        conn = await get_db_connection()
+        async with db_pool.acquire() as conn:
+            async with conn.transaction():
+                await conn.execute("SELECT pg_advisory_xact_lock(12345678)")
+                await conn.execute(pgvector_setup)
+                await conn.execute(tables_sql)
+                await conn.execute(migration_sql)
+                await conn.execute(indices_sql)
+                await conn.execute(functions_sql)
+                await conn.execute(comments_sql)
         
-        # Выполняем создание таблиц по частям
-        await conn.execute(pgvector_setup)
-        await conn.execute(tables_sql)
-        await conn.execute(migration_sql)  # НОВОЕ: выполняем миграцию
-        await conn.execute(indices_sql)
-        await conn.execute(functions_sql)
-        await conn.execute(comments_sql)
-        
-        await release_db_connection(conn)
         logger.info("✅ Все таблицы и миграции созданы успешно")
         
     except Exception as e:
         logger.error(f"❌ Ошибка создания таблиц: {e}")
-        if 'conn' in locals():
-            await release_db_connection(conn)
         raise
         
 # 👤 ФУНКЦИИ ДЛЯ РАБОТЫ С ПОЛЬЗОВАТЕЛЯМИ
