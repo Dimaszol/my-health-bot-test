@@ -906,16 +906,26 @@ async def upload_document(
         with open(local_file, 'wb') as f:
             f.write(content)
 
+        # Считаем страницы PDF
+        pdf_total_pages = None
+        if file_ext == 'pdf':
+            try:
+                import pypdf
+                with open(local_file, 'rb') as f:
+                    pdf_total_pages = len(pypdf.PdfReader(f).pages)
+            except Exception:
+                pass
+
         # Создаём запись в БД со статусом processing (без file_path — добавим после обработки)
         file_type = "pdf" if file_ext == "pdf" else "image"
         conn = await get_db_connection()
         try:
             document_id = await conn.fetchval("""
                 INSERT INTO documents 
-                (user_id, file_path, file_type, additional_context, confirmed)
-                VALUES ($1, $2, $3, $4, false)
+                (user_id, file_path, file_type, additional_context, confirmed, pdf_total_pages)
+                VALUES ($1, $2, $3, $4, false, $5)
                 RETURNING id
-            """, user_id, '', file_type, additional_context)
+            """, user_id, '', file_type, additional_context, pdf_total_pages)
         finally:
             await release_db_connection(conn)
 
@@ -2281,6 +2291,16 @@ async def create_one_time_document_checkout(
             filename=filename,
             source_path=temp_file_path
         )
+
+        # Считаем страницы PDF до удаления временного файла
+        pdf_total_pages = None
+        if file_ext == 'pdf':
+            try:
+                import pypdf
+                with open(temp_file_path, 'rb') as f:
+                    pdf_total_pages = len(pypdf.PdfReader(f).pages)
+            except Exception:
+                pass
         
         # Удаляем временный файл
         if os.path.exists(temp_file_path):
@@ -2299,10 +2319,10 @@ async def create_one_time_document_checkout(
         try:
             document_id = await conn.fetchval("""
                 INSERT INTO documents 
-                (user_id, file_path, file_type, additional_context, confirmed, payment_confirmed)
-                VALUES ($1, $2, $3, $4, false, false)
+                (user_id, file_path, file_type, additional_context, confirmed, payment_confirmed, pdf_total_pages)
+                VALUES ($1, $2, $3, $4, false, false, $5)
                 RETURNING id
-            """, user_id, permanent_path, file_type, additional_context)
+            """, user_id, permanent_path, file_type, additional_context, pdf_total_pages)
         finally:
             await release_db_connection(conn)
         

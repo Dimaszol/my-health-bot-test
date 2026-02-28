@@ -40,8 +40,28 @@ async def process_document(
     """
     
     try:
+        # Обрезаем PDF до 10 страниц перед отправкой в AI
+        MAX_PDF_PAGES = 10
+        truncated_file_path = file_path  # по умолчанию — оригинал
+        temp_truncated_path = None
+
+        if file_path.lower().endswith('.pdf'):
+            try:
+                import pypdf
+                reader = pypdf.PdfReader(file_path)
+                if len(reader.pages) > MAX_PDF_PAGES:
+                    writer = pypdf.PdfWriter()
+                    for i in range(MAX_PDF_PAGES):
+                        writer.add_page(reader.pages[i])
+                    temp_truncated_path = file_path + "_truncated.pdf"
+                    with open(temp_truncated_path, 'wb') as f:
+                        writer.write(f)
+                    truncated_file_path = temp_truncated_path
+                    logger.info(f"PDF truncated to {MAX_PDF_PAGES} pages for AI analysis")
+            except Exception as e:
+                logger.warning(f"PDF truncation failed, using original: {e}")
         # Классификация документа
-        classification = await classify_document(file_path)
+        classification = await classify_document(truncated_file_path)
         
         logger.info(f"🩺 Classification: {classification.get('document_type')} (confidence: {classification.get('confidence')})")
         
@@ -67,7 +87,7 @@ async def process_document(
         
         # Анализ ассистентом
         assistant_result = await analyze_with_assistant(
-            file_path=file_path,
+            file_path=truncated_file_path,
             document_type=document_type,
             lang=lang,
             patient_context=patient_context
@@ -91,7 +111,7 @@ async def process_document(
         
         # Анализ специалистом
         specialist_result = await analyze_with_specialist(
-            file_path=file_path,
+            file_path=truncated_file_path,
             document_type=document_type,
             lang=lang,
             patient_context=patient_context,
@@ -160,3 +180,7 @@ async def process_document(
             "message": t("document_processing_error", lang),
             "error_details": str(e)
         }
+    
+    finally:
+        if temp_truncated_path and os.path.exists(temp_truncated_path):
+            os.remove(temp_truncated_path)

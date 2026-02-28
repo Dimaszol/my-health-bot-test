@@ -1065,10 +1065,10 @@ TRANSLATIONS = {
         'de': 'Datei auswählen'
     },
     'supported_formats': {
-        'ru': 'Форматы: PDF, JPG, PNG (до 10 МБ)',
-        'en': 'Formats: PDF, JPG, PNG (up to 10 MB)',
-        'uk': 'Формати: PDF, JPG, PNG (до 10 МБ)',
-        'de': 'Formate: PDF, JPG, PNG (bis 10 MB)'
+        'ru': 'Форматы: PDF (до 10 стр.), JPG, PNG — до 10 МБ',
+        'en': 'Formats: PDF (up to 10 pages), JPG, PNG — up to 10 MB',
+        'uk': 'Формати: PDF (до 10 стор.), JPG, PNG — до 10 МБ',
+        'de': 'Formate: PDF (bis 10 Seiten), JPG, PNG — bis 10 MB'
     },
     'uploaded_documents': {
         'ru': 'Загруженные документы',

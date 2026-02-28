@@ -350,6 +350,7 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
             WHERE user_id = $1
             AND confirmed = false
             AND full_analysis IS NULL
+            AND title IS NULL
             AND payment_confirmed = true
             AND uploaded_at > NOW() - INTERVAL '5 minutes'
             ORDER BY uploaded_at DESC
