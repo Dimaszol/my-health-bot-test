@@ -926,7 +926,7 @@ async def set_user_language(user_id: int, language: str, telegram_user=None) -> 
             # Новый пользователь - даём бесплатные лимиты
             await conn.execute("""
                 INSERT INTO user_limits (user_id, documents_left, gpt4o_queries_left, subscription_type, email)
-                VALUES ($1, 1, 5, 'free', NULL)
+                VALUES ($1, 1, 3, 'free', NULL)
                 ON CONFLICT (user_id) DO NOTHING
             """, user_id)
         

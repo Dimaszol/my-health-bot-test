@@ -1206,6 +1206,12 @@ TRANSLATIONS = {
         'uk': 'Завантажити вихідний документ',
         'de': 'Originaldokument herunterladen'
     },    
+    'legend_delete': {
+        'ru': 'Удалить документ и запись',
+        'en': 'Delete document and record',
+        'uk': 'Видалити документ і запис',
+        'de': 'Dokument und Eintrag löschen'
+    },
     'legend_edit': {
         'ru': 'Редактировать название или дату документа',
         'en': 'Edit document name or date',
@@ -1219,16 +1225,16 @@ TRANSLATIONS = {
         'de': 'Einbeziehen / ausschließen'
     },
     'legend_toggle_desc': {
-        'ru': 'Выбирайте, какие документы использовать при общении в чате. Рекомендуется оставлять включёнными только те документы, которые относятся к текущему вопросу — это помогает ИИ давать более точные и релевантные ответы',
-        'en': 'Choose which documents to use when chatting. It is recommended to keep only documents relevant to the current question enabled — this helps AI provide more accurate and relevant answers',
-        'uk': 'Вибирайте, які документи використовувати при спілкуванні в чаті. Рекомендується залишати увімкненими лише ті документи, які стосуються поточного питання — це допомагає ШІ давати точніші та релевантніші відповіді',
-        'de': 'Wählen Sie aus, welche Dokumente beim Chatten verwendet werden sollen. Es wird empfohlen, nur Dokumente zu aktivieren, die für die aktuelle Frage relevant sind — dies hilft der KI, genauere und relevantere Antworten zu geben'
+        'ru': 'Если тумблер включён, ИИ использует документ при ответах в чате и анализе последующих документов.',
+        'en': 'If the toggle is enabled, the AI will use the document when answering in chat and when analyzing subsequent documents.',
+        'uk': 'Якщо перемикач увімкнений, ШІ використовує документ під час відповідей у чаті та аналізу наступних документів.',
+        'de': 'Wenn der Schalter aktiviert ist, verwendet die KI das Dokument bei Antworten im Chat und bei der Analyse nachfolgender Dokumente.'
     },
     'legend_analysis': {
-        'ru': 'Детальный анализ',
-        'en': 'Detailed analysis',
-        'uk': 'Детальний аналіз',
-        'de': 'Detaillierte Analyse'
+        'ru': 'Полный разбор',
+        'en': 'Full Analysis',
+        'uk': 'Повний розбір',
+        'de': 'Vollständige Analyse'
     },
     'back_to_documents': {
         'ru': 'Назад к документам',
@@ -1273,10 +1279,10 @@ TRANSLATIONS = {
         'de': 'Medizinische Interpretation'
     },
     'full_analysis_description': {
-        'ru': 'Анализ документа специализированными моделями на основе первичного анализа с последующей консолидацией рассуждений. Представляет собой обсуждение возможных интерпретаций и не является диагнозом или окончательным выводом.',
-        'en': 'Analysis of the document by specialized models based on the primary analysis, followed by consolidation of reasoning. It represents a discussion of possible interpretations and does not constitute a diagnosis or a final conclusion.',
-        'uk': 'Аналіз документа спеціалізованими моделями на основі первинного аналізу з подальшою консолідацією міркувань. Є обговоренням можливих інтерпретацій і не є діагнозом або остаточним висновком.',
-        'de': 'Analyse des Dokuments durch spezialisierte Modelle auf Grundlage der primären Analyse mit anschließender Konsolidierung der Überlegungen. Sie stellt eine Diskussion möglicher Interpretationen dar und ist keine Diagnose oder endgültige Schlussfolgerung.'
+        'ru': 'Подробный анализ документа с возможными медицинскими интерпретациями. Рассматривает различные возможные объяснения данных и может быть полезен при обсуждении с врачом.',
+        'en': 'Detailed analysis of the document with possible medical interpretations. It explores different possible explanations of the data and may be useful when discussing them with a doctor.',
+        'uk': 'Детальний аналіз документа з можливими медичними інтерпретаціями. Розглядає різні можливі пояснення даних і може бути корисним під час обговорення з лікарем.',
+        'de': 'Detaillierte Analyse des Dokuments mit möglichen medizinischen Interpretationen. Betrachtet verschiedene mögliche Erklärungen der Daten und kann bei der Besprechung mit einem Arzt hilfreich sein.'
     },
     'raw_text_title': {
         'ru': 'Сводка по документу',
@@ -1285,10 +1291,10 @@ TRANSLATIONS = {
         'de': 'Dokumentenzusammenfassung'
     },
     'legend_analysis_desc': {
-        'ru': 'Подробный разбор документа несколькими ИИ-моделями с разными взглядами на данные',
-        'en': 'Detailed analysis of the document by several AI models with different views on the data',
-        'uk': 'Детальний розбір документа кількома ШІ-моделями з різними поглядами на дані',
-        'de': 'Detaillierte Analyse des Dokuments durch mehrere KI-Modelle mit unterschiedlichen Ansichten der Daten'
+        'ru': 'Подробный анализ документа с интерпретациями нескольких ИИ-моделей.',
+        'en': 'Detailed analysis of the document with interpretations from multiple AI models.',
+        'uk': 'Детальний аналіз документа з інтерпретаціями кількох ШІ-моделей.',
+        'de': 'Detaillierte Analyse des Dokuments mit Interpretationen mehrerer KI-Modelle.'
     },
     'legend_warning': {
         'ru': 'Здесь представлены рассуждения и возможные интерпретации. Это не диагноз и не медицинское заключение. Раздел помогает лучше понять документ и может быть полезен врачу при очной оценке',
@@ -1476,10 +1482,10 @@ TRANSLATIONS = {
         'de': 'In Chat-Speicher einbeziehen'
     },
     'btn_detailed_analysis': {
-        'ru': 'Детальный анализ',
-        'en': 'Detailed Analysis',
-        'uk': 'Детальний аналіз',
-        'de': 'Detaillierte Analyse'
+        'ru': 'Полный разбор',
+        'en': 'Full Analysis',
+        'uk': 'Повний розбір',
+        'de': 'Vollständige Analyse'
     },
     'document_updated': {
         'ru': 'Документ успешно обновлён',
@@ -1498,18 +1504,12 @@ TRANSLATIONS = {
         'uk': 'Консультація щодо документа',
         'en': 'Consultation on the document',
         'de': 'Beratung zum Dokument'
-    },
-    'discuss_document': {
-        'ru': 'Открыть консультацию',
-        'uk': 'Відкрити консультацію',
-        'en': 'Open consultation',
-        'de': 'Beratung öffnen'
-    },
+    },    
     'upgrade_plan': {
-        'ru': 'Чтобы продолжить обсуждение документа, обновите план',
-        'en': 'To continue document discussion, upgrade your plan',
-        'uk': 'Щоб продовжити обговорення документа, оновіть план',
-        'de': 'Um die Dokumentendiskussion fortzusetzen, upgraden Sie Ihren Plan'
+        'ru': 'Лимит детальных консультаций достигнут — получить ещё',
+        'en': 'Detailed consultation limit reached — get more',
+        'uk': 'Ліміт детальних консультацій досягнуто — отримати ще',
+        'de': 'Limit für detaillierte Beratungen erreicht — weitere erhalten'
     },
     'document_chat_requires_premium': {
         'ru': 'Обсуждение документа доступно при наличии детальных консультаций',

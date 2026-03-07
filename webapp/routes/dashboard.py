@@ -368,6 +368,19 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
             # Добавляем записи в документ
             doc['timeline_entries'] = timeline_entries
 
+            # Последнее AI-сообщение в чате по документу
+            last_chat_msg = await conn.fetchrow(
+                """SELECT message, timestamp FROM document_chat_history
+                WHERE document_id = $1 AND user_id = $2 AND role = 'assistant'
+                ORDER BY id DESC LIMIT 1""",
+                doc['id'], user_id
+            )
+            if last_chat_msg:
+                from webapp.utils.text_formatter import format_for_web
+                doc['last_chat_message'] = format_for_web(last_chat_msg['message'])
+            else:
+                doc['last_chat_message'] = None
+
         user = await conn.fetchrow(
             "SELECT birth_year FROM users WHERE user_id = $1",
             user_id

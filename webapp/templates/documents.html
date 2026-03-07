@@ -293,6 +293,22 @@ footer {
                     </svg>
                 </a>
 
+                <!-- Кнопка удалить (иконка) -->
+                <button 
+                    class="delete-btn"
+                    data-doc-id="{{ doc.id }}"
+                    type="button"
+                    title="{{ t('btn_delete_document', lang) }}"
+                    style="display: flex; align-items: center; background: none; border: none; cursor: pointer; color: #ac8787; padding: 0; transition: color 0.2s;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                        <path d="M10 11v6"></path>
+                        <path d="M14 11v6"></path>
+                        <path d="M9 6V4h6v2"></path>
+                    </svg>
+                </button>
+
                 <!-- РЕЖИМ ПРОСМОТРА: Кнопка Редактировать -->
                 <button 
                     id="doc-edit-btn-{{ doc.id }}"
@@ -343,7 +359,7 @@ footer {
             <a href="/dashboard/document/{{ doc.id }}" 
             class="btn-show-minimal"
             style="text-decoration: none;">
-                🔍 {{ t('btn_detailed_analysis', lang) }}
+                📄 {{ t('btn_detailed_analysis', lang) }}
             </a>
             
             <!-- Кнопка Показать -->
@@ -375,11 +391,20 @@ footer {
             </div>
             {% endif %}
 
-           <!-- Disclaimer + Кнопки -->
+           <!-- Чат-превью + Кнопка обсудить -->
             <div class="disclaimer-delete-container">
+                {% if doc.last_chat_message %}
+                <div style="position: relative; max-height: 72px; overflow: hidden; flex: 1;">
+                    <div style="font-size: 0.8rem; color: #6b7280; line-height: 1.4;">
+                        {{ doc.last_chat_message | safe }}
+                    </div>
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 36px; background: linear-gradient(to bottom, transparent, white); pointer-events: none;"></div>
+                </div>
+                {% else %}
                 <p style="margin: 0; font-size: 0.8rem; color: #6b7280; line-height: 1.4; flex: 1;">
                     {{ t('ai_disclaimer', lang) }}
                 </p>
+                {% endif %}
                 
                 <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                     <a href="/dashboard/document/{{ doc.id }}/chat" 
@@ -388,15 +413,6 @@ footer {
                         <span class="btn-icon">💬</span>
                         <span>{{ t('btn_discuss', lang) }}</span>
                     </a>
-                    
-                    <button 
-                        class="btn-action btn-delete delete-btn"
-                        data-doc-id="{{ doc.id }}"
-                        type="button"
-                        style="border-radius: 8px; padding: 0.5rem 1rem;">
-                        <span class="btn-icon">🗑️</span>
-                        <span>{{ t('btn_delete_document', lang) }}</span>
-                    </button>
                 </div>
             </div>
         </div>
@@ -404,6 +420,10 @@ footer {
 </div>
 {% endfor %}
 </div>
+
+<p style="margin: 0; font-size: 0.8rem; color: #6b7280; line-height: 1.4; flex: 1;">
+                    {{ t('ai_disclaimer', lang) }}
+                </p>
 
 <!-- 📘 ЛЕГЕНДА ДЛЯ КАРТОЧЕК ДОКУМЕНТОВ -->
 {% if documents %}
@@ -424,6 +444,22 @@ footer {
             </div>
             <div>
                 <strong>{{ t('legend_download', lang) }}</strong>
+            </div>
+        </div>
+
+        <!-- Удалить -->
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <div style="width: 40px; display: flex; justify-content: center; align-items: center; flex-shrink: 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ac8787" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                    <path d="M10 11v6"></path>
+                    <path d="M14 11v6"></path>
+                    <path d="M9 6V4h6v2"></path>
+                </svg>
+            </div>
+            <div>
+                <strong>{{ t('legend_delete', lang) }}</strong>
             </div>
         </div>
 
@@ -459,7 +495,7 @@ footer {
         <div>
             <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
                 <div style="width: 40px; display: flex; justify-content: center; align-items: flex-start; flex-shrink: 0; padding-top: 0.2rem;">
-                    <span>🔍</span>
+                    <span>📄</span>
                 </div>
                 <div>
                     <strong>{{ t('legend_analysis', lang) }}</strong> — {{ t('legend_analysis_desc', lang) }}
