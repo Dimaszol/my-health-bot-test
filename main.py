@@ -339,9 +339,18 @@ async def prompt_document_upload(message: types.Message):
 async def prompt_memory_note(message: types.Message):
     user_id = message.from_user.id
     lang = await get_user_language(user_id)
+    
+    # Проверяем наличие детальных консультаций до входа в состояние
+    has_detailed = await check_gpt4o_limit(user_id)
+    if not has_detailed:
+        await message.answer(t("detailed_responses_finished", lang), parse_mode="HTML")
+        await SubscriptionHandlers.show_subscription_upsell(
+            message, user_id, reason="limits_exceeded"
+        )
+        return
+    
     user_states[message.from_user.id] = "awaiting_memory_note"
     
-    # ✅ ИСПРАВЛЕНО: используем cancel_keyboard из keyboards
     from keyboards import cancel_keyboard
     await message.answer(
         t("write_note", lang), 
@@ -1004,6 +1013,8 @@ async def handle_user_message(message: types.Message):
 
             chunks = await split_into_chunks(summary, document_id, user_id)
             await add_chunks_to_vector_db(document_id, user_id, chunks)
+            # Списываем одну детальную консультацию
+            await spend_gpt4o_limit(user_id, message, bot)
 
             await message.answer(t("note_saved", lang, title=title), parse_mode="HTML")
             await send_note_controls(message, document_id)
