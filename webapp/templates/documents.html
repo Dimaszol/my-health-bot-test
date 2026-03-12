@@ -73,6 +73,15 @@ footer {
                 </div>
             
         </div>
+        {% if documents %}
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem;">
+            <label class="toggle-switch-compact" title="{{ t('use_medical_history_tooltip', lang) }}">
+                <input type="checkbox" id="use-memory" name="use_medical_history" value="true" checked>
+                <span class="toggle-slider-compact"></span>
+            </label>
+            <span style="color: #555; font-size: 0.9rem;">{{ t('use_medical_history_toggle', lang) }}</span>
+        </div>
+        {% endif %}
         
         <div style="display: flex; margin-top: 1.5rem;">
             <button type="submit" class="btn" style="min-width: 300px; width: auto; padding: 1rem 2.5rem;">
@@ -82,10 +91,29 @@ footer {
     </form>
 </div>
 {% else %}
+{% if documents|length == 1 %}
+<div class="card" style="margin-bottom: 1.5rem; background:#f8fafc; border:1px solid #e2e8f0; padding:1.4rem 1.6rem;">
+    
+    <div style="display:flex; gap:12px; align-items:flex-start;">
+        
+        <div style="font-size:1.4rem;">📈</div>
+        
+        <div>            
+            <div style="font-size:0.98rem; line-height:1.6; color:#334155;">
+                {{ t('one_document_upsell', lang) }}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endif %}
+{% if documents|length != 1 %}
 <!-- ⚠️ Информация о лимитах (перед кнопкой) -->
         <p style="margin: 0 0 1.0rem 0; color: #666; font-size: 0.9rem; font-weight: 600; line-height: 1.0;">
             ℹ️ {{ t('document_limit_reached_title', lang) }}
-        </p>        
+        </p>
+{% endif %}     
 <!-- 💳 ФОРМА С ONE-TIME PAYMENT -->
 <div class="card" style="margin-bottom: 1rem;" id="upload-card">
     <form id="upload-form-onetime">
@@ -123,6 +151,13 @@ footer {
             
         </div>                
     <!-- Две кнопки -->
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem;">
+            <label class="toggle-switch-compact" title="{{ t('use_medical_history_tooltip', lang) }}">
+                <input type="checkbox" id="use-memory-onetime" name="use_medical_history" value="true" checked>
+                <span class="toggle-slider-compact"></span>
+            </label>
+            <span style="color: #555; font-size: 0.9rem;">{{ t('use_medical_history_toggle', lang) }}</span>
+        </div>
     <div class="one-time-buttons" style="display: flex; gap: 1rem; margin-top: 1.5rem; align-items: center;">
         <button type="submit" class="btn" style="min-width: 300px; width: auto; padding: 1rem 2.5rem;">
             <span style="font-size: 1rem; font-weight: 600;">
@@ -421,10 +456,6 @@ footer {
 {% endfor %}
 </div>
 
-<p style="margin: 0; font-size: 0.8rem; color: #6b7280; line-height: 1.4; flex: 1;">
-                    {{ t('ai_disclaimer', lang) }}
-                </p>
-
 <!-- 📘 ЛЕГЕНДА ДЛЯ КАРТОЧЕК ДОКУМЕНТОВ -->
 {% if documents %}
 <div class="card" style="margin-top: 2rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #667eea;">
@@ -537,6 +568,9 @@ footer {
         </div>
     </div>
 </div>
+<p style="margin: 0; font-size: 0.8rem; color: #6b7280; line-height: 1.4; flex: 1;">
+    {{ t('ai_disclaimer', lang) }}
+</p>
 {% endif %}
 
 {% endblock %}
@@ -852,6 +886,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const uploadCard = document.getElementById('upload-card');
         const progressCard = document.getElementById('progress-card');
+
+        // Уведомление при переключении тумблера медкарты
+        const memoryToggle = document.getElementById('use-memory');
+        if (memoryToggle) {
+            memoryToggle.addEventListener('change', function() {
+                const msg = this.checked 
+                    ? '{{ t("use_medical_history_on", lang) }}' 
+                    : '{{ t("use_medical_history_off", lang) }}';
+                showFlashMessage(msg, 'success');
+            });
+        }
         
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -867,6 +912,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
             formData.append('additional_context', contextInput.value || '');
+            const memEl = document.getElementById('use-memory');
+            formData.append('use_medical_history', memEl ? (memEl.checked ? 'true' : 'false') : 'false');
             
             // Скрываем форму, показываем прогресс
             uploadCard.style.display = 'none';
@@ -943,7 +990,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 autoResize();
             });
         }
-        
+        const memoryToggleOnetime = document.getElementById('use-memory-onetime');
+        if (memoryToggleOnetime) {
+            memoryToggleOnetime.addEventListener('change', function() {
+                const msg = this.checked 
+                    ? '{{ t("use_medical_history_on", lang) }}' 
+                    : '{{ t("use_medical_history_off", lang) }}';
+                showFlashMessage(msg, 'success');
+            });
+        }
         uploadFormOnetime.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -964,6 +1019,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
             formData.append('additional_context', contextInputOnetime.value || '');
+            const memElOnetime = document.getElementById('use-memory-onetime');
+            formData.append('use_medical_history', memElOnetime ? (memElOnetime.checked ? 'true' : 'false') : 'false');
             
             try {
                 // Отправляем на создание checkout

@@ -1517,6 +1517,36 @@ TRANSLATIONS = {
         'uk': 'Обговорення документа доступне за наявності детальних консультацій',
         'de': 'Dokumentendiskussion verfügbar mit detaillierten Beratungen'
     },
+    'use_medical_history_toggle': {
+        'ru': 'Учитывать историю медкарты',
+        'en': 'Use medical history in analysis',
+        'uk': 'Враховувати історію медкарти',
+        'de': 'Krankengeschichte in der Analyse berücksichtigen'
+    },
+    'use_medical_history_on': {
+        'ru': 'Учтена история медкарты',
+        'en': 'Medical history included in analysis',
+        'uk': 'Враховано історію медкарти',
+        'de': 'Krankengeschichte wurde berücksichtigt'
+    },
+    'use_medical_history_off': {
+        'ru': 'Анализ только по загруженному документу',
+        'en': 'Analysis based only on the uploaded document',
+        'uk': 'Аналіз лише за завантаженим документом',
+        'de': 'Analyse nur anhand des hochgeladenen Dokuments'
+    },
+    'use_medical_history_tooltip': {
+        'ru': 'Учитывать предыдущие анализы при анализе документа',
+        'en': 'Use previous analyses when analyzing the document',
+        'uk': 'Враховувати попередні аналізи при аналізі документа',
+        'de': 'Frühere Analysen bei der Dokumentenanalyse berücksichtigen'
+    },
+    'one_document_upsell': {
+        'ru': 'Ваш первый анализ готов. Добавьте другие медицинские документы, чтобы анализ учитывал историю медкарты и изменения показателей со временем.',
+        'en': 'Your first analysis is ready. Add other medical documents so the analysis can consider your medical history and changes in results over time.',
+        'uk': 'Ваш перший аналіз готовий. Додайте інші медичні документи, щоб аналіз враховував історію медкарти та зміни показників з часом.',
+        'de': 'Ihre erste Analyse ist fertig. Fügen Sie weitere medizinische Dokumente hinzu, damit die Analyse die Krankengeschichte und Veränderungen der Werte im Laufe der Zeit berücksichtigen kann.'
+    },
     
     # ============================================
     # 💬 СТРАНИЦА ЧАТА

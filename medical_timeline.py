@@ -357,7 +357,7 @@ async def extract_medical_events_gemini(document_text: str, existing_timeline: L
 # УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ИЗВЛЕЧЕНИЯ МЕДИЦИНСКИХ ДАННЫХ
 # ==========================================
 
-async def update_medical_timeline_on_document_upload(user_id: int, document_id: int, document_text: str, document_date: date = None, use_gemini: bool = False) -> bool:
+async def update_medical_timeline_on_document_upload(user_id: int, document_id: int, document_text: str, document_date: date = None, use_gemini: bool = False, document_type: str = None) -> bool:
     """
     Универсальная функция обновления медкарты - добавляет ОДНУ сжатую запись с самыми важными данными
     """
@@ -368,9 +368,9 @@ async def update_medical_timeline_on_document_upload(user_id: int, document_id: 
         
         # Извлекаем самую важную информацию
         if use_gemini:
-            medical_summary = await extract_medical_summary_universal_gemini(document_text, lang)
+            medical_summary = await extract_medical_summary_universal_gemini(document_text, lang, document_type)
         else:
-            medical_summary = await extract_medical_summary_universal_gpt(document_text, lang)
+            medical_summary = await extract_medical_summary_universal_gpt(document_text, lang, document_type)
         
         if not medical_summary:
             return True
@@ -382,7 +382,44 @@ async def update_medical_timeline_on_document_upload(user_id: int, document_id: 
         log_error_with_context(e, {"function": "update_medical_timeline_on_document_upload", "user_id": user_id})
         return False
 
-async def extract_medical_summary_universal_gpt(document_text: str, lang: str = "ru") -> Dict:
+def _get_objective_data_rules(document_type: str) -> str:
+    rules = {
+        'lab_results': (
+            "- Extract only laboratory measurements with values and units\n"
+            "- Format: parameter_name value unit (e.g. blood_glucose 20.6 mmol/L; hba1c 10.4 %)\n"
+            "- NO interpretation, NO reference ranges, NO conclusions"
+        ),
+        'ecg': (
+            "- Extract numeric ECG parameters only\n"
+            "- Format: parameter value unit (e.g. heart_rate 72 bpm; qrs_duration 90 ms)\n"
+            "- NO rhythm descriptions unless accompanied by numeric values"
+        ),
+        'imaging': (
+            "- Extract only measurable sizes or quantitative findings\n"
+            "- Format: structure_name size unit (e.g. liver_size 165 mm; lesion_size 12 mm)\n"
+            "- NO descriptive findings without measurements"
+        ),
+        'clinical_report': (
+            "- Extract measurable clinical parameters or vital signs if present\n"
+            "- Format: parameter value unit (e.g. blood_pressure 120/80 mmHg; temperature 37.2 C)\n"
+            "- If no vital signs present, return null"
+        ),
+        'prescription': (
+            "- objective_data must always be null for prescriptions"
+        ),
+        'pathology': (
+            "- Extract tumor size or numeric pathology scores only if present\n"
+            "- Format: finding size unit (e.g. tumor_size 15 mm; mitotic_index 3/hpf)\n"
+            "- If no numeric findings, return null"
+        ),
+    }
+    return rules.get(document_type, (
+        "- Extract measurable values with units when present\n"
+        "- Format: parameter value unit\n"
+        "- NO interpretations or conclusions"
+    ))
+
+async def extract_medical_summary_universal_gpt(document_text: str, lang: str = "ru", document_type: str = None) -> Dict:
     """
     GPT: Универсальное извлечение самой важной медицинской информации (любой тип документа)
     """
@@ -394,10 +431,13 @@ async def extract_medical_summary_universal_gpt(document_text: str, lang: str = 
         'de': 'German'
     }
     response_lang = lang_names.get(lang, 'Russian')
+    doc_type = document_type or 'unknown'
     
-    system_prompt = f"""You are a medical data extraction specialist. Create a SINGLE comprehensive medical timeline entry from any medical document.
+    system_prompt = f"""You are a medical data extraction specialist.
+DOCUMENT TYPE: {doc_type}
+Create a SINGLE comprehensive medical timeline entry from any medical document.
 
-TASK: Extract and combine ALL important medical information into ONE timeline entry (max 20 words).
+TASK: Extract and combine ALL important medical information into ONE timeline entry.
 
 UNIVERSAL APPROACH: Works with any medical document - reports, lab results, imaging, consultations, prescriptions, etc.
 
@@ -408,6 +448,11 @@ Prioritize the most critical, but include other significant findings if space al
 You must return TWO separate fields:
 - description → user-friendly medical timeline entry
 - objective_data → strict factual extraction for internal AI memory
+
+RULE SCOPE:
+Rules for "description" apply ONLY to the description field.
+Rules for "objective_data" apply ONLY to the objective_data field.
+Do NOT mix rules between the two fields.
 
 IMPORTANT: These two fields have DIFFERENT purposes.
 
@@ -425,18 +470,19 @@ CRITICAL RULES FOR description:
 - Max 20 words
 
 CRITICAL RULES FOR objective_data:
+- objective_data MUST ALWAYS be written in ENGLISH
 - STRICT factual extraction only
-- Include only measured values and direct observations
+- Include only measured values or standardized scores
 - Preserve original numbers and units exactly as written
-- Start with the study type or examined structure when applicable (e.g., "Blood test —", "Ultrasound —", "X-ray abdomen —")
-- Ensure the entry is self-contained and understandable without additional context
-- Include the examined organ/structure when relevant
+- Ignore reference ranges and normal ranges
+- Format: parameter value unit; parameter value unit
 - NO interpretations
 - NO conclusions
-- NO inferred diagnoses
-- NO severity wording unless explicitly written in the document
-- Max 20 words
-- If no measurable or objective findings exist, return null
+- Max 12 measurements
+- If no measurable findings exist, return null
+
+objective_data EXTRACTION RULES (Document type: {doc_type}):
+{_get_objective_data_rules(doc_type)}
 
 IMPORTANCE CLASSIFICATION:
 - Base importance on severity of measured values or explicitly stated conditions
@@ -449,7 +495,7 @@ RESPONSE FORMAT (JSON only):
     "category": "ONE OF: diagnosis, treatment, test, procedure, general",
     "importance": "critical|important|normal",
     "description": "User-friendly combined summary in {response_lang} (max 20 words)",
-    "objective_data": "Strict factual measurements only (max 20 words)" | null
+    "objective_data": "Strict factual measurements only (max 12 measurements)" | null
 }}
 
 If no important medical info found, return: {{"no_data": true}}
@@ -463,23 +509,12 @@ EXAMPLES:
 Adapt format and language to match the document content and user's language."""
 
     user_prompt = f"""MEDICAL DOCUMENT:
-        {document_text}
+{document_text}
 
-        INSTRUCTIONS:
-1. Create ONE comprehensive medical timeline entry (max 20 words in description).
-2. Extract ALL important findings.
-3. Always include specific numerical values if present.
-4. Fill BOTH fields correctly:
-   - description → user-friendly combined summary
-   - objective_data → strict factual measurements only (no interpretation)
+TASK:
+Analyze the document and produce the JSON response according to the rules defined in the system instructions.
 
-IMPORTANT:
-- objective_data must contain only raw measurements and direct observations.
-- Do NOT include conclusions or severity wording in objective_data.
-- If no measurable or objective findings exist, set objective_data to null.
-- Return JSON only.
-
-Return the final JSON object."""
+Return JSON only."""
 
     try:
         async with OPENAI_SEMAPHORE:
@@ -765,5 +800,44 @@ async def cleanup_old_timeline_entries(user_id: int, max_entries: int = 20) -> b
     except Exception as e:
         log_error_with_context(e, {"function": "cleanup_old_timeline_entries", "user_id": user_id})
         return False
+    finally:
+        await release_db_connection(conn)
+
+async def get_objective_history_for_specialist(user_id: int, document_type: str, limit: int = 7) -> str:
+    """Получить историю objective_data по типу документа для специалиста"""
+    conn = await get_db_connection()
+    try:
+        rows = await conn.fetch("""
+            SELECT mt.event_date, d.subtype, mt.objective_data
+            FROM medical_timeline mt
+            JOIN documents d ON d.id = mt.source_document_id
+            WHERE mt.user_id = $1
+              AND d.document_type = $2
+              AND d.confirmed = true
+              AND mt.objective_data IS NOT NULL
+              AND mt.objective_data != ''
+            ORDER BY mt.event_date DESC
+            LIMIT $3
+        """, user_id, document_type, limit)
+        
+        if not rows:
+            return ""
+        
+        lines = []
+        for row in rows:
+            date_str = row['event_date'].strftime('%Y-%m-%d') if row['event_date'] else '?'
+            subtype = row['subtype']
+            obj_data = row['objective_data']
+            
+            if subtype:
+                lines.append(f"{date_str} | {subtype} → {obj_data}")
+            else:
+                lines.append(f"{date_str} → {obj_data}")
+        
+        return "\n".join(lines)
+        
+    except Exception as e:
+        log_error_with_context(e, {"function": "get_objective_history_for_specialist"})
+        return ""
     finally:
         await release_db_connection(conn)

@@ -1307,7 +1307,8 @@ async def analyze_with_specialist(
     document_type: str,
     lang: str = "ru",
     patient_context: str = "",
-    assistant_analysis: str = ""
+    assistant_analysis: str = "",
+    medical_history: str = ""
 ) -> Dict[str, Any]:
     """
     Анализирует документ с помощью специализированного промпта Gemini
@@ -1344,6 +1345,18 @@ async def analyze_with_specialist(
             user_prompt_parts.append(patient_context)
         
         user_prompt_parts.append(f"Assistant's preliminary findings:\n{assistant_analysis}")
+        if medical_history:
+            history_block = (
+                "PATIENT MEDICAL HISTORY (Context Only)\n"
+                "Format: [date | subtype] objective measurements\n"
+                "The following historical entries are provided ONLY for contextual interpretation.\n"
+                "Rules:\n"
+                "- Do NOT repeat historical values as current findings.\n"
+                "- Do NOT include historical measurements in the findings of the current document.\n"
+                "- Use history only to evaluate patterns, dynamics, or consistency.\n\n"
+                f"{medical_history}"
+            )
+            user_prompt_parts.append(history_block)
         user_prompt_parts.append("Analyze the document:")
         
         user_prompt = "\n\n".join(user_prompt_parts)

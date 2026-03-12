@@ -455,7 +455,7 @@ class SubscriptionWebhookHandler:
             conn = await get_db_connection()
             try:
                 doc = await conn.fetchrow("""
-                    SELECT file_path, additional_context, file_type 
+                    SELECT file_path, additional_context, file_type, use_medical_history
                     FROM documents 
                     WHERE id = $1 AND user_id = $2
                 """, document_id, user_id)
@@ -466,6 +466,7 @@ class SubscriptionWebhookHandler:
                 
                 file_path = doc['file_path']
                 additional_context = doc['additional_context'] or ''
+                use_medical_history = bool(doc['use_medical_history'] or False)                
                 
                 # Получаем язык пользователя
                 from db_postgresql import get_user_language
@@ -507,7 +508,8 @@ class SubscriptionWebhookHandler:
                     file_path=local_file_path,
                     user_id=user_id,
                     lang=lang,
-                    additional_context=additional_context
+                    additional_context=additional_context,
+                    use_medical_history=use_medical_history
                 )
                                 
             finally:

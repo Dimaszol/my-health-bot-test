@@ -15,7 +15,8 @@ async def process_document(
     file_path: str,
     user_id: int,
     lang: str = "ru",
-    additional_context: Optional[str] = None
+    additional_context: Optional[str] = None,
+    use_medical_history: bool = False 
 ) -> Dict[str, Any]:
     """
     Главный оркестратор обработки медицинского документа
@@ -84,7 +85,12 @@ async def process_document(
         
         if confidence < 0.85:
             document_type = 'generic'
-        
+
+        medical_history = ""
+        if use_medical_history:
+            from medical_timeline import get_objective_history_for_specialist
+            medical_history = await get_objective_history_for_specialist(user_id, document_type)
+                
         # Анализ ассистентом
         assistant_result = await analyze_with_assistant(
             file_path=truncated_file_path,
@@ -115,7 +121,8 @@ async def process_document(
             document_type=document_type,
             lang=lang,
             patient_context=patient_context,
-            assistant_analysis=assistant_analysis
+            assistant_analysis=assistant_analysis,
+            medical_history=medical_history
         )
         
         if not specialist_result.get('success', False):

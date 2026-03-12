@@ -851,6 +851,7 @@ async def upload_document(
     request: Request,
     file: UploadFile = File(...),
     additional_context: str = Form(None),
+    use_medical_history: bool = Form(False),    
     user_id: int = Depends(get_current_user)
 ):
     lang = await get_user_language(user_id)
@@ -922,16 +923,16 @@ async def upload_document(
         try:
             document_id = await conn.fetchval("""
                 INSERT INTO documents 
-                (user_id, file_path, file_type, additional_context, confirmed, pdf_total_pages)
-                VALUES ($1, $2, $3, $4, false, $5)
+                (user_id, file_path, file_type, additional_context, confirmed, pdf_total_pages, use_medical_history)
+                VALUES ($1, $2, $3, $4, false, $5, $6)
                 RETURNING id
-            """, user_id, '', file_type, additional_context, pdf_total_pages)
+            """, user_id, '', file_type, additional_context, pdf_total_pages, use_medical_history)
         finally:
             await release_db_connection(conn)
 
         # Запускаем обработку в фоне
         asyncio.create_task(
-            _process_document_background(document_id, user_id, local_file, temp_dir, filename, lang, additional_context)
+            _process_document_background(document_id, user_id, local_file, temp_dir, filename, lang, additional_context, use_medical_history)
         )
 
         return JSONResponse(content={
@@ -950,7 +951,7 @@ async def upload_document(
         return JSONResponse(status_code=500, content={'success': False, 'error': t('document_processing_error', lang)})
 
 
-async def _process_document_background(document_id: int, user_id: int, local_file: str, temp_dir: str, filename: str, lang: str, additional_context: str):
+async def _process_document_background(document_id: int, user_id: int, local_file: str, temp_dir: str, filename: str, lang: str, additional_context: str, use_medical_history: bool = False ):
     """Фоновая обработка — локальный файл передаётся напрямую как раньше"""
     from document_processor import process_document
     from vector_db_postgresql import split_into_chunks, add_chunks_to_vector_db
@@ -967,7 +968,8 @@ async def _process_document_background(document_id: int, user_id: int, local_fil
             file_path=local_file,
             user_id=user_id,
             lang=lang,
-            additional_context=additional_context
+            additional_context=additional_context,
+            use_medical_history=use_medical_history
         )
 
         if not result.get('success', False):
@@ -1061,6 +1063,7 @@ async def _process_document_background(document_id: int, user_id: int, local_fil
                 document_id=document_id,
                 document_text=result.get('raw_text', ''),
                 document_date=result.get('document_date'),
+                document_type=result.get('document_type'),
                 use_gemini=False
             )
         except Exception as e:
@@ -2234,6 +2237,7 @@ async def create_one_time_document_checkout(
     request: Request,
     file: UploadFile = File(...),
     additional_context: str = Form(""),
+    use_medical_history: bool = Form(False),
     user_id: int = Depends(get_current_user)
 ):
     """
@@ -2319,10 +2323,10 @@ async def create_one_time_document_checkout(
         try:
             document_id = await conn.fetchval("""
                 INSERT INTO documents 
-                (user_id, file_path, file_type, additional_context, confirmed, payment_confirmed, pdf_total_pages)
-                VALUES ($1, $2, $3, $4, false, false, $5)
+                (user_id, file_path, file_type, additional_context, confirmed, payment_confirmed, pdf_total_pages, use_medical_history)
+                VALUES ($1, $2, $3, $4, false, false, $5, $6)
                 RETURNING id
-            """, user_id, permanent_path, file_type, additional_context, pdf_total_pages)
+            """, user_id, permanent_path, file_type, additional_context, pdf_total_pages, use_medical_history)
         finally:
             await release_db_connection(conn)
         
