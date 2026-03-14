@@ -8,6 +8,9 @@ from PIL import Image
 from typing import Tuple, List, Dict
 from db_postgresql import t
 
+GEMINI_TIMELINE_TIMEOUT = 60
+GEMINI_IMAGE_TIMEOUT = 120
+
 class GeminiMedicalAnalyzer:
     """Анализатор медицинских изображений через Gemini API"""
     
@@ -22,30 +25,13 @@ class GeminiMedicalAnalyzer:
         print("✅ Gemini 3 Pro Preview инициализирован")
     
     async def analyze_medical_image(self, image_path: str, lang: str = "ru", custom_prompt: str = None) -> Tuple[str, str]:
-        """
-        Анализирует медицинское изображение
-        
-        Args:
-            image_path: Путь к изображению
-            lang: Язык ответа (ru, uk, en)
-            custom_prompt: Кастомный промпт (если нужен)
-            
-        Returns:
-            Tuple[analysis_text, error_message]
-        """
         try:
-            
-            # Проверяем существование файла
             if not os.path.exists(image_path):
                 return "", t("gemini_file_not_found", lang, path=image_path)
             
-            # Загружаем изображение
             image = Image.open(image_path)
-            
-            # Используем хитрый образовательный промпт
             prompt = custom_prompt or self._get_educational_prompt(lang)
             
-            # Более мягкие настройки безопасности
             safety_settings = {
                 genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
                 genai.types.HarmCategory.HARM_CATEGORY_HATE_SPEECH: genai.types.HarmBlockThreshold.BLOCK_NONE,
@@ -53,41 +39,40 @@ class GeminiMedicalAnalyzer:
                 genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
             }
             
-            # Генерируем ответ асинхронно
-            response = await asyncio.to_thread(
-                self.model.generate_content,
-                [prompt, image],
-                generation_config=genai.types.GenerationConfig(
-                    temperature=1.0,
-                    max_output_tokens=5000,
-                    candidate_count=1
+            response = await asyncio.wait_for(
+                self.model.generate_content_async(
+                    [prompt, image],
+                    generation_config=genai.types.GenerationConfig(
+                        temperature=1.0,
+                        max_output_tokens=5000,
+                        candidate_count=1
+                    ),
+                    safety_settings=safety_settings
                 ),
-                safety_settings=safety_settings
+                timeout=GEMINI_IMAGE_TIMEOUT
             )
             
-            # Умная обработка ответа
             analysis_text = ""
             
-            # Проверяем разные способы получения текста
             if hasattr(response, 'text') and response.text:
                 analysis_text = response.text
             elif hasattr(response, 'candidates') and response.candidates:
                 candidate = response.candidates[0]
                 
-                # Проверяем finish_reason
                 if hasattr(candidate, 'finish_reason'):
                     if candidate.finish_reason == 2:  # SAFETY
-                        # Пробуем с более нейтральным промптом
                         alt_prompt = self._get_alternative_prompt(lang)
-                        response = await asyncio.to_thread(
-                            self.model.generate_content,
-                            [alt_prompt, image],
-                            generation_config=genai.types.GenerationConfig(
-                                temperature=1.0,
-                                max_output_tokens=3000,
-                                candidate_count=1
+                        response = await asyncio.wait_for(
+                            self.model.generate_content_async(
+                                [alt_prompt, image],
+                                generation_config=genai.types.GenerationConfig(
+                                    temperature=1.0,
+                                    max_output_tokens=3000,
+                                    candidate_count=1
+                                ),
+                                safety_settings=safety_settings
                             ),
-                            safety_settings=safety_settings
+                            timeout=GEMINI_IMAGE_TIMEOUT
                         )
                         
                         if hasattr(response, 'text') and response.text:
@@ -98,7 +83,6 @@ class GeminiMedicalAnalyzer:
                     elif candidate.finish_reason == 3:  # RECITATION
                         return "", t("gemini_copyright_violation", lang)
                 
-                # Если finish_reason нормальный, пробуем извлечь текст
                 if not analysis_text and hasattr(candidate, 'content') and candidate.content.parts:
                     try:
                         analysis_text = candidate.content.parts[0].text
@@ -109,10 +93,12 @@ class GeminiMedicalAnalyzer:
                 return "", t("gemini_no_analysis", lang)
             
             return analysis_text, ""
+
+        except asyncio.TimeoutError:
+            return "", t("gemini_temporary_error", lang, error="timeout")
             
         except Exception as e:
             error_msg = f"Ошибка Gemini: {str(e)}"
-            # Специальная обработка известных ошибок
             if "finish_reason" in str(e) and "2" in str(e):
                 return "", t("gemini_safety_policies", lang)
             elif "The `response.text`" in str(e):
@@ -206,23 +192,11 @@ async def send_to_gemini_vision(image_path: str, lang: str = "ru", prompt: str =
         return "", t("gemini_image_analysis_error", lang, error=str(e))
     
 async def extract_medical_timeline_gemini(document_text: str, existing_timeline: List[Dict], lang: str = "ru") -> List[Dict]:
-    """
-    Извлечение медицинских событий через Gemini
-    
-    Args:
-        document_text: Текст медицинского документа
-        existing_timeline: Существующая медкарта (последние 10 записей)
-        lang: Язык ответа (ru, uk, en)
-    
-    Returns:
-        List[Dict]: Список новых/обновленных медицинских событий
-    """
-    
     try:
         import google.generativeai as genai
         import os
-        
-        # Проверяем API ключ
+        import asyncio
+
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             return []
@@ -230,7 +204,6 @@ async def extract_medical_timeline_gemini(document_text: str, existing_timeline:
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-2.5-pro')
         
-        # Форматируем существующую медкарту
         timeline_text = ""
         if existing_timeline:
             timeline_text = "\n".join([
@@ -240,7 +213,6 @@ async def extract_medical_timeline_gemini(document_text: str, existing_timeline:
         else:
             timeline_text = "Медкарта пустая"
         
-        # Определяем язык ответа
         lang_names = {
             'ru': 'Russian',
             'uk': 'Ukrainian',
@@ -286,23 +258,24 @@ IMPORTANT:
 
 Extract and update medical timeline:"""
 
-        # Отправляем запрос к Gemini
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.1,  # Низкая для точности
-                max_output_tokens=1500,
-                candidate_count=1
+        response = await asyncio.wait_for(
+            model.generate_content_async(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.1,
+                    max_output_tokens=1500,
+                    candidate_count=1
+                ),
+                safety_settings=[
+                    {
+                        "category": "HARM_CATEGORY_MEDICAL",
+                        "threshold": "BLOCK_NONE"
+                    }
+                ]
             ),
-            safety_settings=[
-                {
-                    "category": "HARM_CATEGORY_MEDICAL",
-                    "threshold": "BLOCK_NONE"
-                }
-            ]
+            timeout=GEMINI_TIMELINE_TIMEOUT
         )
         
-        # Обрабатываем ответ
         if not response.candidates:
             return []
         
@@ -318,30 +291,27 @@ Extract and update medical timeline:"""
         if not result_text:
             return []
         
-        
-        # Проверяем на "NO_CHANGES"
         if result_text.upper() in ['NO_CHANGES', 'БЕЗ ИЗМЕНЕНИЙ', 'БЕЗ_ИЗМЕНЕНИЙ']:
             return []
         
-        # Пробуем парсить JSON
         try:
-            # Очищаем ответ от лишнего текста (могут быть ``` или объяснения)
             json_start = result_text.find('[')
             json_end = result_text.rfind(']') + 1
             
             if json_start >= 0 and json_end > json_start:
                 json_text = result_text[json_start:json_end]
                 events = json.loads(json_text)
-                
-                if isinstance(events, list):
-                    return events
-                else:
-                    return []
+                return events if isinstance(events, list) else []
             else:
                 return []
                 
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
             return []
+
+    except asyncio.TimeoutError:
+        from error_handler import log_error_with_context
+        log_error_with_context(Exception(f"Gemini timeline timeout after {GEMINI_TIMELINE_TIMEOUT}s"), {"function": "extract_medical_timeline_gemini"})
+        return []
         
     except Exception as e:
         from error_handler import log_error_with_context

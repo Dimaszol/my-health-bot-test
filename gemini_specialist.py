@@ -1,6 +1,7 @@
 import google.generativeai as genai
 import os
 import json
+import asyncio
 from typing import Dict, Any, Optional
 import logging
 
@@ -8,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 # Конфигурация
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+GEMINI_TIMEOUT = 180
 
 # ==========================================
 # ASSISTANT PROMPTS (первичный анализ)
@@ -1219,23 +1222,13 @@ def build_patient_context(profile: Optional[Dict], additional_context: Optional[
     return "\n\n".join(context_parts) if context_parts else ""
 
 async def analyze_with_assistant(
-    file_path: str,
-    document_type: str,
+    file_path: str = None,
+    document_type: str = "generic",
     lang: str = "ru",
-    patient_context: str = ""
+    patient_context: str = "",
+    uploaded_file=None
 ) -> Dict[str, Any]:
-    """
-    Первичный анализ документа ассистентом врача
-    
-    Args:
-        file_path: Путь к файлу документа
-        document_type: Тип документа (ecg, lab_results, и т.д.)
-        lang: Язык ответа
-        patient_context: Контекст пациента (профиль + доп. информация)
-        
-    Returns:
-        Dict с результатом анализа
-    """
+    external_file = uploaded_file is not None
     try:
         system_prompt = ASSISTANT_PROMPTS.get(document_type, GENERIC_ASSISTANT_PROMPT)
         
@@ -1246,22 +1239,18 @@ async def analyze_with_assistant(
             "de": "German"
         }.get(lang, "Russian")
 
-        # ✅ Языковая инструкция добавляется в system_prompt
         system_prompt_with_language = f"IMPORTANT: You MUST respond in {response_language} language. Do NOT discuss or comment on document dates in your analysis.\n\n{system_prompt}"
         
-        # ✅ Формируем user_prompt БЕЗ дублирования system_prompt
         user_prompt_parts = []
-        
         if patient_context:
             user_prompt_parts.append(patient_context)
-        
         user_prompt_parts.append("Analyze the document:")
         user_prompt = "\n\n".join(user_prompt_parts)
         
-        uploaded_file = genai.upload_file(file_path)
-        logger.info(f"File uploaded to Gemini for assistant analysis: {uploaded_file.name}")
-        
-        # ✅ Модель получает промпт ТОЛЬКО через system_instruction
+        if not external_file:
+            uploaded_file = await asyncio.to_thread(genai.upload_file, file_path)
+            logger.info("File uploaded to Gemini for assistant analysis")
+
         model = genai.GenerativeModel(
             model_name="gemini-3-pro-preview",
             system_instruction=system_prompt_with_language
@@ -1274,17 +1263,22 @@ async def analyze_with_assistant(
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
         
-        response = model.generate_content(
-            [uploaded_file, user_prompt],
-            generation_config=genai.GenerationConfig(
-                temperature=1.0,
-                max_output_tokens=8192
+        response = await asyncio.wait_for(
+            model.generate_content_async(
+                [uploaded_file, user_prompt],
+                generation_config=genai.GenerationConfig(
+                    temperature=1.0,
+                    max_output_tokens=8192
+                ),
+                safety_settings=safety_settings
             ),
-            safety_settings=safety_settings
+            timeout=GEMINI_TIMEOUT
         )
         
         analysis_text = response.text
-        genai.delete_file(uploaded_file.name)
+
+        if not external_file:
+            await asyncio.to_thread(genai.delete_file, uploaded_file.name)
         
         logger.info(f"Assistant analysis complete for document_type={document_type}")
         
@@ -1293,9 +1287,27 @@ async def analyze_with_assistant(
             "analysis": analysis_text,
             "assistant_type": document_type
         }
+
+    except asyncio.TimeoutError:
+        logger.warning(f"Gemini assistant timeout after {GEMINI_TIMEOUT}s for document_type={document_type}")
+        if not external_file and uploaded_file:
+            try:
+                await asyncio.to_thread(genai.delete_file, uploaded_file.name)
+            except Exception:
+                pass
+        return {
+            "success": False,
+            "error": "timeout",
+            "assistant_type": document_type
+        }
         
     except Exception as e:
         logger.error(f"Assistant analysis failed: {str(e)}", exc_info=True)
+        if not external_file and uploaded_file:
+            try:
+                await asyncio.to_thread(genai.delete_file, uploaded_file.name)
+            except Exception:
+                pass
         return {
             "success": False,
             "error": str(e),
@@ -1303,31 +1315,18 @@ async def analyze_with_assistant(
         }
 
 async def analyze_with_specialist(
-    file_path: str,
-    document_type: str,
+    file_path: str = None,
+    document_type: str = "generic",
     lang: str = "ru",
     patient_context: str = "",
     assistant_analysis: str = "",
-    medical_history: str = ""
+    medical_history: str = "",
+    uploaded_file=None
 ) -> Dict[str, Any]:
-    """
-    Анализирует документ с помощью специализированного промпта Gemini
-    
-    Args:
-        file_path: Путь к файлу документа
-        document_type: Тип документа (ecg, lab_results, и т.д.)
-        lang: Язык ответа
-        patient_context: Контекст пациента (профиль + доп. информация)
-        assistant_analysis: Результаты анализа ассистента
-        
-    Returns:
-        Dict с результатом анализа
-    """
+    external_file = uploaded_file is not None
     try:
-        # Выбираем нужный промпт
         system_prompt = SPECIALIST_PROMPTS.get(document_type, GENERIC_SPECIALIST_PROMPT)
         
-        # Определяем язык ответа
         response_language = {
             "ru": "Russian",
             "uk": "Ukrainian", 
@@ -1335,16 +1334,15 @@ async def analyze_with_specialist(
             "de": "German"
         }.get(lang, "Russian")
 
-        # ✅ Языковая инструкция добавляется в system_prompt
         system_prompt_with_language = f"IMPORTANT: You MUST respond in {response_language} language. Do NOT discuss or comment on document dates in your analysis.\n\n{system_prompt}"
         
-        # ✅ Формируем user_prompt БЕЗ дублирования system_prompt
         user_prompt_parts = []
         
         if patient_context:
             user_prompt_parts.append(patient_context)
         
         user_prompt_parts.append(f"Assistant's preliminary findings:\n{assistant_analysis}")
+        
         if medical_history:
             history_block = (
                 "PATIENT MEDICAL HISTORY (Context Only)\n"
@@ -1357,21 +1355,19 @@ async def analyze_with_specialist(
                 f"{medical_history}"
             )
             user_prompt_parts.append(history_block)
+        
         user_prompt_parts.append("Analyze the document:")
-        
         user_prompt = "\n\n".join(user_prompt_parts)
-        
-        # Загружаем файл в Gemini Files API
-        uploaded_file = genai.upload_file(file_path)
-        logger.info(f"File uploaded to Gemini for specialist analysis: {uploaded_file.name}")
-        
-        # ✅ Модель получает промпт ТОЛЬКО через system_instruction
+
+        if not external_file:
+            uploaded_file = await asyncio.to_thread(genai.upload_file, file_path)
+            logger.info("File uploaded to Gemini for specialist analysis")
+
         model = genai.GenerativeModel(
             model_name="gemini-3-pro-preview",
             system_instruction=system_prompt_with_language
         )
         
-        # Safety settings
         safety_settings = [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
@@ -1379,20 +1375,22 @@ async def analyze_with_specialist(
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
         
-        response = model.generate_content(
-            [uploaded_file, user_prompt],
-            generation_config=genai.GenerationConfig(
-                temperature=1.0,
-                max_output_tokens=8192
+        response = await asyncio.wait_for(
+            model.generate_content_async(
+                [uploaded_file, user_prompt],
+                generation_config=genai.GenerationConfig(
+                    temperature=1.0,
+                    max_output_tokens=8192
+                ),
+                safety_settings=safety_settings
             ),
-            safety_settings=safety_settings
+            timeout=GEMINI_TIMEOUT
         )
         
-        # Получаем текст ответа
         analysis_text = response.text
-        
-        # Удаляем файл из Gemini после обработки
-        genai.delete_file(uploaded_file.name)
+
+        if not external_file:
+            await asyncio.to_thread(genai.delete_file, uploaded_file.name)
         
         logger.info(f"Specialist analysis complete for document_type={document_type}")
         
@@ -1401,9 +1399,27 @@ async def analyze_with_specialist(
             "analysis": analysis_text,
             "specialist_type": document_type
         }
+
+    except asyncio.TimeoutError:
+        logger.warning(f"Gemini specialist timeout after {GEMINI_TIMEOUT}s for document_type={document_type}")
+        if not external_file and uploaded_file:
+            try:
+                await asyncio.to_thread(genai.delete_file, uploaded_file.name)
+            except Exception:
+                pass
+        return {
+            "success": False,
+            "error": "timeout",
+            "specialist_type": document_type
+        }
         
     except Exception as e:
         logger.error(f"Specialist analysis failed: {str(e)}", exc_info=True)
+        if not external_file and uploaded_file:
+            try:
+                await asyncio.to_thread(genai.delete_file, uploaded_file.name)
+            except Exception:
+                pass
         return {
             "success": False,
             "error": str(e),

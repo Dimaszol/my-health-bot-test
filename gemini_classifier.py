@@ -1,6 +1,7 @@
 import google.generativeai as genai
 import os
 import json
+import asyncio
 from typing import Dict, Any
 import logging
 
@@ -8,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 # Конфигурация
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+GEMINI_CLASSIFIER_TIMEOUT = 60  # секунд — добавь вверху gemini_classifier.py
 
 # JSON Schema для валидации ответа
 CLASSIFICATION_SCHEMA = {
@@ -72,29 +75,18 @@ Extract the document date if visible on the image.
 
 Return ONLY the JSON object."""
 
-
-async def classify_document(file_path: str) -> Dict[str, Any]:
-    """
-    Классифицирует медицинский документ (PDF или изображение)
-    
-    Args:
-        file_path: Путь к файлу
-        
-    Returns:
-        Dict с полями: is_medical, document_type, subtype, confidence
-    """
+async def classify_document(file_path: str = None, uploaded_file=None) -> Dict[str, Any]:
+    external_file = uploaded_file is not None
     try:
-        # Загружаем файл в Gemini Files API
-        uploaded_file = genai.upload_file(file_path)
-        logger.info(f"File uploaded to Gemini: {uploaded_file.name}")
-        
-        # Создаем модель Gemini 2.5 Flash
+        if not external_file:
+            uploaded_file = await asyncio.to_thread(genai.upload_file, file_path)
+            logger.info("File uploaded to Gemini for classification")
+
         model = genai.GenerativeModel(
             model_name="gemini-2.5-flash",
             system_instruction=CLASSIFIER_SYSTEM_PROMPT
         )
         
-        # Safety settings
         safety_settings = [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
@@ -102,67 +94,66 @@ async def classify_document(file_path: str) -> Dict[str, Any]:
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
         
-        # Отправляем запрос
-        response = model.generate_content(
-            [uploaded_file, "Classify this document. Return ONLY valid JSON."],
-            generation_config=genai.GenerationConfig(
-                temperature=0.1,
-                response_mime_type="application/json",
-                response_schema=CLASSIFICATION_SCHEMA
+        response = await asyncio.wait_for(
+            model.generate_content_async(
+                [uploaded_file, "Classify this document. Return ONLY valid JSON."],
+                generation_config=genai.GenerationConfig(
+                    temperature=0.1,
+                    response_mime_type="application/json",
+                    response_schema=CLASSIFICATION_SCHEMA
+                ),
+                safety_settings=safety_settings
             ),
-            safety_settings=safety_settings
+            timeout=GEMINI_CLASSIFIER_TIMEOUT
         )
         
-        # Безопасный парсинг JSON (убираем Markdown если есть)
         raw_text = response.text
-        logger.info(f"Gemini response text: '{raw_text[:200]}'")
 
-        # Проверяем что ответ не пустой
         if not raw_text or raw_text.strip() == "":
-            logger.error("Gemini returned empty response!")
-            return {
-                "is_medical": True,
-                "document_type": "generic",
-                "subtype": None,
-                "confidence": 0.5,
-                "document_date": None
-            }
+            logger.warning("Gemini classifier returned empty response")
+            return _default_classification()
 
-        # Извлекаем JSON из текста (даже если есть "Here is the JSON" и т.д.)
         import re
         json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
-        if json_match:
-            clean_json = json_match.group(0)
-        else:
-            clean_json = raw_text
+        clean_json = json_match.group(0) if json_match else raw_text
 
-        # Парсим JSON
         try:
             result = json.loads(clean_json)
-        except json.JSONDecodeError as je:
-            logger.error(f"Failed to parse JSON: {clean_json}")
-            return {
-                "is_medical": True,
-                "document_type": "generic",
-                "subtype": None,
-                "confidence": 0.5,
-                "document_date": None
-            }
+        except json.JSONDecodeError:
+            logger.warning("Gemini classifier JSON parse failed")
+            return _default_classification()
         
-        # Удаляем файл из Gemini после обработки
-        genai.delete_file(uploaded_file.name)
+        if not external_file:
+            await asyncio.to_thread(genai.delete_file, uploaded_file.name)
         
         logger.info(f"Classification complete: type={result.get('document_type')}, confidence={result.get('confidence')}")
         
         return result
+
+    except asyncio.TimeoutError:
+        logger.warning(f"Gemini classifier timeout after {GEMINI_CLASSIFIER_TIMEOUT}s")
+        if not external_file and uploaded_file:
+            try:
+                await asyncio.to_thread(genai.delete_file, uploaded_file.name)
+            except Exception:
+                pass
+        return _default_classification()
         
     except Exception as e:
         logger.error(f"Classification failed: {str(e)}", exc_info=True)
-        # Возвращаем дефолтное значение при ошибке
-        return {
-            "is_medical": True,
-            "document_type": "generic",
-            "subtype": None,
-            "confidence": 0.5,
-            "document_date": None
-        }
+        if not external_file and uploaded_file:
+            try:
+                await asyncio.to_thread(genai.delete_file, uploaded_file.name)
+            except Exception:
+                pass
+        return _default_classification()
+
+
+def _default_classification() -> Dict[str, Any]:
+    return {
+        "is_medical": True,
+        "document_type": "generic",
+        "subtype": None,
+        "confidence": 0.5,
+        "document_date": None
+    }
