@@ -225,31 +225,6 @@ async def handle_document_upload(message: types.Message, bot):
                 "user_id": user_id, 
                 "document_id": document_id
             })
-        
-        # 🆕 ГЕНЕРАЦИЯ ПЕРВОГО СООБЩЕНИЯ В DOCUMENT-CHAT
-        try:
-            from document_questions import generate_and_save_first_message
-            from medical_timeline import get_document_importance
-            
-            # Получаем importance из medical_timeline
-            importance = await get_document_importance(document_id, user_id)
-            
-            # Генерируем и сохраняем первое сообщение
-            await generate_and_save_first_message(
-                document_id=document_id,
-                user_id=user_id,
-                full_analysis=vision_text,
-                importance=importance,
-                lang=lang
-            )
-                    
-        except Exception as e:
-            # Не прерываем процесс если сообщение не сгенерировалось
-            from error_handler import log_error_with_context
-            log_error_with_context(e, {
-                "action": "generate_first_document_message",
-                "document_id": document_id
-            })
 
         # ✅ ЗАПИСЫВАЕМ ЛИМИТ ТОЛЬКО ПОСЛЕ ПОЛНОЙ УСПЕШНОЙ ОБРАБОТКИ
         await record_user_action(user_id, "document")

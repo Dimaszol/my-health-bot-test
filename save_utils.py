@@ -216,19 +216,34 @@ async def maybe_update_summary(user_id):
     prompt = (
         f"📅 TODAY: {today}\n"
         f"🗓️ DELETE RULE: Remove entries older than 7 days (before {cutoff_date})\n\n"
-        f"Update medical summary following these rules:\n"
-        f"1. If topic mentioned in new messages → update date to {today}\n"
-        f"2. If topic NOT mentioned → keep original date\n"
-        f"3. ⚠️ MANDATORY: Delete ALL entries with dates before {cutoff_date}\n"
-        f"4. Group similar topics (max 8 entries total)\n"
-        f"5. Format: [DD.MM.YYYY] - [brief description]\n\n"
-        f"EXAMPLE of what to DELETE:\n"
-        f"❌ [{cutoff_date}] - Old symptom (exactly 7 days - DELETE!)\n"
-        f"✅ [02.07.2025] - Recent symptom (keep)\n\n"
+
+        f"Update the conversation summary using these rules:\n"
+        f"1. If a topic appears in the new messages → update its date to {today}\n"
+        f"2. If a topic is NOT mentioned → keep its original date\n"
+        f"3. ⚠️ MANDATORY: Delete ALL entries dated before {cutoff_date}\n"
+        f"4. Group similar topics together (maximum 8 entries total)\n"
+        f"5. Use this format for each entry:\n"
+        f"[DD.MM.YYYY] [TYPE] short description\n\n"
+
+        f"TYPE must be one of:\n"
+        f"SYM – symptom or physical sensation\n"
+        f"VITAL – measurements (blood pressure, pulse, etc.)\n"
+        f"MED – medications or treatments\n"
+        f"PROC – medical procedures\n"
+        f"QUESTION – user questions or concerns\n"
+        f"INFO – other relevant context\n\n"
+
+        f"Descriptions must be short (5–12 words) and describe the topic discussed.\n\n"
+
+        f"EXAMPLE of deletion:\n"
+        f"❌ [{cutoff_date}] [SYM] Old symptom (exactly 7 days – DELETE!)\n"
+        f"✅ [02.07.2025] [SYM] Recent symptom (keep)\n\n"
+
         f"Previous summary:\n{old_summary}\n\n"
         f"New messages:\n{dialogue}\n\n"
-        f"⚠️ FINAL CHECK: Delete entries from {cutoff_date} and earlier!\n"
-        f"Respond in {lang_names.get(user_lang, 'Russian')} language:"
+
+        f"⚠️ FINAL CHECK: Delete entries from {cutoff_date} and earlier.\n"
+        f"Respond in {lang_names.get(user_lang, 'Russian')} language."
     )
 
     # ⚠️ Ограничиваем объём промта по символам (~токены)
@@ -241,12 +256,21 @@ async def maybe_update_summary(user_id):
                 model="gpt-4o-mini",
                 messages=[
                     {
-                        "role": "system", 
+                        "role": "system",
                         "content": (
-                            f"You are a medical summarizer. TODAY is {today}. "
-                            f"CRITICAL RULE: Delete ALL entries dated {cutoff_date} or earlier. "
-                            f"Only keep entries from last 7 days. Calculate: if date is before {cutoff_date} → DELETE. "
-                            f"Use format [DD.MM.YYYY] - [description]. "
+                            f"You are a medical conversation summarizer.\n"
+                            f"TODAY is {today}.\n\n"
+
+                            f"Your task is to maintain a rolling summary of topics discussed "
+                            f"in the last 7 days.\n\n"
+
+                            f"CRITICAL RULE:\n"
+                            f"Delete ALL entries dated {cutoff_date} or earlier.\n"
+                            f"Only keep entries from the last 7 days.\n\n"
+
+                            f"Output format for each entry:\n"
+                            f"[DD.MM.YYYY] [TYPE] short description\n\n"
+
                             f"Always respond ONLY in {lang_names.get(user_lang, 'Russian')} language, "
                             f"regardless of the input language."
                         )
@@ -319,6 +343,143 @@ async def maybe_update_summary(user_id):
             pass
         
         return True  # ← ВАЖНО: возвращаем True чтобы считалось что обработка завершена
+    
+async def maybe_update_summary_from_document(user_id: int, document_id: int):
+    """
+    Обновляет общую сводку на основе чата по документу.
+    Срабатывает когда в чате документа накопилось >= 4 вопросов пользователя.
+    """
+    from datetime import datetime, timedelta
+    from db_postgresql import get_db_connection, release_db_connection
+
+    def create_cutoff_date() -> str:
+        cutoff = datetime.now() - timedelta(days=7)
+        return cutoff.strftime("%d.%m.%Y")
+
+    # Получаем язык пользователя
+    try:
+        user_lang = await get_user_language(user_id)
+        if user_lang not in ['ru', 'uk', 'en', 'de']:
+            user_lang = 'en'
+    except Exception:
+        user_lang = 'en'
+
+    # Получаем текущую сводку
+    old_summary, last_id = await get_conversation_summary(user_id)
+    if not old_summary:
+        old_summary = ""
+
+    # Получаем все сообщения из чата по этому документу
+    conn = await get_db_connection()
+    try:
+        rows = await conn.fetch(
+            """SELECT dch.role, dch.message, d.title as doc_title
+               FROM document_chat_history dch
+               JOIN documents d ON d.id = dch.document_id
+               WHERE dch.document_id = $1 AND dch.user_id = $2
+               ORDER BY dch.id ASC""",
+            document_id, user_id
+        )
+        messages = [dict(r) for r in rows]
+    except Exception:
+        return False
+    finally:
+        await release_db_connection(conn)
+
+    # Проверяем порог
+    user_messages = [m for m in messages if m['role'] == 'user']
+    if len(user_messages) < 4:
+        return False
+
+    # Добавляем название документа к каждому сообщению для контекста
+    doc_title = messages[0].get('doc_title', 'документ') if messages else 'документ'
+    for m in messages:
+        m['message'] = f"[{doc_title}] {m['message']}"
+
+    dialogue = format_dialogue(messages)
+    today = datetime.now().strftime("%d.%m.%Y")
+    cutoff_date = create_cutoff_date()
+
+    lang_names = {
+        'ru': 'Russian',
+        'uk': 'Ukrainian',
+        'en': 'English',
+        'de': 'German'
+    }
+
+    prompt = (
+        f"📅 TODAY: {today}\n"
+        f"🗓️ DELETE RULE: Remove entries older than 7 days (before {cutoff_date})\n\n"
+        f"Update the conversation summary using these rules:\n"
+        f"1. If a topic appears in the new messages → update its date to {today}\n"
+        f"2. If a topic is NOT mentioned → keep its original date\n"
+        f"3. ⚠️ MANDATORY: Delete ALL entries dated before {cutoff_date}\n"
+        f"4. Group similar topics together (maximum 8 entries total)\n"
+        f"5. Use this format for each entry:\n"
+        f"[DD.MM.YYYY] [TYPE] short description\n\n"
+        f"TYPE must be one of:\n"
+        f"SYM – symptom or physical sensation\n"
+        f"VITAL – measurements (blood pressure, pulse, etc.)\n"
+        f"MED – medications or treatments\n"
+        f"PROC – medical procedures\n"
+        f"QUESTION – user questions or concerns\n"
+        f"INFO – other relevant context\n\n"
+        f"Descriptions must be short (5–12 words) and describe the topic discussed.\n\n"
+        f"EXAMPLE of deletion:\n"
+        f"❌ [{cutoff_date}] [SYM] Old symptom (exactly 7 days – DELETE!)\n"
+        f"✅ [02.07.2025] [SYM] Recent symptom (keep)\n\n"
+        f"Previous summary:\n{old_summary}\n\n"
+        f"New messages from document chat:\n{dialogue}\n\n"
+        f"⚠️ FINAL CHECK: Delete entries from {cutoff_date} and earlier.\n"
+        f"Respond in {lang_names.get(user_lang, 'Russian')} language."
+    )
+
+    if len(prompt) > 5000:
+        prompt = prompt[:5000]
+
+    try:
+        async with OPENAI_SEMAPHORE:
+            response = await client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            f"You are a medical conversation summarizer.\n"
+                            f"TODAY is {today}.\n\n"
+                            f"CRITICAL RULE:\n"
+                            f"Delete ALL entries dated {cutoff_date} or earlier.\n"
+                            f"Only keep entries from the last 7 days.\n\n"
+                            f"Output format for each entry:\n"
+                            f"[DD.MM.YYYY] [TYPE] short description\n\n"
+                            f"Always respond ONLY in {lang_names.get(user_lang, 'Russian')} language."
+                        )
+                    },
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=400,
+                temperature=0.2
+            )
+
+            response_content = response.choices[0].message.content
+            if not response_content:
+                return False
+
+            new_summary = response_content.strip()
+            if not new_summary:
+                return False
+
+    except Exception:
+        return False
+
+    # Сохраняем если сводка изменилась
+    if (new_summary and old_summary and str(new_summary).strip() != str(old_summary).strip()) or \
+       (new_summary and not old_summary):
+        last_message_id = await get_last_message_id(user_id)
+        await save_conversation_summary(user_id, new_summary, last_message_id)
+        return True
+
+    return False
 
 async def format_user_profile(user_id: int) -> str:
     """

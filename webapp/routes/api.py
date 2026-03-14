@@ -456,11 +456,15 @@ async def document_chat_message(
                 content={'success': False, 'error': 'Документ не найден'}
             )
         
+        from db_postgresql import get_conversation_summary
+        summary_text, _ = await get_conversation_summary(user_id)
+
         # Генерируем ответ
         ai_response = await generate_document_chat_response(
             context_data=context_data,
             user_message=user_message,
-            lang=lang
+            lang=lang,
+            conversation_summary=summary_text
         )
         
         # Сохраняем ответ
@@ -473,6 +477,12 @@ async def document_chat_message(
             )
         finally:
             await release_db_connection(conn)
+
+        try:
+            from save_utils import maybe_update_summary_from_document
+            await maybe_update_summary_from_document(user_id, document_id)
+        except Exception:
+            pass
         
         # Списываем лимит
         from subscription_manager import SubscriptionManager

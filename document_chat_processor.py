@@ -131,7 +131,8 @@ def build_document_input(document_base64: str, file_type: str) -> dict:
 async def generate_document_chat_response(
     context_data: Dict,
     user_message: str,
-    lang: str = "ru"
+    lang: str = "ru",
+    conversation_summary: str = ""
 ) -> str:
     """
     Генерирует ответ AI для чата по документу
@@ -198,6 +199,13 @@ async def generate_document_chat_response(
     PREVIOUS AI ANALYSIS (for context only):
     {context_data['full_analysis']}
     """
+
+    summary_block = ""
+    if conversation_summary:
+        summary_block = f"""PATIENT HISTORY FROM RECENT CONVERSATIONS (last 7 days):
+    {conversation_summary}
+
+    """
     
     # Формируем контекст из истории
     history_context = ""
@@ -218,7 +226,8 @@ async def generate_document_chat_response(
     # )
     
    # Формируем user_prompt с контекстом
-    user_prompt = f"""{history_context}
+    user_prompt = f"""{summary_block}
+{history_context}
 
 Patient's question: {user_message}"""
 
