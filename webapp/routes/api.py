@@ -1106,6 +1106,63 @@ async def _process_document_background(document_id: int, user_id: int, local_fil
             )
         finally:
             await release_db_connection(conn)
+        
+        # 📧 Email триггер первого документа
+        try:
+            from webapp.email_templates import get_email_content
+            from webapp.email_service import send_email
+
+            conn_eq = await get_db_connection()
+            try:
+                doc_count = await conn_eq.fetchval(
+                    "SELECT COUNT(*) FROM documents WHERE user_id = $1 AND confirmed = true",
+                    user_id
+                )
+                if doc_count == 1:  # Именно первый документ
+                    # Отменяем reminders
+                    await conn_eq.execute("""
+                        UPDATE email_queue
+                        SET status = 'cancelled'
+                        WHERE user_id = $1
+                        AND email_type IN ('reminder_24h', 'reminder_4d')
+                        AND status = 'pending'
+                    """, user_id)
+
+                    # Получаем email и язык пользователя
+                    user_row = await conn_eq.fetchrow(
+                        "SELECT email, language FROM users WHERE user_id = $1", user_id
+                    )
+                    # Получаем название документа
+                    doc_title = await conn_eq.fetchval(
+                        "SELECT title FROM documents WHERE id = $1", document_id
+                    )
+
+                    if user_row and user_row['email']:
+                        first_message = await conn_eq.fetchval("""
+                            SELECT message FROM document_chat_history
+                            WHERE document_id = $1 AND role = 'assistant'
+                            ORDER BY id ASC LIMIT 1
+                        """, document_id)
+
+                        content = get_email_content(
+                            'first_document_uploaded',
+                            user_row['language'] or 'en',
+                            document_id=document_id,
+                            first_message=first_message,
+                            doc_title=doc_title
+                        )
+                        if content:
+                            ok = await send_email(user_row['email'], content['subject'], content['html'])
+                            # Пишем в историю
+                            await conn_eq.execute("""
+                                INSERT INTO email_queue (user_id, email_type, send_after, status)
+                                VALUES ($1, 'first_document_uploaded', now(), $2)
+                            """, user_id, 'sent' if ok else 'pending')
+
+            finally:
+                await release_db_connection(conn_eq)
+        except Exception as e:
+            safe_log_warning("Ошибка email триггера первого документа", error=e)
 
     except Exception as e:
         safe_log_error("Критическая ошибка фоновой обработки документа", error=e, document_id=document_id)

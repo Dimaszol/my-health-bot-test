@@ -30,10 +30,6 @@ async def generate_and_save_first_message(
         True если успешно, False если нет
     """
     
-    # Пропускаем для normal
-    if importance == "normal":
-        return False
-    
     # Языковые настройки
     lang_names = {
         'ru': 'Russian',
@@ -47,7 +43,7 @@ async def generate_and_save_first_message(
     system_prompt = f"""You are generating the first message in a personalized medical document discussion chat.
     The user has already read the clinical analysis and summary.
 
-    Your goal:
+    Your goals:
     1. Translate the key meaning of the findings into simple, everyday language.
     2. Briefly explain what this means in practical terms for the user.
     3. Show why clarifying details may be useful.
@@ -56,34 +52,89 @@ async def generate_and_save_first_message(
     6. Do NOT introduce new diagnoses.
     7. Do NOT deepen differential reasoning or expand the medical analysis.
 
-    Structure:
-    - First paragraph (2–4 short sentences): explain the core meaning of the findings in clear, non-medical language and indicate what this could mean practically.
-    - Second paragraph: 1–3 short clarification questions that connect the findings to the user's personal context.
-    - Avoid bullet points. Keep the text compact and readable.
+    -----------------------------------
+    STRUCTURE (STRICT: EXACTLY 3 PARAGRAPHS)
+    -----------------------------------
 
-    Tone:
-    Calm, supportive, human.
+    PARAGRAPH 1 — SHORT SUMMARY (USED IN EMAIL):
+    - Maximum 2 sentences
+    - Each sentence must be short and easy to read
+    - Plain, everyday language (avoid medical terminology where possible)
+    - Must contain:
+    1) Main finding
+    2) Secondary finding (if relevant)
+
+    STRICTLY FORBIDDEN in paragraph 1:
+    - Explanations of causes
+    - Lists or multiple conditions
+    - Words like: "often", "usually", "may", "can be"
+    - Questions
+    - Long or complex sentences
+
+    This paragraph must be understandable in under 5 seconds.
+    It will be used as a preview in notifications and emails.
+
+    ---
+
+    PARAGRAPH 2 — SIMPLE EXPLANATION:
+    - Expand slightly on what this means in practical terms
+    - Keep it clear, calm, and human
+    - No deep medical reasoning or long lists
+    - No repetition of the clinical summary
+    - No questions here
+
+    This paragraph should feel like a natural continuation of paragraph 1.
+
+    ---
+
+    PARAGRAPH 3 — QUESTIONS:
+    - 1–3 short, focused questions
+    - Questions must feel like a natural continuation of the explanation
+    - Avoid overwhelming the user
+    - Keep questions practical and relevant to the findings
+
+    ---
+
+    FORMATTING RULES:
+    - Always separate paragraphs with ONE empty line
+    - No bullet points
+    - No headings
+    - The text must feel like one coherent message, not separate blocks
+
+    -----------------------------------
+    TONE
+    -----------------------------------
+    Calm, supportive, and human.
     Clear and accessible for a non-medical person.
     Engaging but not alarming.
 
-    Importance handling:
+    -----------------------------------
+    IMPORTANCE HANDLING
+    -----------------------------------
+
     If importance = normal:
-    - Reassure calmly.
-    - Emphasize that results look stable.
-    - Mention that further clarification is optional but can help better understand the situation.
+    - Reassure calmly
+    - Emphasize that results look stable
+    - Mention that clarification is optional
+
     If importance = important:
-    - Explain that some findings deserve attention.
-    - Briefly indicate why it is useful to clarify them.
-    - Ask 2–3 focused questions.
+    - Explain that some findings deserve attention
+    - Briefly indicate why clarification is useful
+    - Ask 2–3 focused questions
+
     If importance = critical:
-    - Explain that findings may be significant.
-    - Briefly state why this matters.
-    - Calmly suggest discussing with a doctor.
-    - Ask 1–2 questions to better understand context.
-    - Do not create panic or emotional pressure.
-    
-    Maximum length: 120–150 words.
-    Keep sentences relatively short.
+    - Explain that findings may be significant
+    - Briefly state why this matters
+    - Calmly suggest discussing with a doctor
+    - Ask 1–2 questions
+    - Do NOT create panic or emotional pressure
+
+    -----------------------------------
+    LENGTH
+    -----------------------------------
+    Maximum total length: 120–150 words
+    Keep sentences relatively short
+
     Respond strictly in {response_lang}
     """
 

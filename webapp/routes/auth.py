@@ -286,6 +286,41 @@ async def google_callback(request: Request, background_tasks: BackgroundTasks):
                     # 🎯 ФЛАГ ДЛЯ GOOGLE ADS: это новая регистрация
                     request.session['just_registered'] = True
 
+                   # 📧 Email рассылка
+                    try:
+                        from webapp.utils.logger import safe_log_warning
+                        from webapp.email_templates import get_email_content
+                        from webapp.email_service import send_email
+                        
+                        conn_email = await get_db_connection()
+                        try:
+                            # Создаём только reminder задачи (welcome отправляем сразу)
+                            await conn_email.execute("""
+                                INSERT INTO email_queue (user_id, email_type, send_after)
+                                VALUES
+                                ($1, 'reminder_24h', now() + interval '24 hours'),
+                                ($1, 'reminder_4d',  now() + interval '4 days')
+                            """, new_user['user_id'])
+                        finally:
+                            await release_db_connection(conn_email)
+
+                        # Отправляем welcome сразу
+                        content = get_email_content('welcome', current_session_lang)
+                        if content:
+                            ok = await send_email(email, content['subject'], content['html'])
+                            if ok:
+                                conn_email2 = await get_db_connection()
+                                try:
+                                    await conn_email2.execute("""
+                                        INSERT INTO email_queue (user_id, email_type, send_after, status)
+                                        VALUES ($1, 'welcome', now(), 'sent')
+                                    """, new_user['user_id'])
+                                finally:
+                                    await release_db_connection(conn_email2)
+
+                    except Exception as e:
+                        safe_log_warning("Не удалось отправить welcome письмо", error=e)
+
                     # 🔔 БЕЗОПАСНОЕ уведомление админу о регистрации
                     try:
                         from webapp.utils.telegram_notifications import notify_new_registration

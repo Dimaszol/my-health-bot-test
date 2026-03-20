@@ -102,6 +102,9 @@ async def lifespan(app: FastAPI):
     print("="*50 + "\n")
     
     # ✅ yield = приложение работает здесь
+    from webapp.email_scheduler import start_email_scheduler
+    start_email_scheduler()
+    print("✅ Email scheduler запущен")
     yield
     
     # ==========================================
@@ -128,7 +131,14 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print("Ошибка при закрытии БД")
 
-# 🏗️ СОЗДАЁМ FASTAPI ПРИЛОЖЕНИЕ
+    try:
+        from webapp.email_scheduler import stop_email_scheduler
+        stop_email_scheduler()
+        print("✅ Email scheduler остановлен")
+    except Exception as e:
+        print("Ошибка при остановке email scheduler")
+
+# 🏗️ СОЗДАЁМ FASTAPI ПРИЛОЖЕНИЕ 
 app = FastAPI(
     title="Медицинский Бот - Веб Версия",
     description="Асинхронный веб-интерфейс для медицинского бота",

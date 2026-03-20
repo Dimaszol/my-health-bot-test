@@ -441,6 +441,18 @@ async def create_tables():
             expires_at TIMESTAMP NOT NULL,
             is_used BOOLEAN DEFAULT FALSE
         );
+
+        -- ================================
+        -- 📧 ОЧЕРЕДЬ EMAIL РАССЫЛОК
+        -- ================================
+        CREATE TABLE IF NOT EXISTS email_queue (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            email_type TEXT NOT NULL CHECK (email_type IN ('welcome', 'reminder_24h', 'reminder_4d', 'first_document_uploaded')),
+            send_after TIMESTAMP NOT NULL,
+            status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'cancelled')),
+            created_at TIMESTAMP DEFAULT now()
+        );
     """
 
     # ================================
@@ -505,6 +517,8 @@ async def create_tables():
         CREATE INDEX IF NOT EXISTS idx_account_links_telegram ON account_links(telegram_user_id);
         CREATE INDEX IF NOT EXISTS idx_account_links_web ON account_links(web_user_id);
         CREATE INDEX IF NOT EXISTS idx_account_links_active ON account_links(link_code) WHERE is_used = FALSE;
+        CREATE INDEX IF NOT EXISTS idx_email_queue_status_send_after ON email_queue(status, send_after) WHERE status = 'pending';
+        CREATE INDEX IF NOT EXISTS idx_email_queue_user_id ON email_queue(user_id);
     """
 
     # ================================
