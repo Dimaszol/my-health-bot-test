@@ -77,7 +77,7 @@ class RateLimiter:
             from db_postgresql import fetch_one
             
             result = await fetch_one("""
-                SELECT created_at FROM users WHERE user_id = ?
+                SELECT created_at FROM users WHERE user_id = %s
             """, (user_id,))
             
             if not result:

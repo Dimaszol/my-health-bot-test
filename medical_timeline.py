@@ -768,41 +768,6 @@ async def format_medical_timeline_for_user(user_id: int, lang: str, limit: int =
     
     return "\n".join(lines)
 
-async def cleanup_old_timeline_entries(user_id: int, max_entries: int = 20) -> bool:
-    """Удаляет старые записи медкарты, оставляя только последние max_entries"""
-    
-    conn = await get_db_connection()
-    try:
-        # Подсчитываем общее количество записей
-        count_query = "SELECT COUNT(*) FROM medical_timeline WHERE user_id = $1"
-        total_count = await conn.fetchval(count_query, user_id)
-        
-        if total_count <= max_entries:
-            return True  # Чистка не нужна
-        
-        # Удаляем старые записи, оставляя только последние max_entries
-        cleanup_query = """
-        DELETE FROM medical_timeline 
-        WHERE user_id = $1 
-        AND id NOT IN (
-            SELECT id FROM medical_timeline 
-            WHERE user_id = $1 
-            ORDER BY event_date DESC, created_at DESC 
-            LIMIT $2
-        )
-        """
-        
-        result = await conn.execute(cleanup_query, user_id, max_entries)
-        deleted_count = total_count - max_entries
-        
-        return True
-        
-    except Exception as e:
-        log_error_with_context(e, {"function": "cleanup_old_timeline_entries", "user_id": user_id})
-        return False
-    finally:
-        await release_db_connection(conn)
-
 async def get_objective_history_for_specialist(user_id: int, document_type: str, limit: int = 7) -> str:
     """Получить историю objective_data по типу документа для специалиста"""
     conn = await get_db_connection()

@@ -1325,7 +1325,7 @@ async def analyze_with_specialist(
 ) -> Dict[str, Any]:
     external_file = uploaded_file is not None
     try:
-        system_prompt = SPECIALIST_PROMPTS.get(document_type, GENERIC_SPECIALIST_PROMPT)
+        system_prompt_base = SPECIALIST_PROMPTS.get(document_type, GENERIC_SPECIALIST_PROMPT)
         
         response_language = {
             "ru": "Russian",
@@ -1334,29 +1334,62 @@ async def analyze_with_specialist(
             "de": "German"
         }.get(lang, "Russian")
 
-        system_prompt_with_language = f"IMPORTANT: You MUST respond in {response_language} language. Do NOT discuss or comment on document dates in your analysis.\n\n{system_prompt}"
-        
+        has_history = bool(medical_history and medical_history.strip())
+
+        system_prompt = f"""IMPORTANT: You MUST respond in {response_language} language.
+Do NOT discuss or comment on document dates.
+
+SOURCE PRIORITY:
+1. Current document → source of current findings
+2. Medical history → contextual past data (if provided)
+3. Assistant analysis → preliminary hypothesis to validate
+
+CORE RULES:
+- Do not treat assistant analysis as ground truth.
+- Do not introduce data not present in document or history.
+- Do not mix sources without explicitly distinguishing them.
+"""
+
+        if has_history:
+            system_prompt += """
+MEDICAL HISTORY RULES (ACTIVE):
+- Medical history contains factual past measurements.
+- It SHOULD be used when clinically relevant.
+- It MUST NOT be presented as current findings.
+- If a relevant parameter is missing in the current document but exists in history,
+  it SHOULD be mentioned as contextual information.
+"""
+        else:
+            system_prompt += """
+NO PRIOR DATA:
+- No medical history is available.
+- Interpretation must be based only on the current document.
+"""
+
+        system_prompt += "\n\n" + system_prompt_base
+
         user_prompt_parts = []
-        
+
         if patient_context:
-            user_prompt_parts.append(patient_context)
-        
-        user_prompt_parts.append(f"Assistant's preliminary findings:\n{assistant_analysis}")
-        
-        if medical_history:
+            user_prompt_parts.append(f"PATIENT CONTEXT:\n{patient_context}")
+
+        if assistant_analysis:
+            user_prompt_parts.append(
+                f"PRELIMINARY ANALYSIS (requires validation):\n{assistant_analysis}"
+            )
+
+        if has_history:
             history_block = (
-                "PATIENT MEDICAL HISTORY (Context Only)\n"
-                "Format: [date | subtype] objective measurements\n"
-                "The following historical entries are provided ONLY for contextual interpretation.\n"
-                "Rules:\n"
-                "- Do NOT repeat historical values as current findings.\n"
-                "- Do NOT include historical measurements in the findings of the current document.\n"
-                "- Use history only to evaluate patterns, dynamics, or consistency.\n\n"
+                "PATIENT MEDICAL HISTORY (FACTUAL DATA)\n"
+                "Format: [date | subtype] objective measurements\n\n"
+                "This data is extracted from previous documents.\n"
+                "Use it as contextual information when relevant.\n"
+                "Always distinguish it from current findings.\n\n"
                 f"{medical_history}"
             )
             user_prompt_parts.append(history_block)
-        
-        user_prompt_parts.append("Analyze the document:")
+
+        user_prompt_parts.append("Perform expert analysis of the uploaded document.")
         user_prompt = "\n\n".join(user_prompt_parts)
 
         if not external_file:
@@ -1365,16 +1398,16 @@ async def analyze_with_specialist(
 
         model = genai.GenerativeModel(
             model_name="gemini-3-pro-preview",
-            system_instruction=system_prompt_with_language
+            system_instruction=system_prompt
         )
-        
+
         safety_settings = [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
-        
+
         response = await asyncio.wait_for(
             model.generate_content_async(
                 [uploaded_file, user_prompt],
@@ -1386,14 +1419,14 @@ async def analyze_with_specialist(
             ),
             timeout=GEMINI_TIMEOUT
         )
-        
+
         analysis_text = response.text
 
         if not external_file:
             await asyncio.to_thread(genai.delete_file, uploaded_file.name)
-        
+
         logger.info(f"Specialist analysis complete for document_type={document_type}")
-        
+
         return {
             "success": True,
             "analysis": analysis_text,
@@ -1412,7 +1445,7 @@ async def analyze_with_specialist(
             "error": "timeout",
             "specialist_type": document_type
         }
-        
+
     except Exception as e:
         logger.error(f"Specialist analysis failed: {str(e)}", exc_info=True)
         if not external_file and uploaded_file:
