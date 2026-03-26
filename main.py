@@ -40,7 +40,7 @@ from analytics_system import Analytics
 from faq_handler import handle_faq_main, handle_faq_section
 from promo_manager import PromoManager, check_promo_on_message
 from safe_message_answer import send_error_message, send_response_message
-from medication_notifications import initialize_medication_notifications, shutdown_medication_notifications
+#from medication_notifications import initialize_medication_notifications, shutdown_medication_notifications
 from medication_ui_handlers import handle_medication_callbacks, show_medications_schedule_updated
 #from garmin_scheduler import initialize_garmin_scheduler, shutdown_garmin_scheduler
 #from garmin_ui_handlers import GARMIN_CALLBACK_HANDLERS, GarminStates
@@ -2002,14 +2002,14 @@ async def main():
             raise
 
         # 💊 5. ИНИЦИАЛИЗАЦИЯ СИСТЕМЫ УВЕДОМЛЕНИЙ О ЛЕКАРСТВАХ
-        print("💊 Инициализация системы уведомлений о лекарствах...")
-        try:
-            await initialize_medication_notifications(bot)
-            print("✅ Система уведомлений о лекарствах запущена")
-        except Exception as e:
-            print("Ошибка системы уведомлений")
+        #print("💊 Инициализация системы уведомлений о лекарствах...")
+        #try:
+        #    await initialize_medication_notifications(bot)
+        #    print("✅ Система уведомлений о лекарствах запущена")
+        #except Exception as e:
+        #    print("Ошибка системы уведомлений")
             # НЕ поднимаем исключение - бот может работать без уведомлений
-            print("⚠️ Бот продолжит работу без уведомлений о лекарствах")
+        #    print("⚠️ Бот продолжит работу без уведомлений о лекарствах")
 
         # 🏃 6. ИНИЦИАЛИЗАЦИЯ GARMIN ПЛАНИРОВЩИКА
         #print("🏃 Инициализация Garmin планировщика...")
@@ -2088,12 +2088,12 @@ async def main():
     finally:
         # 🧹 ОЧИСТКА РЕСУРСОВ
         print("🧹 Закрытие соединений...")
-        try:
+        #try:
             # 💊 Остановка системы уведомлений
-            await shutdown_medication_notifications()
-            print("✅ Система уведомлений остановлена")
-        except Exception as e:
-            print("Ошибка остановки уведомлений")
+        #    await shutdown_medication_notifications()
+        #    print("✅ Система уведомлений остановлена")
+        #except Exception as e:
+        #    print("Ошибка остановки уведомлений")
         
         try:
             await close_db_pool()

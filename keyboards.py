@@ -15,8 +15,8 @@ def main_menu_keyboard(lang):
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text=t("main_upload_doc", lang)), KeyboardButton(text=t("main_note", lang))],
-            [KeyboardButton(text=t("main_documents", lang)), KeyboardButton(text=t("main_schedule", lang))],
-            [KeyboardButton(text=t("main_settings", lang)), KeyboardButton(text=t("main_webapp", lang))]
+            [KeyboardButton(text=t("main_documents", lang)), KeyboardButton(text=t("main_settings", lang))],
+            [KeyboardButton(text=t("main_webapp", lang))]
         ],
         resize_keyboard=True
     )

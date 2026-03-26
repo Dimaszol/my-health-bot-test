@@ -32,21 +32,17 @@ class FAQHandler:
                     callback_data="faq_notes"
                 )
             ],
-            [
-                InlineKeyboardButton(
-                    text=get_faq_text("faq_medications", lang),
-                    callback_data="faq_medications"
-                ),
+            [                
                 InlineKeyboardButton(
                     text=get_faq_text("faq_profile", lang),
                     callback_data="faq_profile"
-                )
-            ],
-            [
+                ),
                 InlineKeyboardButton(
                     text=get_faq_text("faq_security", lang),
                     callback_data="faq_security"
-                ),
+                )
+            ],
+            [                
                 InlineKeyboardButton(
                     text=get_faq_text("faq_support", lang),
                     callback_data="faq_support"
