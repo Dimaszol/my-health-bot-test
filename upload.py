@@ -209,12 +209,13 @@ async def handle_document_upload(message: types.Message, bot):
             from medical_timeline import update_medical_timeline_on_document_upload
             
             # Используем полный текст документа для извлечения медицинских событий
-            medical_timeline_success = await update_medical_timeline_on_document_upload(
+            await update_medical_timeline_on_document_upload(
                 user_id=user_id,
                 document_id=document_id,
                 document_text=raw_text,
                 document_date=document_date,
-                use_gemini=False  # По умолчанию GPT, можно переключить для тестирования
+                document_type=document_type,
+                assistant_text=first_analysis
             )
 
         except Exception as e:

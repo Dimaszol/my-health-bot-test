@@ -18,20 +18,27 @@ async def process_email_queue():
     """Обрабатывает pending письма из email_queue"""
     conn = await get_db_connection()
     try:
-        # Берём до 50 писем которые уже можно отправить
-        rows = await conn.fetch("""
-            SELECT eq.id, eq.user_id, eq.email_type,
-                   u.email, u.language
-            FROM email_queue eq
-            JOIN users u ON u.user_id = eq.user_id
-            WHERE eq.status = 'pending'
-              AND eq.send_after <= now()
-            ORDER BY eq.send_after
-            LIMIT 50
-        """)
+        async with conn.transaction():
+            rows = await conn.fetch("""
+                SELECT eq.id, eq.user_id, eq.email_type,
+                       u.email, u.language
+                FROM email_queue eq
+                JOIN users u ON u.user_id = eq.user_id
+                WHERE eq.status = 'pending'
+                  AND eq.send_after <= now()
+                ORDER BY eq.send_after
+                LIMIT 50
+                FOR UPDATE OF eq SKIP LOCKED
+            """)
 
-        if not rows:
-            return
+            if not rows:
+                return
+
+            ids = [row["id"] for row in rows]
+            await conn.execute(
+                "UPDATE email_queue SET status = 'processing' WHERE id = ANY($1::int[])",
+                ids
+            )
 
         logger.info(f"Email queue: processing {len(rows)} items")
 
@@ -42,12 +49,10 @@ async def process_email_queue():
             to_email = row["email"]
             lang = row["language"] or "en"
 
-            # Пользователь без email — отменяем
             if not to_email:
                 await _set_status(conn, queue_id, "cancelled")
                 continue
 
-            # Для reminder писем: проверяем загрузил ли уже документ
             if email_type in ("reminder_24h", "reminder_4d"):
                 doc_count = await conn.fetchval(
                     "SELECT COUNT(*) FROM documents WHERE user_id = $1 AND confirmed = true",
@@ -57,13 +62,11 @@ async def process_email_queue():
                     await _set_status(conn, queue_id, "cancelled")
                     continue
 
-            # Получаем контент письма
             content = get_email_content(email_type, lang)
             if not content:
                 await _set_status(conn, queue_id, "cancelled")
                 continue
 
-            # Отправляем
             ok = await send_email(to_email, content["subject"], content["html"])
             await _set_status(conn, queue_id, "sent" if ok else "pending")
 

@@ -558,7 +558,9 @@ class SubscriptionWebhookHandler:
                         user_id=user_id,
                         document_id=document_id,
                         document_text=result.get('raw_text', ''),
-                        use_gemini=False
+                        document_type=result.get('document_type'),
+                        document_date=result.get('document_date'),
+                        assistant_text=result.get('first_analysis')
                     )
                     logger.info(f"✅ Medical timeline updated for document {document_id}")
                 except Exception as e:

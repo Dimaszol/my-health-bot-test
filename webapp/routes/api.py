@@ -1074,7 +1074,7 @@ async def _process_document_background(document_id: int, user_id: int, local_fil
                 document_text=result.get('raw_text', ''),
                 document_date=result.get('document_date'),
                 document_type=result.get('document_type'),
-                use_gemini=False
+                assistant_text=result.get('first_analysis')
             )
         except Exception as e:
             safe_log_warning("Ошибка timeline при фоновой обработке", error=e)
@@ -1913,93 +1913,38 @@ async def cancel_subscription_endpoint(
 # 🧪 ТЕСТОВЫЙ ENDPOINT (удалить после отладки)
 # ============================================
 
-@router.get("/test-gpt5-form")
-async def test_gpt5_form(request: Request):
-    """GET страница с формой"""
-    from webapp.app import templates
-    from webapp.utils.context import get_template_context
-    
-    context = get_template_context(request)
-    return templates.TemplateResponse("test_gpt5.html", context)
-
-from pydantic import BaseModel
 import time
 
 class TestGPT5Request(BaseModel):
     text: str
     lang: str = "uk"
+    system_prompt: str = ""
+
+@router.get("/test-gpt5-form")
+async def test_gpt5_form(request: Request):
+    import os
+    from fastapi.responses import HTMLResponse
+    path = os.path.join("webapp", "templates", "test_gpt5.html")
+    with open(path, "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
 
 @router.post("/test-gpt5")
 async def test_gpt5_mini(request_data: TestGPT5Request):
-    """🧪 Тестовый endpoint для проверки GPT-5-mini"""
     try:
         start_time = time.time()
-        
         from gpt import client
-        
-        lang_names = {'ru': 'Russian', 'uk': 'Ukrainian', 'en': 'English', 'de': 'German'}
-        target_language = lang_names.get(request_data.lang, 'Ukrainian')
-        
-        system_prompt = (
-            "You are a medical assistant.\n"
-            "Your task is to generate a concise medical document title.\n"
-            f"You MUST respond ONLY in {target_language}.\n"
-            "Return ONLY the title as plain text."
-        )
-        
-        user_prompt = f"Generate a short title:\n\n{request_data.text[:1500]}"
-        
-        print(f"\n{'='*60}")
-        print(f"🧪 TEST GPT-5-MINI")
-        print(f"📝 Input: {request_data.text[:100]}...")
-        
+
         response = await client.responses.create(
-            model="gpt-5.2-pro",  # ← 5.2 вместо nano
+            model="gpt-5-nano",
             input=[
-                {"role": "user", "content": f"Generate a short Ukrainian medical document title:\n\n{request_data.text[:1500]}"}
+                {"role": "system", "content": request_data.system_prompt},
+                {"role": "user", "content": request_data.text[:1500]}
             ],
             max_output_tokens=100
         )
-        
-        print(f"📥 Response type: {type(response)}")
-        print(f"Has output_text: {hasattr(response, 'output_text')}")
-        
-        output_text_direct = getattr(response, 'output_text', None)
-        print(f"output_text value: {repr(output_text_direct)}")
-        
-        # 🔍 ДЕТАЛЬНАЯ ДИАГНОСТИКА response.output
-        texts = []
-        if hasattr(response, 'output'):
-            print(f"\n🔍 response.output exists!")
-            
-            for i, item in enumerate(response.output or []):
-                print(f"\n  📦 Item {i}:")
-                print(f"     Type: {type(item)}")
-                
-                # ✅ ПРОБУЕМ ИЗВЛЕЧЬ ИЗ REASONING
-                if hasattr(item, 'summary'):
-                    summary = getattr(item, 'summary', None)
-                    print(f"     summary: {repr(summary)}")
-                    if summary:
-                        texts.append(summary)
-                
-                if hasattr(item, 'content'):
-                    content = getattr(item, 'content', None)
-                    print(f"     content: {repr(content)}")
-                    if content:
-                        texts.append(str(content))
-                
-                # Пробуем все текстовые атрибуты
-                for attr in ['text', 'output', 'result', 'answer']:
-                    if hasattr(item, attr):
-                        val = getattr(item, attr, None)
-                        if val:
-                            print(f"     {attr}: {repr(val)[:200]}")
-                            texts.append(str(val))
-        
-        extracted = " ".join(t.strip() for t in texts if t and str(t).strip())
-        print(f"\n✅ Extracted: {repr(extracted)}")
-        
+
+        output_text = getattr(response, 'output_text', None)
+
         texts = []
         if hasattr(response, 'output'):
             for item in response.output or []:
@@ -2007,21 +1952,19 @@ async def test_gpt5_mini(request_data: TestGPT5Request):
                     for block in item.content or []:
                         if hasattr(block, 'text') and block.text:
                             texts.append(block.text)
-                            print(f"✅ Found text: {repr(block.text)}")
-        
-        extracted = " ".join(t.strip() for t in texts if t and t.strip())
-        
+
+        extracted = " ".join(item.strip() for item in texts if item and item.strip())
+
         return JSONResponse(content={
             'success': True,
-            'title': extracted or output_text_direct or "",
-            'model': 'gpt-5-mini',
+            'title': extracted or output_text or "",
+            'model': 'gpt-5-nano',
             'processing_time': int((time.time() - start_time) * 1000),
-            'output_text': output_text_direct
+            'output_text': output_text
         })
-        
+
     except Exception as e:
         import traceback
-        print(f"❌ ERROR: {str(e)}")
         print(traceback.format_exc())
         return JSONResponse(status_code=500, content={'success': False, 'error': str(e)})
 

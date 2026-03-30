@@ -1,80 +1,85 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GPT Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        button { background: #00C9A7; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        button:disabled { background: #aaa; }
+        #result { margin-top: 20px; padding: 16px; background: #f5f5f5; border-radius: 8px; white-space: pre-wrap; min-height: 60px; }
+        label { font-weight: bold; display: block; margin-top: 16px; }
+        select { padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
+        .meta { font-size: 12px; color: #888; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <h2>🧪 GPT API Test</h2>
 
-{% block title %}
-{{ t('intent_title', lang) }} – {{ t('site_title', lang) }}
-{% endblock %}
+    <label>System Prompt:</label>
+    <textarea id="systemPrompt" rows="4">You are a medical assistant. Generate a short document title in Ukrainian.</textarea>
 
-{% block content %}
+    <label>User Message:</label>
+    <textarea id="userMessage" rows="6" placeholder="Enter text here..."></textarea>
 
-<!-- 🎯 INTENT HERO -->
-<section class="hero" style="padding-bottom: 2rem;">
-    <div class="container">
-        <div class="hero-content" style="align-items: center;">
+    <label>Language:</label>
+    <select id="lang">
+        <option value="uk">Ukrainian</option>
+        <option value="ru">Russian</option>
+        <option value="en">English</option>
+        <option value="de">German</option>
+    </select>
 
-            <!-- LEFT: VALUE -->
-            <div class="hero-text">
-                <h1>
-                    {{ t('intent_h1_part1', lang) }}
-                    <span class="highlight">{{ t('intent_h1_highlight', lang) }}</span><br>
-                    {{ t('intent_h1_part2', lang) }}
-                </h1>
+    <br><br>
+    <button id="sendBtn" onclick="sendTest()">▶ Send</button>
 
-                <p style="font-size: 1.1rem; max-width: 520px;">
-                    {{ t('intent_subtitle', lang) }}
-                </p>
+    <div id="result">Result will appear here...</div>
+    <div class="meta" id="meta"></div>
 
-                <ul style="margin: 1.5rem 0; color: var(--text-secondary); line-height: 1.8;">
-                    <li>✓ {{ t('intent_bullet_1', lang) }}</li>
-                    <li>✓ {{ t('intent_bullet_2', lang) }}</li>
-                    <li>✓ {{ t('intent_bullet_3', lang) }}</li>
-                </ul>
+    <script>
+        async function sendTest() {
+            const btn = document.getElementById('sendBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Sending...';
+            document.getElementById('result').textContent = '';
+            document.getElementById('meta').textContent = '';
 
-                <div style="margin-top: 2rem;">
-                    <a href="/login" class="btn btn-large" style="display: inline-flex; align-items: center; gap: 8px;">
-                        <!-- Google icon -->
-                        <svg width="18" height="18" viewBox="0 0 18 18">
-                            <path fill="#4285F4" d="M17.64 9.2H9v3.48h4.84c-.21 1.12-.84 2.08-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.87 2.7-6.62z"/>
-                            <path fill="#34A853" d="M9 18c2.43 0 4.47-.81 5.96-2.18l-2.9-2.26c-.81.54-1.84.86-3.06.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33C2.44 15.98 5.48 18 9 18z"/>
-                            <path fill="#FBBC05" d="M3.96 10.71A5.4 5.4 0 0 1 3.68 9c0-.59.1-1.17.28-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.04l3-2.33z"/>
-                            <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z"/>
-                        </svg>
-                        {{ t('intent_cta_main', lang) }}
-                    </a>
+            const text = document.getElementById('userMessage').value.trim();
+            const lang = document.getElementById('lang').value;
 
-                    <p style="font-size: 0.85rem; color: #6c757d; margin-top: 0.5rem;">
-                        {{ t('intent_cta_sub', lang) }}
-                    </p>
-                </div>
-            </div>
+            if (!text) {
+                document.getElementById('result').textContent = 'Please enter a message.';
+                btn.disabled = false;
+                btn.textContent = '▶ Send';
+                return;
+            }
 
-            <!-- RIGHT: BEFORE / AFTER -->
-            <div class="hero-image" style="max-width: 520px;">
-                <div class="card" style="margin-bottom: 1.5rem;">
-                    <h4 style="margin-bottom: 0.5rem;">{{ t('intent_before_title', lang) }}</h4>
-                    <img src="/static/demo_before.png"
-                         alt="Lab results example"
-                         style="width:100%; border-radius:12px; opacity:0.85;">
-                </div>
+            try {
+                const resp = await fetch('/api/test-gpt5', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        text, 
+                        lang,
+                        system_prompt: document.getElementById('systemPrompt').value.trim()
+                    })
+                });
+                const data = await resp.json();
 
-                <div class="card" style="border: 2px solid #00C9A7;">
-                    <h4 style="margin-bottom: 0.5rem;">{{ t('intent_after_title', lang) }}</h4>
-                    <img src="/static/demo_after.png"
-                         alt="Clinical summary example"
-                         style="width:100%; border-radius:12px;">
-                </div>
-            </div>
+                if (data.success) {
+                    document.getElementById('result').textContent = data.title || '(empty response)';
+                    document.getElementById('meta').textContent = 
+                        `Model: ${data.model} | Time: ${data.processing_time}ms | output_text: ${data.output_text}`;
+                } else {
+                    document.getElementById('result').textContent = '❌ Error: ' + data.error;
+                }
+            } catch (e) {
+                document.getElementById('result').textContent = '❌ Network error: ' + e.message;
+            }
 
-        </div>
-    </div>
-</section>
-
-<!-- 🔒 TRUST NOTE -->
-<section style="margin: 2rem 0;">
-    <div class="container text-center">
-        <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 720px; margin: 0 auto;">
-            {{ t('intent_trust_note', lang) }}
-        </p>
-    </div>
-</section>
-
-{% endblock %}
+            btn.disabled = false;
+            btn.textContent = '▶ Send';
+        }
+    </script>
+</body>
+</html>
