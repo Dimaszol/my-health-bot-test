@@ -16,7 +16,7 @@ async def get_latest_medical_timeline(user_id: int, limit: int = 10) -> List[Dic
     conn = await get_db_connection()
     try:
         query = """
-        SELECT mt.id, mt.event_date, mt.category, mt.importance, mt.description, mt.source_document_id
+        SELECT mt.id, mt.event_date, mt.category, mt.importance, mt.description, mt.source_document_id, mt.objective_data, d.document_type, d.subtype
         FROM medical_timeline mt
         INNER JOIN documents d ON mt.source_document_id = d.id
         WHERE mt.user_id = $1 AND d.confirmed = true
@@ -34,7 +34,10 @@ async def get_latest_medical_timeline(user_id: int, limit: int = 10) -> List[Dic
                 'category': row['category'],
                 'importance': row['importance'],
                 'description': row['description'],
-                'source_document_id': row['source_document_id']
+                'source_document_id': row['source_document_id'],
+                'objective_data': row['objective_data'],
+                'document_type': row['document_type'],
+                'subtype': row['subtype']
             })
         
         return timeline

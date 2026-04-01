@@ -2147,7 +2147,7 @@ async def update_document(
     
     data = await request.json()
     new_title = data.get('title', '').strip()
-    new_date_str = data.get('document_date')  # ← Было uploaded_at
+    new_date_str = data.get('document_date')
     
     if not new_title:
         return JSONResponse(
@@ -2157,7 +2157,6 @@ async def update_document(
     
     conn = await get_db_connection()
     try:
-        # Проверяем что документ принадлежит пользователю
         doc = await conn.fetchrow(
             "SELECT user_id FROM documents WHERE id = $1",
             document_id
@@ -2169,7 +2168,6 @@ async def update_document(
                 content={"success": False, "message": "Document not found"}
             )
         
-        # Парсим дату (формат YYYY-MM-DD с фронтенда)
         if new_date_str:
             try:
                 new_date = datetime.strptime(new_date_str, '%Y-%m-%d').date()
@@ -2178,7 +2176,6 @@ async def update_document(
         else:
             new_date = None
         
-        # Обновляем документ (document_date вместо uploaded_at)
         await conn.execute(
             """
             UPDATE documents 
@@ -2187,6 +2184,17 @@ async def update_document(
             """,
             new_title, new_date, document_id
         )
+        
+        # Обновляем дату в медкарте
+        if new_date is not None:
+            await conn.execute(
+                """
+                UPDATE medical_timeline
+                SET event_date = $1
+                WHERE source_document_id = $2 AND user_id = $3
+                """,
+                new_date, document_id, user_id
+            )
         
         return {"success": True, "message": t("document_updated", lang)}
         

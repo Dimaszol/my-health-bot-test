@@ -94,41 +94,62 @@ async def get_recent_messages_formatted(user_id: int, limit: int = 6) -> str:
         logger.error(f"Ошибка форматирования сообщений: {e}")
         return "Recent messages unavailable"
 
+def _format_objective_data(raw: str) -> str:
+    if not raw:
+        return "No data"
+    parts = raw.split(";")
+    formatted = []
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
+        pieces = part.split(" ", 1)
+        if len(pieces) == 2:
+            formatted.append(f"{pieces[0].capitalize()}: {pieces[1]}")
+        else:
+            formatted.append(part)
+    return "\n".join(formatted)
+
+
 async def get_medical_timeline_simple(user_id: int, limit: int = 6) -> str:
     """
     Простая функция для получения медкарты в компактном виде
     """
     try:
         from db_postgresql import get_db_connection, release_db_connection
-        
+
         conn = await get_db_connection()
-        
-        # Получаем последние записи
+
         rows = await conn.fetch("""
-            SELECT mt.event_date, mt.description, mt.importance
+            SELECT mt.event_date, mt.description, mt.importance, mt.objective_data,
+                   d.document_type, mt.category, d.subtype
             FROM medical_timeline mt
             INNER JOIN documents d ON mt.source_document_id = d.id
             WHERE mt.user_id = $1 AND d.confirmed = true
             ORDER BY mt.event_date DESC, mt.created_at DESC
             LIMIT $2
         """, user_id, limit)
-        
+
         if not rows:
             return "Medical timeline: empty"
-        
-        # Форматируем компактно
-        lines = []
+
+        lines = ["🏥 Medical timeline (latest first)", "---"]
         for row in rows:
-            date_str = row['event_date'].strftime('%d.%m.%Y') if row['event_date'] else 'N/A'
-            importance = row['importance'] or 'normal'
-            description = (row['description'] or '')[:80]  # Ограничиваем длину
-            
-            # Добавляем эмодзи важности
-            emoji = '🔴' if importance == 'critical' else '🟡' if importance == 'important' else '⚪'
-            lines.append(f"{emoji} {date_str}: {description}")
-        
+            date_str = row['event_date'].strftime('%Y-%m-%d') if row['event_date'] else 'N/A'
+            doc_type = (row['document_type'] or row['category'] or 'general').upper()
+            subtype = row['subtype'] or "N/A"
+
+            line = f"{date_str} | {doc_type} | {subtype}"
+
+            if row['objective_data']:
+                line += f"\nOBJECTIVE:\n{_format_objective_data(row['objective_data'])}"
+
+            line += f"\nINTERPRETATION:\n{(row['description'] or '')[:150]}"
+            line += "\n---"
+            lines.append(line)
+
         return "\n".join(lines)
-        
+
     except Exception as e:
         return "Medical timeline: unavailable"
     finally:
