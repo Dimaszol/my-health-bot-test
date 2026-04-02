@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from webapp.utils.context import get_template_context
 from webapp.legal_translations import tl as legal_t  # ← Переименовываем как legal_t
 from webapp.translations import get_current_language
+from webapp.about_translations import about_t
 
 # Создаём роутер
 router = APIRouter()
@@ -136,3 +137,21 @@ async def medical_disclaimer_with_lang(request: Request, lang: str):
     context['md_t'] = md_t
     
     return templates.TemplateResponse("medical_disclaimer.html", context)
+
+@router.get("/about", response_class=HTMLResponse)
+async def about_page(request: Request):
+    lang = get_current_language(request.session)
+    context = get_template_context(request)
+    context['about_t'] = about_t
+    return templates.TemplateResponse("about.html", context)
+
+
+@router.get("/{lang}/about", response_class=HTMLResponse)
+async def about_page_with_lang(request: Request, lang: str):
+    if lang not in ['de', 'ru', 'uk']:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404)
+    request.session['language'] = lang
+    context = get_template_context(request)
+    context['about_t'] = about_t
+    return templates.TemplateResponse("about.html", context)

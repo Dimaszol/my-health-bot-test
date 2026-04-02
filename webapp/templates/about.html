@@ -1,0 +1,407 @@
+{% extends "base.html" %}
+
+{% block title %}{{ about_t('about_page_title', lang) }} - PulseBook{% endblock %}
+
+{% block meta_description %}{{ about_t('about_meta_description', lang) }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+.about-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+}
+
+/* HERO */
+.about-hero {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.about-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, rgba(0,201,167,0.12) 0%, rgba(0,201,167,0.06) 100%);
+    border: 1px solid rgba(0,201,167,0.3);
+    border-radius: 100px;
+    padding: 0.4rem 1.2rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #00A88E;
+    margin-bottom: 1.5rem;
+}
+
+.about-hero h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin-bottom: 1.2rem;
+}
+
+.about-hero h1 .highlight {
+    color: var(--primary-color);
+}
+
+.about-hero p {
+    font-size: 1.15rem;
+    color: var(--text-secondary);
+    max-width: 620px;
+    margin: 0 auto;
+    line-height: 1.7;
+}
+
+/* MISSION BLOCK */
+.mission-block {
+    background: linear-gradient(135deg, #f0fdf9 0%, #f0f9ff 100%);
+    border: 1px solid rgba(0,201,167,0.2);
+    border-left: 4px solid var(--primary-color);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    margin-bottom: 3rem;
+}
+
+.mission-block h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.mission-block p {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    line-height: 1.75;
+    margin: 0;
+}
+
+/* CARDS GRID */
+.about-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.about-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    transition: var(--transition-normal);
+}
+
+.about-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(0,201,167,0.3);
+}
+
+.about-card-icon {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, rgba(0,201,167,0.12) 0%, rgba(0,201,167,0.06) 100%);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.2rem;
+}
+
+.about-card h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.6rem;
+}
+
+.about-card p {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.65;
+    margin: 0;
+}
+
+/* AI TECH BLOCK */
+.ai-tech-block {
+    background: linear-gradient(135deg, var(--text-primary) 0%, #2d3748 100%);
+    border-radius: var(--radius-xl);
+    padding: 2.5rem;
+    margin-bottom: 3rem;
+    color: white;
+}
+
+.ai-tech-block h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.ai-tech-block p {
+    color: rgba(255,255,255,0.8);
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+}
+
+.ai-models-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.ai-model-tag {
+    background: rgba(0,201,167,0.2);
+    border: 1px solid rgba(0,201,167,0.4);
+    color: #00C9A7;
+    padding: 0.4rem 1rem;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* DISCLAIMER / LIMITATIONS */
+.medical-disclaimer-block {
+    background: #fff8f0;
+    border: 1px solid #fde8cc;
+    border-left: 4px solid #f59e0b;
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin-bottom: 3rem;
+}
+
+.medical-disclaimer-block h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #92400e;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.medical-disclaimer-block p {
+    font-size: 0.95rem;
+    color: #78350f;
+    line-height: 1.7;
+    margin: 0;
+}
+
+.limitations-list {
+    color: #78350f;
+    font-size: 0.95rem;
+    line-height: 2;
+    padding-left: 1.2rem;
+    margin: 0;
+}
+
+/* STATS */
+.about-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1.5rem;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+.stat-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value-sm {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1.3;
+    margin-bottom: 0.5rem;
+    padding-top: 0.3rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* CTA */
+.about-cta {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: linear-gradient(135deg, rgba(0,201,167,0.06) 0%, rgba(0,201,167,0.02) 100%);
+    border: 1px solid rgba(0,201,167,0.15);
+    border-radius: var(--radius-xl);
+}
+
+.about-cta h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+}
+
+.about-cta p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .about-hero h1 { font-size: 2rem; }
+    .about-stats { grid-template-columns: 1fr; }
+    .ai-tech-block { padding: 1.5rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="about-page">
+
+    <!-- HERO -->
+    <div class="about-hero">
+        <div class="about-hero-badge">
+            ⚕️ {{ about_t('about_badge', lang) }}
+        </div>
+        <h1>{{ about_t('about_hero_title', lang) }} <span class="highlight">PulseBook</span></h1>
+        <p>{{ about_t('about_hero_subtitle', lang) }}</p>
+    </div>
+
+    <!-- МИССИЯ -->
+    <div class="mission-block">
+        <h2>🎯 {{ about_t('about_mission_title', lang) }}</h2>
+        <p>{{ about_t('about_mission_text', lang) }}</p>
+    </div>
+
+    <!-- КТО СОЗДАЛ -->
+    <div class="about-card" style="margin-bottom: 3rem;">
+        <div class="about-card-icon">👤</div>
+        <h3>{{ about_t('about_creator_title', lang) }}</h3>
+        <p>{{ about_t('about_creator_text', lang) }}</p>
+    </div>
+
+    <!-- СТАТИСТИКА -->
+    <div class="about-stats">
+        <div class="stat-item">
+            <div class="stat-value">4</div>
+            <div class="stat-label">{{ about_t('about_stat_languages', lang) }}</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">24/7</div>
+            <div class="stat-label">{{ about_t('about_stat_availability', lang) }}</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value-sm">{{ about_t('about_stat_privacy_value', lang) }}</div>
+            <div class="stat-label">{{ about_t('about_stat_privacy', lang) }}</div>
+        </div>
+    </div>
+
+    <!-- КАРТОЧКИ -->
+    <div class="about-cards">
+        <div class="about-card">
+            <div class="about-card-icon">📄</div>
+            <h3>{{ about_t('about_card1_title', lang) }}</h3>
+            <p>{{ about_t('about_card1_text', lang) }}</p>
+        </div>
+        <div class="about-card">
+            <div class="about-card-icon">🤖</div>
+            <h3>{{ about_t('about_card2_title', lang) }}</h3>
+            <p>{{ about_t('about_card2_text', lang) }}</p>
+        </div>
+        <div class="about-card">
+            <div class="about-card-icon">🔒</div>
+            <h3>{{ about_t('about_card3_title', lang) }}</h3>
+            <p>{{ about_t('about_card3_text', lang) }}</p>
+        </div>
+    </div>
+
+    <!-- AI ТЕХНОЛОГИИ -->
+    <div class="ai-tech-block">
+        <h2>🧠 {{ about_t('about_ai_title', lang) }}</h2>
+        <p>{{ about_t('about_ai_text', lang) }}</p>
+        <div class="ai-models-list">
+            <span class="ai-model-tag">OpenAI</span>
+            <span class="ai-model-tag">Claude</span>
+            <span class="ai-model-tag">Gemini</span>
+            <span class="ai-model-tag">{{ about_t('about_ai_tag_multilang', lang) }}</span>
+            <span class="ai-model-tag">{{ about_t('about_ai_tag_medical', lang) }}</span>
+        </div>
+        <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 1.2rem; margin-bottom: 0;">
+            {{ about_t('about_ai_how', lang) }}
+        </p>
+    </div>
+
+    <!-- ИСТОЧНИКИ ДАННЫХ -->
+    <div class="mission-block" style="border-left-color: #6B46C1; background: linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%); border-color: rgba(107,70,193,0.2);">
+        <h2>📚 {{ about_t('about_sources_title', lang) }}</h2>
+        <p>{{ about_t('about_sources_text', lang) }}</p>
+    </div>
+
+    <!-- ОГРАНИЧЕНИЯ -->
+    <div class="medical-disclaimer-block">
+        <h2>⚠️ {{ about_t('about_limitations_title', lang) }}</h2>
+        <ul class="limitations-list">
+            <li>{{ about_t('about_limit_1', lang) }}</li>
+            <li>{{ about_t('about_limit_2', lang) }}</li>
+            <li>{{ about_t('about_limit_3', lang) }}</li>
+        </ul>
+    </div>
+
+    <!-- МЕДИЦИНСКИЙ ДИСКЛЕЙМЕР -->
+    <div class="medical-disclaimer-block">
+        <h2>⚕️ {{ about_t('about_disclaimer_title', lang) }}</h2>
+        <p>{{ about_t('about_disclaimer_text', lang) }}</p>
+    </div>
+
+    <!-- CTA -->
+    <div class="about-cta">
+        <h2>{{ about_t('about_cta_title', lang) }}</h2>
+        <p>{{ about_t('about_cta_subtitle', lang) }}</p>
+        <a href="/auth/google" class="btn btn-large" style="display: inline-flex; align-items: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 18 18">
+                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+            </svg>
+            {{ t('btn_try_free', lang) }}
+        </a>
+    </div>
+
+</div>
+
+<!-- Schema.org для Google E-E-A-T -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  "name": "About PulseBook",
+  "description": "PulseBook is an AI-powered medical document assistant that helps users understand their health data",
+  "url": "https://pulsebook.health/about",
+  "mainEntity": {
+    "@type": "Organization",
+    "name": "PulseBook",
+    "url": "https://pulsebook.health",
+    "description": "AI-powered medical document understanding platform",
+    "applicationCategory": "HealthApplication",
+    "medicalSpecialty": "General practice"
+  }
+}
+</script>
+{% endblock %}

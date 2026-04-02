@@ -383,6 +383,7 @@
                 <div class="footer-section">
                     <h4>{{ t('footer_information', lang) }}</h4>
                     <ul>
+                        <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/about">{{ t('menu_about', lang) }}</a></li>
                         <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/faq">FAQ</a></li>                        
                         <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/medical-disclaimer">Medical Disclaimer</a></li>                        
                     </ul>
