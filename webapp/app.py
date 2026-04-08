@@ -309,7 +309,7 @@ templates.env.filters['markdown'] = markdown_filter
 # ==========================================
 
 try:
-    from routes import auth, dashboard, api, webhook, faq, account_linking, legal
+    from routes import auth, dashboard, api, webhook, faq, account_linking, legal, seo
     
     # Регистрируем роутеры (как blueprints в Flask)
     app.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -319,6 +319,7 @@ try:
     app.include_router(faq.router, tags=["faq"])
     app.include_router(account_linking.router, tags=["account_linking"])
     app.include_router(legal.router, tags=["legal"])
+    app.include_router(seo.router, tags=["seo"])
     
     print("✅ Все роутеры зарегистрированы")
     
@@ -473,7 +474,7 @@ async def sitemap():
     
     domain = "https://pulsebook.health"
     
-    pages = ['/', '/faq', '/privacy', '/terms', '/medical-disclaimer']
+    pages = ['/', '/faq', '/privacy', '/terms', '/medical-disclaimer', '/about']
     langs = ['en', 'de']  # Пока только EN и DE для продвижения
     
     urls = []

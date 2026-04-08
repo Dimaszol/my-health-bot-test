@@ -1,0 +1,621 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page.meta_title }} - {{ t('site_title', lang) }}{% endblock %}
+
+{% block extra_styles %}
+<meta name="description" content="{{ page.meta_desc }}">
+<link rel="canonical" href="https://pulsebook.health/{{ lang }}/analysis/{{ page.slug }}">
+<link rel="alternate" hreflang="ru" href="https://pulsebook.health/ru/analysis/{{ page.slug }}">
+<link rel="alternate" hreflang="uk" href="https://pulsebook.health/uk/analysis/{{ page.slug }}">
+<link rel="alternate" hreflang="en" href="https://pulsebook.health/en/analysis/{{ page.slug }}">
+<link rel="alternate" hreflang="de" href="https://pulsebook.health/de/analysis/{{ page.slug }}">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "MedicalWebPage",
+  "name": "{{ page.meta_title }}",
+  "description": "{{ page.meta_desc }}",
+  "url": "https://pulsebook.health/{{ lang }}/analysis/{{ page.slug }}",
+  "about": {
+    "@type": "MedicalTest",
+    "name": "{{ page.indicator_name }}",
+    "normalRange": "{{ page.normal_min_f }}-{{ page.normal_max_f }} {{ page.unit }}"
+  },
+  "specialty": "Laboratory Medicine"
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for faq in page.faqs %}
+    {
+      "@type": "Question",
+      "name": "{{ faq.question }}",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{{ faq.answer }}"
+      }
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+
+<style>
+
+/* Хлебные крошки */
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+.breadcrumb a { color: var(--primary-color); text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+.breadcrumb-sep { color: var(--border-color); }
+
+/* Секции */
+.content-section { margin: 2rem 0; }
+.content-section h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* AI чекер */
+.ai-checker-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.4rem;
+}
+.ai-checker-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+.checker-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Причины отклонений — две колонки на десктопе, одна на мобиле */
+.causes-responsive {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 600px) {
+    .checker-grid { grid-template-columns: 1fr; }
+    .causes-grid { grid-template-columns: 1fr; }
+    .causes-responsive { grid-template-columns: 1fr; }
+}
+.value-field { grid-column: 1 / -1; }
+.value-input-wrap { display: flex; align-items: center; gap: 0.5rem; }
+.value-unit { font-size: 1rem; color: var(--text-secondary); font-weight: 500; white-space: nowrap; }
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+/* AI результат */
+.ai-result {
+    display: none;
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    background: var(--background);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+.ai-result.visible { display: block; }
+.ai-result-header { font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem; font-size: 0.95rem; }
+.ai-result-text { color: var(--text-secondary); line-height: 1.7; font-size: 0.95rem; margin-bottom: 1rem; }
+.ai-result-funnel {
+    background: #fff8f0;
+    border: 1px solid #fbd38d;
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    color: #744210;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+/* Загрузка */
+.ai-loading { display: none; text-align: center; padding: 1.5rem; }
+.ai-loading.visible { display: block; }
+.loading-dots { display: inline-flex; gap: 6px; margin-bottom: 0.75rem; }
+.loading-dots span {
+    width: 10px; height: 10px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    animation: dot-bounce 1.2s infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dot-bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-10px); }
+}
+
+/* Таблица норм */
+.norms-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; table-layout: fixed; }
+.norms-table th {
+    background: #f8fafb;
+    padding: 0.875rem 1.25rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    border-bottom: 2px solid var(--border-color);
+}
+.norms-table td {
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+.norms-table tbody tr:last-child td { border-bottom: none; }
+.norms-table tbody tr:hover { background: #f8fafb; }
+.norm-badge {
+    display: inline-block;
+    background: #e6fffa;
+    color: #00876a;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Причины */
+.cause-card.high { background: #fff5f5; border-color: #fed7d7; }
+.cause-card.low { background: #ebf8ff; border-color: #bee3f8; }
+.cause-card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem; }
+.cause-card.high h4 { color: #c53030; }
+.cause-card.low h4 { color: #2b6cb0; }
+.cause-card ul { list-style: none; padding: 0; margin: 0; }
+.cause-card ul li {
+    color: var(--text-secondary); font-size: 0.9rem;
+    padding: 0.3rem 0; display: flex; gap: 0.5rem; line-height: 1.5;
+}
+.cause-card ul li::before { content: "•"; flex-shrink: 0; }
+.cause-card.high ul li::before { color: #fc8181; }
+.cause-card.low ul li::before { color: #63b3ed; }
+
+/* Что делать */
+.todo-list { list-style: none; padding: 0; margin: 0; }
+.todo-list li {
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem;
+}
+.todo-list li:last-child { border-bottom: none; }
+.todo-icon {
+    width: 28px; height: 28px;
+    background: #e6fffa; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; flex-shrink: 0;
+}
+
+/* Связанные показатели */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.75rem; margin-top: 1rem;
+}
+.related-card {
+    display: block; padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: var(--transition-normal);
+    text-align: center;
+    background: var(--gradient-card);
+}
+.related-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+.related-card .r-name { font-weight: 700; color: var(--text-primary); font-size: 0.95rem; margin-bottom: 0.25rem; }
+.related-card .r-desc { font-size: 0.8rem; color: var(--text-secondary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="seo-page">
+
+    <!-- Хлебные крошки -->
+    <nav class="breadcrumb" aria-label="breadcrumb">
+        <a href="/{{ lang }}">{{ t('menu_home', lang) }}</a>
+        <span class="breadcrumb-sep">›</span>
+        <a href="/{{ lang }}/analysis">{{ st('seo_analyses_title', lang) }}</a>
+        <span class="breadcrumb-sep">›</span>
+        <span>{{ page.indicator_name }}</span>
+    </nav>
+
+    <!-- H1 + Быстрый ответ -->
+    <div style="background: var(--gradient-hero); border-radius: var(--radius-md); padding: 2rem; margin-bottom: 1.5rem;">
+        <h1 style="font-size: 2rem; font-weight: 800; color: var(--text-primary); line-height: 1.3; margin-bottom: 1rem;">
+            {{ page.h1 }}
+        </h1>
+        <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 0.75rem;">
+            {{ page.quick_answer }}
+        </p>
+        <p style="font-size: 0.75rem; color: #a0aec0; border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin: 0;">
+            {{ st('seo_disclaimer', lang) }}
+        </p>
+    </div>
+
+    <!-- ===== AI ФОРМА ===== -->
+    <div class="card">
+        <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem;">
+            🔬 {{ st('seo_checker_title', lang) }} {{ page.indicator_name }}
+        </h2>
+        <p id="checker-subtitle" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            {{ st('seo_checker_subtitle', lang) }}
+        </p>
+
+        <!-- Форма -->
+        <div id="checker-form">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+
+                <!-- Значение -->
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.4rem;">
+                        {{ page.indicator_name }}, {{ page.unit }}
+                    </label>
+                    <input
+                        type="number" id="indicator-value"
+                        placeholder="{{ page.example_value }}"
+                        step="0.1"
+                        min="{{ page.value_min }}"
+                        max="{{ page.value_max }}"
+                        style="width: 100%; padding: 0.75rem 1rem; border: 2px solid var(--border-color); border-radius: var(--radius-md); font-size: 1.1rem; font-weight: 700; text-align: center; box-sizing: border-box; background: var(--background); transition: border-color 0.2s;"
+                        onfocus="this.style.borderColor='var(--primary-color)'"
+                        onblur="this.style.borderColor='var(--border-color)'"
+                    >
+                </div>
+
+                <!-- Пол -->
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.4rem;">
+                        {{ st('seo_gender', lang) }}
+                    </label>
+                    <select id="user-gender" style="width: 100%; padding: 0.75rem 1rem; border: 2px solid var(--border-color); border-radius: var(--radius-md); font-size: 1rem; color: var(--text-primary); background: var(--background); box-sizing: border-box;">
+                        <option value="female">{{ st('seo_gender_female', lang) }}</option>
+                        <option value="male">{{ st('seo_gender_male', lang) }}</option>
+                    </select>
+                </div>
+
+                <!-- Возраст -->
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.4rem;">
+                        {{ st('seo_age', lang) }}
+                    </label>
+                    <input
+                        type="number" id="user-age"
+                        placeholder="35" min="1" max="110"
+                        style="width: 100%; padding: 0.75rem 1rem; border: 2px solid var(--border-color); border-radius: var(--radius-md); font-size: 1rem; box-sizing: border-box; background: var(--background); transition: border-color 0.2s;"
+                        onfocus="this.style.borderColor='var(--primary-color)'"
+                        onblur="this.style.borderColor='var(--border-color)'"
+                    >
+                </div>
+            </div>
+
+            <button class="btn btn-large" id="check-btn" onclick="checkIndicator()" style="width: 100%; justify-content: center;">
+                {{ st('seo_check_btn', lang) }}
+            </button>
+        </div>
+
+        <!-- Загрузка -->
+        <div id="ai-loading" style="display: none; text-align: center; padding: 2.5rem 0;">
+            <svg style="animation: spin 1s linear infinite; width: 48px; height: 48px; color: var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 1rem;">{{ st('seo_analyzing', lang) }}</p>
+        </div>
+
+        <!-- Результат -->
+        <div id="ai-result" style="display: none;">
+            <h3 id="ai-result-title" style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem;"></h3>
+            <p id="ai-result-text" style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 1.25rem;"></p>
+            
+            <!-- CTA появляется после результата -->
+            <div style="background: var(--gradient-hero); border-radius: var(--radius-md); padding: 1.5rem; text-align: center; border: 1px solid var(--border-color);">
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--primary-color); margin-bottom: 0.5rem;">
+                    {{ st('seo_cta1_title', lang) }}
+                </h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                    {{ st('seo_cta1_text', lang) }}
+                </p>
+                <a href="/login" class="btn btn-large" style="display: inline-block;">
+                    {{ st('seo_cta1_btn', lang) }} →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Простое объяснение -->
+    <div class="content-section">
+        <h2>{{ st('seo_section_what', lang) }} {{ page.indicator_name }}?</h2>
+        <div class="card">
+            <p style="color: var(--text-secondary); line-height: 1.8; margin: 0;">{{ page.explanation }}</p>
+        </div>
+    </div>
+
+    <!-- Таблица норм -->
+    <div class="content-section">
+        <h2>{{ st('seo_section_norms', lang) }}</h2>
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
+                <thead>
+                    <tr style="background: #f8fafb;">
+                        <th style="padding: 1rem 1.5rem; text-align: center; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); border-bottom: 2px solid var(--border-color); width: 33%;">{{ st('seo_norm_group', lang) }}</th>
+                        <th style="padding: 1rem 1.5rem; text-align: center; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); border-bottom: 2px solid var(--border-color); width: 33%;">{{ st('seo_norm_range', lang) }}</th>
+                        <th style="padding: 1rem 1.5rem; text-align: center; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); border-bottom: 2px solid var(--border-color); width: 33%;">{{ st('seo_norm_unit', lang) }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for norm in page.norms %}
+                    <tr style="{% if not loop.last %}border-bottom: 1px solid var(--border-color);{% endif %}">
+                        <td style="padding: 1rem 1.5rem; text-align: center; font-weight: 500; color: var(--text-primary);">{{ norm.group }}</td>
+                        <td style="padding: 1rem 1.5rem; text-align: center;">
+                            <span style="display: inline-block; background: #e6fffa; color: #00876a; padding: 0.25rem 0.875rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">{{ norm.min }} – {{ norm.max }}</span>
+                        </td>
+                        <td style="padding: 1rem 1.5rem; text-align: center; color: var(--text-secondary);">{{ page.unit }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Причины отклонений -->
+    <div class="content-section">
+        <h2>{{ st('seo_section_causes', lang) }}</h2>
+        <div class="causes-responsive">
+
+            <!-- Сначала низкий -->
+            <div class="card" style="border-top: 3px solid #63b3ed;">
+                <h4 style="font-size: 1rem; font-weight: 700; color: #2b6cb0; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#63b3ed" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
+                    </svg>
+                    {{ st('seo_causes_low', lang) }} {{ page.indicator_name }}
+                </h4>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    {% for cause in page.causes_low %}
+                    <li style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">
+                        <span style="color: #63b3ed; flex-shrink: 0; margin-top: 2px;">•</span>
+                        {{ cause }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Потом высокий -->
+            <div class="card" style="border-top: 3px solid #fc8181;">
+                <h4 style="font-size: 1rem; font-weight: 700; color: #c53030; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fc8181" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+                    </svg>
+                    {{ st('seo_causes_high', lang) }} {{ page.indicator_name }}
+                </h4>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    {% for cause in page.causes_high %}
+                    <li style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">
+                        <span style="color: #fc8181; flex-shrink: 0; margin-top: 2px;">•</span>
+                        {{ cause }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Что делать -->
+    <div class="content-section">
+        <h2>{{ st('seo_section_todo', lang) }}</h2>
+        <div class="card">
+            <ul class="todo-list">
+                {% for item in page.todo_items %}
+                <li>
+                    <span class="todo-icon">{{ item.icon }}</span>
+                    <span>{{ item.text }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- CTA #2 -->
+    <section style="background: var(--gradient-hero); padding: 2rem 1rem; border-radius: var(--radius-lg); margin: 2rem 0; text-align: center;">
+        <h3 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-primary);">
+            {{ st('seo_cta2_title', lang) }}
+        </h3>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+            {{ st('seo_cta2_text', lang) }}
+        </p>
+        <a href="/auth/google" class="btn btn-large" style="display: inline-flex; align-items: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 18 18">
+                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+            </svg>
+            {{ st('seo_cta2_btn', lang) }} →
+        </a>
+        <p style="font-size: 0.85rem; color: #6c757d; margin-top: 0.75rem;">
+            {{ t('btn_google_subtitle', lang) }}
+        </p>
+    </section>
+
+    <!-- FAQ -->
+    <div class="content-section">
+        <h2>{{ st('seo_section_faq', lang) }}</h2>
+        <div class="faq-container">
+            {% for faq in page.faqs %}
+            <details class="faq-item">
+                <summary class="faq-header">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="faq-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 16v-4"/>
+                                <path d="M12 8h.01"/>
+                            </svg>
+                        </div>
+                        <h3>{{ faq.question }}</h3>
+                    </div>
+                    <svg class="faq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </summary>
+                <div class="faq-content">
+                    <div class="faq-text">{{ faq.answer }}</div>
+                </div>
+            </details>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Связанные показатели -->
+    <div class="content-section">
+        <h2>{{ st('seo_section_related', lang) }}</h2>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            {% for rel in page.related %}
+            <a href="/{{ lang }}/analysis/{{ rel.slug }}" class="card" style="text-decoration: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+                        {{ rel.name }} — {{ rel.relation_title }}
+                    </div>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                        {{ rel.relation_desc }}
+                    </div>
+                </div>
+                <svg class="faq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform: rotate(-90deg); flex-shrink: 0;">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+<script>
+/* Убираем стрелки у number input */
+document.querySelectorAll('input[type=number]').forEach(el => {
+    el.style.cssText += 'appearance: textfield;';
+});
+
+const INDICATOR = {
+    name: "{{ page.indicator_name }}",
+    unit: "{{ page.unit }}",
+    slug: "{{ page.slug }}",
+    normalMinM: {{ page.normal_min_m | default(0) }},
+    normalMaxM: {{ page.normal_max_m | default(999) }},
+    normalMinF: {{ page.normal_min_f | default(0) }},
+    normalMaxF: {{ page.normal_max_f | default(999) }},
+    aiPrompt: `{{ page.ai_prompt }}`
+};
+
+const LABELS = {
+    genderFemale: "{{ st('seo_gender_female', lang) }}",
+    genderMale: "{{ st('seo_gender_male', lang) }}",
+    fillFields: "{{ st('seo_fill_fields', lang) }}"
+};
+
+async function checkIndicator() {
+    const rawValue = document.getElementById('indicator-value').value.replace(',', '.');
+    const value = parseFloat(rawValue);
+    const age = parseInt(document.getElementById('user-age').value);
+    const gender = document.getElementById('user-gender').value;
+
+    const valueMin = {{ page.value_min | default(0) }};
+    const valueMax = {{ page.value_max | default(999) }};
+
+    if (!rawValue || isNaN(value)) {
+        highlightError('indicator-value');
+        alert("{{ st('seo_fill_fields', lang) }}");
+        return;
+    }
+    if (value < valueMin || value > valueMax) {
+        highlightError('indicator-value');
+        alert("{{ st('seo_invalid_value', lang) }}");
+        return;
+    }
+    if (!age || isNaN(age)) {
+        highlightError('user-age');
+        alert("{{ st('seo_fill_fields', lang) }}");
+        return;
+    }
+    if (age < 1 || age > 110) {
+        highlightError('user-age');
+        alert("{{ st('seo_invalid_age', lang) }}");
+        return;
+    }
+
+    document.getElementById('checker-form').style.display = 'none';
+    document.getElementById('checker-subtitle').style.display = 'none';
+    document.getElementById('ai-loading').style.display = 'block';
+    document.getElementById('ai-result').style.display = 'none';
+
+    const genderLabel = gender === 'female' ? LABELS.genderFemale : LABELS.genderMale;
+
+    try {
+        const prompt = INDICATOR.aiPrompt
+            .replace('{indicator}', INDICATOR.name)
+            .replace('{value}', value)
+            .replace('{unit}', INDICATOR.unit)
+            .replace('{gender}', genderLabel)
+            .replace('{age}', age);
+
+        const response = await fetch('/api/seo-check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, lang: "{{ lang }}" })
+        });
+
+        const data = await response.json();
+
+        document.getElementById('ai-result-title').textContent =
+            `${INDICATOR.name} ${value} ${INDICATOR.unit} — ${genderLabel}, {{ st('seo_age', lang) }} ${age}`;
+        document.getElementById('ai-result-text').textContent = data.result;
+        document.getElementById('ai-loading').style.display = 'none';
+        document.getElementById('ai-result').style.display = 'block';
+
+    } catch (e) {
+        document.getElementById('ai-result-title').textContent =
+            `${INDICATOR.name} ${value} ${INDICATOR.unit}`;
+        document.getElementById('ai-result-text').textContent = "{{ t('error_unknown_error', lang) }}";
+        document.getElementById('ai-loading').style.display = 'none';
+        document.getElementById('ai-result').style.display = 'block';
+    }
+}
+
+function highlightError(fieldId) {
+    const el = document.getElementById(fieldId);
+    el.style.borderColor = '#fc8181';
+    setTimeout(() => { el.style.borderColor = 'var(--border-color)'; }, 2000);
+}
+</script>
+{% endblock %}
