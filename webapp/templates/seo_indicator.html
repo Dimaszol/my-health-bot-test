@@ -243,9 +243,9 @@
 
     <!-- Хлебные крошки -->
     <nav class="breadcrumb" aria-label="breadcrumb">
-        <a href="/{{ lang }}">{{ t('menu_home', lang) }}</a>
+        <a href="{% if lang != 'en' %}/{{ lang }}{% else %}/{% endif %}">{{ t('menu_home', lang) }}</a>
         <span class="breadcrumb-sep">›</span>
-        <a href="/{{ lang }}/analysis">{{ st('seo_analyses_title', lang) }}</a>
+        <a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/analysis">{{ st('seo_analyses_title', lang) }}</a>
         <span class="breadcrumb-sep">›</span>
         <span>{{ page.indicator_name }}</span>
     </nav>
@@ -345,9 +345,18 @@
                 <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
                     {{ st('seo_cta1_text', lang) }}
                 </p>
-                <a href="/login" class="btn btn-large" style="display: inline-block;">
+                <a href="/auth/google" class="btn btn-large" style="display: inline-flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 18 18">
+                        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                        <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                        <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+                        <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+                    </svg>
                     {{ st('seo_cta1_btn', lang) }} →
                 </a>
+                <p style="font-size: 0.85rem; color: #6c757d; margin-top: 0.75rem;">
+                    {{ t('btn_google_subtitle', lang) }}
+                </p>
             </div>
         </div>
     </div>
@@ -534,8 +543,7 @@ const INDICATOR = {
     normalMinM: {{ page.normal_min_m | default(0) }},
     normalMaxM: {{ page.normal_max_m | default(999) }},
     normalMinF: {{ page.normal_min_f | default(0) }},
-    normalMaxF: {{ page.normal_max_f | default(999) }},
-    aiPrompt: `{{ page.ai_prompt }}`
+    normalMaxF: {{ page.normal_max_f | default(999) }}
 };
 
 const LABELS = {
@@ -582,24 +590,20 @@ async function checkIndicator() {
     const genderLabel = gender === 'female' ? LABELS.genderFemale : LABELS.genderMale;
 
     try {
-        const prompt = INDICATOR.aiPrompt
-            .replace('{indicator}', INDICATOR.name)
-            .replace('{value}', value)
-            .replace('{unit}', INDICATOR.unit)
-            .replace('{gender}', genderLabel)
-            .replace('{age}', age);
+        const prompt = `Indicator: ${INDICATOR.name}\nValue: ${value} ${INDICATOR.unit}\nSex: ${genderLabel}\nAge: ${age}`;
 
         const response = await fetch('/api/seo-check', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, lang: "{{ lang }}" })
+            body: JSON.stringify({ prompt, lang: "{{ lang }}", group: "{{ page.type }}" })
         });
 
         const data = await response.json();
 
         document.getElementById('ai-result-title').textContent =
             `${INDICATOR.name} ${value} ${INDICATOR.unit} — ${genderLabel}, {{ st('seo_age', lang) }} ${age}`;
-        document.getElementById('ai-result-text').textContent = data.result;
+        document.getElementById('ai-result-text').innerHTML = data.result.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
+        document.getElementById('ai-result-text').innerHTML = '<p>' + document.getElementById('ai-result-text').innerHTML + '</p>';
         document.getElementById('ai-loading').style.display = 'none';
         document.getElementById('ai-result').style.display = 'block';
 
