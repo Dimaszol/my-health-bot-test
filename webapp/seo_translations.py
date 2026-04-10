@@ -7,13 +7,7 @@ SEO_TRANSLATIONS = {
         'en': 'Lab Test Explained',
         'uk': 'Розшифровка аналізів',
         'de': 'Laborwerte erklärt',
-    },
-    'seo_disclaimer': {
-        'ru': 'Информация носит ознакомительный характер и не заменяет консультацию врача.',
-        'en': 'This information is for educational purposes only and does not replace medical advice.',
-        'uk': 'Інформація є ознайомчою і не замінює консультацію лікаря.',
-        'de': 'Diese Informationen dienen nur zu Bildungszwecken und ersetzen keine ärztliche Beratung.',
-    },
+    },    
     'seo_checker_title': {
         'ru': 'Проверьте своё значение',
         'en': 'Check your value',
@@ -314,6 +308,78 @@ SEO_TRANSLATIONS = {
         'en': 'Urinalysis',
         'uk': 'Аналіз сечі',
         'de': 'Urinanalyse',
+    },
+    'seo_toc_title': {
+        'ru': 'Содержание',
+        'en': 'Contents',
+        'uk': 'Зміст',
+        'de': 'Inhalt',
+    },
+    'seo_section_interpretation': {
+        'ru': 'Интерпретация результата',
+        'en': 'Result interpretation',
+        'uk': 'Інтерпретація результату',
+        'de': 'Ergebnisinterpretation',
+    },
+    'seo_section_combinations': {
+        'ru': 'в сочетании с другими показателями крови',
+        'en': 'in combination with other blood markers',
+        'uk': 'у поєднанні з іншими показниками крові',
+        'de': 'in Kombination mit anderen Blutwerten',
+    },
+    'seo_section_symptoms': {
+        'ru': 'Возможные симптомы',
+        'en': 'Possible symptoms',
+        'uk': 'Можливі симптоми',
+        'de': 'Mögliche Symptome',
+    },
+    'seo_section_doctor': {
+        'ru': 'Когда обратиться к врачу',
+        'en': 'When to see a doctor',
+        'uk': 'Коли звернутися до лікаря',
+        'de': 'Wann zum Arzt',
+    },
+    'interp_subtitle': {
+        'ru': 'Что означает ваш результат на основе референсных диапазонов',
+        'en': 'What your result means based on common reference ranges',
+        'uk': 'Що означає ваш результат на основі референсних діапазонів',
+        'de': 'Was Ihr Ergebnis im Vergleich zu Referenzbereichen bedeutet',
+    },
+    'interp_normal': {
+        'ru': 'В норме',
+        'en': 'Normal',
+        'uk': 'В нормі',
+        'de': 'Im Normalbereich',
+    },
+    'interp_high_mild': {
+        'ru': 'Слегка повышен',
+        'en': 'Mildly elevated',
+        'uk': 'Трохи підвищений',
+        'de': 'Leicht erhöht',
+    },
+    'interp_high_severe': {
+        'ru': 'Значительно повышен',
+        'en': 'Significantly elevated',
+        'uk': 'Значно підвищений',
+        'de': 'Stark erhöht',
+    },
+    'interp_low': {
+        'ru': 'Снижен',
+        'en': 'Below normal',
+        'uk': 'Знижений',
+        'de': 'Erniedrigt',
+    },
+    'seo_disclaimer_full': {
+        'ru': 'Информация на этой странице предназначена для общего понимания результатов анализа и не заменяет консультацию врача. Для точной интерпретации важно учитывать другие показатели крови и индивидуальные особенности.',
+        'en': 'The information on this page is intended for general understanding of test results and does not replace medical consultation. Accurate interpretation requires considering other blood markers and individual factors.',
+        'uk': 'Інформація на цій сторінці призначена для загального розуміння результатів аналізу і не замінює консультацію лікаря. Для точної інтерпретації важливо враховувати інші показники крові та індивідуальні особливості.',
+        'de': 'Die Informationen auf dieser Seite dienen dem allgemeinen Verständnis von Testergebnissen und ersetzen keine ärztliche Beratung. Für eine genaue Interpretation müssen andere Blutwerte und individuelle Faktoren berücksichtigt werden.',
+    },
+    'seo_disclaimer_source': {
+        'ru': 'Материал подготовлен на основе медицинских источников и используется в рамках аналитической системы PulseBook.',
+        'en': 'Content is based on medical literature and used within the PulseBook analytical system.',
+        'uk': 'Матеріал підготовлений на основі медичних джерел і використовується в рамках аналітичної системи PulseBook.',
+        'de': 'Der Inhalt basiert auf medizinischer Literatur und wird im Rahmen des PulseBook-Analysesystems verwendet.',
     },
 }
 

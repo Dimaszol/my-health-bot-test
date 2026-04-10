@@ -63,6 +63,9 @@
 
 /* Секции */
 .content-section { margin: 2rem 0; }
+.content-section {
+    scroll-margin-top: 80px;
+}
 .content-section h2 {
     font-size: 1.4rem;
     font-weight: 700;
@@ -257,14 +260,78 @@
         </h1>
         <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 0.75rem;">
             {{ page.quick_answer }}
-        </p>
-        <p style="font-size: 0.75rem; color: #a0aec0; border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin: 0;">
-            {{ st('seo_disclaimer', lang) }}
-        </p>
+        </p>       
     </div>
 
+    <!-- Table of Contents -->
+    <details style="background: var(--gradient-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem 1.5rem; margin-bottom: 1.5rem;">
+        <summary style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;">
+            {{ st('seo_toc_title', lang) }}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <ul style="list-style: none; padding: 0; margin: 1rem 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1.5rem;">
+            {% if page.interpretation %}<li><a href="#interpretation" style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem;">→ {{ st('seo_section_interpretation', lang) }}</a></li>{% endif %}
+            <li><a href="#checker" style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem;">→ {{ st('seo_checker_title', lang) }} {{ page.indicator_name }}</a></li>
+            <li><a href="#what" style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem;">→ {{ st('seo_section_what', lang) }} {{ page.indicator_name }}</a></li>
+            <li><a href="#norms" style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem;">→ {{ st('seo_section_norms', lang) }}</a></li>
+            <li><a href="#causes" style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem;">→ {{ st('seo_section_causes', lang) }}</a></li>
+            {% if page.combinations %}<li><a href="#combinations" style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem;">→ {{ page.indicator_name }} {{ st('seo_section_combinations', lang) }}</a></li>{% endif %}
+            {% if page.symptoms %}<li><a href="#symptoms" style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem;">→ {{ st('seo_section_symptoms', lang) }}</a></li>{% endif %}
+            {% if page.when_to_see_doctor %}<li><a href="#doctor" style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem;">→ {{ st('seo_section_doctor', lang) }}</a></li>{% endif %}
+            <li><a href="#todo" style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem;">→ {{ st('seo_section_todo', lang) }}</a></li>
+            <li><a href="#faq" style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem;">→ {{ st('seo_section_faq', lang) }}</a></li>
+            <li><a href="#related" style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem;">→ {{ st('seo_section_related', lang) }}</a></li>
+        </ul>
+    </details>
+
+    <!-- Интерпретация -->
+    {% if page.interpretation %}
+    <div class="content-section" id="interpretation">
+        <h2>{{ st('seo_section_interpretation', lang) }} {{ page.indicator_name }}</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem; margin-top: -0.5rem;">{{ st('interp_subtitle', lang) }}</p>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            {% if page.interpretation.normal %}
+            <div style="display:flex; align-items:flex-start; gap:1rem; padding:1rem; background:#f0fff4; border-radius:var(--radius-md); border-left:4px solid #38a169;">
+                <span style="font-size:1.4rem; flex-shrink:0;">🟢</span>
+                <div>
+                    <strong style="color:#276749;">{{ st('interp_normal', lang) }}</strong>
+                    <p style="margin:0.25rem 0 0; color:var(--text-secondary); font-size:0.95rem; line-height:1.6;">{{ page.interpretation.normal }}</p>
+                </div>
+            </div>
+            {% endif %}
+            {% if page.interpretation.high_mild %}
+            <div style="display:flex; align-items:flex-start; gap:1rem; padding:1rem; background:#fffff0; border-radius:var(--radius-md); border-left:4px solid #d69e2e;">
+                <span style="font-size:1.4rem; flex-shrink:0;">🟡</span>
+                <div>
+                    <strong style="color:#7b341e;">{{ st('interp_high_mild', lang) }}</strong>
+                    <p style="margin:0.25rem 0 0; color:var(--text-secondary); font-size:0.95rem; line-height:1.6;">{{ page.interpretation.high_mild }}</p>
+                </div>
+            </div>
+            {% endif %}
+            {% if page.interpretation.high_severe %}
+            <div style="display:flex; align-items:flex-start; gap:1rem; padding:1rem; background:#fff5f5; border-radius:var(--radius-md); border-left:4px solid #e53e3e;">
+                <span style="font-size:1.4rem; flex-shrink:0;">🔴</span>
+                <div>
+                    <strong style="color:#c53030;">{{ st('interp_high_severe', lang) }}</strong>
+                    <p style="margin:0.25rem 0 0; color:var(--text-secondary); font-size:0.95rem; line-height:1.6;">{{ page.interpretation.high_severe }}</p>
+                </div>
+            </div>
+            {% endif %}
+            {% if page.interpretation.low %}
+            <div style="display:flex; align-items:flex-start; gap:1rem; padding:1rem; background:#ebf8ff; border-radius:var(--radius-md); border-left:4px solid #3182ce;">
+                <span style="font-size:1.4rem; flex-shrink:0;">🔵</span>
+                <div>
+                    <strong style="color:#2b6cb0;">{{ st('interp_low', lang) }}</strong>
+                    <p style="margin:0.25rem 0 0; color:var(--text-secondary); font-size:0.95rem; line-height:1.6;">{{ page.interpretation.low }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
     <!-- ===== AI ФОРМА ===== -->
-    <div class="card">
+    <div class="card" id="checker">
         <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem;">
             🔬 {{ st('seo_checker_title', lang) }} {{ page.indicator_name }}
         </h2>
@@ -336,7 +403,7 @@
         <div id="ai-result" style="display: none;">
             <h3 id="ai-result-title" style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem;"></h3>
             <p id="ai-result-text" style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 1.25rem;"></p>
-            
+
             <!-- CTA появляется после результата -->
             <div style="background: var(--gradient-hero); border-radius: var(--radius-md); padding: 1.5rem; text-align: center; border: 1px solid var(--border-color);">
                 <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--primary-color); margin-bottom: 0.5rem;">
@@ -362,7 +429,7 @@
     </div>
 
     <!-- Простое объяснение -->
-    <div class="content-section">
+    <div class="content-section" id="what">
         <h2>{{ st('seo_section_what', lang) }} {{ page.indicator_name }}?</h2>
         <div class="card">
             <p style="color: var(--text-secondary); line-height: 1.8; margin: 0;">{{ page.explanation }}</p>
@@ -370,7 +437,7 @@
     </div>
 
     <!-- Таблица норм -->
-    <div class="content-section">
+    <div class="content-section" id="norms">
         <h2>{{ st('seo_section_norms', lang) }}</h2>
         <div class="card" style="padding: 0; overflow: hidden;">
             <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
@@ -397,7 +464,7 @@
     </div>
 
     <!-- Причины отклонений -->
-    <div class="content-section">
+    <div class="content-section" id="causes">
         <h2>{{ st('seo_section_causes', lang) }}</h2>
         <div class="causes-responsive">
 
@@ -440,8 +507,52 @@
         </div>
     </div>
 
+    <!-- Комбинации с другими показателями -->
+    {% if page.combinations %}
+    <div class="content-section" id="combinations">
+        <h2>{{ page.indicator_name }} {{ st('seo_section_combinations', lang) }}</h2>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            {% for combo in page.combinations %}
+            <div class="card" style="display:flex; align-items:flex-start; gap:1rem; padding:1rem 1.25rem;">
+                <span style="font-size:1.2rem; flex-shrink:0;">🔬</span>
+                <div>
+                    <strong style="color:var(--text-primary); display:block; margin-bottom:0.25rem;">{{ combo.combo }}</strong>
+                    <span style="color:var(--text-secondary); font-size:0.95rem;">{{ combo.meaning }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Симптомы -->
+    {% if page.symptoms %}
+    <div class="content-section" id="symptoms">
+        <h2>{{ st('seo_section_symptoms', lang) }}</h2>
+        <div class="card">
+            <ul style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:0.5rem; list-style:none; padding:0; margin:0;">
+                {% for s in page.symptoms %}
+                <li style="display:flex; align-items:center; gap:0.5rem; color:var(--text-secondary); font-size:0.95rem; padding: 0.3rem 0;">
+                    <span style="color:var(--primary-color); flex-shrink:0;">•</span>{{ s }}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Когда обратиться к врачу -->
+    {% if page.when_to_see_doctor %}
+    <div class="content-section" id="doctor">
+        <h2>{{ st('seo_section_doctor', lang) }}</h2>
+        <div class="card" style="border-left: 4px solid #e53e3e;">
+            <p style="color:var(--text-secondary); line-height:1.7; margin:0;">{{ page.when_to_see_doctor }}</p>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Что делать -->
-    <div class="content-section">
+    <div class="content-section" id="todo">
         <h2>{{ st('seo_section_todo', lang) }}</h2>
         <div class="card">
             <ul class="todo-list">
@@ -452,6 +563,19 @@
                 </li>
                 {% endfor %}
             </ul>
+        </div>
+    </div>
+
+    <!-- Дисклеймер -->
+    <div style="background: #f8fafb; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; margin: 2rem 0;">
+        <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px;">
+                <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+            </svg>
+            <div>
+                <p style="margin: 0 0 0.4rem; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">{{ st('seo_disclaimer_full', lang) }}</p>
+                <p style="margin: 0; font-size: 0.8rem; color: #a0aec0;">{{ st('seo_disclaimer_source', lang) }}</p>
+            </div>
         </div>
     </div>
 
@@ -478,7 +602,7 @@
     </section>
 
     <!-- FAQ -->
-    <div class="content-section">
+    <div class="content-section" id="faq">
         <h2>{{ st('seo_section_faq', lang) }}</h2>
         <div class="faq-container">
             {% for faq in page.faqs %}
@@ -507,7 +631,7 @@
     </div>
 
     <!-- Связанные показатели -->
-    <div class="content-section">
+    <div class="content-section" id="related">
         <h2>{{ st('seo_section_related', lang) }}</h2>
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
             {% for rel in page.related %}
