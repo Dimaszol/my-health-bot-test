@@ -171,7 +171,7 @@
                             <!-- 🏠 Меню для гостей -->
                             <li><a href="/#how-it-works">{{ t('menu_how_it_works', lang) }}</a></li>
                             <li><a href="/#features">{{ t('menu_features', lang) }}</a></li>
-                            <li><a href="/#security">{{ t('menu_security', lang) }}</a></li>
+                            <li><a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/analysis">{{ t('menu_health_tests', lang) }}</a></li>
                             
                             <!-- 🌍 Переключатель языка для гостей -->
                             <li class="language-selector">
@@ -292,9 +292,9 @@
                     </a>
                 </li>
                 <li>
-                    <a href="/#security">
-                        <span class="menu-icon">🔒</span>
-                        <span>{{ t('menu_security', lang) }}</span>
+                    <a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/analysis">
+                        <span class="menu-icon">🧪</span>
+                        <span>{{ t('menu_health_tests', lang) }}</span>
                     </a>
                 </li>
                     <a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/faq">

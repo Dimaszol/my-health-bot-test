@@ -184,10 +184,10 @@ SEO_TRANSLATIONS = {
         'de': 'Bitte geben Sie Ihren Wert und Ihr Alter ein',
     },
     'seo_list_title': {
-        'ru': 'Расшифровка биомаркеров',
-        'en': 'Biomarker Encyclopedia',
-        'uk': 'Розшифровка біомаркерів',
-        'de': 'Biomarker-Lexikon',
+        'ru': 'Расшифровка результатов анализов',
+        'en': 'Health Test Results Explained',
+        'uk': 'Розшифровка результатів аналізів',
+        'de': 'Erklärung von Testergebnissen',
     },
     'seo_list_desc': {
         'ru': 'Выберите показатель, чтобы узнать норму и получить персональную расшифровку',

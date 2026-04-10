@@ -468,45 +468,88 @@ async def set_language_route(request: Request, lang: str):
 async def sitemap():
     """
     Sitemap для Google Search Console
-    Включает все языковые версии страниц
+    Включает все языковые версии страниц + динамические SEO страницы из БД
     """
     from fastapi.responses import Response
-    
+    from datetime import date
+    from db_postgresql import get_db_connection, release_db_connection
+
     domain = "https://pulsebook.health"
-    
-    pages = ['/', '/faq', '/privacy', '/terms', '/medical-disclaimer', '/about']
-    langs = ['en', 'de']  # Пока только EN и DE для продвижения
-    
+    langs = ['en', 'de', 'ru', 'uk']
+    today = date.today().strftime('%Y-%m-%d')
+
+    static_pages = ['/', '/faq', '/privacy', '/terms', '/medical-disclaimer', '/about']
+
     urls = []
-    
-    for page in pages:
-        # Английская версия (без префикса)
+
+    # Статические страницы
+    for page in static_pages:
         urls.append({
             "loc": f"{domain}{page}",
             "priority": "1.0" if page == '/' else "0.7",
-            "changefreq": "monthly"
+            "changefreq": "monthly",
+            "lastmod": today
         })
-        
-        # Немецкая версия (с префиксом /de)
-        if 'de' in langs:
+        for lang in ['de', 'ru', 'uk']:
             urls.append({
-                "loc": f"{domain}/de{page}",
+                "loc": f"{domain}/{lang}{page}",
                 "priority": "0.9" if page == '/' else "0.6",
-                "changefreq": "monthly"
+                "changefreq": "monthly",
+                "lastmod": today
             })
-    
+
+    # Каталог /analysis для каждого языка
+    for lang in langs:
+        prefix = f"/{lang}" if lang != 'en' else ""
+        urls.append({
+            "loc": f"{domain}{prefix}/analysis",
+            "priority": "0.9",
+            "changefreq": "weekly",
+            "lastmod": today
+        })
+
+    # SEO страницы показателей из БД
+    try:
+        conn = await get_db_connection()
+        try:
+            rows = await conn.fetch("""
+                SELECT DISTINCT ON (s.slug) s.slug,
+                       COALESCE(s.updated_at, s.created_at, NOW()) as last_updated
+                FROM seo_indicators s
+                JOIN indicators i ON s.slug = i.slug
+                WHERE i.is_published = TRUE
+            """)
+            slugs = [(row['slug'], row['last_updated']) for row in rows]
+        finally:
+            await release_db_connection(conn)
+
+        for slug, last_updated in slugs:
+            lastmod = last_updated.strftime('%Y-%m-%d')
+            for lang in langs:
+                prefix = f"/{lang}" if lang != 'en' else ""
+                urls.append({
+                    "loc": f"{domain}{prefix}/analysis/{slug}",
+                    "priority": "0.7",
+                    "changefreq": "monthly",
+                    "lastmod": lastmod
+                })
+
+    except Exception:
+        pass  # Если БД недоступна — отдаём хотя бы статику
+
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    
+
     for url in urls:
         xml += f'  <url>\n'
         xml += f'    <loc>{url["loc"]}</loc>\n'
+        xml += f'    <lastmod>{url["lastmod"]}</lastmod>\n'
         xml += f'    <priority>{url["priority"]}</priority>\n'
         xml += f'    <changefreq>{url["changefreq"]}</changefreq>\n'
         xml += f'  </url>\n'
-    
+
     xml += '</urlset>'
-    
+
     return Response(content=xml, media_type="application/xml")
 
 

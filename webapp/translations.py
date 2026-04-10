@@ -356,11 +356,11 @@ TRANSLATIONS = {
         'uk': 'Можливості',
         'de': 'Funktionen'
     },
-    'menu_security': {
-        'ru': 'Безопасность',
-        'en': 'Security',
-        'uk': 'Безпека',
-        'de': 'Sicherheit'
+    'menu_health_tests': {
+        'ru': 'Анализы',
+        'en': 'Health Tests',
+        'uk': 'Аналізи',
+        'de': 'Gesundheitstests',
     },
     'footer_navigation': {
         'ru': 'Навигация',
