@@ -466,10 +466,6 @@ async def set_language_route(request: Request, lang: str):
 
 @app.get("/sitemap.xml")
 async def sitemap():
-    """
-    Sitemap для Google Search Console
-    Включает все языковые версии страниц + динамические SEO страницы из БД
-    """
     from fastapi.responses import Response
     from datetime import date
     from db_postgresql import get_db_connection, release_db_connection
@@ -477,38 +473,45 @@ async def sitemap():
     domain = "https://pulsebook.health"
     langs = ['en', 'de', 'ru', 'uk']
     today = date.today().strftime('%Y-%m-%d')
-
     static_pages = ['/', '/faq', '/privacy', '/terms', '/medical-disclaimer', '/about']
 
-    urls = []
+    def lang_prefix(lang):
+        return f"/{lang}" if lang != 'en' else ""
 
-    # Статические страницы
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n'
+    xml += '        xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
+
+    def make_url(loc, priority, changefreq, lastmod, alternates=None):
+        s = f'  <url>\n'
+        s += f'    <loc>{loc}</loc>\n'
+        s += f'    <lastmod>{lastmod}</lastmod>\n'
+        s += f'    <priority>{priority}</priority>\n'
+        s += f'    <changefreq>{changefreq}</changefreq>\n'
+        if alternates:
+            for hreflang, href in alternates.items():
+                s += f'    <xhtml:link rel="alternate" hreflang="{hreflang}" href="{href}"/>\n'
+        s += f'  </url>\n'
+        return s
+
+    # Статические страницы — каждый язык отдельным URL + hreflang на все языки
     for page in static_pages:
-        urls.append({
-            "loc": f"{domain}{page}",
-            "priority": "1.0" if page == '/' else "0.7",
-            "changefreq": "monthly",
-            "lastmod": today
-        })
-        for lang in ['de', 'ru', 'uk']:
-            urls.append({
-                "loc": f"{domain}/{lang}{page}",
-                "priority": "0.9" if page == '/' else "0.6",
-                "changefreq": "monthly",
-                "lastmod": today
-            })
+        priority = "1.0" if page == '/' else "0.7"
+        alternates = {lang: f"{domain}{lang_prefix(lang)}{page}" for lang in langs}
+        alternates['x-default'] = f"{domain}{page}"
+        for lang in langs:
+            loc = f"{domain}{lang_prefix(lang)}{page}"
+            p = priority if lang == 'en' else ("0.9" if page == '/' else "0.6")
+            xml += make_url(loc, p, "monthly", today, alternates)
 
-    # Каталог /analysis для каждого языка
+    # Каталог /analysis
+    analysis_alternates = {lang: f"{domain}{lang_prefix(lang)}/analysis" for lang in langs}
+    analysis_alternates['x-default'] = f"{domain}/analysis"
     for lang in langs:
-        prefix = f"/{lang}" if lang != 'en' else ""
-        urls.append({
-            "loc": f"{domain}{prefix}/analysis",
-            "priority": "0.9",
-            "changefreq": "weekly",
-            "lastmod": today
-        })
+        loc = f"{domain}{lang_prefix(lang)}/analysis"
+        xml += make_url(loc, "0.9", "weekly", today, analysis_alternates)
 
-    # SEO страницы показателей из БД
+    # SEO страницы показателей из БД — один блок на slug с hreflang
     try:
         conn = await get_db_connection()
         try:
@@ -525,31 +528,16 @@ async def sitemap():
 
         for slug, last_updated in slugs:
             lastmod = last_updated.strftime('%Y-%m-%d')
+            alternates = {lang: f"{domain}{lang_prefix(lang)}/analysis/{slug}" for lang in langs}
+            alternates['x-default'] = f"{domain}/analysis/{slug}"
             for lang in langs:
-                prefix = f"/{lang}" if lang != 'en' else ""
-                urls.append({
-                    "loc": f"{domain}{prefix}/analysis/{slug}",
-                    "priority": "0.7",
-                    "changefreq": "monthly",
-                    "lastmod": lastmod
-                })
+                loc = f"{domain}{lang_prefix(lang)}/analysis/{slug}"
+                xml += make_url(loc, "0.8", "monthly", lastmod, alternates)
 
     except Exception:
-        pass  # Если БД недоступна — отдаём хотя бы статику
-
-    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
-    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-
-    for url in urls:
-        xml += f'  <url>\n'
-        xml += f'    <loc>{url["loc"]}</loc>\n'
-        xml += f'    <lastmod>{url["lastmod"]}</lastmod>\n'
-        xml += f'    <priority>{url["priority"]}</priority>\n'
-        xml += f'    <changefreq>{url["changefreq"]}</changefreq>\n'
-        xml += f'  </url>\n'
+        pass
 
     xml += '</urlset>'
-
     return Response(content=xml, media_type="application/xml")
 
 

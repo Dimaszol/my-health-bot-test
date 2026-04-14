@@ -11,13 +11,15 @@
     <meta name="apple-mobile-web-app-title" content="PulseBook">
     <title>{% block title %}{{ t('site_title', lang) }} - {{ t('hero_subtitle', lang) }}{% endblock %}</title>
     
-    <!-- 🌍 HREFLANG для мультиязычности (для Google) -->
+    <!-- 🌍 HREFLANG -->
     <link rel="alternate" hreflang="en" href="https://pulsebook.health{{ base_path }}" />
     <link rel="alternate" hreflang="de" href="https://pulsebook.health/de{{ base_path }}" />
+    <link rel="alternate" hreflang="ru" href="https://pulsebook.health/ru{{ base_path }}" />
+    <link rel="alternate" hreflang="uk" href="https://pulsebook.health/uk{{ base_path }}" />
     <link rel="alternate" hreflang="x-default" href="https://pulsebook.health{{ base_path }}" />
-    
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://pulsebook.health{% if lang == 'de' %}/de{% endif %}{{ base_path }}" />
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://pulsebook.health{% if lang != 'en' %}/{{ lang }}{% endif %}{{ base_path }}" />
     
     <!-- 🎨 СТИЛИ -->
     <link rel="stylesheet" href="/static/css/style.css?v=22">
@@ -71,13 +73,17 @@
     }
     </script>
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17861454069"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DCQE87YL2N"></script>
     <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
 
     gtag('config', 'AW-17861454069');
+    gtag('config', 'G-DCQE87YL2N', {
+        debug_mode: true{% if session.get('user_id') %},
+        user_id: '{{ session.get("user_id") }}'{% endif %}
+    });
     </script>
     {% block extra_styles %}{% endblock %}
 </head>
@@ -496,6 +502,14 @@
 
     <!-- 💬 ОСНОВНОЙ JAVASCRIPT -->
     <script src="/static/js/app.js?v=2"></script>
+
+    <script>
+    function trackEvent(name, params) {
+        if (typeof gtag !== 'undefined') {
+            gtag('event', name, Object.assign({ send_to: 'G-DCQE87YL2N' }, params || {}));
+        }
+    }
+    </script>
     
     {% block extra_scripts %}{% endblock %}
 </body>

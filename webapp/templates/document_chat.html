@@ -129,7 +129,10 @@ function scrollToBottom() {
 }
 
 // Прокрутка при загрузке
-window.addEventListener('load', scrollToBottom);
+window.addEventListener('load', function() {
+    scrollToBottom();
+    trackEvent('document_chat_opened', { doc_id: documentId });
+});
 
 // Автоматическое изменение высоты textarea
 if (messageInput) {
@@ -198,6 +201,7 @@ if (chatForm && hasDetailedConsultations) {
             
             if (data.success) {
                 addMessage(data.response, 'ai');
+                trackEvent('document_chat_message_sent', { doc_id: documentId });
             } else {
                 if (data.show_upgrade) {
                     // Показываем сообщение с кнопкой

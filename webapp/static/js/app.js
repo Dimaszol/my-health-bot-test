@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const chatContainer = document.getElementById('chat-container');
     if (chatContainer) {
+        trackEvent('general_chat_opened');
         // Функция прокрутки - выбирает метод в зависимости от размера экрана
         function scrollToBottom() {
             if (window.innerWidth <= 768) {
@@ -161,6 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Добавляем ответ AI
                 if (data.response) {
                     addMessageToChat('ai', data.response);
+                    trackEvent('general_chat_message_sent');
                 }
                 
             } catch (error) {
@@ -434,6 +436,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const isNewUser = localStorage.getItem('visited');
     
+    if (window.location.pathname === '/dashboard') {
+        trackEvent('dashboard_open');
+    }
+
     if (!isNewUser && window.location.pathname === '/dashboard') {
         // Показываем приветственное сообщение
         setTimeout(() => {

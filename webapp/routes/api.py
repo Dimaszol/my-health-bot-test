@@ -317,6 +317,12 @@ async def chat_message(
         # ✅ ПРОСТО AWAIT!
         await save_message(user_id, 'assistant', formatted_response)
 
+        try:
+            from analytics_system import Analytics
+            await Analytics.track(user_id, "general_chat_message_sent")
+        except Exception:
+            pass
+
         # ==========================================
         # 🎯 УВЕЛИЧИВАЕМ СЧЕТЧИК СООБЩЕНИЙ
         # ==========================================
@@ -487,6 +493,12 @@ async def document_chat_message(
         # Списываем лимит
         from subscription_manager import SubscriptionManager
         await SubscriptionManager.spend_limits(user_id, queries=1)
+
+        try:
+            from analytics_system import Analytics
+            await Analytics.track(user_id, "document_chat_message_sent")
+        except Exception:
+            pass
         
         # Форматируем для веба
         from webapp.utils.text_formatter import format_for_web
@@ -1106,6 +1118,21 @@ async def _process_document_background(document_id: int, user_id: int, local_fil
             )
         finally:
             await release_db_connection(conn)
+        
+        try:
+            from analytics_system import Analytics
+            conn2 = await get_db_connection()
+            try:
+                doc_count = await conn2.fetchval(
+                    "SELECT COUNT(*) FROM documents WHERE user_id = $1 AND confirmed = true",
+                    user_id
+                )
+                event = "second_upload" if doc_count > 1 else "upload_success"
+                await Analytics.track(user_id, event, {"file_type": file_type})
+            finally:
+                await release_db_connection(conn2)
+        except Exception:
+            pass
         
         # 📧 Email триггер первого документа
         try:

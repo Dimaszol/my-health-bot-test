@@ -393,7 +393,8 @@ footer {
             <!-- Кнопка "Детальный анализ" -->
             <a href="/dashboard/document/{{ doc.id }}" 
             class="btn-show-minimal"
-            style="text-decoration: none;">
+            style="text-decoration: none;"
+            onclick="trackEvent('detail_opened', {doc_id: '{{ doc.id }}'})">
                 📄 {{ t('btn_detailed_analysis', lang) }}
             </a>
             
@@ -647,7 +648,8 @@ function toggleDocument(docId) {
         body.style.display = 'block';
         if (toggleText) toggleText.textContent = '{{ t("btn_hide", lang) }}';
         currentOpenDocId = docId;
-        card.classList.remove('new');                
+        card.classList.remove('new');        
+        trackEvent('summary_expanded', { doc_id: docId });       
     }
 }
 
@@ -900,6 +902,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            const existingDocs = document.querySelectorAll('.document-card').length;
+            if (existingDocs > 0) trackEvent('second_upload_intent');
             
             const fileInput = document.getElementById('doc-file');            
             
@@ -934,6 +939,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Сохраняем doc_id в URL — polling подхватится даже после перезагрузки
                     history.replaceState(null, '', '?doc_id=' + data.document_id);
                     startDocumentPolling(data.document_id);
+                    trackEvent('upload_success');
                 } else {
                     alert('❌ {{ t("error", lang) }}: ' + data.error);
                     resetUploadForm();
@@ -1089,6 +1095,7 @@ window.addEventListener('load', function() {
         if (newCard) {
             newCard.classList.add('new', 'new-animated');
             toggleDocument(newDocId);
+            setTimeout(() => trackEvent('analysis_viewed'), 2000);
 
             requestAnimationFrame(() => {
                 setTimeout(() => {

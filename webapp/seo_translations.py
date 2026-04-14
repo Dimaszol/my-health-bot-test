@@ -322,10 +322,10 @@ SEO_TRANSLATIONS = {
         'de': 'Ergebnisinterpretation',
     },
     'seo_section_combinations': {
-        'ru': 'в сочетании с другими показателями крови',
-        'en': 'in combination with other blood markers',
-        'uk': 'у поєднанні з іншими показниками крові',
-        'de': 'in Kombination mit anderen Blutwerten',
+        'ru': 'в сочетании с другими показателями',
+        'en': 'in combination with other markers',
+        'uk': 'у поєднанні з іншими показниками',
+        'de': 'in Kombination mit anderen Werten',
     },
     'seo_section_symptoms': {
         'ru': 'Возможные симптомы',
