@@ -133,10 +133,10 @@ async def process_document(
         )
 
         raw_text = await ask_structured(
-            vision_text[:8000],
             lang=lang,
             assistant_analysis=assistant_analysis,
-            specialist_analysis=vision_text
+            specialist_analysis=vision_text,
+            patient_context=additional_context or ""
         )
 
         document_date = classification.get('document_date')

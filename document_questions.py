@@ -96,7 +96,8 @@ async def generate_and_save_first_message(
     ---
 
     FORMATTING RULES:
-    - Always separate paragraphs with ONE empty line
+    - Always separate paragraphs with ONE empty line (blank line between paragraphs)
+    - Use **bold** for key medical terms or important values
     - No bullet points
     - No headings
     - The text must feel like one coherent message, not separate blocks
