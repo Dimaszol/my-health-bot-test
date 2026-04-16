@@ -143,18 +143,24 @@ function filterUsers() {
 let sortDir = 'active';
 
 function sortTable(by) {
-    sortDir = by;
     const rows = Array.from(document.querySelectorAll('#userTable tr'));
+    const idx = by === 'active' ? 7 : 6;
     rows.sort((a, b) => {
-        const idx = by === 'active' ? 7 : 6;
         const aVal = a.cells[idx]?.textContent.trim() || '';
         const bVal = b.cells[idx]?.textContent.trim() || '';
-        return bVal.localeCompare(aVal);
+        if (aVal === '—') return 1;
+        if (bVal === '—') return -1;
+        // Парсим DD.MM HH:MM → сортируем как строку в формате MM.DD HH:MM
+        const parse = s => {
+            const [date, time] = s.split(' ');
+            const [d, m] = date.split('.');
+            return `${m}.${d} ${time}`;
+        };
+        return parse(bVal).localeCompare(parse(aVal));
     });
     const tbody = document.getElementById('userTable');
     rows.forEach(r => tbody.appendChild(r));
 
-    // Обновляем стрелки
     document.querySelectorAll('th').forEach(th => th.style.color = '');
     event.target.style.color = '#00c9a7';
 }

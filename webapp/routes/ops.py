@@ -39,7 +39,7 @@ async def ops_page(request: Request):
                 (SELECT COUNT(*) FROM documents WHERE user_id = u.user_id AND confirmed = true) as doc_count,
                 (SELECT COUNT(*) FROM analytics_events WHERE user_id = u.user_id) as event_count
             FROM users u
-            ORDER BY last_active DESC NULLS LAST
+            ORDER BY u.created_at DESC
             LIMIT 50
         """)
     finally:
