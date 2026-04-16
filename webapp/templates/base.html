@@ -81,8 +81,7 @@
 
     gtag('config', 'AW-17861454069');
     gtag('config', 'G-DCQE87YL2N', {
-        debug_mode: true{% if session.get('user_id') %},
-        user_id: '{{ session.get("user_id") }}'{% endif %}
+        {% if session.get('user_id') %}user_id: '{{ session.get("user_id") }}'{% endif %}
     });
     </script>
     {% block extra_styles %}{% endblock %}

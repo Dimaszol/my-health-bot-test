@@ -557,10 +557,14 @@ Disallow: /api/
 Disallow: /auth/
 Disallow: /webhook/
 Disallow: /set-language/
+Disallow: /ops
 
 Sitemap: {domain}/sitemap.xml
 """
     return Response(content=content, media_type="text/plain")
+
+from routes import ops
+app.include_router(ops.router, tags=["ops"])
 
 # ==========================================
 # 🧪 ТЕСТОВЫЕ РОУТЫ

@@ -151,5 +151,26 @@ function toggleSection(id) {
     content.style.display = isOpen ? 'none' : 'block';
     icon.style.transform = isOpen ? '' : 'rotate(90deg)';
 }
+// 📊 Отслеживание прокрутки до конца
+let scrollTracked = false;
+window.addEventListener('scroll', function() {
+    if (scrollTracked) return;
+    const scrolled = window.scrollY + window.innerHeight;
+    const total = document.documentElement.scrollHeight;
+    if (scrolled >= total - 100) {
+        scrollTracked = true;
+        trackEvent('summary_scrolled', { doc_id: {{ doc.id }} });
+    }
+});
+
+// 📊 Отслеживание клика на чат по документу
+document.addEventListener('DOMContentLoaded', function() {
+    const chatBtn = document.querySelector('a[href="/dashboard/document/{{ doc.id }}/chat"]');
+    if (chatBtn) {
+        chatBtn.addEventListener('click', function() {
+            trackEvent('chat_doc_opened', { doc_id: {{ doc.id }} });
+        });
+    }
+});
 </script>
 {% endblock %}

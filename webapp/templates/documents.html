@@ -707,7 +707,19 @@ function toggleDocument(docId) {
         if (toggleText) toggleText.textContent = '{{ t("btn_hide", lang) }}';
         currentOpenDocId = docId;
         card.classList.remove('new');        
-        trackEvent('summary_expanded', { doc_id: docId });       
+        trackEvent('summary_expanded', { doc_id: docId });     
+        // Отслеживаем прокрутку страницы до конца сводки
+        let scrollTracked = false;
+        const onScroll = function() {
+            if (scrollTracked) return;
+            const cardBottom = body.getBoundingClientRect().bottom;
+            if (cardBottom <= window.innerHeight + 100) {
+                scrollTracked = true;
+                trackEvent('summary_scrolled', { doc_id: docId });
+                window.removeEventListener('scroll', onScroll);
+            }
+        };
+        window.addEventListener('scroll', onScroll);  
     }
 }
 
@@ -959,7 +971,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+            e.preventDefault();            
 
             const existingDocs = document.querySelectorAll('.document-card').length;
             if (existingDocs > 0) trackEvent('second_upload_intent');

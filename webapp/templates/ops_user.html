@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User {{ user.user_id }} — Ops</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'SF Pro Display', -apple-system, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+
+  .header { background: #1a1d2e; border-bottom: 1px solid #2d3152; padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; }
+  .header a { color: #00c9a7; text-decoration: none; font-size: 0.9rem; }
+  .header h1 { font-size: 1.1rem; font-weight: 700; color: #e2e8f0; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 2rem; display: grid; grid-template-columns: 340px 1fr; gap: 1.5rem; }
+
+  .card { background: #1a1d2e; border: 1px solid #2d3152; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .card h2 { font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; }
+
+  .user-info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #1e2235; }
+  .user-info-row:last-child { border-bottom: none; }
+  .user-info-row .k { font-size: 0.82rem; color: #64748b; }
+  .user-info-row .v { font-size: 0.9rem; color: #e2e8f0; font-weight: 500; }
+
+  /* Статус */
+  .status-block { border-radius: 10px; padding: 1rem 1.2rem; display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem; }
+  .status-block.red { background: #450a0a; border: 1px solid #7f1d1d; }
+  .status-block.orange { background: #431407; border: 1px solid #7c2d12; }
+  .status-block.green { background: #052e16; border: 1px solid #14532d; }
+  .status-block .icon { font-size: 1.8rem; }
+  .status-block .text { font-size: 0.95rem; font-weight: 600; }
+
+  /* Воронка */
+  .funnel-step { display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem 0; border-bottom: 1px solid #1e2235; }
+  .funnel-step:last-child { border-bottom: none; }
+  .funnel-icon { font-size: 1.1rem; width: 28px; text-align: center; }
+  .funnel-label { flex: 1; font-size: 0.9rem; }
+  .funnel-label.done { color: #e2e8f0; }
+  .funnel-label.miss { color: #475569; text-decoration: line-through; }
+  .check { font-size: 1rem; }
+
+  /* Тайминги */
+  .timing-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #1e2235; }
+  .timing-row:last-child { border-bottom: none; }
+  .timing-row .k { font-size: 0.82rem; color: #64748b; }
+  .timing-row .v { font-size: 0.9rem; color: #00c9a7; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* Документы */
+  .doc-pill { background: #1e2235; border-radius: 8px; padding: 0.6rem 0.9rem; margin-bottom: 0.5rem; font-size: 0.85rem; }
+  .doc-pill .doc-title { color: #e2e8f0; font-weight: 600; margin-bottom: 0.2rem; }
+  .doc-pill .doc-meta { color: #64748b; font-size: 0.78rem; }
+
+  /* Лента событий */
+  .event-line { display: flex; gap: 1rem; padding: 0.45rem 0; border-bottom: 1px solid #13151f; align-items: flex-start; }
+  .event-time { font-size: 0.75rem; color: #475569; min-width: 105px; padding-top: 2px; font-variant-numeric: tabular-nums; }
+  .event-name { font-size: 0.85rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 4px; }
+  .event-props { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+
+  .ev-registration_completed { background: #052e16; color: #4ade80; }
+  .ev-upload_success, .ev-document_uploaded, .ev-second_upload { background: #1a3a5c; color: #60a5fa; }
+  .ev-summary_viewed, .ev-summary_scrolled { background: #2d1b69; color: #a78bfa; }
+  .ev-general_chat_message_sent, .ev-chat_doc_opened { background: #1a3a2a; color: #34d399; }
+  .ev-subscription_opened, .ev-payment_completed { background: #3b1515; color: #f87171; }
+  .ev-default { background: #1e2235; color: #94a3b8; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="/ops?secret={{ secret }}">← Все пользователи</a>
+  <h1>{{ user.name or 'Без имени' }} &nbsp;·&nbsp; ID {{ user.user_id }}</h1>
+</div>
+
+<div class="container">
+
+  <!-- ЛЕВАЯ КОЛОНКА -->
+  <div class="left-col">
+
+    <!-- Статус -->
+    <div class="status-block {{ status[2] }}">
+      <div class="icon">{{ status[0] }}</div>
+      <div class="text">{{ status[1] }}</div>
+    </div>
+
+    <!-- Инфо о пользователе -->
+    <div class="card">
+      <h2>Профиль</h2>
+      <div class="user-info-row"><span class="k">Email</span><span class="v">{{ user.email or '—' }}</span></div>
+      <div class="user-info-row"><span class="k">Источник</span><span class="v">{{ user.registration_source or '—' }}</span></div>
+      <div class="user-info-row"><span class="k">Язык</span><span class="v">{{ user.language or '—' }}</span></div>
+      <div class="user-info-row"><span class="k">Регистрация</span><span class="v">{% if user.created_at %}{{ user.created_at.strftime('%d.%m.%Y %H:%M') }}{% else %}—{% endif %}</span></div>
+      <div class="user-info-row"><span class="k">Подписка</span><span class="v">{{ limits.get('subscription_type') or 'free' }}</span></div>
+      <div class="user-info-row"><span class="k">Документов осталось</span><span class="v">{{ limits.get('documents_left', '—') }}</span></div>
+      <div class="user-info-row"><span class="k">GPT запросов</span><span class="v">{{ limits.get('gpt4o_queries_left', '—') }}</span></div>
+    </div>
+
+    <!-- Воронка -->
+    <div class="card">
+      <h2>Воронка</h2>
+      {% for step in funnel %}
+      <div class="funnel-step">
+        <div class="funnel-icon">{{ step.icon }}</div>
+        <div class="funnel-label {% if step.done %}done{% else %}miss{% endif %}">{{ step.label }}</div>
+        <div class="check">{% if step.done %}✅{% else %}❌{% endif %}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Тайминги -->
+    <div class="card">
+      <h2>Тайминги</h2>
+      <div class="timing-row">
+        <span class="k">Регистрация → Загрузка</span>
+        <span class="v">{{ fmt_seconds(timings.reg_to_upload) }}</span>
+      </div>
+      <div class="timing-row">
+        <span class="k">Загрузка → Сводка</span>
+        <span class="v">{{ fmt_seconds(timings.upload_to_summary) }}</span>
+      </div>
+      <div class="timing-row">
+        <span class="k">Сводка → Чат</span>
+        <span class="v">{{ fmt_seconds(timings.summary_to_chat) }}</span>
+      </div>
+    </div>
+
+    <!-- Документы -->
+    {% if docs %}
+    <div class="card">
+      <h2>Документы ({{ docs | length }})</h2>
+      {% for doc in docs %}
+      <div class="doc-pill">
+        <div class="doc-title">{{ doc.title or 'Без названия' }}</div>
+        <div class="doc-meta">
+          {{ doc.document_type or '—' }} &nbsp;·&nbsp;
+          {% if doc.uploaded_at %}{{ doc.uploaded_at.strftime('%d.%m.%Y %H:%M') }}{% endif %}
+          &nbsp;·&nbsp; {% if doc.confirmed %}✅ подтверждён{% else %}⏳ в обработке{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- ПРАВАЯ КОЛОНКА — лента событий -->
+  <div class="right-col">
+    <div class="card" style="margin-bottom:0;">
+      <h2>Лента событий ({{ events | length }})</h2>
+
+      {% if events %}
+        {% for e in events | reverse %}
+        <div class="event-line">
+          <div class="event-time">
+            {% if e.timestamp %}{{ e.timestamp.strftime('%d.%m %H:%M:%S') }}{% endif %}
+          </div>
+          <div>
+            <div>
+              <span class="event-name ev-{{ e.event }} ev-default">{{ e.event }}</span>
+            </div>
+            {% if e.properties and e.properties != '{}' %}
+            <div class="event-props">{{ e.properties }}</div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="color:#475569; padding: 1rem 0; font-size:0.9rem;">Событий нет</div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -285,6 +285,12 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
     if just_registered:
         request.session.pop('just_registered', None)
     
+    try:
+        from analytics_system import Analytics
+        await Analytics.track(user_id, "dashboard_open")
+    except Exception:
+        pass
+    
     return templates.TemplateResponse('dashboard.html', context)
 
 
@@ -569,7 +575,13 @@ async def subscription_page(request: Request, user_id: int = Depends(get_current
     context = get_template_context(request)
     context['packages'] = formatted_packages
     context['limits'] = limits
-    context['has_subscription'] = current_package_id is not None  # ✅ ИСПРАВЛЕНО
+    context['has_subscription'] = current_package_id is not None
+
+    try:
+        from analytics_system import Analytics
+        await Analytics.track(user_id, "subscription_opened")
+    except Exception:
+        pass
     
     return templates.TemplateResponse("subscription.html", context)
 
@@ -632,6 +644,12 @@ async def document_detail(
         'timeline': timeline,
         'first_ai_message': last_ai_formatted,
     })
+
+    try:
+        from analytics_system import Analytics
+        await Analytics.track(user_id, "summary_viewed", {"doc_id": doc_id})
+    except Exception:
+        pass
     
     return templates.TemplateResponse("document_detail.html", context)
 
@@ -695,6 +713,12 @@ async def document_chat_page(
         'has_detailed_consultations': has_detailed
     })
     
+    try:
+        from analytics_system import Analytics
+        await Analytics.track(user_id, "chat_doc_opened", {"doc_id": doc_id})
+    except Exception:
+        pass
+
     return templates.TemplateResponse("document_chat.html", context)
 
 @router.get("/test-gpt5")

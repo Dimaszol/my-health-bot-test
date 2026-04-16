@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — PulseBook</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'SF Pro Display', -apple-system, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+  
+  .header { background: #1a1d2e; border-bottom: 1px solid #2d3152; padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; }
+  .header h1 { font-size: 1.2rem; font-weight: 700; color: #00c9a7; }
+  .header span { color: #64748b; font-size: 0.85rem; }
+  
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+  
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card { background: #1a1d2e; border: 1px solid #2d3152; border-radius: 12px; padding: 1.2rem; }
+  .stat-card .num { font-size: 2rem; font-weight: 800; color: #00c9a7; }
+  .stat-card .lbl { font-size: 0.8rem; color: #64748b; margin-top: 0.2rem; }
+
+  .search-box { margin-bottom: 1.5rem; }
+  .search-box input { width: 100%; padding: 0.8rem 1rem; background: #1a1d2e; border: 1px solid #2d3152; border-radius: 8px; color: #e2e8f0; font-size: 0.95rem; outline: none; }
+  .search-box input:focus { border-color: #00c9a7; }
+  .search-box input::placeholder { color: #475569; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th { text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #2d3152; }
+  tbody tr { border-bottom: 1px solid #1e2235; transition: background 0.15s; cursor: pointer; }
+  tbody tr:hover { background: #1a1d2e; }
+  tbody td { padding: 0.85rem 1rem; font-size: 0.9rem; }
+  
+  .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  .badge-tg { background: #1a3a5c; color: #60a5fa; }
+  .badge-web { background: #1a3a2a; color: #4ade80; }
+  .badge-green { background: #064e3b; color: #34d399; }
+  .badge-red { background: #450a0a; color: #f87171; }
+  .badge-orange { background: #431407; color: #fb923c; }
+
+  .user-link { color: #00c9a7; text-decoration: none; font-weight: 600; }
+  .user-link:hover { text-decoration: underline; }
+
+  .last-active { color: #94a3b8; font-size: 0.82rem; }
+
+  .table-wrap { background: #13151f; border: 1px solid #2d3152; border-radius: 12px; overflow: hidden; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔐 PulseBook Ops</h1>
+  <span>Последние 50 пользователей</span>
+</div>
+
+<div class="container">
+
+  <!-- Статистика -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num">{{ users | length }}</div>
+      <div class="lbl">Всего показано</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">{{ users | selectattr('doc_count', '>', 0) | list | length }}</div>
+      <div class="lbl">Загрузили документ</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">{{ users | selectattr('registration_source', 'equalto', 'telegram') | list | length }}</div>
+      <div class="lbl">Из Telegram</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">{{ users | selectattr('registration_source', 'equalto', 'web') | list | length }}</div>
+      <div class="lbl">С веба</div>
+    </div>
+  </div>
+
+  <!-- Поиск -->
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="🔍 Поиск по имени, email или ID..." onkeyup="filterUsers()">
+  </div>
+
+  <!-- Таблица -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Имя</th>
+          <th>Email</th>
+          <th>Источник</th>
+          <th>Документы</th>
+          <th>События</th>
+          <th>Зарегистрирован</th>
+          <th>Последняя активность</th>
+        </tr>
+      </thead>
+      <tbody id="userTable">
+        {% for u in users %}
+        <tr onclick="window.location='/ops/user/{{ u.user_id }}?secret={{ secret }}'">
+          <td style="color:#64748b; font-size:0.8rem;">{{ u.user_id }}</td>
+          <td>
+            <a href="/ops/user/{{ u.user_id }}?secret={{ secret }}" class="user-link" onclick="event.stopPropagation()">
+              {{ u.name or '—' }}
+            </a>
+          </td>
+          <td style="color:#94a3b8; font-size:0.85rem;">{{ u.email or '—' }}</td>
+          <td>
+            {% if u.registration_source == 'telegram' %}
+              <span class="badge badge-tg">Telegram</span>
+            {% else %}
+              <span class="badge badge-web">Web</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.doc_count > 0 %}
+              <span class="badge badge-green">{{ u.doc_count }} doc</span>
+            {% else %}
+              <span class="badge badge-red">0</span>
+            {% endif %}
+          </td>
+          <td style="color:#94a3b8;">{{ u.event_count }}</td>
+          <td class="last-active">
+            {% if u.created_at %}{{ u.created_at.strftime('%d.%m %H:%M') }}{% else %}—{% endif %}
+          </td>
+          <td class="last-active">
+            {% if u.last_active %}{{ u.last_active.strftime('%d.%m %H:%M') }}{% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+function filterUsers() {
+  const val = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('#userTable tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(val) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
