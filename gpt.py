@@ -595,10 +595,8 @@ STYLE AND TONE:
 
 — Professional, calm, and direct
 — No moralizing or excessive detail
-— The text should feel like
-  an honest physician’s summary
-  that provides clarity and psychological safety
-  proportional to the findings
+— The text should feel like an honest physician’s summary that provides clarity and psychological safety proportional to the findings
+— Use light formatting to improve readability (bold for key terms, short paragraphs, clear emphasis)
 
 IMPORTANT:
 You MUST respond in {response_language} language.

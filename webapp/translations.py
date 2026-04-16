@@ -3402,6 +3402,78 @@ TRANSLATIONS = {
         'uk': 'Ваші дані обробляються відповідно до принципів захисту даних GDPR та зберігаються на інфраструктурі, що надається сервісами, які пройшли аудит SOC 2.',
         'de': 'Ihre Daten werden gemäß den Datenschutzgrundsätzen der DSGVO verarbeitet und auf einer Infrastruktur gespeichert, die von SOC 2-auditierten Dienstleistern bereitgestellt wird.'
     },
+    'funnel_cta_question': {
+        'ru': 'Хотите понять, что это значит именно в вашем случае?',
+        'uk': 'Хочете зрозуміти, що це означає саме у вашому випадку?',
+        'en': 'Want to understand what this means for your specific case?',
+        'de': 'Möchten Sie verstehen, was das in Ihrem Fall bedeutet?'
+    },
+    'funnel_cta_btn': {
+        'ru': 'Обсудить мой результат',
+        'uk': 'Обговорити мій результат',
+        'en': 'Discuss my result',
+        'de': 'Mein Ergebnis besprechen'
+    },
+    'funnel_cta_btn_2': {
+        'ru': 'Ответить и продолжить разбор',
+        'uk': 'Відповісти і продовжити розбір',
+        'en': 'Answer and continue analysis',
+        'de': 'Antworten und Analyse fortsetzen'
+    },
+    'funnel_specialist_title': {
+        'ru': 'Клиническая интерпретация',
+        'uk': 'Клінічна інтерпретація',
+        'en': 'Clinical interpretation',
+        'de': 'Klinische Interpretation'
+    },
+    'funnel_specialist_intro': {
+        'ru': 'В подробном разборе:',
+        'uk': 'У детальному розборі:',
+        'en': 'In the detailed analysis:',
+        'de': 'In der detaillierten Analyse:'
+    },
+    'funnel_specialist_li_1': {
+        'ru': 'возможные причины изменений',
+        'uk': 'можливі причини змін',
+        'en': 'possible causes of changes',
+        'de': 'mögliche Ursachen der Veränderungen'
+    },
+    'funnel_specialist_li_2': {
+        'ru': 'как интерпретируются показатели',
+        'uk': 'як інтерпретуються показники',
+        'en': 'how the indicators are interpreted',
+        'de': 'wie die Indikatoren interpretiert werden'
+    },
+    'funnel_specialist_li_3': {
+        'ru': 'какие сценарии учитываются в медицинской практике',
+        'uk': 'які сценарії враховуються в медичній практиці',
+        'en': 'which scenarios are considered in medical practice',
+        'de': 'welche Szenarien in der medizinischen Praxis berücksichtigt werden'
+    },
+    'funnel_specialist_btn': {
+        'ru': 'Посмотреть полный разбор',
+        'uk': 'Переглянути повний розбір',
+        'en': 'See full analysis',
+        'de': 'Vollständige Analyse ansehen'
+    },
+    'funnel_block_title': {
+        'ru': 'Что это значит для вас',
+        'uk': 'Що це означає для вас',
+        'en': 'What this means for you',
+        'de': 'Was das für Sie bedeutet'
+    },
+    'funnel_q_title': {
+        'ru': 'Давайте уточним вашу ситуацию',
+        'uk': 'Давайте уточнимо вашу ситуацію',
+        'en': 'Let\'s clarify your situation',
+        'de': 'Lassen Sie uns Ihre Situation klären'
+    },
+    'funnel_q_subtitle': {
+        'ru': 'Давайте уточним пару деталей — это поможет точнее разобраться в результате',
+        'uk': 'Давайте уточнимо кілька деталей — це допоможе точніше розібратися з результатом',
+        'en': 'Let’s clarify a few details — this will help better understand your result',
+        'de': 'Lassen Sie uns ein paar Details klären — das hilft, Ihr Ergebnis besser zu verstehen'
+    },
     
 }
 

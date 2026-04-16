@@ -360,12 +360,9 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
         # Преобразуем в список словарей
         docs_list = [dict(doc) for doc in documents]
         
-        # ✅ НОВОЕ: Для каждого документа загружаем его medical_timeline записи
+        # Для каждого документа загружаем его medical_timeline записи
         for doc in docs_list:
-            # Получаем timeline записи для этого документа
             timeline_entries = await get_timeline_by_document(doc['id'], user_id)
-            
-            # Добавляем записи в документ
             doc['timeline_entries'] = timeline_entries
 
             # Последнее AI-сообщение в чате по документу
@@ -381,6 +378,23 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
             else:
                 doc['last_chat_message'] = None
 
+            # Воронка — только если документ единственный
+            doc['funnel_para_1_2'] = ''
+            doc['funnel_para_3'] = ''
+            if len(docs_list) == 1:
+                first_msg = await conn.fetchrow(
+                    """SELECT message FROM document_chat_history
+                    WHERE document_id = $1 AND user_id = $2 AND role = 'assistant'
+                    ORDER BY id ASC LIMIT 1""",
+                    doc['id'], user_id
+                )
+                if first_msg:
+                    from webapp.utils.text_formatter import format_for_web
+                    raw = first_msg['message']
+                    paragraphs = [p.strip() for p in raw.split('\n\n') if p.strip()]
+                    doc['funnel_para_1_2'] = format_for_web('\n\n'.join(paragraphs[:2])) if len(paragraphs) >= 2 else format_for_web(raw)
+                    doc['funnel_para_3'] = format_for_web(paragraphs[2]) if len(paragraphs) >= 3 else ''
+
         user = await conn.fetchrow(
             "SELECT birth_year FROM users WHERE user_id = $1",
             user_id
@@ -392,13 +406,12 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
     finally:
         await release_db_connection(conn)
     
-    # ✅ ИСПОЛЬЗУЕМ get_template_context как в старой версии!
     context = get_template_context(request)
     context['documents'] = docs_list
     context['processing_document'] = dict(processing_docs[0]) if processing_docs else None
     context['has_document_limits'] = has_document_limits
     context['show_birth_year_tip'] = show_birth_year_tip
-    # Формируем цены с символом валюты из context
+    context['is_only_document'] = len(docs_list) == 1
     currency_symbol = context.get('currency_symbol', '$')
     context['one_time_price'] = f"{currency_symbol}2.49"
     context['basic_price'] = f"{currency_symbol}3.99"
