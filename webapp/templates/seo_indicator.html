@@ -2,13 +2,17 @@
 
 {% block title %}{{ page.meta_title }} - {{ t('site_title', lang) }}{% endblock %}
 
-{% block extra_styles %}
-<meta name="description" content="{{ page.meta_desc }}">
+{% block hreflang %}
 <link rel="canonical" href="https://pulsebook.health{% if lang != 'en' %}/{{ lang }}{% endif %}/analysis/{{ page.slug }}">
-<link rel="alternate" hreflang="ru" href="https://pulsebook.health/ru/analysis/{{ page.slug }}">
-<link rel="alternate" hreflang="uk" href="https://pulsebook.health/uk/analysis/{{ page.slug }}">
 <link rel="alternate" hreflang="en" href="https://pulsebook.health/analysis/{{ page.slug }}">
 <link rel="alternate" hreflang="de" href="https://pulsebook.health/de/analysis/{{ page.slug }}">
+<link rel="alternate" hreflang="ru" href="https://pulsebook.health/ru/analysis/{{ page.slug }}">
+<link rel="alternate" hreflang="uk" href="https://pulsebook.health/uk/analysis/{{ page.slug }}">
+<link rel="alternate" hreflang="x-default" href="https://pulsebook.health/analysis/{{ page.slug }}">
+{% endblock %}
+
+{% block extra_styles %}
+<meta name="description" content="{{ page.meta_desc }}">
 
 <script type="application/ld+json">
 {
