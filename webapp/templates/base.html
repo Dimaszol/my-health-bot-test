@@ -39,7 +39,7 @@
     <meta property="og:title" content="{% block og_title %}PulseBook - Medical Document Understanding{% endblock %}">
     <meta property="og:description" content="{% block og_description %}Health information support with AI-powered document analysis{% endblock %}">
     <meta property="og:image" content="https://pulsebook.health/static/og-image.png">
-    <meta property="og:url" content="https://pulsebook.health{% if lang == 'de' %}/de{% endif %}{{ base_path }}">
+    <meta property="og:url" content="https://pulsebook.health{% if lang != 'en' %}/{{ lang }}{% endif %}{{ base_path }}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="PulseBook">
     

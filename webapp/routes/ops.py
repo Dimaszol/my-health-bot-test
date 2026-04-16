@@ -39,7 +39,7 @@ async def ops_page(request: Request):
                 (SELECT COUNT(*) FROM documents WHERE user_id = u.user_id AND confirmed = true) as doc_count,
                 (SELECT COUNT(*) FROM analytics_events WHERE user_id = u.user_id) as event_count
             FROM users u
-            ORDER BY u.created_at DESC
+            ORDER BY last_active DESC NULLS LAST
             LIMIT 50
         """)
     finally:
@@ -99,11 +99,10 @@ async def ops_user_detail(request: Request, user_id: int):
     event_names = [e["event"] for e in events_list]
 
     funnel = [
-        {"key": "registration_completed", "label": "Регистрация", "icon": "✅"},
         {"key": "dashboard_open",         "label": "Открыл кабинет", "icon": "🏠"},
-        {"key": "upload_clicked",         "label": "Нажал загрузить", "icon": "📎"},
+        {"key": "documents_page_opened", "label": "Открыл страницу документов", "icon": "📂"},
         {"key": "upload_success",         "label": "Загрузил документ", "icon": "📄"},
-        {"key": "summary_viewed",         "label": "Открыл сводку", "icon": "👁"},
+        {"key": "summary_viewed",         "label": "Открыл подробный разбор", "icon": "👁"},
         {"key": "summary_scrolled",       "label": "Пролистал сводку", "icon": "📜"},
         {"key": "chat_doc_opened",        "label": "Чат по документу", "icon": "💬"},
         {"key": "general_chat_message_sent", "label": "Написал в чат", "icon": "🤖"},

@@ -90,8 +90,8 @@
           <th>Источник</th>
           <th>Документы</th>
           <th>События</th>
-          <th>Зарегистрирован</th>
-          <th>Последняя активность</th>
+          <th style="cursor:pointer;" onclick="sortTable('created')">Зарегистрирован ↕</th>
+          <th style="cursor:pointer; color:#00c9a7;" onclick="sortTable('active')">Последняя активность ↓</th>
         </tr>
       </thead>
       <tbody id="userTable">
@@ -139,6 +139,24 @@ function filterUsers() {
   document.querySelectorAll('#userTable tr').forEach(row => {
     row.style.display = row.textContent.toLowerCase().includes(val) ? '' : 'none';
   });
+}
+let sortDir = 'active';
+
+function sortTable(by) {
+    sortDir = by;
+    const rows = Array.from(document.querySelectorAll('#userTable tr'));
+    rows.sort((a, b) => {
+        const idx = by === 'active' ? 7 : 6;
+        const aVal = a.cells[idx]?.textContent.trim() || '';
+        const bVal = b.cells[idx]?.textContent.trim() || '';
+        return bVal.localeCompare(aVal);
+    });
+    const tbody = document.getElementById('userTable');
+    rows.forEach(r => tbody.appendChild(r));
+
+    // Обновляем стрелки
+    document.querySelectorAll('th').forEach(th => th.style.color = '');
+    event.target.style.color = '#00c9a7';
 }
 </script>
 </body>

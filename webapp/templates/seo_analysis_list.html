@@ -4,10 +4,10 @@
 
 {% block extra_styles %}
 <meta name="description" content="{{ st('seo_list_desc', lang) }}">
-<link rel="canonical" href="https://pulsebook.health/{{ lang }}/analysis">
+<link rel="canonical" href="https://pulsebook.health{% if lang != 'en' %}/{{ lang }}{% endif %}/analysis">
 <link rel="alternate" hreflang="ru" href="https://pulsebook.health/ru/analysis">
 <link rel="alternate" hreflang="uk" href="https://pulsebook.health/uk/analysis">
-<link rel="alternate" hreflang="en" href="https://pulsebook.health/en/analysis">
+<link rel="alternate" hreflang="en" href="https://pulsebook.health/analysis">
 <link rel="alternate" hreflang="de" href="https://pulsebook.health/de/analysis">
 
 <script type="application/ld+json">
@@ -16,7 +16,7 @@
   "@type": "CollectionPage",
   "name": "{{ st('seo_list_title', lang) }}",
   "description": "{{ st('seo_list_desc', lang) }}",
-  "url": "https://pulsebook.health/{{ lang }}/analysis"
+  "url": "https://pulsebook.health{% if lang != 'en' %}/{{ lang }}{% endif %}/analysis"
 }
 </script>
 

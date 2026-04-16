@@ -4,10 +4,10 @@
 
 {% block extra_styles %}
 <meta name="description" content="{{ page.meta_desc }}">
-<link rel="canonical" href="https://pulsebook.health/{{ lang }}/analysis/{{ page.slug }}">
+<link rel="canonical" href="https://pulsebook.health{% if lang != 'en' %}/{{ lang }}{% endif %}/analysis/{{ page.slug }}">
 <link rel="alternate" hreflang="ru" href="https://pulsebook.health/ru/analysis/{{ page.slug }}">
 <link rel="alternate" hreflang="uk" href="https://pulsebook.health/uk/analysis/{{ page.slug }}">
-<link rel="alternate" hreflang="en" href="https://pulsebook.health/en/analysis/{{ page.slug }}">
+<link rel="alternate" hreflang="en" href="https://pulsebook.health/analysis/{{ page.slug }}">
 <link rel="alternate" hreflang="de" href="https://pulsebook.health/de/analysis/{{ page.slug }}">
 
 <script type="application/ld+json">
@@ -16,7 +16,7 @@
   "@type": "MedicalWebPage",
   "name": "{{ page.meta_title }}",
   "description": "{{ page.meta_desc }}",
-  "url": "https://pulsebook.health/{{ lang }}/analysis/{{ page.slug }}",
+  "url": "https://pulsebook.health{% if lang != 'en' %}/{{ lang }}{% endif %}/analysis/{{ page.slug }}",
   "about": {
     "@type": "MedicalTest",
     "name": "{{ page.indicator_name }}",
@@ -635,7 +635,7 @@
         <h2>{{ st('seo_section_related', lang) }}</h2>
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
             {% for rel in page.related %}
-            <a href="/{{ lang }}/analysis/{{ rel.slug }}" class="card" style="text-decoration: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem;">
+            <a href="{% if lang != 'en' %}/{{ lang }}{% endif %}/analysis/{{ rel.slug }}" class="card" style="text-decoration: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem;">
                 <div>
                     <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
                         {{ rel.name }} — {{ rel.relation_title }}

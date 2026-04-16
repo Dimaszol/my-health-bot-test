@@ -355,7 +355,17 @@ async def login(request: Request):
     context = get_template_context(request)
     return templates.TemplateResponse('login.html', context)
 
-# Добавь этот маршрут в webapp/app.py после маршрута "/login"
+@app.get("/{lang}/login", response_class=HTMLResponse)
+async def login_with_lang(request: Request, lang: str):
+    if lang not in ['ru', 'uk', 'de']:
+        raise HTTPException(status_code=404)
+    
+    if request.session.get('user_id'):
+        return RedirectResponse(url='/dashboard', status_code=302)
+    
+    request.session['language'] = lang
+    context = get_template_context(request)
+    return templates.TemplateResponse('login.html', context)
 
 @app.get("/lab-test-analysis", response_class=HTMLResponse)
 @app.get("/blood-test", response_class=HTMLResponse)
