@@ -21,7 +21,7 @@
     {% endblock %}
        
     <!-- 🎨 СТИЛИ -->
-    <link rel="stylesheet" href="/static/css/style.css?v=22">
+    <link rel="stylesheet" href="/static/css/style.css?v=23">
     <link rel="stylesheet" href="/static/css/mobile.css?v=42">
      
     <!-- 🔤 ШРИФТЫ (Google Fonts - Inter) -->
@@ -355,7 +355,40 @@
             {% block content %}{% endblock %}
         </main>
     </div>
-    
+    {% if session.get('user_id') and '/chat' not in request.url.path %}
+    <!-- 📱 НИЖНЯЯ НАВИГАЦИЯ (мобильная) -->
+    <nav class="bottom-nav">
+        <a href="/dashboard/profile" class="bottom-nav-item {% if '/profile' in request.url.path %}active{% endif %}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>{{ t('menu_profile', lang) }}</span>
+        </a>
+        <a href="/dashboard/documents" class="bottom-nav-item {% if '/documents' in request.url.path %}active{% endif %}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            <span>{{ t('menu_documents', lang) }}</span>
+        </a>
+        <a href="/dashboard/chat" class="bottom-nav-item {% if '/chat' in request.url.path %}active{% endif %}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>{{ t('menu_chat', lang) }}</span>
+        </a>
+        <a href="/dashboard" class="bottom-nav-item {% if request.url.path == '/dashboard' %}active{% endif %}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+            </svg>
+            <span>{{ t('menu_dashboard', lang) }}</span>
+        </a>        
+    </nav>
+    {% endif %}
     <!-- 🎨 FOOTER (Подвал) -->
     <footer>
         <div class="container">

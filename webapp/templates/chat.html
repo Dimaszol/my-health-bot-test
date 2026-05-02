@@ -10,20 +10,16 @@
 
 {% block content %}
 <!-- 🎯 ИНДИКАТОР РЕЖИМА КОНСУЛЬТАЦИЙ -->
+{% if not has_detailed_consultations %}
 <div class="consultation-mode-badge">
-    {% if has_detailed_consultations %}
-    <div class="mode-indicator detailed">
-        <span>{{ t('mode_detailed_consultations', lang) }}</span>
-    </div>
-    {% else %}
     <a href="/dashboard/subscription" class="mode-indicator basic">
         <div class="mode-content">
             <span class="mode-text">{{ t('mode_basic_responses', lang) }}</span>
             <span class="mode-upgrade">{{ t('mode_upgrade_to_detailed', lang) }}</span>
         </div>
     </a>
-    {% endif %}
 </div>
+{% endif %}
 <div class="chat-container-wrapper">
     <!-- ОКНО СООБЩЕНИЙ -->
     <div id="chat-container">

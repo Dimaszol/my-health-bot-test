@@ -3474,6 +3474,19 @@ TRANSLATIONS = {
         'en': 'Let’s clarify a few details — this will help better understand your result',
         'de': 'Lassen Sie uns ein paar Details klären — das hilft, Ihr Ergebnis besser zu verstehen'
     },
+    'tab_upload_document': {'ru': 'Загрузить документ', 'en': 'Upload Document', 'uk': 'Завантажити документ', 'de': 'Dokument hochladen'},
+    'tab_my_documents': {'ru': 'Мои документы', 'en': 'My Documents', 'uk': 'Мої документи', 'de': 'Meine Dokumente'},
+    'recent_documents': {'ru': 'Последние документы', 'en': 'Recent Documents', 'uk': 'Останні документи', 'de': 'Letzte Dokumente'},
+    'search_placeholder': {'ru': 'Поиск по названию и описанию...', 'en': 'Search by title and description...', 'uk': 'Пошук за назвою та описом...', 'de': 'Suche nach Titel und Beschreibung...'},
+    'doc_type_ecg':            {'ru': 'ЭКГ',              'en': 'ECG',           'uk': 'ЕКГ',              'de': 'EKG'},
+    'doc_type_lab_results':    {'ru': 'Анализы',           'en': 'Lab Tests',     'uk': 'Аналізи',          'de': 'Analysen'},
+    'doc_type_imaging':        {'ru': 'Снимки',            'en': 'Imaging',       'uk': 'Знімки',           'de': 'Bildgebung'},
+    'doc_type_pathology':      {'ru': 'Патология',         'en': 'Pathology',     'uk': 'Патологія',        'de': 'Pathologie'},
+    'doc_type_clinical_report':{'ru': 'Выписки',           'en': 'Clinical Report','uk': 'Виписки',         'de': 'Klinischer Bericht'},
+    'doc_type_prescription':   {'ru': 'Рецепты',           'en': 'Prescriptions', 'uk': 'Рецепти',          'de': 'Rezepte'},
+    'doc_type_generic':        {'ru': 'Прочее',            'en': 'Other',         'uk': 'Інше',             'de': 'Sonstiges'},
+    'error_loading': {'ru': 'Ошибка загрузки', 'en': 'Loading error', 'uk': 'Помилка завантаження', 'de': 'Ladefehler'},
+    'all_label': {'ru': 'Все', 'en': 'All', 'uk': 'Всі', 'de': 'Alle'},
     
 }
 

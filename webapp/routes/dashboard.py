@@ -4,7 +4,7 @@
 import sys
 import os
 from fastapi import APIRouter, Request, Depends, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 import markdown
 from webapp.utils.logger import safe_log_error, safe_log_info
@@ -113,7 +113,9 @@ async def get_user_stats(user_id: int) -> dict:
     try:
         # Количество документов
         total_docs = await conn.fetchval(
-            "SELECT COUNT(*) FROM documents WHERE user_id = $1", 
+            """SELECT COUNT(*) FROM documents 
+            WHERE user_id = $1 
+            AND full_analysis IS NOT NULL""",
             user_id
         )
         
@@ -296,13 +298,8 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
 
 @router.get("/documents", response_class=HTMLResponse)
 async def documents_page(request: Request, user_id: int = Depends(get_current_user)):
-    """
-    Страница документов
-    
-    ✅ ОБНОВЛЕНО: Загружаем medical_timeline + DEBUG логи
-    """
     from db_postgresql import get_db_connection, release_db_connection
-    from medical_timeline import get_timeline_by_document  # ✅ НОВЫЙ ИМПОРТ
+    from medical_timeline import get_timeline_by_document
     from subscription_manager import check_document_limit
     has_document_limits = await check_document_limit(user_id)
 
@@ -327,11 +324,11 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
                 await conn_cleanup.execute("DELETE FROM documents WHERE id = $1", doc['id'])
         finally:
             await release_db_connection(conn_cleanup)
-    
+
     conn = await get_db_connection()
-    
+
     try:
-        # ✅ ВАЖНО: Выбираем ВСЕ поля, включая raw_text и summary
+        # Последние 10 документов для первой вкладки
         documents = await conn.fetch("""
             SELECT 
                 id, 
@@ -342,12 +339,25 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
                 summary,
                 uploaded_at,
                 confirmed,
-                document_date
+                document_date,
+                document_type,
+                subtype
             FROM documents
             WHERE user_id = $1
             AND full_analysis IS NOT NULL
             ORDER BY uploaded_at DESC
+            LIMIT 10
         """, user_id)
+
+        # Общее количество для счётчика на вкладке
+        total_docs_count = await conn.fetchval(
+            """SELECT COUNT(*) FROM documents 
+            WHERE user_id = $1 
+            AND full_analysis IS NOT NULL
+            AND title IS NOT NULL
+            AND title NOT LIKE '⚠️%'""",
+            user_id
+        )
 
         # Документы в обработке
         processing_docs = await conn.fetch("""
@@ -362,16 +372,15 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
             ORDER BY uploaded_at DESC
             LIMIT 1
         """, user_id)
-        
+
         # Преобразуем в список словарей
         docs_list = [dict(doc) for doc in documents]
-        
-        # Для каждого документа загружаем его medical_timeline записи
+
+        # Для каждого документа загружаем timeline и чат
         for doc in docs_list:
             timeline_entries = await get_timeline_by_document(doc['id'], user_id)
             doc['timeline_entries'] = timeline_entries
 
-            # Последнее AI-сообщение в чате по документу
             last_chat_msg = await conn.fetchrow(
                 """SELECT message, timestamp FROM document_chat_history
                 WHERE document_id = $1 AND user_id = $2 AND role = 'assistant'
@@ -387,7 +396,7 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
             # Воронка — только если документ единственный
             doc['funnel_para_1_2'] = ''
             doc['funnel_para_3'] = ''
-            if len(docs_list) == 1:
+            if total_docs_count == 1:
                 first_msg = await conn.fetchrow(
                     """SELECT message FROM document_chat_history
                     WHERE document_id = $1 AND user_id = $2 AND role = 'assistant'
@@ -405,26 +414,31 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
             "SELECT birth_year FROM users WHERE user_id = $1",
             user_id
         )
-        
-        # Показываем подсказку если нет документов И нет года рождения
-        show_birth_year_tip = (len(docs_list) == 0) and (not user or not user['birth_year'])       
-        
+
+        show_birth_year_tip = (total_docs_count == 0) and (not user or not user['birth_year'])
+
     finally:
         await release_db_connection(conn)
-    
+
     context = get_template_context(request)
     context['documents'] = docs_list
+    context['total_docs_count'] = total_docs_count
     context['processing_document'] = dict(processing_docs[0]) if processing_docs else None
     context['has_document_limits'] = has_document_limits
     context['show_birth_year_tip'] = show_birth_year_tip
-    context['is_only_document'] = len(docs_list) == 1
+    context['is_only_document'] = total_docs_count == 1
     currency_symbol = context.get('currency_symbol', '$')
     context['one_time_price'] = f"{currency_symbol}2.49"
     context['basic_price'] = f"{currency_symbol}3.99"
-    
+
     response = templates.TemplateResponse("documents.html", context)
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
     response.headers["Pragma"] = "no-cache"
+    try:
+        from analytics_system import Analytics
+        await Analytics.track(user_id, "documents_page_opened")
+    except Exception:
+        pass
     return response
 
 @router.get("/chat", response_class=HTMLResponse)

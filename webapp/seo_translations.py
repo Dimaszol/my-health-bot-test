@@ -309,6 +309,12 @@ SEO_TRANSLATIONS = {
         'uk': 'Аналіз сечі',
         'de': 'Urinanalyse',
     },
+    'seo_type_immunology': {
+        'ru': 'Иммунологические анализы',
+        'en': 'Immunology Tests',
+        'uk': 'Імунологічні аналізи',
+        'de': 'Immunologische Tests',
+    },
     'seo_toc_title': {
         'ru': 'Содержание',
         'en': 'Contents',

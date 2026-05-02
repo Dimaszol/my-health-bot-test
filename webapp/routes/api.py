@@ -127,6 +127,44 @@ async def get_current_user(request: Request) -> int:
     
     return user_id
 
+@router.get("/documents/list")
+async def get_documents_list(request: Request, user_id: int = Depends(get_current_user)):
+    from db_postgresql import get_db_connection, release_db_connection
+    from medical_timeline import get_timeline_by_document
+
+    conn = await get_db_connection()
+    try:
+        docs = await conn.fetch("""
+            SELECT id, title, document_date, document_type, subtype
+            FROM documents
+            WHERE user_id = $1 AND full_analysis IS NOT NULL
+            ORDER BY document_date DESC NULLS LAST, uploaded_at DESC
+        """, user_id)
+
+        result = {}
+        for doc in docs:
+            dtype = doc['document_type'] or 'generic'
+            if dtype not in result:
+                result[dtype] = []
+            
+            # Берём только первую запись медкарты
+            timeline = await get_timeline_by_document(doc['id'], user_id)
+            first_entry = timeline[0]['description'] if timeline else None
+
+            result[dtype].append({
+                'id': doc['id'],
+                'title': doc['title'],
+                'document_date': doc['document_date'].strftime('%d.%m.%Y') if doc['document_date'] else None,
+                'document_type': dtype,
+                'subtype': doc['subtype'],
+                'summary': first_entry,
+                'importance': timeline[0]['importance'] if timeline else 'normal'
+            })
+
+        return JSONResponse({'groups': result})
+    finally:
+        await release_db_connection(conn)
+
 # ==========================================
 # 💬 ГЛАВНЫЙ МАРШРУТ: ЧАТ С ИИ
 # ==========================================

@@ -37,7 +37,7 @@ def get_template_context(request: Request) -> dict:
     if path.startswith('/de/') or path.startswith('/ru/') or path.startswith('/uk/'):
         base_path = path[3:]  # Убираем "/de", "/ru", "/uk"
     elif path in ['/de', '/ru', '/uk']:
-        base_path = '/'
+        base_path = ''
     else:
         base_path = path
     

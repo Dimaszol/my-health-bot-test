@@ -1414,3 +1414,51 @@ details[open] .faq-content {
         height: 20px;
     }
 }
+/* ── Нижняя навигация ── */
+.bottom-nav {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: #fff;
+        border-top: 1px solid #e5e7eb;
+        padding: 6px 0 env(safe-area-inset-bottom, 6px);
+        justify-content: space-around;
+        align-items: center;
+    }
+
+    .bottom-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        text-decoration: none;
+        color: #9ca3af;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 10px;
+        transition: color 0.15s;
+        flex: 1;
+    }
+
+    .bottom-nav-item.active {
+        color: #1AC9AD;
+    }
+
+    .bottom-nav-item svg {
+        stroke: currentColor;
+    }
+
+    /* Отступ снизу чтобы контент не перекрывался */
+    .container {
+        padding-bottom: 70px;
+    }
+}

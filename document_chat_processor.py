@@ -87,8 +87,7 @@ async def process_document_chat_question(
         Dict с ключами:
         - document_title: str
         - full_analysis: str - полный анализ документа
-        - recent_messages: List - последние сообщения из истории чата
-        - last_bot_paragraph: str - последний абзац последнего AI ответа
+        - recent_messages: List - последние 3 пары сообщений (6 сообщений)
         - file_path: str
         - file_type: str
         - medical_timeline: str - медкарта других документов пользователя
@@ -97,7 +96,6 @@ async def process_document_chat_question(
 
     conn = await get_db_connection()
     try:
-        # Получаем документ
         doc = await conn.fetchrow(
             """SELECT title, full_analysis, file_path, file_type FROM documents
                WHERE id = $1 AND user_id = $2""",
@@ -107,7 +105,7 @@ async def process_document_chat_question(
         if not doc:
             return None
 
-        # Получаем последние 7 сообщений (текущее + 6 предыдущих)
+        # Получаем последние 7 сообщений: 1 текущее + 6 предыдущих (3 пары)
         history = await conn.fetch(
             """SELECT role, message FROM document_chat_history
                WHERE document_id = $1 AND user_id = $2
@@ -122,36 +120,38 @@ async def process_document_chat_question(
     # Медкарта других документов пользователя (текущий исключён)
     medical_timeline = await _get_medical_timeline_excluding_document(user_id, document_id)
 
-    # Извлекаем последний абзац последнего AI ответа
-    last_bot_paragraph = ""
-    for msg in reversed(history[1:7]):
-        if msg['role'] == 'assistant':
-            last_bot_paragraph = extract_last_paragraph(msg['message'])
-            break
-
-    # Обрезаем сообщения для контекста
+    # Формируем историю: пропускаем history[0] (текущее сообщение пользователя)
+    # Последнее сообщение ассистента передаём полностью, остальные режем до 500
+    # Все сообщения пользователя режем до 800
     recent_messages = []
-    for msg in reversed(history[1:7]):  # Пропускаем текущее сообщение
+    last_assistant_done = False
+
+    for msg in reversed(history[1:]):
         role = msg['role']
         content = msg['message']
 
-        if role == 'user':
+        if role == 'assistant' and not last_assistant_done:
+            # Последнее сообщение ассистента — передаём полностью
+            last_assistant_done = True
+        elif role == 'assistant':
             if len(content) > 500:
                 content = content[:497] + "..."
-        else:
-            if len(content) > 150:
-                content = content[:147] + "..."
+        elif role == 'user':
+            if len(content) > 800:
+                content = content[:797] + "..."
 
         recent_messages.append({
             'role': role,
             'content': content
         })
 
+        if len(recent_messages) >= 6:
+            break
+
     return {
         'document_title': doc['title'],
         'full_analysis': doc['full_analysis'],
         'recent_messages': recent_messages,
-        'last_bot_paragraph': last_bot_paragraph,
         'file_path': doc['file_path'],
         'file_type': doc['file_type'],
         'medical_timeline': medical_timeline,
@@ -194,7 +194,8 @@ async def generate_document_chat_response(
     conversation_summary: str = ""
 ) -> str:
     """
-    Генерирует ответ AI для чата по документу
+    Генерирует ответ AI для чата по документу.
+    История передаётся как настоящие messages с ролями — не как текст.
     """
 
     # Обрезаем full_analysis для предотвращения dilution внимания
@@ -211,6 +212,16 @@ Response language: {get_language_name(lang)}
 3. If information is missing → explicitly say it is not available.
 4. Do NOT restate the full analysis unless the patient explicitly asks.
 5. Do NOT provide definitive diagnoses or medication advice (start/stop/adjust dose) unless explicitly stated in the document.
+
+=== PRODUCT ROLE ===
+
+You are an AI assistant in PulseBook, focused on analyzed document.
+
+Users cannot upload files or photo here — only via the section where they manage their medical documents.
+
+If additional medical results are needed:
+- Briefly mention what is missing
+- Suggest uploading the document to the medical records section for more accurate analysis
 
 === CONTEXT PRIORITY ===
 
@@ -255,41 +266,46 @@ Before asking any clarification:
 
 """
 
-    # История чата по этому документу
-    history_context = ""
-    if context_data['recent_messages']:
-        history_context = "💬 RECENT CONVERSATION ON THIS DOCUMENT:\n"
-        for msg in context_data['recent_messages']:
-            role_label = "Patient" if msg['role'] == 'user' else "Assistant"
-            history_context += f"{role_label}: {msg['content']}\n"
-
-    if context_data['last_bot_paragraph']:
-        history_context += f"\n🔸 LAST ASSISTANT CONTEXT:\n{context_data['last_bot_paragraph']}\n"
-
-    user_prompt = f"""{timeline_block}{summary_block}{history_context}
-Patient's question: {user_message}"""
-
-    client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-    user_content_blocks = [
+    # Собираем messages
+    messages = [
         {
-            "type": "input_text",
-            "text": user_prompt
+            "role": "system",
+            "content": [{"type": "input_text", "text": system_prompt}]
         }
     ]
 
+    # Контекст (timeline + summary) — как user, чтобы модель воспринимала как данные пациента
+    context_text = f"{timeline_block}{summary_block}".strip()
+    if context_text:
+        messages.append({
+            "role": "user",
+            "content": [{"type": "input_text", "text": context_text}]
+        })
+
+    # История диалога с правильными ролями (не как текст)
+    for msg in context_data['recent_messages']:
+        if msg['role'] == 'assistant':
+            messages.append({
+                "role": "assistant",
+                "content": [{"type": "output_text", "text": msg['content']}]
+            })
+        else:
+            messages.append({
+                "role": "user",
+                "content": [{"type": "input_text", "text": msg['content']}]
+            })
+
+    # Текущий вопрос пользователя — последним
+    messages.append({
+        "role": "user",
+        "content": [{"type": "input_text", "text": user_message}]
+    })
+
+    client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
     response = await client.responses.create(
         model="gpt-5.2",
-        input=[
-            {
-                "role": "system",
-                "content": [{"type": "input_text", "text": system_prompt}]
-            },
-            {
-                "role": "user",
-                "content": user_content_blocks
-            }
-        ],
+        input=messages,
         max_output_tokens=2000
     )
 
@@ -331,22 +347,6 @@ def get_media_type(file_type: str) -> str:
         'webp': 'image/webp'
     }
     return media_types.get(file_type.lower(), 'image/jpeg')
-
-
-def extract_last_paragraph(text: str) -> str:
-    """
-    Извлекает последний абзац из текста
-    """
-    text = re.sub(r'<[^>]+>', '', text)
-
-    paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
-    if not paragraphs:
-        paragraphs = [p.strip() for p in text.split('\n') if p.strip()]
-
-    if paragraphs:
-        return paragraphs[-1]
-
-    return ""
 
 
 def get_language_name(lang: str) -> str:
