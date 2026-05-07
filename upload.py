@@ -3,6 +3,7 @@
 import os
 import html
 import logging
+import asyncio
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from save_utils import send_to_gpt_vision, convert_pdf_to_images
@@ -200,7 +201,23 @@ async def handle_document_upload(message: types.Message, bot):
             additional_context=None,
             document_date=document_date
         )
-        
+
+        # 🔬 Сохраняем биомаркеры когда document_id готов
+        from datetime import date
+        lab_extract_task = result.get('lab_extract_task')
+        if lab_extract_task is not None:
+            async def _finish_lab_save(task, uid, doc_id, doc_date):
+                try:
+                    from lab_extractor import _save_biomarkers_to_db
+                    biomarkers = await task
+                    if biomarkers:
+                        test_date = date.fromisoformat(str(doc_date)) if doc_date else date.today()
+                        saved = await _save_biomarkers_to_db(uid, doc_id, test_date, biomarkers)
+                        logger.info("lab_extractor: saved %d biomarkers for document %s", saved, doc_id)
+                except Exception:
+                    logger.exception("lab_extractor: failed to save biomarkers for document %s", doc_id)
+            asyncio.create_task(_finish_lab_save(lab_extract_task, user_id, document_id, document_date))
+
         chunks = await split_into_chunks(summary, document_id, user_id)
         await add_chunks_to_vector_db(document_id, user_id, chunks)
 

@@ -3487,7 +3487,50 @@ TRANSLATIONS = {
     'doc_type_generic':        {'ru': 'Прочее',            'en': 'Other',         'uk': 'Інше',             'de': 'Sonstiges'},
     'error_loading': {'ru': 'Ошибка загрузки', 'en': 'Loading error', 'uk': 'Помилка завантаження', 'de': 'Ladefehler'},
     'all_label': {'ru': 'Все', 'en': 'All', 'uk': 'Всі', 'de': 'Alle'},
-    
+    'tab_biomarkers': {
+    'ru': 'Мои биомаркеры', 'en': 'My Biomarkers', 'uk': 'Мої біомаркери', 'de': 'Meine Biomarker'
+    },
+    'bm_loaded': {
+        'ru': 'Загружено', 'en': 'Loaded', 'uk': 'Завантажено', 'de': 'Geladen'
+    },
+    'bm_normal': {
+        'ru': 'В норме', 'en': 'Normal', 'uk': 'В нормі', 'de': 'Normal'
+    },
+    'bm_deviations': {
+        'ru': 'Отклонений', 'en': 'Deviations', 'uk': 'Відхилень', 'de': 'Abweichungen'
+    },
+    'bm_status_normal': {
+        'ru': 'Норма', 'en': 'Normal', 'uk': 'Норма', 'de': 'Normal'
+    },
+    'bm_status_high': {
+        'ru': 'Высоко', 'en': 'High', 'uk': 'Високо', 'de': 'Hoch'
+    },
+    'bm_status_low': {
+        'ru': 'Низко', 'en': 'Low', 'uk': 'Низько', 'de': 'Niedrig'
+    },
+    'bm_empty_title': {
+        'ru': 'Нет данных о биомаркерах', 'en': 'No biomarker data', 'uk': 'Немає даних про біомаркери', 'de': 'Keine Biomarker-Daten'
+    },
+    'bm_empty_sub': {
+        'ru': 'Загрузите результаты анализов, чтобы увидеть биомаркеры', 'en': 'Upload lab results to see your biomarkers', 'uk': 'Завантажте результати аналізів', 'de': 'Laden Sie Labordaten hoch'
+    },
+    'seo_type_blood': {'ru': 'Общий анализ крови', 'en': 'Complete Blood Count', 'uk': 'Загальний аналіз крові', 'de': 'Blutbild'},
+    'seo_type_biochemistry': {'ru': 'Биохимия', 'en': 'Biochemistry', 'uk': 'Біохімія', 'de': 'Biochemie'},
+    'seo_type_lipids': {'ru': 'Липидный профиль', 'en': 'Lipid Profile', 'uk': 'Ліпідний профіль', 'de': 'Lipidprofil'},
+    'seo_type_liver': {'ru': 'Функция печени', 'en': 'Liver Function', 'uk': 'Функція печінки', 'de': 'Leberfunktion'},
+    'seo_type_kidney': {'ru': 'Функция почек', 'en': 'Kidney Function', 'uk': 'Функція нирок', 'de': 'Nierenfunktion'},
+    'seo_type_thyroid': {'ru': 'Щитовидная железа', 'en': 'Thyroid Panel', 'uk': 'Щитоподібна залоза', 'de': 'Schilddrüse'},
+    'seo_type_cardiac': {'ru': 'Сердечные маркеры', 'en': 'Cardiac Markers', 'uk': 'Серцеві маркери', 'de': 'Herzmarker'},
+    'seo_type_hormones': {'ru': 'Гормоны', 'en': 'Hormones', 'uk': 'Гормони', 'de': 'Hormone'},
+    'seo_type_vitamins': {'ru': 'Витамины и минералы', 'en': 'Vitamins & Minerals', 'uk': 'Вітаміни та мінерали', 'de': 'Vitamine & Mineralien'},
+    'seo_type_coagulation': {'ru': 'Свертывание крови', 'en': 'Coagulation', 'uk': 'Згортання крові', 'de': 'Gerinnung'},
+    'seo_type_inflammation': {'ru': 'Воспаление и иммунитет', 'en': 'Inflammation & Immunity', 'uk': 'Запалення та імунітет', 'de': 'Entzündung & Immunität'},
+    'seo_type_diabetes': {'ru': 'Углеводный обмен', 'en': 'Glucose Metabolism', 'uk': 'Вуглеводний обмін', 'de': 'Glukosestoffwechsel'},
+    'seo_type_electrolytes': {'ru': 'Электролиты', 'en': 'Electrolytes', 'uk': 'Електроліти', 'de': 'Elektrolyte'},
+    'seo_type_iron': {'ru': 'Обмен железа', 'en': 'Iron Metabolism', 'uk': 'Обмін заліза', 'de': 'Eisenstoffwechsel'},
+    'seo_type_tumor_markers': {'ru': 'Онкомаркеры', 'en': 'Tumor Markers', 'uk': 'Онкомаркери', 'de': 'Tumormarker'},
+    'seo_type_urine': {'ru': 'Анализ мочи', 'en': 'Urinalysis', 'uk': 'Аналіз сечі', 'de': 'Urinanalyse'},
+    'seo_type_immunology': {'ru': 'Иммунологические анализы', 'en': 'Immunology Tests', 'uk': 'Імунологічні аналізи', 'de': 'Immunologische Tests'},
 }
 
 

@@ -71,6 +71,14 @@ async def process_document(
         if confidence < 0.85:
             document_type = 'generic'
 
+        # 🔬 Запускаем извлечение биомаркеров параллельно с ассистентом
+        lab_extract_task = None
+        if document_type == 'lab_results':
+            from lab_extractor import _extract_biomarkers_from_file
+            lab_extract_task = asyncio.create_task(
+                _extract_biomarkers_from_file(truncated_file_path)
+            )
+
         medical_history = ""
         if use_medical_history:
             from medical_timeline import get_objective_history_for_specialist
@@ -159,7 +167,8 @@ async def process_document(
             "document_type": classification.get('document_type'),
             "subtype": classification.get('subtype'),
             "confidence": classification.get('confidence'),
-            "document_date": document_date
+            "document_date": document_date,
+            "lab_extract_task": lab_extract_task,
         }
 
     except Exception as e:
@@ -172,11 +181,23 @@ async def process_document(
         }
 
     finally:
-        # Один delete для всего флоу
         if gemini_file:
             try:
                 await asyncio.to_thread(genai.delete_file, gemini_file.name)
             except Exception:
                 pass
+        # Удаляем truncated только если lab_extract_task не использует его
         if temp_truncated_path and os.path.exists(temp_truncated_path):
-            os.remove(temp_truncated_path)
+            if lab_extract_task is None or lab_extract_task.done():
+                os.remove(temp_truncated_path)
+            else:
+                # Удалим после завершения таски
+                async def _cleanup():
+                    try:
+                        await lab_extract_task
+                    except Exception:
+                        pass
+                    finally:
+                        if os.path.exists(temp_truncated_path):
+                            os.remove(temp_truncated_path)
+                asyncio.create_task(_cleanup())

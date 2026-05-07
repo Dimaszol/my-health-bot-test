@@ -621,6 +621,21 @@ class SubscriptionWebhookHandler:
                     document_id
                 )
 
+                # 🔬 Сохраняем биомаркеры
+                lab_extract_task = result.get('lab_extract_task')
+                if lab_extract_task is not None:
+                    async def _finish_lab_save(task, uid, doc_id, doc_date):
+                        try:
+                            from lab_extractor import _save_biomarkers_to_db
+                            from datetime import date
+                            biomarkers = await task
+                            if biomarkers:
+                                test_date = date.fromisoformat(str(doc_date)) if doc_date else date.today()
+                                await _save_biomarkers_to_db(uid, doc_id, test_date, biomarkers)
+                        except Exception as e:
+                            logger.warning(f"⚠️ Lab extractor save error (non-critical): {e}")
+                    asyncio.create_task(_finish_lab_save(lab_extract_task, user_id, document_id, result.get('document_date')))
+
                 logger.info(f"✅ Document {document_id} processed and saved successfully")
                 
             finally:

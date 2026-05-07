@@ -359,6 +359,13 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
             user_id
         )
 
+        bm_count = await conn.fetchval("""
+            SELECT COUNT(DISTINCT lr.slug)
+            FROM lab_results lr
+            JOIN indicators i ON lr.slug = i.slug AND i.is_published = TRUE
+            WHERE lr.user_id = $1
+        """, user_id)        
+
         # Документы в обработке
         processing_docs = await conn.fetch("""
             SELECT id, uploaded_at
@@ -423,6 +430,7 @@ async def documents_page(request: Request, user_id: int = Depends(get_current_us
     context = get_template_context(request)
     context['documents'] = docs_list
     context['total_docs_count'] = total_docs_count
+    context['bm_count'] = bm_count or 0
     context['processing_document'] = dict(processing_docs[0]) if processing_docs else None
     context['has_document_limits'] = has_document_limits
     context['show_birth_year_tip'] = show_birth_year_tip

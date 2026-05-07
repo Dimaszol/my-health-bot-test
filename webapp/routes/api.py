@@ -165,6 +165,38 @@ async def get_documents_list(request: Request, user_id: int = Depends(get_curren
     finally:
         await release_db_connection(conn)
 
+@router.get("/documents/biomarkers")
+async def get_biomarkers(request: Request, user_id: int = Depends(get_current_user)):
+    lang = request.session.get('language', 'en')
+    conn = await get_db_connection()
+    try:
+        rows = await conn.fetch("""
+            SELECT DISTINCT ON (lr.slug)
+                lr.slug,
+                lr.original_value,
+                lr.original_unit,
+                lr.test_date,
+                lr.status,
+                s.name_localized,
+                i.type AS group_slug
+            FROM lab_results lr
+            JOIN indicators i ON lr.slug = i.slug AND i.is_published = TRUE
+            JOIN seo_indicators s ON lr.slug = s.slug AND s.lang = $2
+            WHERE lr.user_id = $1
+            ORDER BY lr.slug, lr.test_date DESC
+        """, user_id, lang)
+    finally:
+        await release_db_connection(conn)
+
+    result = []
+    for r in rows:
+        item = dict(r)
+        if item.get('test_date'):
+            item['test_date'] = item['test_date'].strftime('%d.%m.%Y')
+        result.append(item)
+
+    return {"biomarkers": result}
+
 # ==========================================
 # 💬 ГЛАВНЫЙ МАРШРУТ: ЧАТ С ИИ
 # ==========================================
@@ -1156,6 +1188,22 @@ async def _process_document_background(document_id: int, user_id: int, local_fil
             )
         finally:
             await release_db_connection(conn)
+
+        # 🔬 Сохраняем биомаркеры когда document_id готов
+        lab_extract_task = result.get('lab_extract_task')
+        if lab_extract_task is not None:
+            async def _finish_lab_save(task, uid, doc_id, doc_date):
+                try:
+                    from lab_extractor import _save_biomarkers_to_db
+                    from datetime import date
+                    biomarkers = await task
+                    if biomarkers:
+                        test_date = date.fromisoformat(str(doc_date)) if doc_date else date.today()
+                        saved = await _save_biomarkers_to_db(uid, doc_id, test_date, biomarkers)
+                        safe_log_warning("lab_extractor: biomarkers saved for document")
+                except Exception as e:
+                    safe_log_error("lab_extractor: failed to save biomarkers", error=e)
+            asyncio.create_task(_finish_lab_save(lab_extract_task, user_id, document_id, result.get('document_date')))
         
         try:
             from analytics_system import Analytics
@@ -1978,12 +2026,7 @@ async def cancel_subscription_endpoint(
 # 🧪 ТЕСТОВЫЙ ENDPOINT (удалить после отладки)
 # ============================================
 
-import time
-
-class TestGPT5Request(BaseModel):
-    text: str
-    lang: str = "uk"
-    system_prompt: str = ""
+from fastapi import File, UploadFile
 
 @router.get("/test-gpt5-form")
 async def test_gpt5_form(request: Request):
@@ -1993,45 +2036,35 @@ async def test_gpt5_form(request: Request):
     with open(path, "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read())
 
-@router.post("/test-gpt5")
-async def test_gpt5_mini(request_data: TestGPT5Request):
+@router.post("/test-lab-extractor")
+async def test_lab_extractor(
+    request: Request,
+    file: UploadFile = File(...)
+):
+    import tempfile, os, time
+    start_time = time.time()
     try:
-        start_time = time.time()
-        from gpt import client
+        contents = await file.read()
+        suffix = os.path.splitext(file.filename)[1] or ".pdf"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(contents)
+            tmp_path = tmp.name
 
-        response = await client.responses.create(
-            model="gpt-5-nano",
-            input=[
-                {"role": "system", "content": request_data.system_prompt},
-                {"role": "user", "content": request_data.text[:1500]}
-            ],
-            max_output_tokens=100
-        )
+        from lab_extractor import _extract_biomarkers_from_file
+        biomarkers = await _extract_biomarkers_from_file(tmp_path)
+        os.unlink(tmp_path)
 
-        output_text = getattr(response, 'output_text', None)
-
-        texts = []
-        if hasattr(response, 'output'):
-            for item in response.output or []:
-                if hasattr(item, 'content'):
-                    for block in item.content or []:
-                        if hasattr(block, 'text') and block.text:
-                            texts.append(block.text)
-
-        extracted = " ".join(item.strip() for item in texts if item and item.strip())
-
-        return JSONResponse(content={
-            'success': True,
-            'title': extracted or output_text or "",
-            'model': 'gpt-5-nano',
-            'processing_time': int((time.time() - start_time) * 1000),
-            'output_text': output_text
+        elapsed = int((time.time() - start_time) * 1000)
+        return JSONResponse({
+            "success": True,
+            "biomarkers": biomarkers,
+            "count": len(biomarkers),
+            "processing_time": elapsed
         })
-
     except Exception as e:
-        import traceback
-        print(traceback.format_exc())
-        return JSONResponse(status_code=500, content={'success': False, 'error': str(e)})
+        if 'tmp_path' in locals() and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 # ==========================================
 # 📄 ОТОБРАЖЕНИЕ ФАЙЛОВ ДОКУМЕНТОВ

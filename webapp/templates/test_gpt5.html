@@ -1,85 +1,541 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>GPT Test</title>
+    <meta charset="UTF-8">
+    <title>🧪 Lab Extractor Test</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
-        textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        button { background: #00C9A7; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; }
-        button:disabled { background: #aaa; }
-        #result { margin-top: 20px; padding: 16px; background: #f5f5f5; border-radius: 8px; white-space: pre-wrap; min-height: 60px; }
-        label { font-weight: bold; display: block; margin-top: 16px; }
-        select { padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
-        .meta { font-size: 12px; color: #888; margin-top: 8px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            color: #1a1a2e;
+            min-height: 100vh;
+            padding: 32px 16px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-bottom: 28px;
+        }
+
+        /* Upload card */
+        .card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 28px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+        }
+
+        .card h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #374151;
+        }
+
+        .drop-zone {
+            border: 2px dashed #d1d5db;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fafafa;
+            position: relative;
+        }
+
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: #00C9A7;
+            background: #f0fdf9;
+        }
+
+        .drop-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .drop-icon { font-size: 2.5rem; margin-bottom: 8px; }
+        .drop-label { font-size: 0.95rem; color: #6b7280; }
+        .drop-label span { color: #00C9A7; font-weight: 600; }
+        .drop-hint { font-size: 0.8rem; color: #9ca3af; margin-top: 4px; }
+
+        .file-selected {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: #f0fdf9;
+            border-radius: 8px;
+            margin-top: 14px;
+            border: 1px solid #a7f3d0;
+        }
+
+        .file-selected .file-icon { font-size: 1.4rem; }
+        .file-selected .file-name { font-weight: 500; font-size: 0.9rem; }
+        .file-selected .file-size { font-size: 0.8rem; color: #6b7280; }
+
+        .btn-run {
+            margin-top: 18px;
+            width: 100%;
+            padding: 13px;
+            background: #00C9A7;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-run:hover { background: #00b396; }
+        .btn-run:disabled { opacity: 0.55; cursor: not-allowed; }
+
+        /* Spinner */
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Status bar */
+        .status-bar {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-top: 14px;
+        }
+        .status-bar.loading { background: #eff6ff; color: #3b82f6; display: flex; }
+        .status-bar.success { background: #f0fdf4; color: #16a34a; display: flex; }
+        .status-bar.error   { background: #fef2f2; color: #dc2626; display: flex; }
+
+        /* Meta info */
+        .meta-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .meta-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+        .meta-chip.total   { background: #eff6ff; color: #2563eb; }
+        .meta-chip.high    { background: #fef2f2; color: #dc2626; }
+        .meta-chip.low     { background: #fff7ed; color: #ea580c; }
+        .meta-chip.normal  { background: #f0fdf4; color: #16a34a; }
+        .meta-chip.time    { background: #f5f3ff; color: #7c3aed; }
+
+        /* Filter tabs */
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1.5px solid #e5e7eb;
+            background: #fff;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: #6b7280;
+        }
+        .tab-btn:hover { border-color: #00C9A7; color: #00C9A7; }
+        .tab-btn.active { background: #00C9A7; color: #fff; border-color: #00C9A7; }
+
+        /* Table */
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+
+        thead th {
+            background: #f9fafb;
+            padding: 11px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        tbody tr:hover { background: #f9fafb; }
+
+        tbody td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f3f4f6;
+            vertical-align: middle;
+        }
+
+        tbody tr:last-child td { border-bottom: none; }
+
+        .slug-cell { font-family: monospace; color: #6366f1; font-size: 0.82rem; }
+
+        .display-name { font-weight: 500; color: #111827; }
+        .display-name.generated { font-style: italic; color: #374151; }
+
+        .value-cell { font-weight: 600; }
+        .unit-cell { color: #9ca3af; font-size: 0.82rem; }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-badge.high   { background: #fef2f2; color: #dc2626; }
+        .status-badge.low    { background: #fff7ed; color: #ea580c; }
+        .status-badge.normal { background: #f0fdf4; color: #16a34a; }
+
+        .db-preview {
+            font-size: 0.78rem;
+            color: #9ca3af;
+        }
+
+        /* Empty / hidden */
+        .results-section { display: none; }
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+
+        /* Raw JSON toggle */
+        .raw-toggle {
+            background: none;
+            border: 1px solid #e5e7eb;
+            color: #6b7280;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            float: right;
+        }
+        .raw-toggle:hover { border-color: #6366f1; color: #6366f1; }
+
+        .raw-json {
+            display: none;
+            margin-top: 16px;
+            background: #1e1e2e;
+            color: #cdd6f4;
+            padding: 16px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 600px) {
+            .meta-row { gap: 8px; }
+            .meta-chip { font-size: 0.78rem; padding: 5px 10px; }
+        }
     </style>
 </head>
 <body>
-    <h2>🧪 GPT API Test</h2>
+<div class="container">
 
-    <label>System Prompt:</label>
-    <textarea id="systemPrompt" rows="4">You are a medical assistant. Generate a short document title in Ukrainian.</textarea>
+    <h1>🧪 Lab Extractor Test</h1>
+    <p class="subtitle">Загрузи файл лабораторных анализов — увидишь извлечённые биомаркеры и как они лягут в таблицу <code>lab_results</code></p>
 
-    <label>User Message:</label>
-    <textarea id="userMessage" rows="6" placeholder="Enter text here..."></textarea>
+    <!-- Upload card -->
+    <div class="card">
+        <h2>📄 Загрузить файл</h2>
 
-    <label>Language:</label>
-    <select id="lang">
-        <option value="uk">Ukrainian</option>
-        <option value="ru">Russian</option>
-        <option value="en">English</option>
-        <option value="de">German</option>
-    </select>
+        <div class="drop-zone" id="dropZone">
+            <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.txt">
+            <div class="drop-icon">📂</div>
+            <div class="drop-label">Перетащи файл сюда или <span>выбери файл</span></div>
+            <div class="drop-hint">PDF, JPG, PNG, DOCX, TXT</div>
+        </div>
 
-    <br><br>
-    <button id="sendBtn" onclick="sendTest()">▶ Send</button>
+        <div class="file-selected" id="fileSelected">
+            <span class="file-icon">📋</span>
+            <div>
+                <div class="file-name" id="fileName">—</div>
+                <div class="file-size" id="fileSize">—</div>
+            </div>
+        </div>
 
-    <div id="result">Result will appear here...</div>
-    <div class="meta" id="meta"></div>
+        <button class="btn-run" id="runBtn" onclick="runExtraction()" disabled>
+            <span class="spinner" id="spinner"></span>
+            <span id="btnText">▶ Запустить извлечение</span>
+        </button>
 
-    <script>
-        async function sendTest() {
-            const btn = document.getElementById('sendBtn');
-            btn.disabled = true;
-            btn.textContent = '⏳ Sending...';
-            document.getElementById('result').textContent = '';
-            document.getElementById('meta').textContent = '';
+        <div class="status-bar" id="statusBar">
+            <span id="statusIcon">⏳</span>
+            <span id="statusText">Обработка...</span>
+        </div>
+    </div>
 
-            const text = document.getElementById('userMessage').value.trim();
-            const lang = document.getElementById('lang').value;
+    <!-- Results -->
+    <div class="results-section" id="resultsSection">
+        <div class="card">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                <h2 style="margin:0;">📊 Результат извлечения</h2>
+                <button class="raw-toggle" onclick="toggleRaw()">{ } JSON</button>
+            </div>
 
-            if (!text) {
-                document.getElementById('result').textContent = 'Please enter a message.';
-                btn.disabled = false;
-                btn.textContent = '▶ Send';
-                return;
-            }
+            <div class="meta-row" id="metaRow"></div>
 
-            try {
-                const resp = await fetch('/api/test-gpt5', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        text, 
-                        lang,
-                        system_prompt: document.getElementById('systemPrompt').value.trim()
-                    })
-                });
-                const data = await resp.json();
+            <div class="filter-tabs" id="filterTabs">
+                <button class="tab-btn active" onclick="filterTable('all', this)">Все</button>
+                <button class="tab-btn" onclick="filterTable('high', this)">🔴 Высокие</button>
+                <button class="tab-btn" onclick="filterTable('low', this)">🟠 Низкие</button>
+                <button class="tab-btn" onclick="filterTable('normal', this)">🟢 Норма</button>
+            </div>
 
-                if (data.success) {
-                    document.getElementById('result').textContent = data.title || '(empty response)';
-                    document.getElementById('meta').textContent = 
-                        `Model: ${data.model} | Time: ${data.processing_time}ms | output_text: ${data.output_text}`;
-                } else {
-                    document.getElementById('result').textContent = '❌ Error: ' + data.error;
-                }
-            } catch (e) {
-                document.getElementById('result').textContent = '❌ Network error: ' + e.message;
-            }
+            <div class="table-wrap">
+                <table id="bioTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Slug (в БД)</th>
+                            <th>Название</th>
+                            <th>Исходное значение</th>
+                            <th>Исх. единица</th>
+                            <th>Стандарт. значение</th>
+                            <th>Стандарт. единица</th>
+                            <th>Статус</th>
+                            <th>display_name</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bioTableBody"></tbody>
+                </table>
+                <div class="no-data" id="noData" style="display:none;">Нет данных для выбранного фильтра</div>
+            </div>
 
-            btn.disabled = false;
-            btn.textContent = '▶ Send';
+            <div class="raw-json" id="rawJson"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let allRows = [];
+    let currentFilter = 'all';
+
+    // ── Drag & drop ──────────────────────────────────────────
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            onFileSelected();
         }
-    </script>
+    });
+    fileInput.addEventListener('change', onFileSelected);
+
+    function onFileSelected() {
+        const file = fileInput.files[0];
+        if (!file) return;
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = formatSize(file.size);
+        document.getElementById('fileSelected').style.display = 'flex';
+        document.getElementById('runBtn').disabled = false;
+        setStatus('', '', '');
+        document.getElementById('resultsSection').style.display = 'none';
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // ── Status bar ───────────────────────────────────────────
+    function setStatus(type, icon, text) {
+        const bar = document.getElementById('statusBar');
+        bar.className = 'status-bar' + (type ? ' ' + type : '');
+        document.getElementById('statusIcon').textContent = icon;
+        document.getElementById('statusText').textContent = text;
+    }
+
+    // ── Run ──────────────────────────────────────────────────
+    async function runExtraction() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const btn = document.getElementById('runBtn');
+        const spinner = document.getElementById('spinner');
+        const btnText = document.getElementById('btnText');
+
+        btn.disabled = true;
+        spinner.style.display = 'block';
+        btnText.textContent = 'Обработка...';
+        setStatus('loading', '⏳', 'Отправляем файл в lab_extractor...');
+        document.getElementById('resultsSection').style.display = 'none';
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const resp = await fetch('/api/test-lab-extractor', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+
+            if (data.success) {
+                setStatus('success', '✅', `Извлечено биомаркеров: ${data.count} | Время: ${data.processing_time} мс`);
+                renderResults(data);
+            } else {
+                setStatus('error', '❌', 'Ошибка: ' + (data.error || 'неизвестная ошибка'));
+            }
+
+        } catch (e) {
+            setStatus('error', '❌', 'Сетевая ошибка: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.textContent = '▶ Запустить снова';
+        }
+    }
+
+    // ── Render ───────────────────────────────────────────────
+    function renderResults(data) {
+        const biomarkers = data.biomarkers || {};
+        allRows = Object.entries(biomarkers);
+
+        // Meta chips
+        const counts = { high: 0, low: 0, normal: 0 };
+        allRows.forEach(([, v]) => { if (counts[v.status] !== undefined) counts[v.status]++; });
+
+        document.getElementById('metaRow').innerHTML = `
+            <span class="meta-chip total">📊 Всего: ${allRows.length}</span>
+            <span class="meta-chip high">🔴 Высокие: ${counts.high}</span>
+            <span class="meta-chip low">🟠 Низкие: ${counts.low}</span>
+            <span class="meta-chip normal">🟢 Норма: ${counts.normal}</span>
+            <span class="meta-chip time">⏱ ${data.processing_time} мс</span>
+        `;
+
+        // Raw JSON
+        document.getElementById('rawJson').textContent = JSON.stringify(biomarkers, null, 2);
+
+        currentFilter = 'all';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.tab-btn').classList.add('active');
+
+        renderTable('all');
+        document.getElementById('resultsSection').style.display = 'block';
+        document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function renderTable(filter) {
+        const tbody = document.getElementById('bioTableBody');
+        const noData = document.getElementById('noData');
+        const tableEl = document.getElementById('bioTable');
+
+        const rows = filter === 'all' ? allRows : allRows.filter(([, v]) => v.status === filter);
+
+        if (!rows.length) {
+            tbody.innerHTML = '';
+            noData.style.display = 'block';
+            tableEl.style.display = 'none';
+            return;
+        }
+
+        noData.style.display = 'none';
+        tableEl.style.display = 'table';
+
+        const statusIcon = { high: '🔴', low: '🟠', normal: '🟢' };
+
+        tbody.innerHTML = rows.map(([slug, v], i) => {
+            const isCustom = !!v.display_name;
+            const displayName = v.display_name || slug.replace(/_/g, ' ');
+            const originalVal = v.original_value ?? '—';
+            const originalUnit = v.original_unit ?? '—';
+            const standardVal = v.standard_value !== null && v.standard_value !== undefined ? v.standard_value : '—';
+            const standardUnit = v.standard_unit ?? '—';
+            const status = v.status || 'normal';
+
+            return `<tr data-status="${status}">
+                <td class="db-preview">${i + 1}</td>
+                <td class="slug-cell">${slug}</td>
+                <td class="display-name ${isCustom ? 'generated' : ''}">${displayName}${isCustom ? ' <span title="Не в маппинге" style="font-size:0.75rem;color:#9ca3af;">*</span>' : ''}</td>
+                <td class="value-cell">${originalVal}</td>
+                <td class="unit-cell">${originalUnit}</td>
+                <td class="value-cell">${standardVal}</td>
+                <td class="unit-cell">${standardUnit}</td>
+                <td><span class="status-badge ${status}">${statusIcon[status] || ''} ${status}</span></td>
+                <td class="db-preview">${isCustom ? v.display_name : '—'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function filterTable(filter, btn) {
+        currentFilter = filter;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderTable(filter);
+    }
+
+    function toggleRaw() {
+        const el = document.getElementById('rawJson');
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    }
+</script>
 </body>
 </html>
