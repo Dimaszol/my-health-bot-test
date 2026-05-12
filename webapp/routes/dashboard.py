@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 import markdown
 from webapp.utils.logger import safe_log_error, safe_log_info
 from webapp.tips import get_random_tip
+from db_postgresql import get_db_connection, release_db_connection
 
 # Создаём templates и регистрируем фильтр markdown
 templates = Jinja2Templates(directory="webapp/templates")
@@ -105,9 +106,7 @@ async def get_user_stats(user_id: int) -> dict:
     """
     Получить статистику пользователя
     ✅ ПОЛНОСТЬЮ ASYNC!
-    """
-    from db_postgresql import get_db_connection, release_db_connection
-    
+    """      
     conn = await get_db_connection()
     
     try:
@@ -119,12 +118,18 @@ async def get_user_stats(user_id: int) -> dict:
             user_id
         )
         
-        # Количество сообщений
-        total_messages = await conn.fetchval(
-            "SELECT COUNT(*) FROM chat_history WHERE user_id = $1 AND role = 'user'", 
-            user_id
+        # Счётчик сообщений для онбординга
+        total_messages_count = await conn.fetchval(
+            "SELECT total_messages_count FROM users WHERE user_id = $1", user_id
         )
-        
+
+        bm_count = await conn.fetchval("""
+            SELECT COUNT(DISTINCT lr.slug)
+            FROM lab_results lr
+            JOIN indicators i ON lr.slug = i.slug AND i.is_published = TRUE
+            WHERE lr.user_id = $1
+        """, user_id)
+
         # Лимиты
         limits = await conn.fetchrow(
             "SELECT documents_left, gpt4o_queries_left FROM user_limits WHERE user_id = $1",
@@ -144,20 +149,22 @@ async def get_user_stats(user_id: int) -> dict:
         
         return {
             'total_documents': total_docs or 0,
-            'total_messages': total_messages or 0,
+            'total_messages_count': total_messages_count or 0,
             'documents_left': limits['documents_left'] if limits else 0,
             'queries_left': limits['gpt4o_queries_left'] if limits else 0,
-            'subscription_type': subscription_type  # ✅ ДОБАВИЛИ
+            'bm_count': bm_count or 0,
+            'subscription_type': subscription_type 
         }
         
     except Exception as e:
         safe_log_error("Ошибка получения статистики пользователя", error=e)
         return {
             'total_documents': 0,
-            'total_messages': 0,
+            'total_messages_count': 0,
             'documents_left': 0,
             'queries_left': 0,
-            'subscription_type': None  # ✅ ДОБАВИЛИ в fallback
+            'bm_count': 0,
+            'subscription_type': None 
         }
         
     finally:
@@ -233,14 +240,29 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
     
     stats = await get_user_stats(user_id)
     
+    last_doc_chat = None
+    conn_ldc = await get_db_connection()
+    try:
+        row = await conn_ldc.fetchrow("""
+            SELECT d.id as doc_id, d.title as doc_title,
+                dch.message as last_msg, dch.timestamp as last_ts
+            FROM document_chat_history dch
+            JOIN documents d ON d.id = dch.document_id
+            WHERE dch.user_id = $1 AND dch.role = 'assistant'
+            ORDER BY dch.id DESC LIMIT 1
+        """, user_id)
+        if row:
+            last_doc_chat = dict(row)
+    finally:
+        await release_db_connection(conn_ldc)
+
     # Проверяем, нужно ли показывать онбординг
     show_onboarding = (
-        stats.get('total_documents', 0) == 0 and 
-        stats.get('total_messages', 0) == 0
+        stats.get('total_documents', 0) == 0 and
+        stats.get('total_messages_count', 0) == 0
     )
 
     # Проверяем источник регистрации
-    from db_postgresql import get_db_connection, release_db_connection
     conn = await get_db_connection()
     try:
         user_info = await conn.fetchrow(
@@ -254,6 +276,9 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
     from db_postgresql import get_user_language
     # Получаем язык пользователя
     lang = await get_user_language(user_id)
+
+    from subscription_manager import SubscriptionManager
+    limits_data = await SubscriptionManager.get_user_limits(user_id)
 
     # Получаем случайный совет дня
     from webapp.tips import get_random_tip
@@ -280,6 +305,8 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
         'profile_completion': calculate_profile_completion(profile),
         'random_tip': random_tip,
         'just_registered': just_registered,
+        'last_doc_chat': last_doc_chat,
+        'limits_data': limits_data,
         'show_onboarding': show_onboarding
     })
 
@@ -295,10 +322,20 @@ async def dashboard(request: Request, user_id: int = Depends(get_current_user)):
     
     return templates.TemplateResponse('dashboard.html', context)
 
+@router.post("/skip-onboarding")
+async def skip_onboarding(request: Request, user_id: int = Depends(get_current_user)):
+    conn = await get_db_connection()
+    try:
+        await conn.execute(
+            "UPDATE users SET total_messages_count = 1 WHERE user_id = $1 AND total_messages_count = 0",
+            user_id
+        )
+    finally:
+        await release_db_connection(conn)
+    return RedirectResponse(url="/dashboard", status_code=303)
 
 @router.get("/documents", response_class=HTMLResponse)
 async def documents_page(request: Request, user_id: int = Depends(get_current_user)):
-    from db_postgresql import get_db_connection, release_db_connection
     from medical_timeline import get_timeline_by_document
     from subscription_manager import check_document_limit
     has_document_limits = await check_document_limit(user_id)
@@ -617,7 +654,6 @@ async def document_detail(
     Детальная страница одного документа
     Показывает: дату, название, медкарту, превью, полный анализ, сводку
     """
-    from db_postgresql import get_db_connection, release_db_connection
     from medical_timeline import get_timeline_by_document
     
     conn = await get_db_connection()
@@ -684,7 +720,6 @@ async def document_chat_page(
     """
     Страница чата по документу
     """
-    from db_postgresql import get_db_connection, release_db_connection
     from subscription_manager import check_gpt4o_limit
     from webapp.utils.text_formatter import format_for_web
     

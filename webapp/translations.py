@@ -661,10 +661,10 @@ TRANSLATIONS = {
         'de': 'Willkommen'
     },
     'dashboard_subtitle': {
-        'ru': 'Ваш персональный медицинский кабинет',
-        'en': 'Your personal medical dashboard',
-        'uk': 'Ваш особистий медичний кабінет',
-        'de': 'Ihr persönliches medizinisches Dashboard'
+        'ru': 'Вся ваша медицинская история — с понятным разбором',
+        'en': 'Your complete medical history — with clear explanations',
+        'uk': 'Вся ваша медична історія — зі зрозумілим поясненням',
+        'de': 'Ihre gesamte Krankengeschichte — mit verständlichen Erklärungen'
     },
     # Після dashboard_subtitle
     'onboarding_upload_title': {
@@ -1047,11 +1047,11 @@ TRANSLATIONS = {
         'de': 'Meine Krankenakte'
     },    
     'additional_context_label': {
-        'ru': 'Контекст или вопрос для анализа (по желанию)',
-        'en': 'Context or question for analysis (optional)',
-        'uk': 'Контекст або питання для аналізу (за бажанням)',
-        'de': 'Kontext oder Frage zur Analyse (optional)'
-    },  
+        'ru': 'Контекст или вопрос (необязательно)',
+        'en': 'Context or question (optional)',
+        'uk': 'Контекст або питання (необовʼязково)',
+        'de': 'Kontext oder Frage (optional)'
+    },
     'additional_context_placeholder': {
         'ru': 'Например: кашель 2 недели, без температуры, боль в груди, ЭКГ для контроля...',
         'en': 'Example: cough for 2 weeks, no fever, chest pain, ECG for monitoring...',
@@ -1059,10 +1059,10 @@ TRANSLATIONS = {
         'de': 'Beispiel: Husten seit 2 Wochen, kein Fieber, Brustschmerzen, EKG zur Kontrolle...'
     },
     'additional_context_hint_description': {
-        'ru': 'Контекст помогает точнее интерпретировать документ. Для изображений и ЭКГ он особенно полезен. Если важного контекста нет — оставьте поле пустым.',
-        'en': 'Context helps interpret the document more accurately. It is especially useful for images and ECGs. If there is no important context, leave the field empty.',
-        'uk': 'Контекст допомагає точніше інтерпретувати документ. Для зображень і ЕКГ він особливо корисний. Якщо важливого контексту немає — залиште поле порожнім.',
-        'de': 'Kontext hilft, das Dokument genauer zu interpretieren. Er ist besonders bei Bildern und EKGs hilfreich. Wenn es keinen wichtigen Kontext gibt, lassen Sie das Feld leer.'
+        'ru': 'Помогает точнее интерпретировать результаты.',
+        'en': 'Helps interpret results more accurately.',
+        'uk': 'Допомагає точніше інтерпретувати результати.',
+        'de': 'Hilft, die Ergebnisse genauer zu interpretieren.'
     },
     'select_file': {
         'ru': 'Выберите файл',
@@ -3531,6 +3531,98 @@ TRANSLATIONS = {
     'seo_type_tumor_markers': {'ru': 'Онкомаркеры', 'en': 'Tumor Markers', 'uk': 'Онкомаркери', 'de': 'Tumormarker'},
     'seo_type_urine': {'ru': 'Анализ мочи', 'en': 'Urinalysis', 'uk': 'Аналіз сечі', 'de': 'Urinanalyse'},
     'seo_type_immunology': {'ru': 'Иммунологические анализы', 'en': 'Immunology Tests', 'uk': 'Імунологічні аналізи', 'de': 'Immunologische Tests'},
+    # ══ Dashboard новый дизайн ══
+    'dashboard_edit': {'ru': 'Редактировать', 'en': 'Edit', 'uk': 'Редагувати', 'de': 'Bearbeiten'},    
+    'dashboard_medcard_title': {'ru': 'Медкарта', 'en': 'Medical Records', 'uk': 'Медкарта', 'de': 'Krankenakte'},
+    'dashboard_consultations_title': {'ru': 'Консультации', 'en': 'Consultations', 'uk': 'Консультації', 'de': 'Beratungen'},
+    'dashboard_last_chat_label': {'ru': 'Последний чат', 'en': 'Last Chat', 'uk': 'Останній чат', 'de': 'Letzter Chat'},
+    'dashboard_open_general_chat': {'ru': 'Открыть общий чат', 'en': 'Open General Chat', 'uk': 'Відкрити загальний чат', 'de': 'Allgemeinen Chat öffnen'},
+    'dashboard_tariff_limits_title': {'ru': 'Тарифы и лимиты', 'en': 'Plan & Limits', 'uk': 'Тарифи та ліміти', 'de': 'Tarif & Limits'},
+    'dashboard_docs_label': {'ru': 'Документы', 'en': 'Documents', 'uk': 'Документи', 'de': 'Dokumente'},
+    'dashboard_docs_count_label': {'ru': 'Документов', 'en': 'Documents', 'uk': 'Документів', 'de': 'Dokumente'},
+    'dashboard_queries_label': {'ru': 'Консультации', 'en': 'Consultations', 'uk': 'Консультації', 'de': 'Beratungen'},
+    'dashboard_limits_renew': {'ru': 'Лимиты обновятся', 'en': 'Limits renew on', 'uk': 'Ліміти оновляться', 'de': 'Limits erneuern sich am'},
+    'dashboard_limits_permanent': {'ru': 'Бессрочно', 'en': 'No expiry', 'uk': 'Безстроково', 'de': 'Unbefristet'},
+    'dashboard_upgrade_plan': {
+        'ru': 'Получить больше лимитов →',
+        'en': 'Get more limits →',
+        'uk': 'Отримати більше лімітів →',
+        'de': 'Mehr Limits erhalten →'
+    },
+    'dashboard_account_title': {'ru': 'Аккаунт', 'en': 'Account', 'uk': 'Акаунт', 'de': 'Konto'},
+    'dashboard_install_app_label': {'ru': 'Установить приложение', 'en': 'Install App', 'uk': 'Встановити додаток', 'de': 'App installieren'},
+    'dashboard_install_app_sub': {'ru': 'iOS · Android', 'en': 'iOS · Android', 'uk': 'iOS · Android', 'de': 'iOS · Android'},
+    'dashboard_add_doc_btn': {'ru': 'Добавить документ', 'en': 'Add Document', 'uk': 'Додати документ', 'de': 'Dokument hinzufügen'},
+    'dashboard_my_docs_btn': {'ru': 'Мои документы', 'en': 'My Documents', 'uk': 'Мої документи', 'de': 'Meine Dokumente'},
+    'dashboard_my_biomarkers_btn': {'ru': 'Мои биомаркеры', 'en': 'My Biomarkers', 'uk': 'Мої біомаркери', 'de': 'Meine Biomarker'},
+    'dashboard_biomarkers': {'ru': 'биомаркеров', 'en': 'biomarkers', 'uk': 'біомаркерів', 'de': 'Biomarker'},
+    'chat_empty_state': {'ru': 'Нет активных чатов по документам', 'en': 'No active document chats', 'uk': 'Немає активних чатів по документах', 'de': 'Keine aktiven Dokument-Chats'},
+    # ══ Онбординг новый ══
+    'onboarding_start_label': {'ru': 'С чего начать?', 'en': 'Where to start?', 'uk': 'З чого почати?', 'de': 'Wo anfangen?'},
+    'onboarding_ask_title': {'ru': 'Задать вопрос', 'en': 'Ask a Question', 'uk': 'Поставити запитання', 'de': 'Frage stellen'},
+    'onboarding_ask_desc': {'ru': 'Спросите про симптомы, лекарства или результаты анализов', 'en': 'Ask about symptoms, medications or test results', 'uk': 'Запитайте про симптоми, ліки або результати аналізів', 'de': 'Fragen zu Symptomen, Medikamenten oder Testergebnissen'},
+    'onboarding_trust_secure': {'ru': 'Данные защищены', 'en': 'Data secured', 'uk': 'Дані захищені', 'de': 'Daten geschützt'},
+    'onboarding_trust_fast': {
+        'ru': 'Анализ за пару минут',
+        'en': 'Analysis in a couple of minutes',
+        'uk': 'Аналіз за кілька хвилин',
+        'de': 'Analyse in ein paar Minuten'
+    },
+    'onboarding_trust_ai': {
+        'ru': 'Объясняем простым языком',
+        'en': 'Explained in simple language',
+        'uk': 'Пояснюємо простою мовою',
+        'de': 'Einfach erklärt'
+    },
+    'onboarding_skip': {'ru': 'Пропустить, перейти в кабинет', 'en': 'Skip, go to dashboard', 'uk': 'Пропустити, перейти в кабінет', 'de': 'Überspringen, zum Dashboard'},
+    'free_label': {
+        'ru': 'Бесплатно',
+        'en': 'Free',
+        'uk': 'Безкоштовно',
+        'de': 'Kostenlos'
+    },
+    'onetime_tag': {
+        'ru': 'Без подписки',
+        'en': 'No subscription',
+        'uk': 'Без підписки',
+        'de': 'Ohne Abo'
+    },
+    'onetime_title': {
+        'ru': 'Попробовать без подписки',
+        'en': 'Try without subscription',
+        'uk': 'Спробувати без підписки',
+        'de': 'Ohne Abo ausprobieren'
+    },
+    'onetime_feature_1': {
+        'ru': '1 медицинский документ',
+        'en': '1 medical document',
+        'uk': '1 медичний документ',
+        'de': '1 medizinisches Dokument'
+    },
+    'onetime_feature_2': {
+        'ru': '10 детальных консультаций',
+        'en': '10 detailed consultations',
+        'uk': '10 детальних консультацій',
+        'de': '10 detaillierte Beratungen'
+    },
+    'onetime_no_renewal': {
+        'ru': 'Без авто-продления, оплата один раз.',
+        'en': 'No auto-renewal, pay once.',
+        'uk': 'Без автопоновлення, оплата один раз.',
+        'de': 'Ohne automatische Verlängerung, einmalige Zahlung.'
+    },
+    'onetime_btn': {
+        'ru': 'Попробовать →',
+        'en': 'Try →',
+        'uk': 'Спробувати →',
+        'de': 'Ausprobieren →'
+    },
+    'upgrade_to': {
+        'ru': 'Перейти на',
+        'en': 'Switch to',
+        'uk': 'Перейти на',
+        'de': 'Zu',
+    },
 }
 
 

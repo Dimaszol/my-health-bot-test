@@ -30,14 +30,14 @@ footer {
 .bm-cat-section{margin-bottom:20px;}
 .bm-cat-title{font-size:13px;font-weight:700;color:#6b8c87;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
 .bm-cat-title::after{content:'';flex:1;height:1px;background:#e0edeb;}
-@media(max-width:520px){.bm-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:520px){.bm-grid{grid-template-columns:1fr 1fr;} .doc-page-title{display:none;}}
 </style>
 {% endblock %}
 
 {% block content %}
 <!-- 📄 СТРАНИЦА ДОКУМЕНТОВ -->
 
-<div style="margin-bottom: 1rem;">
+<div class="doc-page-title" style="margin-bottom: 1rem;">
     <h1 style="font-size: 2rem; font-weight: 700; color: #6ab0b9; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6ab0b9" stroke-width="1">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -1749,22 +1749,22 @@ function renderBiomarkers(bms) {
 
     // Summary + фильтр chips
     let html = `
-        <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+        <div style="display:flex;gap:10px;margin-bottom:18px;">
             <div onclick="setBmFilter('all',document.querySelector('#bm-filter-chips .doc-chip'))"
-                style="flex:1;min-width:120px;background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 2px 14px rgba(17,29,27,0.07);cursor:pointer;transition:box-shadow .15s;"
+                style="flex:1;min-width:60px;background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 2px 14px rgba(17,29,27,0.07);cursor:pointer;transition:box-shadow .15s;"
                 onmouseenter="this.style.boxShadow='0 4px 20px rgba(17,29,27,0.12)'"
                 onmouseleave="this.style.boxShadow='0 2px 14px rgba(17,29,27,0.07)'">
                 <div style="font-size:22px;font-weight:800;color:#111;">${bms.length}</div>
                 <div style="font-size:12px;color:#6b8c87;font-weight:600;margin-top:2px;">${BM_LABELS.loaded}</div>
             </div>
             <div onclick="setBmStatusFilter('normal')"
-                style="flex:1;min-width:120px;background:rgba(46,204,154,.08);border-radius:14px;padding:14px 16px;border:1.5px solid rgba(46,204,154,.2);cursor:pointer;transition:opacity .15s;"
+                style="flex:1;min-width:60px;background:rgba(46,204,154,.08);border-radius:14px;padding:14px 16px;border:1.5px solid rgba(46,204,154,.2);cursor:pointer;transition:opacity .15s;"
                 onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
                 <div style="font-size:22px;font-weight:800;color:#0d7a5a;">${countNorm}</div>
                 <div style="font-size:12px;color:#0d7a5a;font-weight:600;margin-top:2px;">${BM_LABELS.normal}</div>
             </div>
             <div onclick="setBmStatusFilter('abnormal')"
-                style="flex:1;min-width:120px;background:rgba(224,90,90,.10);border-radius:14px;padding:14px 16px;border:1.5px solid rgba(224,90,90,.2);cursor:pointer;transition:opacity .15s;"
+                style="flex:1;min-width:60px;background:rgba(224,90,90,.10);border-radius:14px;padding:14px 16px;border:1.5px solid rgba(224,90,90,.2);cursor:pointer;transition:opacity .15s;"
                 onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
                 <div style="font-size:22px;font-weight:800;color:#E05A5A;">${countBad}</div>
                 <div style="font-size:12px;color:#E05A5A;font-weight:600;margin-top:2px;">${BM_LABELS.deviations}</div>
@@ -1855,5 +1855,6 @@ function setBmStatusFilter(type) {
 // Читаем параметр ?tab= при загрузке
 const urlTab = new URLSearchParams(window.location.search).get('tab');
 if (urlTab === 'docs') switchTab('docs');
+else if (urlTab === 'biomarkers') switchTab('biomarkers');
 </script>
 {% endblock %}

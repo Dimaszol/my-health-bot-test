@@ -2,668 +2,960 @@
 
 {% block title %}{{ t('menu_dashboard', lang) }} - {{ t('site_title', lang) }}{% endblock %}
 
-{% block content %}
-
-<!-- 👋 ПРИВЕТСТВИЕ Для нового пользователя -->
-
-{% if show_onboarding %}
-<div style="margin-bottom: 3rem;">
-    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">
-        {{ t('dashboard_welcome', lang) }}, <span class="gradient-text">{{ user.name }}</span>!
-    </h1>
-    <p style="color: var(--text-secondary); font-size: 1.1rem;">
-        {{ t('dashboard_subtitle', lang) }}
-    </p>
-</div>
-<div class="faq-container" style="margin: 24px 0;">
-    
-    <!-- Шаг 1: Загрузка документа -->
-    <div class="faq-item">
-        <div class="faq-header" style="cursor: default; padding: 1.5rem;">
-            <div style="width: 100%;">
-                <h3 style="margin-bottom: 8px;">{{ t('onboarding_upload_title', lang) }}</h3>
-                <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.95rem;">
-                    {{ t('onboarding_upload_desc', lang) }}
-                </p>
-                <a href="/dashboard/documents" class="btn" style="display: inline-block; text-decoration: none;">
-                    {{ t('onboarding_upload_button', lang) }}
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Шаг 2: Заполнение профиля (раскрывающийся) -->
-    <div class="faq-item" id="profile-onboarding">
-        <div class="faq-header" onclick="toggleOnboarding(this)">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <div class="faq-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="8" r="4"/>
-                        <path d="M4 21c0-5 4-8 8-8s8 3 8 8"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3>{{ t('onboarding_profile_title', lang) }}</h3>
-                    <p style="color: var(--text-secondary); margin: 8px 0 0 0; font-size: 0.95rem;">
-                        {{ t('onboarding_profile_desc', lang) }}
-                    </p>
-                </div>
-            </div>
-            <svg class="faq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"/>
-            </svg>
-        </div>
-        <div class="faq-content">
-            <div class="faq-text">
-                <form id="quick-profile-form">
-                    <div class="profile-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem;">
-                        <!-- Год рождения -->
-                        <div>
-                            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_birth_year', lang) }}</strong>
-                            <input 
-                                type="number" 
-                                name="birth_year" 
-                                value="{{ user.birth_year if user and user.birth_year else '' }}"
-                                placeholder="1990"
-                                min="1900"
-                                max="2024"
-                                style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
-                            >
-                        </div>
-                        
-                        <!-- Пол -->
-                        <div>
-                            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_gender', lang) }}</strong>
-                            <select 
-                                name="gender"
-                                style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
-                            >
-                                <option value="">{{ t('profile_not_specified', lang) }}</option>
-                                <option value="{{ t('gender_male', lang) }}" {{ 'selected' if user and user.gender == t('gender_male', lang) else '' }}>{{ t('gender_male', lang) }}</option>
-                                <option value="{{ t('gender_female', lang) }}" {{ 'selected' if user and user.gender == t('gender_female', lang) else '' }}>{{ t('gender_female', lang) }}</option>
-                                <option value="{{ t('gender_other', lang) }}" {{ 'selected' if user and user.gender == t('gender_other', lang) else '' }}>{{ t('gender_other', lang) }}</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Рост -->
-                        <div>
-                            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_height', lang) }}</strong>
-                            <input 
-                                type="number" 
-                                name="height_cm"
-                                value="{{ user.height_cm if user and user.height_cm else '' }}"
-                                placeholder="175"
-                                min="50"
-                                max="250"
-                                style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
-                            >
-                        </div>
-                        
-                        <!-- Вес -->
-                        <div>
-                            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_weight', lang) }}</strong>
-                            <input 
-                                type="number" 
-                                name="weight_kg"
-                                value="{{ user.weight_kg if user and user.weight_kg else '' }}"
-                                placeholder="70.5"
-                                min="20"
-                                max="300"
-                                step="0.1"
-                                style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
-                            >
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="btn" style="padding: 0.6rem 1.5rem;">
-                        ✅ {{ t('save', lang) }}
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <style>
-    /* Адаптация для мобильных (как на странице профиля) */
-    @media (max-width: 768px) {
-        .profile-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-        }
-    }
-    </style>
-
-    <!-- Шаг 3: Советы (раскрывающийся) -->
-    <div class="faq-item">
-        <div class="faq-header" onclick="toggleOnboarding(this)">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <div class="faq-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2a7 7 0 0 0-4 12c1 1 2 2 2 4h4c0-2 1-3 2-4a7 7 0 0 0-4-12z"/>
-                        <path d="M9 18h6"/>
-                        <path d="M10 22h4"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3>{{ t('onboarding_tips_title', lang) }}</h3>
-                    <p style="color: var(--text-secondary); margin: 8px 0 0 0; font-size: 0.95rem;">
-                        {{ t('onboarding_tips_desc', lang) }}
-                    </p>
-                </div>
-            </div>
-            <svg class="faq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"/>
-            </svg>
-        </div>
-        <div class="faq-content">
-            <div class="faq-text">
-
-                <!-- Совет 1 -->
-                <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);">
-                    <strong style="display: block; margin-bottom: 0.5rem; color: var(--text-primary);">{{ t('onboarding_tip1_title', lang) }}</strong>
-                    <p style="color: var(--text-secondary); line-height: 1.7; margin: 0;">{{ t('onboarding_tip1_text', lang) }}</p>
-                </div>
-
-                <!-- Совет 2 -->
-                <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);">
-                    <strong style="display: block; margin-bottom: 0.5rem; color: var(--text-primary);">{{ t('onboarding_tip2_title', lang) }}</strong>
-                    <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 0.8rem;">{{ t('onboarding_tip2_text', lang) }}</p>
-                    <img src="/static/images/quality_example.jpg" alt="" style="width: 100%; border-radius: 8px;">
-                </div>
-
-                <!-- Совет 3 -->
-                <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);">
-                    <strong style="display: block; margin-bottom: 0.5rem; color: var(--text-primary);">{{ t('onboarding_tip3_title', lang) }}</strong>
-                    <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 0.8rem;">{{ t('onboarding_tip3_text', lang) }}</p>
-                    <img src="/static/images/orientation_example.jpg" alt="" style="width: 100%; border-radius: 8px;">
-                </div>
-
-                <!-- Совет 4 -->
-                <div>
-                    <strong style="display: block; margin-bottom: 0.5rem; color: var(--text-primary);">{{ t('onboarding_tip4_title', lang) }}</strong>
-                    <p style="color: var(--text-secondary); line-height: 1.7; margin: 0;">{{ t('onboarding_tip4_text', lang) }}</p>
-                </div>
-
-            </div>
-        </div>
-    </div>
-    
-</div>
-
-<script>
-// Обработка формы профиля через существующий API
-document.getElementById('quick-profile-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    
-    // Формируем данные в формате для /api/profile/update
-    const data = {
-        section: 'medical',
-        birth_year: formData.get('birth_year') || null,
-        gender: formData.get('gender') || null,
-        weight_kg: formData.get('weight_kg') ? parseFloat(formData.get('weight_kg')) : null,
-        height_cm: formData.get('height_cm') ? parseInt(formData.get('height_cm')) : null
-    };
-    
-    try {
-        const response = await fetch('/api/profile/update', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            location.reload();
-        } else {
-            alert(result.message || 'Ошибка сохранения');
-        }
-    } catch (error) {
-        console.error('Ошибка сохранения:', error);
-        alert('Ошибка сохранения данных');
-    }
-});
-// Функция для раскрытия онбординга (аналогично FAQ)
-function toggleOnboarding(header) {
-    const item = header.parentElement;
-    const wasActive = item.classList.contains('active');
-    
-    // Закрываем все остальные
-    document.querySelectorAll('.faq-item').forEach(el => {
-        if (el !== item) el.classList.remove('active');
-    });
-    
-    // Переключаем текущий
-    if (!wasActive) {
-        item.classList.add('active');
-    } else {
-        item.classList.remove('active');
-    }
-}
-</script>
-{% else %}
-<div style="margin-bottom: 2rem;">
-    <h1 style="font-size: 2rem; font-weight: 700; color: #6ab0b9; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6ab0b9" stroke-width="1">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-        </svg>
-        {{ t('menu_dashboard', lang) }}
-    </h1>
-</div>
-{% endif %}
-
-<!-- 📈 СТАТИСТИКА (3 карточки в ряд) -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
-    
-    <!-- Документы -->
-    <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column;">
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-            <div style="width: 40px; height: 40px;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#4A5568" stroke-width="1" style="width: 100%; height: 100%;">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/>
-                    <polyline points="10 9 9 9 8 9"/>
-                </svg>
-            </div>
-            <div>
-                <p style="color: var(--text-secondary); font-weight: 600; font-size: 0.95rem; margin: 0; display: flex; align-items: baseline; gap: 0.3rem;">
-                    {{ t('stats_documents_uploaded', lang) }} <span style="font-size: 0.95rem; font-weight: 600;">({{ stats.total_documents }})</span>
-                </p>
-            </div>
-        </div>
-        <div style="flex: 1;">
-            <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 1rem;">
-                {{ t('stats_documents_left', lang) }}: <strong style="color: var(--primary-color);">{{ stats.documents_left }}</strong>
-            </p>
-        </div>
-        <a href="/dashboard/documents" class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 0.9rem; text-align: center;">
-            {{ t('btn_upload_document', lang) }}
-        </a>
-    </div>
-    
-    <!-- AI-Консультации -->
-    <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column;">
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-            <div style="width: 40px; height: 40px;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#4A5568" stroke-width="1" style="width: 100%; height: 100%;">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-            </div>
-            <div>
-                <p style="color: var(--text-secondary); font-weight: 600; font-size: 0.95rem; margin: 0;">
-                    {{ t('stats_messages', lang) }}
-                </p>
-            </div>
-        </div>
-        <div style="flex: 1;">
-            <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.3rem;">
-                {{ t('stats_detailed_consultations', lang) }}: <strong style="color: var(--primary-color);">{{ stats.queries_left }}</strong>
-            </p>
-            <p style="color: var(--text-light); font-size: 0.75rem; font-style: italic; margin-bottom: 1rem;">
-                {{ t('stats_basic_answers', lang) }}
-            </p>
-        </div>
-        <a href="/dashboard/chat" class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 0.9rem; text-align: center;">
-            {{ t('btn_open_chat', lang) }}
-        </a>
-    </div>
-        
-    <!-- Тариф -->
-    <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column; background: linear-gradient(135deg, #e0f7f4 0%, #e8f4f8 100%); border: 2px solid var(--primary-color);">
-        <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem;">
-            <div style="width: 32px; height: 32px;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#4A5568" stroke-width="1" style="width: 100%; height: 100%;">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                    <circle cx="12" cy="12" r="3"/>
-                </svg>
-            </div>
-            <p style="color: var(--text-secondary); font-weight: 600; font-size: 0.95rem; margin: 0;">
-                {{ t('stats_current_plan', lang) }}
-            </p>
-        </div>
-        <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
-            <h3 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0;">
-                {{ current_plan_name }}
-            </h3>
-        </div>
-        <a href="/dashboard/subscription" class="btn" style="width: 100%; padding: 10px; font-size: 0.9rem; text-align: center;">
-            {{ t('btn_upgrade_plan', lang) }} →
-        </a>
-    </div>
-    
-</div>
-
-<!-- 🎯 ДОПОЛНИТЕЛЬНЫЕ ДЕЙСТВИЯ -->
-<div style="margin-bottom: 3rem;">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
-        
-        {% if show_telegram_connect %}
-        <!-- Подключить Telegram (только для веб-пользователей) -->
-        <a href="/dashboard/link_telegram" class="card" style="padding: 1.5rem; text-decoration: none; cursor: pointer; transition: all 0.3s;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <div style="width: 40px; height: 40px;">
-                    <svg viewBox="0 0 24 24" fill="#0088cc" style="width: 100%; height: 100%;">
-                        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.008-1.252-.241-1.865-.44-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635.099-.002.321.023.465.141.121.099.155.232.171.326.016.094.037.308.02.474z"/>
-                    </svg>
-                </div>
-                <div>
-                    <h4 style="color: var(--text-primary); margin-bottom: 0.3rem; font-size: 1.1rem;">
-                        {{ t('action_connect_telegram', lang) }}
-                    </h4>
-                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
-                        {{ t('action_connect_telegram_desc', lang) }}
-                    </p>
-                </div>
-            </div>
-        </a>
-        {% endif %}
-        <!-- Установить PWA (только для мобильных и если не установлено) -->
-        <div id="pwa-install-card" class="card" style="display: none; padding: 1.5rem; text-decoration: none; cursor: pointer; transition: all 0.3s;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <div style="width: 40px; height: 40px;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#00C9A7" stroke-width="1" style="width: 100%; height: 100%;">
-                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                        <polyline points="7.5 4.21 12 6.81 16.5 4.21"/>
-                        <polyline points="7.5 19.79 7.5 14.6 3 12"/>
-                        <polyline points="21 12 16.5 14.6 16.5 19.79"/>
-                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                        <line x1="12" y1="22.08" x2="12" y2="12"/>
-                    </svg>
-                </div>
-                <div>
-                    <h4 style="color: var(--text-primary); margin-bottom: 0.3rem; font-size: 1.1rem;">
-                        {{ t('action_install_app', lang) }}
-                    </h4>
-                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
-                        {{ t('action_install_app_desc', lang) }}
-                    </p>
-                </div>
-            </div>
-        </div>
-        <!-- Заполнить анкету -->
-        <a href="/dashboard/profile" class="card" style="padding: 1.5rem; text-decoration: none; cursor: pointer; transition: all 0.3s;">
-            <div style="display: flex; align-items: start; justify-content: space-between; gap: 1rem;">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div style="width: 40px; height: 40px;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#4A5568" stroke-width="1" style="width: 100%; height: 100%;">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <h4 style="color: var(--text-primary); margin-bottom: 0.3rem; font-size: 1.1rem;">
-                            {{ t('action_profile', lang) }}
-                        </h4>
-                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
-                            {{ t('action_profile_desc', lang) }}
-                        </p>
-                    </div>
-                </div>
-                
-                <!-- Круговой индикатор процента -->
-                <div style="width: 60px; height: 60px; position: relative; flex-shrink: 0;">
-                    <svg width="60" height="60" style="transform: rotate(-90deg);">
-                        <circle cx="30" cy="30" r="25" fill="none" stroke="#e2e8f0" stroke-width="5"/>
-                        <circle cx="30" cy="30" r="25" fill="none" stroke="#48bb78" stroke-width="5" 
-                                stroke-dasharray="{{ (profile_completion / 100) * 157 }} 157" 
-                                stroke-linecap="round"/>
-                    </svg>
-                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: #2d3748; font-size: 0.9rem;">
-                        {{ profile_completion }}%
-                    </div>
-                </div>
-            </div>
-        </a>
-        
-    </div>
-</div>
-
-<!-- 💡 ПОДСКАЗКИ -->
-<div class="tip-box" style="background: linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%); border-left: 4px solid #f59e0b; border-radius: 12px; padding: 1.5rem; margin-top: 3rem;">
-    <h4 style="margin-bottom: 0.5rem; color: #92400e; display: flex; align-items: center; gap: 0.5rem;">
-        💡 {{ t('tip_of_day', lang) }}
-    </h4>
-    <p style="margin: 0; color: #78350f; line-height: 1.6;">
-        {{ random_tip }}
-    </p>
-</div>
-
-<!-- 🎉 МОДАЛЬНОЕ ОКНО УСПЕШНОЙ ОПЛАТЫ -->
-<div id="paymentSuccessModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 20px; padding: 40px; max-width: 500px; width: 90%; text-align: center; animation: slideIn 0.4s ease-out;">
-        
-        <!-- Иконка успеха -->
-        <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; animation: scaleIn 0.5s ease-out;">
-            <svg viewBox="0 0 52 52" style="width: 50px; height: 50px; stroke: white; stroke-width: 4; fill: none;">
-                <path d="M14 27l10 10 20-20" stroke-dasharray="100" stroke-dashoffset="100" style="animation: drawCheck 0.6s ease-out 0.3s forwards;"/>
-            </svg>
-        </div>
-        
-        <!-- Заголовок -->
-        <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 10px; color: var(--text-primary);">
-            {{ t('payment_success_heading', lang) }}
-        </h2>
-        <p style="color: var(--text-secondary); margin-bottom: 30px; font-size: 1.1rem;">
-            {{ t('payment_success_message', lang) }}
-        </p>
-        
-        <!-- Кнопка с SVG иконкой -->
-        <button onclick="closePaymentModal()" class="btn" style="width: 100%; padding: 12px; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-            </svg>
-            {{ t('go_to_dashboard', lang) }}
-        </button>
-        
-        <p style="color: var(--text-light); margin-top: 15px; font-size: 0.85rem;">
-            {{ t('auto_redirect_message', lang) }} <span id="countdown">5</span>s
-        </p>
-    </div>
-</div>
-
-{% endblock %}
-
 {% block extra_styles %}
 <style>
-    /* Дополнительные анимации для dashboard */
-    .stat-card {
-        animation: fadeInUp 0.5s ease;
-        animation-fill-mode: both;
-    }
-    
-    .stat-card:nth-child(1) {
-        animation-delay: 0.1s;
-    }
-    
-    .stat-card:nth-child(2) {
-        animation-delay: 0.2s;
-    }
-    
-    .stat-card:nth-child(3) {
-        animation-delay: 0.3s;
-    }
-    
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    /* Анимации для модального окна оплаты */
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-50px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    @keyframes scaleIn {
-        from {
-            transform: scale(0);
-        }
-        to {
-            transform: scale(1);
-        }
-    }
-    
-    @keyframes drawCheck {
-        to {
-            stroke-dashoffset: 0;
-        }
-    }
+footer { display: none !important; }
+
+/* ── CSS переменные дашборда ── */
+:root {
+  --teal: #2DE8C8;
+  --teal-dark: #1AC9AD;
+  --teal-dim: rgba(45,232,200,0.10);
+  --teal-glow: rgba(45,232,200,0.22);
+  --db-bg: #f0f9f7;
+  --db-card: #ffffff;
+  --db-text: #111d1b;
+  --db-muted: #6b8c87;
+  --db-border: #e0edeb;
+  --db-shadow: 0 2px 14px rgba(17,29,27,0.07), 0 1px 3px rgba(17,29,27,0.04);
+}
+
+.db-wrap {
+  width: 100%;
+  padding: 0;
+  min-height: calc(100vh - 160px); /* header + padding контейнера */
+  display: flex;
+  flex-direction: column;
+}
+
+.db-mini-footer {
+  margin-top: auto;
+}
+
+@media (max-width: 768px) {
+  .db-wrap { padding-bottom: 0px; }
+  .db-mini-footer { display: none; }
+}
+
+/* ════════════════════════════════════
+   ОНБОРДИНГ
+   ════════════════════════════════════ */
+.ob-hero {
+  background: linear-gradient(160deg, #1AC9AD 0%, #2DE8C8 100%);
+  border-radius: 20px;
+  padding: 28px 24px 36px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.ob-hero::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 160px; height: 160px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 50%;
+}
+.ob-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -20px; left: 30px;
+  width: 100px; height: 100px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 50%;
+}
+.ob-hero-ecg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  position: relative; z-index: 1;
+}
+.ob-hero-brand {
+  font-size: 14px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: -0.3px;
+}
+.ob-hero-greeting {
+  font-size: 22px;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 6px;
+  position: relative; z-index: 1;
+}
+.ob-hero-sub {
+  font-size: 13.5px;
+  color: rgba(255,255,255,0.85);
+  font-weight: 500;
+  line-height: 1.5;
+  position: relative; z-index: 1;
+}
+.ob-section-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--db-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+.ob-action-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--db-card);
+  border: 1.5px solid var(--db-border);
+  border-radius: 18px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  margin-bottom: 10px;
+  text-align: left;
+}
+.ob-action-card:hover {
+  border-color: var(--teal);
+  box-shadow: 0 4px 20px rgba(45,232,200,0.15);
+  transform: translateY(-1px);
+}
+.ob-action-card.primary {
+  background: linear-gradient(135deg, #1AC9AD 0%, #2DE8C8 100%);
+  border-color: transparent;
+}
+.ob-action-card.primary:hover {
+  box-shadow: 0 6px 24px rgba(45,232,200,0.35);
+}
+.ob-card-icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.25);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ob-action-card:not(.primary) .ob-card-icon {
+  background: var(--teal-dim);
+}
+.ob-card-text { flex: 1; }
+.ob-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 3px;
+}
+.ob-action-card:not(.primary) .ob-card-title { color: var(--db-text); }
+.ob-card-desc {
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.8);
+  font-weight: 500;
+  line-height: 1.4;
+}
+.ob-action-card:not(.primary) .ob-card-desc { color: var(--db-muted); }
+.ob-card-arrow {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.ob-trust {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ob-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--db-card);
+  border: 1px solid var(--db-border);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--db-muted);
+}
+.ob-skip {
+  display: block;
+  text-align: center;
+  color: var(--db-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-top: 64px;
+  padding: 8px;
+  transition: color 0.15s;
+}
+.ob-skip:hover { color: var(--teal-dark); }
+
+/* ════════════════════════════════════
+   ОБЫЧНЫЙ КАБИНЕТ
+   ════════════════════════════════════ */
+
+/* Profile Hero */
+.db-profile-hero {
+  background: var(--db-card);
+  border-radius: 20px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--db-shadow);
+  margin-bottom: 16px;
+}
+.db-avatar {
+  width: 56px; height: 56px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #2DE8C8 0%, #1AC9AD 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+  letter-spacing: -1px;
+}
+.db-hero-info { flex: 1; min-width: 0; }
+.db-hero-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--db-text);
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.db-hero-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.db-tariff-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #2DE8C8 0%, #1AC9AD 100%);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 4px 10px;
+}
+.db-hero-since {
+  font-size: 11.5px;
+  color: var(--db-muted);
+  font-weight: 500;
+}
+.db-edit-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--db-bg);
+  border: 1.5px solid var(--db-border);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--db-text);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.db-edit-btn:hover {
+  border-color: var(--teal);
+  color: var(--teal-dark);
+}
+
+/* Grid layout */
+.db-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 640px) {
+  .db-grid { grid-template-columns: 1fr; }
+}
+
+/* Card base */
+.db-card {
+  background: var(--db-card);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--db-shadow);
+}
+.db-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+}
+.db-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.db-card-icon {
+  width: 38px; height: 38px;
+  border-radius: 11px;
+  background: var(--teal-dim);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.db-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--db-text);
+  line-height: 1.2;
+}
+.db-card-sub {
+  font-size: 11.5px;
+  color: var(--db-muted);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* Action grid (медкарта 3 кнопки) */
+.db-action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+.db-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  background: var(--db-bg);
+  border: 1.5px solid var(--db-border);
+  border-radius: 14px;
+  padding: 14px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  text-align: center;
+}
+.db-action-btn:hover {
+  background: var(--teal-dim);
+  border-color: var(--teal);
+  transform: translateY(-1px);
+}
+.db-action-btn-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: white;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 4px rgba(17,29,27,0.08);
+}
+.db-action-btn-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--db-text);
+  line-height: 1.3;
+}
+
+/* Chat preview */
+.db-chat-preview {
+  margin: 0 16px 12px;
+  background: var(--db-bg);
+  border-radius: 14px;
+  border: 1px solid var(--db-border);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  display: block;
+}
+.db-chat-preview:hover { background: var(--teal-dim); border-color: var(--teal); }
+.db-chat-preview-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+.db-chat-preview-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--db-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 65%;
+}
+.db-chat-time { font-size: 11px; color: var(--db-muted); font-weight: 500; flex-shrink: 0; }
+.db-chat-msg {
+  font-size: 12.5px;
+  color: var(--db-muted);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.db-section-label {
+  font-size: 11px;
+  color: var(--db-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 5px;
+}
+.db-chat-footer { padding: 0 16px 16px; }
+.db-primary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: linear-gradient(135deg, #2DE8C8 0%, #1AC9AD 100%);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  border-radius: 13px;
+  padding: 13px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s;
+  box-shadow: 0 4px 16px rgba(45,232,200,0.25);
+}
+.db-primary-btn:hover { box-shadow: 0 6px 22px rgba(45,232,200,0.35); transform: translateY(-1px); }
+
+/* Tariff */
+.db-tariff-body { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 12px; }
+.db-limit-row { display: flex; flex-direction: column; gap: 6px; }
+.db-limit-top { display: flex; align-items: center; justify-content: space-between; }
+.db-limit-label { font-size: 13px; font-weight: 600; color: var(--db-text); }
+.db-limit-count { font-size: 13px; font-weight: 700; color: var(--teal-dark); }
+.db-limit-count span { color: var(--db-muted); font-weight: 500; }
+.db-progress-track {
+  height: 7px;
+  background: var(--db-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.db-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #2DE8C8, #1AC9AD);
+  transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+}
+.db-progress-fill.warn { background: linear-gradient(90deg, #FFB547, #FF8A00); }
+.db-renew-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+  background: var(--db-bg);
+  border-radius: 11px;
+}
+.db-renew-text { font-size: 12.5px; color: var(--db-muted); font-weight: 500; }
+.db-renew-text strong { color: var(--db-text); font-weight: 700; }
+.db-outline-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background: transparent;
+  border: 1.5px solid var(--teal);
+  color: var(--teal-dark);
+  font-size: 13.5px;
+  font-weight: 700;
+  border-radius: 13px;
+  padding: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.db-outline-btn:hover { background: var(--teal-dim); transform: translateY(-1px); }
+
+/* Settings list */
+.db-settings-list { padding: 0 0 4px; }
+.db-settings-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 20px;
+  cursor: pointer;
+  transition: background 0.12s;
+  border-bottom: 1px solid #f0f7f6;
+  text-decoration: none;
+}
+.db-settings-item:last-child { border-bottom: none; }
+.db-settings-item:hover { background: var(--db-bg); }
+.db-settings-item-icon {
+  width: 36px; height: 36px;
+  background: var(--db-bg);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.db-settings-item-text { flex: 1; }
+.db-settings-item-label { font-size: 14px; font-weight: 600; color: var(--db-text); }
+.db-settings-item-sub { font-size: 11.5px; color: var(--db-muted); font-weight: 500; margin-top: 2px; }
+.db-chevron {
+  color: #c0d4d1;
+  flex-shrink: 0;
+}
+
+/* Карточка на всю ширину */
+.db-full-card { margin-bottom: 16px; }
+
+/* Mobile tweaks */
+@media (max-width: 480px) {
+  .db-profile-hero { padding: 16px; }
+  .db-hero-name { font-size: 16px; }
+  .db-edit-btn { padding: 7px 10px; font-size: 12px; }
+  .db-edit-btn span { display: none; }
+  .db-tariff-body { padding: 0 16px 16px; }
+}
+/* Мини-футер кабинета */
+.db-mini-footer {
+  text-align: center;
+  padding: 20px 0 12px;
+  color: var(--db-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.db-mini-footer a {
+  color: var(--db-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.db-mini-footer a:hover { color: var(--teal-dark); }
+.db-mini-footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.db-mini-footer-links span { opacity: 0.4; }
+
 </style>
 {% endblock %}
 
-{% block extra_scripts %}
+{% block content %}
+<div class="db-wrap">
+
+{% if show_onboarding %}
+<!-- ══════════════════════════════════════
+     ОНБОРДИНГ — новый пользователь
+     ══════════════════════════════════════ -->
+
+<!-- Hero с градиентом -->
+<div class="ob-hero">  
+  <div class="ob-hero-greeting">{{ t('dashboard_welcome', lang) }}, {{ user.name }}!</div>
+  <div class="ob-hero-sub">{{ t('dashboard_subtitle', lang) }}</div>
+</div>
+
+<!-- С чего начать -->
+<p class="ob-section-label">{{ t('onboarding_start_label', lang) }}</p>
+
+<!-- Кнопка 1 — загрузить документ (primary) -->
+<a href="/dashboard/documents" class="ob-action-card primary">
+  <div class="ob-card-icon">
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+      <path d="M13 4v14M7 10l6-6 6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M4 20v1a2 2 0 002 2h14a2 2 0 002-2v-1" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="ob-card-text">
+    <div class="ob-card-title">{{ t('onboarding_upload_title', lang) }}</div>
+    <div class="ob-card-desc">{{ t('onboarding_upload_desc', lang) }}</div>
+  </div>
+  <div class="ob-card-arrow">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M3 7h8M8 4l3 3-3 3" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+</a>
+
+<!-- Кнопка 2 — задать вопрос -->
+<a href="/dashboard/chat" class="ob-action-card">
+  <div class="ob-card-icon">
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+      <path d="M4 6h18a1 1 0 011 1v11a1 1 0 01-1 1H9l-6 4V7a1 1 0 011-1z" stroke="#2DE8C8" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M9 11h8M9 15h5" stroke="#2DE8C8" stroke-width="1.7" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="ob-card-text">
+    <div class="ob-card-title">{{ t('onboarding_ask_title', lang) }}</div>
+    <div class="ob-card-desc">{{ t('onboarding_ask_desc', lang) }}</div>
+  </div>
+  <div class="ob-card-arrow">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M3 7h8M8 4l3 3-3 3" stroke="#1AC9AD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+</a>
+
+<!-- Trust row -->
+<div class="ob-trust">
+  <div class="ob-trust-item">🔒 {{ t('onboarding_trust_secure', lang) }}</div>
+  <div class="ob-trust-item">⚡ {{ t('onboarding_trust_fast', lang) }}</div>
+  <div class="ob-trust-item">🩺 {{ t('onboarding_trust_ai', lang) }}</div>
+</div>
+
+<!-- Skip -->
+<a href="#" class="ob-skip" id="ob-skip-btn">{{ t('onboarding_skip', lang) }} →</a>
+
+{% else %}
+<!-- ══════════════════════════════════════
+     ОБЫЧНЫЙ КАБИНЕТ
+     ══════════════════════════════════════ -->
+
+<!-- 1. Profile Hero -->
+<div class="db-profile-hero">
+  <div class="db-avatar">
+    {% if user.name %}{{ user.name[:2]|upper }}{% else %}?{% endif %}
+  </div>
+  <div class="db-hero-info">
+    <div class="db-hero-name">{{ user.name or '—' }}</div>
+    <div class="db-hero-sub">
+      <span class="db-tariff-pill">
+        <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+          <path d="M5 1l1.2 2.8 3 .3-2.2 2 .7 3L5 7.8 2.3 9.1l.7-3L.8 4.1l3-.3z" fill="white"/>
+        </svg>
+        {{ current_plan_name }}
+      </span>      
+    </div>
+  </div>
+  <a href="/dashboard/profile" class="db-edit-btn">
+    <svg width="14" height="14" viewBox="0 0 15 15" fill="none">
+      <path d="M10 2l3 3-8 8H2v-3L10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+    </svg>
+    <span>{{ t('dashboard_edit', lang) }}</span>
+  </a>
+</div>
+
+<!-- 2x2 grid: Медкарта + Консультации -->
+<div class="db-grid">
+
+  <!-- Блок: Медкарта -->
+  <div class="db-card">
+    <div class="db-card-header">
+      <div class="db-card-header-left">
+        <div class="db-card-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <rect x="3" y="2" width="14" height="16" rx="3" stroke="#2DE8C8" stroke-width="1.8"/>
+            <path d="M7 7h6M7 10h6M7 13h4" stroke="#2DE8C8" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="db-card-title">{{ t('dashboard_medcard_title', lang) }}</div>
+          <div class="db-card-sub">{{ t('dashboard_docs_count_label', lang) }}: {{ stats.total_documents }} · {{ t('dashboard_biomarkers', lang) | capitalize }}: {{ stats.bm_count }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="db-action-grid">
+      <!-- Добавить документ -->
+      <a href="/dashboard/documents?tab=upload" class="db-action-btn">
+        <div class="db-action-btn-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M9 3v12M3 9h12" stroke="#2DE8C8" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="db-action-btn-label">{{ t('dashboard_add_doc_btn', lang) }}</span>
+      </a>
+      <!-- Мои документы -->
+      <a href="/dashboard/documents?tab=docs" class="db-action-btn">
+        <div class="db-action-btn-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <rect x="3" y="2" width="12" height="14" rx="2.5" stroke="#2DE8C8" stroke-width="1.7"/>
+            <path d="M6 6h6M6 9h6M6 12h4" stroke="#2DE8C8" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="db-action-btn-label">{{ t('dashboard_my_docs_btn', lang) }}</span>
+      </a>
+      <!-- Мои биомаркеры -->
+      <a href="/dashboard/documents?tab=biomarkers" class="db-action-btn">
+        <div class="db-action-btn-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="9" r="6" stroke="#2DE8C8" stroke-width="1.7"/>
+            <path d="M3 9h2l2-3 2 6 2-7 2 6 2-3" stroke="#2DE8C8" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="db-action-btn-label">{{ t('dashboard_my_biomarkers_btn', lang) }}</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Блок: Консультации -->
+  <div class="db-card">
+    <div class="db-card-header">
+      <div class="db-card-header-left">
+        <div class="db-card-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 4h14a1 1 0 011 1v8a1 1 0 01-1 1H7l-4 3V5a1 1 0 011-1z" stroke="#2DE8C8" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M7 8h6M7 11h4" stroke="#2DE8C8" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="db-card-title">{{ t('dashboard_consultations_title', lang) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Превью последнего чата -->
+    {% if last_doc_chat %}
+    <div style="padding: 0 16px; margin-bottom: 8px;">
+      <div class="db-section-label">{{ t('dashboard_last_chat_label', lang) }}</div>
+    </div>
+    <a href="/dashboard/document/{{ last_doc_chat.doc_id }}/chat" class="db-chat-preview">
+      <div class="db-chat-preview-top">
+        <span class="db-chat-preview-title">{{ last_doc_chat.doc_title }}</span>
+        <span class="db-chat-time">
+          {% if last_doc_chat.last_ts %}
+            {{ last_doc_chat.last_ts.strftime('%d.%m') }}
+          {% endif %}
+        </span>
+      </div>
+      <div class="db-chat-msg">
+        {% set msg_text = last_doc_chat.last_msg | striptags %}
+        {{ msg_text[:80] }}{% if msg_text|length > 80 %}…{% endif %}
+      </div>
+    </a>
+    {% else %}
+    <div style="padding: 0 16px 12px; color: var(--db-muted); font-size: 13px;">
+      {{ t('chat_empty_state', lang) }}
+    </div>
+    {% endif %}
+
+    <div class="db-chat-footer">
+      <a href="/dashboard/chat" class="db-primary-btn">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M2 3h12a1 1 0 011 1v7a1 1 0 01-1 1H6l-4 2.5V4a1 1 0 011-1z" fill="white" fill-opacity="0.9"/>
+        </svg>
+        {{ t('dashboard_open_general_chat', lang) }}
+      </a>
+    </div>
+  </div>
+
+</div><!-- /db-grid -->
+
+<!-- 2x2 grid: Тариф + Аккаунт -->
+<div class="db-grid">
+
+  <!-- Блок: Тарифы и лимиты -->
+  <div class="db-card">
+    <div class="db-card-header">
+      <div class="db-card-header-left">
+        <div class="db-card-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 14V8l7-5 7 5v6a1 1 0 01-1 1H4a1 1 0 01-1-1z" stroke="#2DE8C8" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M8 15v-4h4v4" stroke="#2DE8C8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="db-card-title">{{ t('dashboard_tariff_limits_title', lang) }}</div>
+          <div class="db-card-sub">
+            {% if limits_data and limits_data.expires_at %}
+              {{ t('dashboard_limits_renew', lang) }} {{ limits_data.expires_at.strftime('%d.%m.%Y') if limits_data.expires_at else '' }}
+            {% else %}
+              {{ t('dashboard_limits_permanent', lang) }}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <span class="db-tariff-pill">
+        <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+          <path d="M5 1l1.2 2.8 3 .3-2.2 2 .7 3L5 7.8 2.3 9.1l.7-3L.8 4.1l3-.3z" fill="white"/>
+        </svg>
+        {{ current_plan_name }}
+      </span>
+    </div>
+
+    <div class="db-tariff-body">
+        <!-- Документы -->
+        {% set sub_type = stats.subscription_type %}
+        {% if sub_type == 'basic_sub' %}{% set doc_max = 5 %}{% set q_max = 50 %}
+        {% elif sub_type == 'premium_sub' %}{% set doc_max = 20 %}{% set q_max = 200 %}
+        {% else %}{% set doc_max = 2 %}{% set q_max = 6 %}{% endif %}
+
+        <div class="db-limit-row">
+        <div class="db-limit-top">
+            <span class="db-limit-label">{{ t('dashboard_docs_label', lang) }}</span>
+            <span class="db-limit-count"><span>{{ t('stats_documents_left', lang) }}: </span>{{ stats.documents_left }}</span>
+        </div>
+        <div class="db-progress-track">
+            {% set doc_pct = [((stats.documents_left / doc_max) * 100)|int, 100]|min %}
+            <div class="db-progress-fill {% if doc_pct <= 25 %}warn{% endif %}" style="width: {{ doc_pct }}%"></div>
+        </div>
+        </div>
+
+      <!-- Консультации -->
+        <div class="db-limit-row">
+        <div class="db-limit-top">
+            <span class="db-limit-label">{{ t('dashboard_queries_label', lang) }}</span>
+            <span class="db-limit-count"><span>{{ t('stats_queries_left', lang) }}: </span>{{ stats.queries_left }}</span>
+        </div>
+        <div class="db-progress-track">
+            {% set q_pct = [((stats.queries_left / q_max) * 100)|int, 100]|min %}
+            <div class="db-progress-fill {% if q_pct <= 25 %}warn{% endif %}" style="width: {{ q_pct }}%"></div>
+        </div>
+        </div>
+
+      <a href="/dashboard/subscription" class="db-outline-btn">{{ t('dashboard_upgrade_plan', lang) }}</a>
+    </div>
+  </div>
+
+  <!-- Блок: Аккаунт -->
+  <div class="db-card">
+    <div class="db-card-header">
+      <div class="db-card-header-left">
+        <div class="db-card-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="7" r="3.3" stroke="#2DE8C8" stroke-width="1.7"/>
+            <path d="M3 17c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="#2DE8C8" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="db-card-title">{{ t('dashboard_account_title', lang) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="db-settings-list">
+
+      <!-- Подключить Telegram (только для web-регистрации) -->
+      {% if show_telegram_connect %}
+      <a href="/dashboard/connect-telegram" class="db-settings-item">
+        <div class="db-settings-item-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M2.5 9.2L15.4 3.4c.6-.3 1.2.3 1 .9l-2.3 11.3c-.1.6-.8.8-1.3.4L9.2 13l-2 2.5c-.4.5-1.2.2-1.2-.4v-3.2L13.6 5 5.4 11l-2.7-.8c-.6-.2-.6-1 0-1z" stroke="#229ED9" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="db-settings-item-text">
+          <div class="db-settings-item-label">{{ t('action_connect_telegram', lang) }}</div>
+          <div class="db-settings-item-sub">{{ t('action_connect_telegram_desc', lang) }}</div>
+        </div>
+        <svg class="db-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none">
+          <path d="M1 1l5 5-5 5" stroke="#c0d4d1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      {% endif %}
+
+      <!-- Установить приложение (показываем через JS на мобильных) -->
+      <div id="pwa-install-item" class="db-settings-item" style="display:none; cursor:pointer;">
+        <div class="db-settings-item-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <rect x="5" y="1.5" width="8" height="15" rx="1.8" stroke="#7a9b97" stroke-width="1.5"/>
+            <path d="M8 13.8h2" stroke="#7a9b97" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="db-settings-item-text">
+          <div class="db-settings-item-label">{{ t('dashboard_install_app_label', lang) }}</div>
+          <div class="db-settings-item-sub">{{ t('dashboard_install_app_sub', lang) }}</div>
+        </div>
+        <svg class="db-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none">
+          <path d="M1 1l5 5-5 5" stroke="#c0d4d1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <!-- Редактировать профиль -->
+      <a href="/dashboard/profile" class="db-settings-item">
+        <div class="db-settings-item-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="6.5" r="3" stroke="#7a9b97" stroke-width="1.6"/>
+            <path d="M2.5 15c0-3.6 13-3.6 13 0" stroke="#7a9b97" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="db-settings-item-text">
+          <div class="db-settings-item-label">{{ t('dashboard_edit', lang) }} {{ t('profile', lang)|lower }}</div>
+          <div class="db-settings-item-sub">{{ t('action_profile_desc', lang) }}</div>
+        </div>
+        <svg class="db-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none">
+          <path d="M1 1l5 5-5 5" stroke="#c0d4d1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+
+    </div>
+  </div>
+
+</div><!-- /db-grid -->
+{% endif %}
+
+<!-- Мини-футер -->
+<div class="db-mini-footer">
+  <div>© 2026 PulseBook</div>
+  <div class="db-mini-footer-links">
+    <a href="/privacy">Privacy Policy</a>
+    <span>•</span>
+    <a href="/terms">Terms</a>
+    <span>•</span>
+    <a href="/medical-disclaimer">Medical Disclaimer</a>
+  </div>
+</div>
+</div><!-- /db-wrap -->
+
 <script>
-// Проверка успешной оплаты при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const paymentSuccess = urlParams.get('payment_success');
-    const sessionId = urlParams.get('session_id');
-    
-    if (paymentSuccess === 'true' && sessionId) {
-        showPaymentSuccessModal();
-    }
-});
-
-function showPaymentSuccessModal() {
-    // Показываем модальное окно
-    const modal = document.getElementById('paymentSuccessModal');
-    modal.style.display = 'flex';
-    
-    // Автоматическое закрытие через 5 секунд
-    let seconds = 5;
-    const countdownElement = document.getElementById('countdown');
-    
-    const timer = setInterval(() => {
-        seconds--;
-        countdownElement.textContent = seconds;
-        
-        if (seconds <= 0) {
-            clearInterval(timer);
-            closePaymentModal();
-        }
-    }, 1000);
-}
-
-function closePaymentModal() {
-    document.getElementById('paymentSuccessModal').style.display = 'none';
-    // Убираем параметры из URL
-    window.history.replaceState({}, document.title, '/dashboard');
-    // Перезагружаем страницу чтобы обновить статистику
-    window.location.reload();
-}
-
-// PWA Installation Logic
+// ── PWA установка (мобильные) ──
 (function() {
-    const pwaCard = document.getElementById('pwa-install-card');
-    let deferredPrompt;
-    
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const isInstalled = window.matchMedia('(display-mode: standalone)').matches || 
-                       window.navigator.standalone === true;
-    
-    if (!isMobile || isInstalled) {
-        return;
-    }
-    
-    if (isIOS) {
-        pwaCard.style.display = 'block';
-        pwaCard.style.cursor = 'pointer';
-        pwaCard.onclick = function() {
-            showIOSInstallInstructions();
-        };
-    } else {
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            pwaCard.style.display = 'block';
-            
-            pwaCard.onclick = async function() {
-                if (!deferredPrompt) return;
-                
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                
-                if (outcome === 'accepted') {
-                    pwaCard.style.display = 'none';
-                }
-                
-                deferredPrompt = null;
-            };
-        });
-    }
-    
-    function showIOSInstallInstructions() {
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        `;
-        
-        modal.innerHTML = `
-            <div style="
-                background: white;
-                border-radius: 20px;
-                padding: 30px;
-                max-width: 400px;
-                width: 100%;
-                text-align: center;
-            ">
-                <h3 style="margin-bottom: 20px; color: #333;">📱 {{ t('install_app_ios_title', lang) }}</h3>
-                <ol style="text-align: left; line-height: 2; color: #666;">
-                    <li>{{ t('install_app_ios_step1', lang) }}</li>
-                    <li>{{ t('install_app_ios_step2', lang) }}</li>
-                    <li>{{ t('install_app_ios_step3', lang) }}</li>
-                </ol>
-                <button onclick="this.closest('div').parentElement.remove()" class="btn" style="margin-top: 20px; width: 100%;">
-                    {{ t('understood', lang) }}
-                </button>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        modal.onclick = (e) => {
-            if (e.target === modal) modal.remove();
-        };
-    }
-})();
-// 🎯 GOOGLE ADS КОНВЕРСИЯ РЕГИСТРАЦИИ (one-time)
-const isJustRegistered = {{ 'true' if just_registered else 'false' }};
+  let deferredPrompt = null;
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const pwaItem = document.getElementById('pwa-install-item');
 
+  if (isMobile && pwaItem) {
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+    if (!isInStandaloneMode) {
+      if (isIOS) {
+        pwaItem.style.display = 'flex';
+        pwaItem.onclick = showIOSInstallInstructions;
+      } else {
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          deferredPrompt = e;
+          pwaItem.style.display = 'flex';
+          pwaItem.onclick = async function() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') pwaItem.style.display = 'none';
+            deferredPrompt = null;
+          };
+        });
+      }
+    }
+  }
+
+  function showIOSInstallInstructions() {
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML = `
+      <div style="background:white;border-radius:20px;padding:28px;max-width:380px;width:100%;text-align:center;">
+        <h3 style="margin-bottom:16px;color:#111;">📱 {{ t('install_app_ios_title', lang) }}</h3>
+        <ol style="text-align:left;line-height:2;color:#666;padding-left:20px;">
+          <li>{{ t('install_app_ios_step1', lang) }}</li>
+          <li>{{ t('install_app_ios_step2', lang) }}</li>
+          <li>{{ t('install_app_ios_step3', lang) }}</li>
+        </ol>
+        <button onclick="this.closest('div').parentElement.remove()" style="margin-top:16px;width:100%;padding:12px;background:linear-gradient(135deg,#2DE8C8,#1AC9AD);color:white;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;">
+          {{ t('understood', lang) }}
+        </button>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  }
+})();
+
+// ── Google Ads конверсия (только при первой регистрации) ──
+const isJustRegistered = {{ 'true' if just_registered else 'false' }};
 if (isJustRegistered && typeof gtag === 'function') {
-  gtag('event', 'conversion', {
-    'send_to': 'AW-17861454069/d81xCNCOiOkbEPXRgMVC'
+  gtag('event', 'conversion', { 'send_to': 'AW-17861454069/d81xCNCOiOkbEPXRgMVC' });
+}
+
+// ── Онбординг — кнопка пропустить ──
+const skipBtn = document.getElementById('ob-skip-btn');
+if (skipBtn) {
+  skipBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    fetch('/dashboard/skip-onboarding', { method: 'POST' })
+      .then(() => window.location.href = '/dashboard');
   });
-  console.log('✅ Google Ads conversion sent');
 }
 </script>
 {% endblock %}

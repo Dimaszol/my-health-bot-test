@@ -2348,6 +2348,19 @@ async def cleanup_old_pending_documents(user_id: int):
     finally:
         await release_db_connection(conn)
 
+@router.post("/create-onetime-limits-checkout")
+async def create_onetime_limits_checkout(
+    request: Request,
+    user_id: int = Depends(get_current_user)
+):
+    from stripe_manager import StripeManager
+    from db_postgresql import get_user_language
+    lang = await get_user_language(user_id)
+    success, url_or_error = await StripeManager.create_onetime_limits_checkout(user_id, lang)
+    if success:
+        return {'success': True, 'checkout_url': url_or_error}
+    return JSONResponse(status_code=500, content={'success': False, 'error': url_or_error})
+
 @router.post("/create-one-time-document-checkout")
 async def create_one_time_document_checkout(
     request: Request,

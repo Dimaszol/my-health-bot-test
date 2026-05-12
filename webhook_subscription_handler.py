@@ -99,6 +99,14 @@ class SubscriptionWebhookHandler:
                             "result": result,
                             "processed_at": datetime.now().isoformat()
                         })
+                    elif payment_type == 'one_time_limits':  # ← ДОБАВЬ
+                        result = await self._handle_one_time_limits_payment(session_data)
+                        return web.json_response({
+                            "status": "success",
+                            "event_type": event_type,
+                            "result": result,
+                            "processed_at": datetime.now().isoformat()
+                        })
                     
                     # Стандартная обработка подписок и пакетов
                     from stripe_manager import StripeManager
@@ -157,6 +165,47 @@ class SubscriptionWebhookHandler:
                 status=500
             )
     
+    async def _handle_one_time_limits_payment(self, session_data):
+        """Добавляет лимиты после разовой оплаты без документа"""
+        try:
+            from db_postgresql import execute_query, fetch_one
+            session_id = session_data.get('id')
+            user_id = int(session_data.get('metadata', {}).get('user_id'))
+
+            existing = await fetch_one(
+                "SELECT id FROM transactions WHERE stripe_session_id = $1 AND status = 'completed'",
+                (session_id,)
+            )
+            if existing:
+                return {"status": "success", "message": "Already processed"}
+
+            await execute_query("""
+                INSERT INTO transactions
+                (user_id, stripe_session_id, amount_usd, package_type,
+                payment_method, status, documents_granted, completed_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+            """, (user_id, session_id, 2.49, 'one_time_limits', 'stripe', 'completed', 1))
+
+            conn = await get_db_connection()
+            try:
+                await conn.execute(
+                    "UPDATE user_limits SET documents_left = documents_left + 1, updated_at = NOW() WHERE user_id = $1",
+                    user_id
+                )
+                await conn.execute(
+                    "UPDATE user_limits SET gpt4o_queries_left = gpt4o_queries_left + 5 WHERE user_id = $1",
+                    user_id
+                )
+            finally:
+                await release_db_connection(conn)
+
+            logger.info(f"✅ one_time_limits processed for user")
+            return {"status": "success", "message": "Limits added"}
+
+        except Exception as e:
+            logger.error(f"❌ Error in _handle_one_time_limits_payment")
+            return {"status": "error", "message": "Handler failed"}
+
     async def _handle_successful_payment(self, invoice_data, subscription_id, amount):
         """
         ✅ ИСПРАВЛЕНО - Извлекаем user_id через stripe_customer_id из БД

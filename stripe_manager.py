@@ -226,6 +226,67 @@ class StripeManager:
             logger.error(f"❌ Ошибка создания one-time checkout: {e}")
             error_msg = t("stripe_session_creation_error", lang)
             return False, error_msg
+    
+    @staticmethod
+    async def create_onetime_limits_checkout(user_id: int, lang: str = "ru"):
+        """Stripe checkout для разового разбора без документа — просто добавляет лимиты"""
+        try:
+            from webapp.utils.currency import get_ui_currency
+            from db_postgresql import get_db_connection, release_db_connection
+
+            conn = await get_db_connection()
+            try:
+                user_data = await conn.fetchrow(
+                    "SELECT country FROM users WHERE user_id = $1", user_id
+                )
+                country = user_data['country'] if user_data else None
+            finally:
+                await release_db_connection(conn)
+
+            currency = get_ui_currency(country)
+            amount_cents = 249  # $2.49
+
+            product_names = {
+                'ru': 'Разовый AI-разбор документа',
+                'en': 'One-Time Document AI Analysis',
+                'uk': 'Разовій AI-розбір документа',
+                'de': 'Einmalige KI-Dokumentenanalyse'
+            }
+            product_descriptions = {
+                'ru': '1 медицинский документ + 10 детальных консультаций',
+                'en': '1 medical document + 10 detailed consultations',
+                'uk': '1 медичний документ + 10 детальних консультацій',
+                'de': '1 medizinisches Dokument + 10 detaillierte Beratungen'
+            }
+
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': currency.lower(),
+                        'unit_amount': amount_cents,
+                        'product_data': {
+                            'name': product_names.get(lang, product_names['en']),
+                            'description': product_descriptions.get(lang, product_descriptions['en']),
+                        },
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url=StripeConfig.WEB_SUCCESS_URL + "&session_id={CHECKOUT_SESSION_ID}",
+                cancel_url=StripeConfig.WEB_CANCEL_URL,
+                metadata={
+                    'type': 'one_time_limits',  # ← новый тип
+                    'user_id': str(user_id),
+                    'lang': lang,
+                    'currency': currency
+                }
+            )
+            return True, session.url
+
+        except Exception as e:
+            logger.error(f"Ошибка создания onetime limits checkout")
+            return False, t("stripe_session_creation_error", lang)
 
     @staticmethod
     async def _save_payment_session(user_id: int, session_id: str, package_id: str, amount_cents: int):

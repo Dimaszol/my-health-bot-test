@@ -36,8 +36,46 @@ async def stripe_webhook(request: Request):
         if event['type'] == 'checkout.session.completed':
             session = event['data']['object']
             session_id = session['id']
-            
-            # Используем существующую функцию из StripeManager
+            payment_type = session.get('metadata', {}).get('type')
+
+            # Разовый разбор без документа
+            if payment_type == 'one_time_limits':
+                from db_postgresql import execute_query, fetch_one, get_db_connection, release_db_connection
+                user_id = int(session.get('metadata', {}).get('user_id'))
+
+                existing = await fetch_one(
+                    "SELECT id FROM transactions WHERE stripe_session_id = $1 AND status = 'completed'",
+                    (session_id,)
+                )
+                if not existing:
+                    await execute_query("""
+                        INSERT INTO transactions
+                        (user_id, stripe_session_id, amount_usd, package_type,
+                        payment_method, status, documents_granted, completed_at)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+                    """, (user_id, session_id, 2.49, 'one_time_limits', 'stripe', 'completed', 1))
+
+                    conn = await get_db_connection()
+                    try:
+                        await conn.execute(
+                            "UPDATE user_limits SET documents_left = documents_left + 1, updated_at = NOW() WHERE user_id = $1",
+                            user_id
+                        )
+                        await conn.execute(
+                            "UPDATE user_limits SET gpt4o_queries_left = gpt4o_queries_left + 10 WHERE user_id = $1",
+                            user_id
+                        )
+                    finally:
+                        await release_db_connection(conn)
+
+                logger.info(f"✅ one_time_limits обработан")
+                return JSONResponse(content={"status": "success"})
+
+            # Разовый анализ документа — уже обрабатывается отдельно
+            if payment_type == 'one_time_document':
+                return JSONResponse(content={"status": "ignored", "reason": "handled by bot webhook"})
+
+            # Стандартная обработка подписок
             success, message = await StripeManager.handle_successful_payment(session_id)
             
             if success:
