@@ -792,7 +792,7 @@ main {
     <p class="pf-modal-warn">{{ t('profile_action_irreversible', lang) }}</p>
     <div class="pf-modal-actions">
       <button class="pf-modal-cancel" onclick="closeDeleteModal()">{{ t('common_cancel', lang) }}</button>
-      <button class="pf-modal-delete" onclick="confirmDelete()">{{ t('common_delete', lang) }}</button>
+      <button class="pf-modal-delete" onclick="confirmDelete()">{{ t('btn_delete', lang) }}</button>
     </div>
   </div>
 </div>
@@ -1023,12 +1023,12 @@ async function confirmDelete() {
     } else {
       showToast('✗ ' + (data.error || '{{ t("account_deletion_error", lang) }}'), 'error');
       btn.disabled = false;
-      btn.textContent = '{{ t("common_delete", lang) }}';
+      btn.textContent = '{{ t("btn_delete", lang) }}';
     }
   } catch {
     showToast('✗ {{ t("account_deletion_error", lang) }}', 'error');
     btn.disabled = false;
-    btn.textContent = '{{ t("common_delete", lang) }}';
+    btn.textContent = '{{ t("btn_delete", lang) }}';
   }
 }
 </script>

@@ -251,7 +251,7 @@ body { background: var(--bg); }
     </a>
     <button class="dd-ic-btn" onclick="openEditModal()">
       <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M13 3l4 4-9 9H4v-4L13 3z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>{{ t('btn_edit', lang) }}</span>
+      <span>{{ t('edit', lang) }}</span>
     </button>
     <button class="dd-ic-btn danger" onclick="openDeleteModal()">
       <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M4 5h12M7 5V3h6v2M8 9v5M12 9v5M5 5l1 11h8l1-11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -345,7 +345,7 @@ body { background: var(--bg); }
         <span class="dd-bm-badge {{ badge_class }}">
           {% if status == 'high' %}{{ t('bm_status_high', lang) }}
           {% elif status == 'low' %}{{ t('bm_status_low', lang) }}
-          {% else %}{{ t('bm_status_norm', lang) }}{% endif %}
+          {% else %}{{ t('bm_status_normal', lang) }}{% endif %}
         </span>
       </div>
       <div class="dd-bm-val">{{ bm.original_value }} <span class="dd-bm-unit">{{ bm.original_unit or '' }}</span></div>      
@@ -383,7 +383,7 @@ body { background: var(--bg); }
 
   <!-- ── Summary (raw_text / summary) ── -->
   {% if doc.summary or doc.raw_text %}
-  <div class="dd-sec-label">{{ t('doc_section_summary', lang) }}</div>
+  <div class="dd-sec-label">{{ t('legend_summary', lang) }}</div>
   <div class="dd-summary-card">    
     <div class="dd-summary-text">
       {{ doc.raw_text | markdown | safe }}
@@ -427,7 +427,7 @@ body { background: var(--bg); }
 <!-- ── Edit modal ── -->
 <div class="dd-modal-overlay" id="editModal">
   <div class="dd-edit-modal">
-    <h3>{{ t('btn_edit', lang) }}</h3>
+    <h3>{{ t('edit', lang) }}</h3>
     <div class="dd-field">
       <label>{{ t('document_title_optional', lang) }}</label>
       <input type="text" id="editTitle" value="{{ doc.title }}" maxlength="200">
