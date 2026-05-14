@@ -3,964 +3,1033 @@
 {% block title %}{{ t('page_profile_title', lang) }} - {{ t('site_title', lang) }}{% endblock %}
 
 {% block extra_styles %}
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-footer {
-    display: none !important;
+footer { display: none !important; }
+
+/* ── CSS Variables ── */
+:root {
+  --teal:    #2DE8C8;
+  --td:      #1AC9AD;
+  --tdim:    rgba(45,232,200,0.10);
+  --tglow:   rgba(45,232,200,0.22);
+  --bg:      #f0f9f7;
+  --card:    #ffffff;
+  --text:    #111d1b;
+  --muted:   #6b8c87;
+  --label:   #6b8c87;
+  --border:  #e0edeb;
+  --shadow:  0 2px 14px rgba(17,29,27,0.07), 0 1px 3px rgba(17,29,27,0.04);
+  --red:     #FF5B5B;
+  --reddim:  rgba(255,91,91,0.10);
+}
+
+/* ── Body / Page ── */
+body { font-family: 'Manrope', sans-serif !important; }
+
+main {
+  background: var(--bg) !important;
+  padding: 2rem 0 4rem !important;
+  min-height: 100vh;
+}
+
+/* ── Page wrap ── */
+.pf-wrap {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+/* ── Page header ── */
+.pf-header {
+  margin-bottom: 1.75rem;
+}
+.pf-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #6ab0b9;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+.pf-subtitle {
+  font-size: 0.875rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ── Section Card ── */
+.pf-card {
+  background: var(--card);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.pf-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.pf-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pf-card-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--tdim);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.pf-card-icon.red { background: var(--reddim); }
+.pf-card-label {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.2px;
+}
+.pf-card-body {
+  padding: 18px 20px 20px;
+}
+
+/* ── Buttons ── */
+.btn-edit {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--tdim);
+  border: none; border-radius: 9px;
+  padding: 7px 13px;
+  font-size: 12.5px; font-weight: 700; color: var(--td);
+  cursor: pointer; font-family: 'Manrope', sans-serif;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btn-edit:hover { background: rgba(45,232,200,0.18); }
+
+.btn-save {
+  background: linear-gradient(135deg, #2DE8C8 0%, #1AC9AD 100%);
+  border: none; border-radius: 9px;
+  padding: 7px 14px;
+  font-size: 12.5px; font-weight: 700; color: white;
+  cursor: pointer; font-family: 'Manrope', sans-serif;
+  box-shadow: 0 2px 10px rgba(45,232,200,0.3);
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.btn-save:hover { opacity: 0.9; }
+
+.btn-cancel {
+  background: none;
+  border: 1px solid var(--border); border-radius: 9px;
+  padding: 7px 12px;
+  font-size: 12.5px; font-weight: 600; color: var(--muted);
+  cursor: pointer; font-family: 'Manrope', sans-serif;
+  transition: border-color 0.15s;
+  white-space: nowrap;
+}
+.btn-cancel:hover { border-color: var(--muted); }
+
+.btn-group { display: flex; gap: 7px; }
+
+@media (max-width: 600px) {
+  .btn-edit .btn-text,
+  .btn-save .btn-text,
+  .btn-cancel .btn-text { display: none; }
+  .btn-edit, .btn-save, .btn-cancel {
+    padding: 7px 9px;
+  }
+}
+
+/* ── Read fields ── */
+.rf-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--label);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 4px;
+}
+.rf-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.rf-value.empty { color: #b0ceca; }
+
+/* ── Divider ── */
+.pf-divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+/* ── Grid 2-col ── */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+/* ── Input fields ── */
+.pf-input,
+.pf-select,
+.pf-textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 13px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  font-family: 'Manrope', sans-serif;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.pf-input:focus, .pf-textarea:focus { border-color: var(--td); }
+.pf-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b8c87' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+  padding-right: 34px;
+}
+.pf-select:focus { border-color: var(--td); outline: none; }
+.pf-textarea { resize: vertical; min-height: 80px; line-height: 1.55; }
+
+/* ── Segment buttons ── */
+.seg-group { display: flex; flex-wrap: wrap; gap: 7px; }
+.seg-btn {
+  padding: 7px 13px;
+  border-radius: 9px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 12.5px; font-weight: 700;
+  cursor: pointer; font-family: 'Manrope', sans-serif;
+  transition: all 0.13s;
+}
+.seg-btn:hover { border-color: var(--td); color: var(--td); }
+.seg-btn.active {
+  border-color: var(--td);
+  background: var(--tdim);
+  color: var(--td);
+}
+
+/* ── Avatar block ── */
+.pf-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.pf-avatar {
+  width: 52px; height: 52px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #2DE8C8 0%, #1AC9AD 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 800; color: white; letter-spacing: -0.5px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(26,201,173,0.28);
+}
+.pf-avatar-name {
+  font-size: 16px; font-weight: 800; color: var(--text);
+  letter-spacing: -0.3px; margin-bottom: 6px;
+}
+.pf-avatar-meta {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 4px 12px;
+}
+.pf-meta-item {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 500; color: var(--muted);
+}
+
+/* ── Hint block ── */
+.pf-hint {
+  background: linear-gradient(110deg, #f4fbf9, #e8f8f4);
+  border: 1px solid #c8ebe3;
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.pf-hint-icon {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  background: white;
+  border: 1px solid #c8ebe3;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.pf-hint-text {
+  font-size: 13px; font-weight: 500; color: var(--muted);
+  line-height: 1.6;
+}
+.pf-hint-text strong {
+  font-weight: 700; color: var(--text);
+  display: block; margin-bottom: 2px;
+}
+
+/* ── Danger zone ── */
+.pf-danger-head .pf-card-label { color: var(--red); }
+.pf-danger-body {
+  font-size: 13.5px; color: var(--muted); font-weight: 500;
+  line-height: 1.6; margin-bottom: 16px;
+}
+.btn-delete-acc {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--reddim);
+  border: 1.5px solid rgba(255,91,91,0.25);
+  border-radius: 10px;
+  padding: 9px 18px;
+  font-size: 13.5px; font-weight: 700; color: var(--red);
+  cursor: pointer; font-family: 'Manrope', sans-serif;
+  transition: all 0.15s;
+}
+.btn-delete-acc:hover {
+  background: rgba(255,91,91,0.18);
+  border-color: rgba(255,91,91,0.4);
+}
+
+/* ── Modal ── */
+.pf-modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(17,29,27,0.45);
+  backdrop-filter: blur(3px);
+  z-index: 1000;
+  align-items: center; justify-content: center;
+}
+.pf-modal-overlay.open { display: flex; }
+.pf-modal {
+  background: white;
+  border-radius: 22px;
+  padding: 32px 28px 28px;
+  max-width: 420px; width: 90%;
+  box-shadow: 0 24px 60px rgba(17,29,27,0.18);
+  animation: modalIn 0.22s ease;
+}
+@keyframes modalIn {
+  from { transform: scale(0.94) translateY(8px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+.pf-modal-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: var(--reddim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin-bottom: 16px;
+}
+.pf-modal h3 {
+  font-size: 17px; font-weight: 800; color: var(--text);
+  letter-spacing: -0.3px; margin-bottom: 8px;
+}
+.pf-modal p {
+  font-size: 13.5px; color: var(--muted); font-weight: 500;
+  line-height: 1.6; margin-bottom: 12px;
+}
+.pf-modal-list {
+  background: var(--bg);
+  border-radius: 12px; padding: 12px 16px;
+  margin-bottom: 12px;
+}
+.pf-modal-list li {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  margin-bottom: 5px; padding-left: 4px;
+}
+.pf-modal-list li:last-child { margin-bottom: 0; }
+.pf-modal-warn {
+  font-size: 12.5px; font-weight: 700;
+  color: var(--red) !important;
+  margin-bottom: 20px !important;
+}
+.pf-modal-actions {
+  display: flex; gap: 10px;
+}
+.pf-modal-cancel {
+  flex: 1; padding: 11px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 11px; font-size: 13.5px; font-weight: 700;
+  color: var(--muted); cursor: pointer; font-family: 'Manrope', sans-serif;
+}
+.pf-modal-delete {
+  flex: 1; padding: 11px;
+  background: var(--red); border: none;
+  border-radius: 11px; font-size: 13.5px; font-weight: 700;
+  color: white; cursor: pointer; font-family: 'Manrope', sans-serif;
+  box-shadow: 0 3px 10px rgba(255,91,91,0.3);
+}
+
+/* ── Toast ── */
+.pf-toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--text); color: white;
+  border-radius: 12px; padding: 12px 18px;
+  font-size: 13.5px; font-weight: 600;
+  box-shadow: 0 8px 24px rgba(17,29,27,0.2);
+  z-index: 9999;
+  display: flex; align-items: center; gap: 9px;
+  transform: translateY(80px); opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  max-width: 320px;
+}
+.pf-toast.show { transform: translateY(0); opacity: 1; }
+.pf-toast.success { background: var(--td); }
+.pf-toast.error   { background: var(--red); }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .grid-4 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+  /* Sticky шапка карточки при редактировании */
+  .pf-card { overflow: visible; border-radius: 16px; }
+  .pf-card-head {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: white;
+    border-radius: 16px 16px 0 0;
+  }
+  /* Убираем боковые отступы — как в кабинете */
+  .pf-wrap {
+    padding: 0 10px;
+  }
+  .pf-header {
+    padding: 0 4px;
+  }
+  main {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+@media (max-width: 440px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .pf-card-head { padding: 12px 14px; }
+  .pf-card-body { padding: 14px 14px 16px; }
+  .pf-toast { right: 12px; left: 12px; bottom: 16px; max-width: none; }
+  .btn-edit, .btn-save, .btn-cancel {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- 👤 СТРАНИЦА ПРОФИЛЯ -->
 
-<div style="margin-bottom: 2rem;">
-    <h1 style="color: #6ab0b9; display: flex; align-items: center; gap: 0.5rem;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6ab0b9" stroke-width="1">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
+<div class="pf-wrap">
+
+  <!-- ── Page header ── -->
+  <div class="pf-header">
+    <div class="pf-title">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6ab0b9" stroke-width="1.5">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      {{ t('page_profile_title', lang) }}
+    </div>
+    <div class="pf-subtitle">{{ t('page_profile_subtitle', lang) }}</div>
+  </div>
+
+  <!-- ════════════════════════════
+       1. Основная информация
+  ════════════════════════════ -->
+  <div class="pf-card" id="basic-card">
+    <div class="pf-card-head">
+      <div class="pf-card-title">
+        <div class="pf-card-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="5" r="3" stroke="#1AC9AD" stroke-width="1.5"/>
+            <path d="M2 14c0-3 2.7-5 6-5s6 2 6 5" stroke="#1AC9AD" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="pf-card-label">{{ t('profile_basic_info', lang) }}</span>
+      </div>
+      <div class="btn-group" id="basic-btns">
+        <button class="btn-edit" id="basic-edit-btn" onclick="editSection('basic')"><svg width="16" height="16" viewBox="0 0 12 12" fill="none"><path d="M8 1.5l2.5 2.5-6.5 6.5H1.5V8L8 1.5z" stroke="#1AC9AD" stroke-width="1.4" stroke-linejoin="round"/></svg><span class="btn-text">{{ t('edit', lang) }}</span></button>
+        <button class="btn-cancel" id="basic-cancel-btn" style="display:none" onclick="cancelSection('basic')"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="#6b8c87" stroke-width="1.6" stroke-linecap="round"/></svg><span class="btn-text">{{ t('cancel', lang) }}</span></button>
+        <button class="btn-save" id="basic-save-btn" style="display:none" onclick="saveSection('basic')"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:3px;vertical-align:middle"><path d="M1.5 5.5l3 3 5-5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="btn-text">{{ t('save', lang) }}</span></button>
+      </div>
+    </div>
+    <div class="pf-card-body">
+
+      <!-- View mode -->
+      <div id="basic-view" class="pf-avatar-row">
+        <div class="pf-avatar" id="basic-initials">{{ (user.name or '?')[0]|upper }}</div>
+        <div style="flex:1;min-width:0">
+          <div class="pf-avatar-name" id="basic-name-display">{{ user.name if user else t('profile_not_specified', lang) }}</div>
+          <div class="pf-avatar-meta">
+            <span class="pf-meta-item">
+              <svg width="12" height="12" viewBox="0 0 13 13" fill="none"><path d="M1 3.5l5.5 4 5.5-4M1 3.5h11v7H1V3.5z" stroke="#7a9b97" stroke-width="1.3" stroke-linejoin="round"/></svg>
+              {{ user.email if user else '—' }}
+            </span>
+            <span class="pf-meta-item">
+              <svg width="12" height="12" viewBox="0 0 13 13" fill="none"><rect x="1" y="2" width="11" height="10" rx="2" stroke="#7a9b97" stroke-width="1.3"/><path d="M1 5h11M4 1v2M9 1v2" stroke="#7a9b97" stroke-width="1.3" stroke-linecap="round"/></svg>
+              {{ t('profile_registered', lang) }}: {{ user.created_at.strftime('%d.%m.%Y') if user and user.created_at else t('unknown', lang) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit mode -->
+      <div id="basic-edit" style="display:none">
+        <div class="pf-avatar-row" style="margin-bottom:14px">
+          <div class="pf-avatar" id="basic-initials-edit">{{ (user.name or '?')[0]|upper }}</div>
+          <div style="flex:1;min-width:0">
+            <div class="rf-label">{{ t('profile_name', lang) }}</div>
+            <input class="pf-input" id="name-input" type="text"
+              value="{{ user.name if user else '' }}"
+              maxlength="100"
+              style="font-size:15px;font-weight:700"
+              oninput="updateInitialsPreview(this.value)">
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 12px;padding-left:66px">
+          <span class="pf-meta-item">
+            <svg width="12" height="12" viewBox="0 0 13 13" fill="none"><path d="M1 3.5l5.5 4 5.5-4M1 3.5h11v7H1V3.5z" stroke="#7a9b97" stroke-width="1.3" stroke-linejoin="round"/></svg>
+            <span style="color:var(--muted);font-size:12px;font-weight:500">{{ user.email if user else '' }}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       2. Медицинская анкета
+  ════════════════════════════ -->
+  <div class="pf-card" id="medical-card">
+    <div class="pf-card-head">
+      <div class="pf-card-title">
+        <div class="pf-card-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 2v12M2 8h12" stroke="#1AC9AD" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="pf-card-label">{{ t('profile_medical_form', lang) }}</span>
+      </div>
+      <div class="btn-group">
+        <button class="btn-edit" id="medical-edit-btn" onclick="editSection('medical')"><svg width="16" height="16" viewBox="0 0 12 12" fill="none"><path d="M8 1.5l2.5 2.5-6.5 6.5H1.5V8L8 1.5z" stroke="#1AC9AD" stroke-width="1.4" stroke-linejoin="round"/></svg><span class="btn-text">{{ t('edit', lang) }}</span></button>
+        <button class="btn-cancel" id="medical-cancel-btn" style="display:none" onclick="cancelSection('medical')"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="#6b8c87" stroke-width="1.6" stroke-linecap="round"/></svg><span class="btn-text">{{ t('cancel', lang) }}</span></button>
+        <button class="btn-save" id="medical-save-btn" style="display:none" onclick="saveSection('medical')"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:3px;vertical-align:middle"><path d="M1.5 5.5l3 3 5-5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="btn-text">{{ t('save', lang) }}</span></button>
+      </div>
+    </div>
+    <div class="pf-card-body">
+
+      <!-- View mode -->
+      <div id="medical-view">
+        <div class="grid-4" style="margin-bottom:14px">
+          <div>
+            <div class="rf-label">{{ t('profile_birth_year', lang) }}</div>
+            <div class="rf-value {% if not (user and user.birth_year) %}empty{% endif %}" id="birth-year-display">
+              {{ user.birth_year if user and user.birth_year else t('profile_not_specified', lang) }}
+            </div>
+          </div>
+          <div>
+            <div class="rf-label">{{ t('profile_gender', lang) }}</div>
+            <div class="rf-value {% if not (user and user.gender) %}empty{% endif %}" id="gender-display">
+              {{ user.gender if user and user.gender else t('profile_not_specified', lang) }}
+            </div>
+          </div>
+          <div>
+            <div class="rf-label">{{ t('profile_height', lang) }}</div>
+            <div class="rf-value {% if not (user and user.height_cm) %}empty{% endif %}" id="height-display">
+              {% if user and user.height_cm %}{{ user.height_cm }} {{ t('profile_height_unit', lang) }}{% else %}{{ t('profile_not_specified', lang) }}{% endif %}
+            </div>
+          </div>
+          <div>
+            <div class="rf-label">{{ t('profile_weight', lang) }}</div>
+            <div class="rf-value {% if not (user and user.weight_kg) %}empty{% endif %}" id="weight-display">
+              {% if user and user.weight_kg %}{{ user.weight_kg }} {{ t('profile_weight_unit', lang) }}{% else %}{{ t('profile_not_specified', lang) }}{% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="pf-divider"></div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-top:14px">
+          <div>
+            <div class="rf-label">{{ t('profile_chronic_conditions', lang) }}</div>
+            <div class="rf-value {% if not (user and user.chronic_conditions) %}empty{% endif %}" id="chronic-display">
+              {{ user.chronic_conditions if user and user.chronic_conditions else t('profile_not_specified', lang) }}
+            </div>
+          </div>
+          <div>
+            <div class="rf-label">{{ t('profile_allergies', lang) }}</div>
+            <div class="rf-value {% if not (user and user.allergies) %}empty{% endif %}" id="allergies-display">
+              {{ user.allergies if user and user.allergies else t('profile_not_specified', lang) }}
+            </div>
+          </div>
+          <div>
+            <div class="rf-label">{{ t('profile_family_history', lang) }}</div>
+            <div class="rf-value {% if not (user and user.family_history) %}empty{% endif %}" id="family-history-display">
+              {{ user.family_history if user and user.family_history else t('profile_not_specified', lang) }}
+            </div>
+          </div>
+          <div>
+            <div class="rf-label">{{ t('profile_medications', lang) }}</div>
+            <div class="rf-value {% if not (user and user.medications) %}empty{% endif %}" id="medications-display">
+              {{ user.medications if user and user.medications else t('profile_not_specified', lang) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit mode -->
+      <div id="medical-edit" style="display:none">
+        <div class="grid-4" style="margin-bottom:14px">
+          <div>
+            <div class="rf-label">{{ t('profile_birth_year', lang) }}</div>
+            <input class="pf-input" id="birth-year-input" type="number"
+              placeholder="1990" min="1900" max="2015"
+              value="{{ user.birth_year if user and user.birth_year else '' }}">
+          </div>
+          <div>
+            <div class="rf-label">{{ t('profile_gender', lang) }}</div>
+            <select class="pf-select" id="gender-input">
+              <option value="">{{ t('profile_not_specified', lang) }}</option>
+              <option value="{{ t('gender_male', lang) }}" {{ 'selected' if user and user.gender == t('gender_male', lang) else '' }}>{{ t('gender_male', lang) }}</option>
+              <option value="{{ t('gender_female', lang) }}" {{ 'selected' if user and user.gender == t('gender_female', lang) else '' }}>{{ t('gender_female', lang) }}</option>
+            </select>
+          </div>
+          <div>
+            <div class="rf-label">{{ t('profile_height', lang) }} ({{ t('profile_height_unit', lang) }})</div>
+            <input class="pf-input" id="height-input" type="number"
+              placeholder="170" min="100" max="250"
+              value="{{ user.height_cm if user and user.height_cm else '' }}">
+          </div>
+          <div>
+            <div class="rf-label">{{ t('profile_weight', lang) }} ({{ t('profile_weight_unit', lang) }})</div>
+            <input class="pf-input" id="weight-input" type="number"
+              placeholder="70" min="30" max="300"
+              value="{{ user.weight_kg if user and user.weight_kg else '' }}">
+          </div>
+        </div>
+        <div class="pf-divider"></div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-top:14px">
+          <div>
+            <div class="rf-label">{{ t('profile_chronic_conditions', lang) }}</div>
+            <textarea class="pf-textarea" id="chronic-input"
+              placeholder="{{ t('profile_not_specified', lang) }}">{{ user.chronic_conditions if user and user.chronic_conditions else '' }}</textarea>
+          </div>
+          <div>
+            <div class="rf-label">{{ t('profile_allergies', lang) }}</div>
+            <textarea class="pf-textarea" id="allergies-input"
+              placeholder="{{ t('profile_not_specified', lang) }}">{{ user.allergies if user and user.allergies else '' }}</textarea>
+          </div>
+          <div>
+            <div class="rf-label">{{ t('profile_family_history', lang) }}</div>
+            <textarea class="pf-textarea" id="family-history-input"
+              placeholder="{{ t('profile_not_specified', lang) }}">{{ user.family_history if user and user.family_history else '' }}</textarea>
+          </div>
+          <div>
+            <div class="rf-label">{{ t('profile_medications', lang) }}</div>
+            <textarea class="pf-textarea" id="medications-input"
+              placeholder="{{ t('profile_not_specified', lang) }}">{{ user.medications if user and user.medications else '' }}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       3. Образ жизни
+  ════════════════════════════ -->
+  <div class="pf-card" id="lifestyle-card">
+    <div class="pf-card-head">
+      <div class="pf-card-title">
+        <div class="pf-card-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 14s-5-4-5-8a5 5 0 0 1 10 0c0 4-5 8-5 8z" stroke="#1AC9AD" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="8" cy="6" r="1.5" fill="#1AC9AD"/>
+          </svg>
+        </div>
+        <span class="pf-card-label">{{ t('profile_lifestyle', lang) }}</span>
+      </div>
+      <div class="btn-group">
+        <button class="btn-edit" id="lifestyle-edit-btn" onclick="editSection('lifestyle')"><svg width="16" height="16" viewBox="0 0 12 12" fill="none"><path d="M8 1.5l2.5 2.5-6.5 6.5H1.5V8L8 1.5z" stroke="#1AC9AD" stroke-width="1.4" stroke-linejoin="round"/></svg><span class="btn-text">{{ t('edit', lang) }}</span></button>
+        <button class="btn-cancel" id="lifestyle-cancel-btn" style="display:none" onclick="cancelSection('lifestyle')"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="#6b8c87" stroke-width="1.6" stroke-linecap="round"/></svg><span class="btn-text">{{ t('cancel', lang) }}</span></button>
+        <button class="btn-save" id="lifestyle-save-btn" style="display:none" onclick="saveSection('lifestyle')"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:3px;vertical-align:middle"><path d="M1.5 5.5l3 3 5-5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="btn-text">{{ t('save', lang) }}</span></button>
+      </div>
+    </div>
+    <div class="pf-card-body">
+
+      <!-- View mode -->
+      <div id="lifestyle-view">
+        <div class="grid-3">
+          <div>
+            <div class="rf-label">🚬 {{ t('profile_smoking', lang) }}</div>
+            <div class="rf-value {% if not (user and user.smoking) %}empty{% endif %}" id="smoking-display">
+              {{ user.smoking if user and user.smoking else t('profile_not_specified', lang) }}
+            </div>
+          </div>
+          <div>
+            <div class="rf-label">🍷 {{ t('profile_alcohol', lang) }}</div>
+            <div class="rf-value {% if not (user and user.alcohol) %}empty{% endif %}" id="alcohol-display">
+              {{ user.alcohol if user and user.alcohol else t('profile_not_specified', lang) }}
+            </div>
+          </div>
+          <div>
+            <div class="rf-label">🏃 {{ t('profile_physical_activity', lang) }}</div>
+            <div class="rf-value {% if not (user and user.physical_activity) %}empty{% endif %}" id="activity-display">
+              {{ user.physical_activity if user and user.physical_activity else t('profile_not_specified', lang) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit mode -->
+      <div id="lifestyle-edit" style="display:none;flex-direction:column;gap:18px">
+        <div>
+          <div class="rf-label">🚬 {{ t('profile_smoking', lang) }}</div>
+          <div class="seg-group">
+            {% set s = user.smoking if user and user.smoking else '' %}
+            <button type="button" class="seg-btn {% if s == t('smoking_yes', lang) %}active{% endif %}"
+              data-group="smoking" data-val="{{ t('smoking_yes', lang) }}" onclick="toggleSeg(this)">{{ t('smoking_yes', lang) }}</button>
+            <button type="button" class="seg-btn {% if s == t('smoking_no', lang) %}active{% endif %}"
+              data-group="smoking" data-val="{{ t('smoking_no', lang) }}" onclick="toggleSeg(this)">{{ t('smoking_no', lang) }}</button>
+            <button type="button" class="seg-btn {% if s == 'Vape' %}active{% endif %}"
+              data-group="smoking" data-val="Vape" onclick="toggleSeg(this)">Vape</button>
+          </div>
+          <input type="hidden" id="smoking-input" value="{{ user.smoking if user and user.smoking else '' }}">
+        </div>
+        <div>
+          <div class="rf-label">🍷 {{ t('profile_alcohol', lang) }}</div>
+          <div class="seg-group">
+            {% set a = user.alcohol if user and user.alcohol else '' %}
+            <button type="button" class="seg-btn {% if a == t('alcohol_never', lang) %}active{% endif %}"
+              data-group="alcohol" data-val="{{ t('alcohol_never', lang) }}" onclick="toggleSeg(this)">{{ t('alcohol_never', lang) }}</button>
+            <button type="button" class="seg-btn {% if a == t('alcohol_sometimes', lang) %}active{% endif %}"
+              data-group="alcohol" data-val="{{ t('alcohol_sometimes', lang) }}" onclick="toggleSeg(this)">{{ t('alcohol_sometimes_hint', lang) }}</button>
+            <button type="button" class="seg-btn {% if a == t('alcohol_often', lang) %}active{% endif %}"
+              data-group="alcohol" data-val="{{ t('alcohol_often', lang) }}" onclick="toggleSeg(this)">{{ t('alcohol_often_hint', lang) }}</button>
+          </div>
+          <input type="hidden" id="alcohol-input" value="{{ user.alcohol if user and user.alcohol else '' }}">
+        </div>
+        <div>
+          <div class="rf-label">🏃 {{ t('profile_physical_activity', lang) }}</div>
+          <div class="seg-group">
+            {% set ac = user.physical_activity if user and user.physical_activity else '' %}
+            <button type="button" class="seg-btn {% if ac == t('activity_none', lang) %}active{% endif %}"
+              data-group="activity" data-val="{{ t('activity_none', lang) }}" onclick="toggleSeg(this)">{{ t('activity_none', lang) }}</button>
+            <button type="button" class="seg-btn {% if ac == t('activity_low', lang) %}active{% endif %}"
+              data-group="activity" data-val="{{ t('activity_low', lang) }}" onclick="toggleSeg(this)">{{ t('activity_low', lang) }}</button>
+            <button type="button" class="seg-btn {% if ac == t('activity_medium', lang) %}active{% endif %}"
+              data-group="activity" data-val="{{ t('activity_medium', lang) }}" onclick="toggleSeg(this)">{{ t('activity_medium', lang) }}</button>
+            <button type="button" class="seg-btn {% if ac == t('activity_high', lang) %}active{% endif %}"
+              data-group="activity" data-val="{{ t('activity_high', lang) }}" onclick="toggleSeg(this)">{{ t('activity_high', lang) }}</button>
+            <button type="button" class="seg-btn {% if ac == t('activity_pro', lang) %}active{% endif %}"
+              data-group="activity" data-val="{{ t('activity_pro', lang) }}" onclick="toggleSeg(this)">{{ t('activity_pro', lang) }}</button>
+          </div>
+          <input type="hidden" id="activity-input" value="{{ user.physical_activity if user and user.physical_activity else '' }}">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Hint ── -->
+  <div class="pf-hint">
+    <div class="pf-hint-icon">💡</div>
+    <div class="pf-hint-text">
+      <strong>{{ t('profile_how_to_fill', lang) }}</strong>
+      {{ t('profile_fill_instruction', lang) }}
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       4. Danger zone
+  ════════════════════════════ -->
+  <div class="pf-card">
+    <div class="pf-card-head pf-danger-head">
+      <div class="pf-card-title">
+        <div class="pf-card-icon red">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 2l6 12H2L8 2z" stroke="#FF5B5B" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M8 7v3" stroke="#FF5B5B" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="12" r="0.6" fill="#FF5B5B"/>
+          </svg>
+        </div>
+        <span class="pf-card-label" style="color:var(--red)">{{ t('profile_danger_zone', lang) }}</span>
+      </div>
+    </div>
+    <div class="pf-card-body">
+      <p class="pf-danger-body">{{ t('profile_delete_warning', lang) }}</p>
+      <button class="btn-delete-acc" onclick="openDeleteModal()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M2 4h10M5 4V2.5h4V4M5.5 6.5v4M8.5 6.5v4M3 4l.7 7.5h6.6L11 4" stroke="#FF5B5B" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        {{ t('page_profile_title', lang) }}
-    </h1>
-    <p style="color: #666;">
-        {{ t('page_profile_subtitle', lang) }}
-    </p>
+        {{ t('profile_delete_account', lang) }}
+      </button>
+    </div>
+  </div>
+
+</div><!-- /pf-wrap -->
+
+<!-- ── Delete modal ── -->
+<div class="pf-modal-overlay" id="deleteModal">
+  <div class="pf-modal">
+    <div class="pf-modal-icon">⚠️</div>
+    <h3>{{ t('profile_delete_account_confirm_title', lang) }}</h3>
+    <p>{{ t('profile_delete_account_confirm_message', lang) }}</p>
+    <ul class="pf-modal-list">
+      <li>📄 {{ t('profile_delete_documents', lang) }}</li>
+      <li>💬 {{ t('profile_delete_chat_history', lang) }}</li>
+      <li>🏥 {{ t('profile_delete_medical_questionnaire', lang) }}</li>
+      <li>👤 {{ t('profile_delete_profile', lang) }}</li>
+    </ul>
+    <p class="pf-modal-warn">{{ t('profile_action_irreversible', lang) }}</p>
+    <div class="pf-modal-actions">
+      <button class="pf-modal-cancel" onclick="closeDeleteModal()">{{ t('common_cancel', lang) }}</button>
+      <button class="pf-modal-delete" onclick="confirmDelete()">{{ t('common_delete', lang) }}</button>
+    </div>
+  </div>
 </div>
 
-<!-- 📊 ОСНОВНАЯ ИНФОРМАЦИЯ -->
-<div class="card" id="basic-info-card">
-    <!-- Заголовок с кнопками -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h3 style="margin: 0;">{{ t('profile_basic_info', lang) }}</h3>
-        
-        <div style="display: flex; gap: 0.5rem;">
-            <!-- Кнопка "Редактировать" -->
-            <button 
-                id="basic-edit-btn"
-                onclick="editSection('basic')"
-                style="padding: 0.5rem 1.2rem; background: #00c9a7; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
-            >
-                ✏️ {{ t('edit', lang) }}
-            </button>
-            
-            <!-- Кнопки "Сохранить" и "Отмена" (скрыты по умолчанию) -->
-            <button 
-                id="basic-save-btn"
-                onclick="saveSection('basic')"
-                style="display: none; padding: 0.5rem 1.2rem; background: #00C9A7; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
-            >
-                ✅ {{ t('save', lang) }}
-            </button>
-            <button 
-                id="basic-cancel-btn"
-                onclick="cancelEdit('basic')"
-                style="display: none; padding: 0.5rem 1.2rem; background: #cbd5e0; color: #2d3748; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
-            >
-                ❌ {{ t('cancel', lang) }}
-            </button>
-        </div>
-    </div>
-    
-    <!-- Режим просмотра -->
-    <div id="basic-view-mode">
-        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 0.5rem; margin-bottom: 1rem;">
-            <strong>{{ t('profile_name', lang) }}:</strong>
-            <span id="name-display">{{ user.name if user else t('profile_not_specified', lang) }}</span>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 0.5rem; margin-bottom: 1rem;">
-            <strong>{{ t('profile_email', lang) }}:</strong>
-            <span>{{ user.email if user else t('profile_not_specified', lang) }}</span>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 0.5rem; margin-bottom: 1rem;">
-            <strong>{{ t('profile_registered', lang) }}:</strong>
-            <span>{{ user.created_at.strftime('%d.%m.%Y') if user and user.created_at else t('unknown', lang) }}</span>
-        </div>
-    </div>
-    
-    <!-- Режим редактирования (скрыт по умолчанию) -->
-    <div id="basic-edit-mode" style="display: none;">
-        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 0.5rem; margin-bottom: 1rem; align-items: center;">
-            <strong>{{ t('profile_name', lang) }}:</strong>
-            <input 
-                type="text" 
-                id="name-input" 
-                value="{{ user.name if user else '' }}"
-                style="width: 100%; max-width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem; box-sizing: border-box;"
-                maxlength="100"
-            >
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <strong>{{ t('profile_email', lang) }}:</strong>
-            <span style="color: #999;">{{ user.email if user else t('profile_not_specified', lang) }}</span>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <strong>{{ t('profile_registered', lang) }}:</strong>
-            <span style="color: #999;">{{ user.created_at.strftime('%d.%m.%Y') if user and user.created_at else t('unknown', lang) }}</span>
-        </div>
-    </div>
-</div>
-
-<!-- 🏥 МЕДИЦИНСКАЯ АНКЕТА -->
-<div class="card" id="medical-info-card">
-    <!-- Заголовок с кнопками -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-        <h3 style="margin: 0;">{{ t('profile_medical_form', lang) }}</h3>
-        
-        <div style="display: flex; gap: 0.5rem;">
-            <!-- Кнопка "Редактировать" -->
-            <button 
-                id="medical-edit-btn"
-                onclick="editSection('medical')"
-                style="padding: 0.5rem 1.2rem; background: #00c9a7; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
-            >
-                ✏️ {{ t('edit', lang) }}
-            </button>
-            
-            <!-- Кнопки "Сохранить" и "Отмена" (скрыты по умолчанию) -->
-            <button 
-                id="medical-save-btn"
-                onclick="saveSection('medical')"
-                style="display: none; padding: 0.5rem 1.2rem; background: #00C9A7; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
-            >
-                ✅ {{ t('save', lang) }}
-            </button>
-            <button 
-                id="medical-cancel-btn"
-                onclick="cancelEdit('medical')"
-                style="display: none; padding: 0.5rem 1.2rem; background: #cbd5e0; color: #2d3748; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
-            >
-                ❌ {{ t('cancel', lang) }}
-            </button>
-        </div>
-    </div>
-    
-    <p style="color: #666; margin-bottom: 1.5rem;">
-        {{ t('profile_medical_form_desc', lang) }}
-    </p>
-    
-    <!-- Режим просмотра -->
-    <div id="medical-view-mode">
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
-            <!-- Год рождения -->
-            <div>
-                <strong style="display: block; margin-bottom: 0.3rem;">{{ t('profile_birth_year', lang) }}</strong>
-                <span style="color: #666;" id="birth-year-display">{{ user.birth_year if user and user.birth_year else t('profile_not_specified', lang) }}</span>
-            </div>
-            
-            <!-- Пол -->
-            <div>
-                <strong style="display: block; margin-bottom: 0.3rem;">{{ t('profile_gender', lang) }}</strong>
-                <span style="color: #666;" id="gender-display">{{ user.gender if user and user.gender else t('profile_not_specified', lang) }}</span>
-            </div>
-            
-            <!-- Рост -->
-            <div>
-                <strong style="display: block; margin-bottom: 0.3rem;">{{ t('profile_height', lang) }}</strong>
-                <span style="color: #666;" id="height-display">
-                    {% if user and user.height_cm %}
-                        {{ user.height_cm }} {{ t('profile_height_unit', lang) }}
-                    {% else %}
-                        {{ t('profile_not_specified', lang) }}
-                    {% endif %}
-                </span>
-            </div>
-            
-            <!-- Вес -->
-            <div>
-                <strong style="display: block; margin-bottom: 0.3rem;">{{ t('profile_weight', lang) }}</strong>
-                <span style="color: #666;" id="weight-display">
-                    {% if user and user.weight_kg %}
-                        {{ user.weight_kg }} {{ t('profile_weight_unit', lang) }}
-                    {% else %}
-                        {{ t('profile_not_specified', lang) }}
-                    {% endif %}
-                </span>
-            </div>
-        </div>
-        
-        <!-- Хронические заболевания -->
-        <div style="margin-top: 1.5rem;">
-            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_chronic_conditions', lang) }}</strong>
-            <p style="color: #666; padding: 1rem; background: white; border-radius: 8px;" id="chronic-display">
-                {{ user.chronic_conditions if user and user.chronic_conditions else t('profile_not_specified', lang) }}
-            </p>
-        </div>
-        
-        <!-- Аллергии -->
-        <div style="margin-top: 1.5rem;">
-            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_allergies', lang) }}</strong>
-            <p style="color: #666; padding: 1rem; background: white; border-radius: 8px;" id="allergies-display">
-                {{ user.allergies if user and user.allergies else t('profile_not_specified', lang) }}
-            </p>
-        </div>
-
-        <!-- Семейная история болезней -->
-        <div style="margin-top: 1.5rem;">
-            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_family_history', lang) }}</strong>
-            <p style="color: #666; padding: 1rem; background: white; border-radius: 8px;" id="family-history-display">
-                {{ user.family_history if user and user.family_history else t('profile_not_specified', lang) }}
-            </p>
-        </div>
-        
-        <!-- Лекарства -->
-        <div style="margin-top: 1.5rem;">
-            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_medications', lang) }}</strong>
-            <p style="color: #666; padding: 1rem; background: white; border-radius: 8px;" id="medications-display">
-                {{ user.medications if user and user.medications else t('profile_not_specified', lang) }}
-            </p>
-        </div>
-    </div>
-    
-    <!-- Режим редактирования (скрыт по умолчанию) -->
-    <div id="medical-edit-mode" style="display: none;">
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
-            <!-- Год рождения -->
-            <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_birth_year', lang) }}</strong>
-                <input 
-                    type="number" 
-                    id="birth-year-input" 
-                    value="{{ user.birth_year if user and user.birth_year else '' }}"
-                    placeholder="1990"
-                    min="1900"
-                    max="2024"
-                    style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
-                >
-            </div>
-            
-            <!-- Пол -->
-            <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_gender', lang) }}</strong>
-                <select 
-                    id="gender-input"
-                    style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
-                >
-                    <option value="">{{ t('profile_not_specified', lang) }}</option>
-                    <option value="{{ t('gender_male', lang) }}" {{ 'selected' if user and user.gender == t('gender_male', lang) else '' }}>{{ t('gender_male', lang) }}</option>
-                    <option value="{{ t('gender_female', lang) }}" {{ 'selected' if user and user.gender == t('gender_female', lang) else '' }}>{{ t('gender_female', lang) }}</option>
-                    <option value="{{ t('gender_other', lang) }}" {{ 'selected' if user and user.gender == t('gender_other', lang) else '' }}>{{ t('gender_other', lang) }}</option>
-                </select>
-            </div>
-            
-            <!-- Рост -->
-            <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_height', lang) }}</strong>
-                <input 
-                    type="number" 
-                    id="height-input" 
-                    value="{{ user.height_cm if user and user.height_cm else '' }}"
-                    placeholder="175"
-                    min="50"
-                    max="250"
-                    style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
-                >
-            </div>
-            
-            <!-- Вес -->
-            <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_weight', lang) }}</strong>
-                <input 
-                    type="number" 
-                    id="weight-input" 
-                    value="{{ user.weight_kg if user and user.weight_kg else '' }}"
-                    placeholder="70.5"
-                    min="20"
-                    max="300"
-                    step="0.1"
-                    style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
-                >
-            </div>
-        </div>
-        
-        <!-- Хронические заболевания -->
-        <div style="margin-top: 1.5rem;">
-            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_chronic_conditions', lang) }}</strong>
-            <textarea 
-                id="chronic-input"
-                rows="3"
-                placeholder="{{ t('profile_not_specified', lang) }}"
-                style="width: 100%; padding: 0.8rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem; resize: vertical;"
-            >{{ user.chronic_conditions if user and user.chronic_conditions else '' }}</textarea>
-        </div>
-        
-        <!-- Аллергии -->
-        <div style="margin-top: 1.5rem;">
-            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_allergies', lang) }}</strong>
-            <textarea 
-                id="allergies-input"
-                rows="3"
-                placeholder="{{ t('profile_not_specified', lang) }}"
-                style="width: 100%; padding: 0.8rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem; resize: vertical;"
-            >{{ user.allergies if user and user.allergies else '' }}</textarea>
-        </div>
-
-        <!-- Семейная история -->
-        <div style="margin-top: 1.5rem;">
-            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_family_history', lang) }}</strong>
-            <textarea 
-                id="family-history-input"
-                rows="3"
-                placeholder="{{ t('profile_not_specified', lang) }}"
-                style="width: 100%; padding: 0.8rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem; resize: vertical;"
-            >{{ user.family_history if user and user.family_history else '' }}</textarea>
-        </div>
-        
-        <!-- Лекарства -->
-        <div style="margin-top: 1.5rem;">
-            <strong style="display: block; margin-bottom: 0.5rem;">{{ t('profile_medications', lang) }}</strong>
-            <textarea 
-                id="medications-input"
-                rows="3"
-                placeholder="{{ t('profile_not_specified', lang) }}"
-                style="width: 100%; padding: 0.8rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem; resize: vertical;"
-            >{{ user.medications if user and user.medications else '' }}</textarea>
-        </div>
-    </div>
-</div>
-
-<!-- 🔄 ОБРАЗ ЖИЗНИ -->
-<div class="card" id="lifestyle-info-card">
-    <!-- Заголовок с кнопками -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h3 style="margin: 0;">{{ t('profile_lifestyle', lang) }}</h3>
-        
-        <div style="display: flex; gap: 0.5rem;">
-            <!-- Кнопка "Редактировать" -->
-            <button 
-                id="lifestyle-edit-btn"
-                onclick="editSection('lifestyle')"
-                style="padding: 0.5rem 1.2rem; background: #00c9a7; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
-            >
-                ✏️ {{ t('edit', lang) }}
-            </button>
-            
-            <!-- Кнопки "Сохранить" и "Отмена" (скрыты по умолчанию) -->
-            <button 
-                id="lifestyle-save-btn"
-                onclick="saveSection('lifestyle')"
-                style="display: none; padding: 0.5rem 1.2rem; background: #00C9A7; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
-            >
-                ✅ {{ t('save', lang) }}
-            </button>
-            <button 
-                id="lifestyle-cancel-btn"
-                onclick="cancelEdit('lifestyle')"
-                style="display: none; padding: 0.5rem 1.2rem; background: #cbd5e0; color: #2d3748; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500;"
-            >
-                ❌ {{ t('cancel', lang) }}
-            </button>
-        </div>
-    </div>
-    <p style="color: #666; margin-bottom: 1.5rem;">
-        {{ t('profile_medical_form_desc', lang) }}
-    </p>
-    <!-- Режим просмотра -->
-    <div id="lifestyle-view-mode">
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
-            <!-- Курение -->
-            <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">🚬 {{ t('profile_smoking', lang) }}</strong>
-                <span style="color: #666;" id="smoking-display">{{ user.smoking if user and user.smoking else t('profile_not_specified', lang) }}</span>
-            </div>
-            
-            <!-- Алкоголь -->
-            <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">🍷 {{ t('profile_alcohol', lang) }}</strong>
-                <span style="color: #666;" id="alcohol-display">{{ user.alcohol if user and user.alcohol else t('profile_not_specified', lang) }}</span>
-            </div>
-            
-            <!-- Физическая активность -->
-            <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">🏃 {{ t('profile_physical_activity', lang) }}</strong>
-                <span style="color: #666;" id="activity-display">{{ user.physical_activity if user and user.physical_activity else t('profile_not_specified', lang) }}</span>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Режим редактирования (скрыт по умолчанию) -->
-    <div id="lifestyle-edit-mode" style="display: none;">
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
-            <!-- Курение -->
-            <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">🚬 {{ t('profile_smoking', lang) }}</strong>
-                <select 
-                    id="smoking-input"
-                    style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
-                >
-                    <option value="">{{ t('profile_not_specified', lang) }}</option>
-                    <option value="{{ t('smoking_yes', lang) }}" {{ 'selected' if user and user.smoking == t('smoking_yes', lang) else '' }}>{{ t('smoking_yes', lang) }}</option>
-                    <option value="{{ t('smoking_no', lang) }}" {{ 'selected' if user and user.smoking == t('smoking_no', lang) else '' }}>{{ t('smoking_no', lang) }}</option>
-                    <option value="{{ t('smoking_vape', lang) }}" {{ 'selected' if user and user.smoking == t('smoking_vape', lang) else '' }}>{{ t('smoking_vape', lang) }}</option>
-                </select>
-            </div>
-            
-            <!-- Алкоголь -->
-            <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">🍷 {{ t('profile_alcohol', lang) }}</strong>
-                <select 
-                    id="alcohol-input"
-                    style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
-                >
-                    <option value="">{{ t('profile_not_specified', lang) }}</option>
-                    <option value="{{ t('alcohol_never', lang) }}" {{ 'selected' if user and user.alcohol == t('alcohol_never', lang) else '' }}>{{ t('alcohol_never', lang) }}</option>
-                    <option value="{{ t('alcohol_sometimes', lang) }}" {{ 'selected' if user and user.alcohol == t('alcohol_sometimes', lang) else '' }}>{{ t('alcohol_sometimes_hint', lang) }}</option>
-                    <option value="{{ t('alcohol_often', lang) }}" {{ 'selected' if user and user.alcohol == t('alcohol_often', lang) else '' }}>{{ t('alcohol_often_hint', lang) }}</option>
-                </select>
-            </div>
-            
-            <!-- Физическая активность -->
-            <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">🏃 {{ t('profile_physical_activity', lang) }}</strong>
-                <select 
-                    id="activity-input"
-                    style="width: 100%; padding: 0.6rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
-                >
-                    <option value="">{{ t('profile_not_specified', lang) }}</option>
-                    <option value="{{ t('activity_none', lang) }}" {{ 'selected' if user and user.physical_activity == t('activity_none', lang) else '' }}>{{ t('activity_none_hint', lang) }}</option>
-                    <option value="{{ t('activity_low', lang) }}" {{ 'selected' if user and user.physical_activity == t('activity_low', lang) else '' }}>{{ t('activity_low_hint', lang) }}</option>
-                    <option value="{{ t('activity_medium', lang) }}" {{ 'selected' if user and user.physical_activity == t('activity_medium', lang) else '' }}>{{ t('activity_medium_hint', lang) }}</option>
-                    <option value="{{ t('activity_high', lang) }}" {{ 'selected' if user and user.physical_activity == t('activity_high', lang) else '' }}>{{ t('activity_high_hint', lang) }}</option>
-                    <option value="{{ t('activity_pro', lang) }}" {{ 'selected' if user and user.physical_activity == t('activity_pro', lang) else '' }}>{{ t('activity_pro_hint', lang) }}</option>
-                </select>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ℹ️ ИНФОРМАЦИЯ -->
-<div class="info-block" style="background: #e0f7fa; border-left: 4px solid #00bcd4; padding: 1rem 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-    <strong>💡 {{ t('profile_how_to_fill', lang) }}</strong><br>
-    {{ t('profile_fill_instruction', lang) }}
-</div>
-
-<!-- 🗑️ УДАЛЕНИЕ ДАННЫХ -->
-<div class="card" style="border-left-color: #dc3545;">
-    <h3 style="color: #dc3545;">⚠️ {{ t('profile_danger_zone', lang) }}</h3>
-    <p style="color: #666; margin: 1rem 0;">
-        {{ t('profile_delete_warning', lang) }}
-    </p>
-    <button 
-        onclick="deleteAccount()"
-        class="btn btn-danger"
-    >
-        🗑️ {{ t('profile_delete_account', lang) }}
-    </button>
-</div>
+<!-- ── Toast ── -->
+<div class="pf-toast" id="pf-toast"></div>
 
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-// Переменные для хранения исходных значений (для отмены)
-let originalValues = {};
+/* ── State ── */
+let _origValues = {};
 
-/**
- * Включение режима редактирования для секции
- */
-function editSection(section) {
-    // Сохраняем исходные значения для возможности отмены
-    saveOriginalValues(section);
-    
-    // Скрываем режим просмотра, показываем режим редактирования
-    document.getElementById(`${section}-view-mode`).style.display = 'none';
-    document.getElementById(`${section}-edit-mode`).style.display = 'block';
-    
-    // Меняем кнопки
-    document.getElementById(`${section}-edit-btn`).style.display = 'none';
-    document.getElementById(`${section}-save-btn`).style.display = 'inline-block';
-    document.getElementById(`${section}-cancel-btn`).style.display = 'inline-block';
+/* ── Helpers ── */
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('pf-toast');
+  t.className = `pf-toast ${type}`;
+  t.textContent = msg;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => t.classList.add('show'));
+  });
+  setTimeout(() => {
+    t.classList.remove('show');
+  }, 3000);
 }
 
-/**
- * Отмена редактирования
- */
-function cancelEdit(section) {
-    // Восстанавливаем исходные значения
-    restoreOriginalValues(section);
-    
-    // Возвращаем режим просмотра
-    document.getElementById(`${section}-view-mode`).style.display = 'block';
-    document.getElementById(`${section}-edit-mode`).style.display = 'none';
-    
-    // Меняем кнопки обратно
-    document.getElementById(`${section}-edit-btn`).style.display = 'inline-block';
-    document.getElementById(`${section}-save-btn`).style.display = 'none';
-    document.getElementById(`${section}-cancel-btn`).style.display = 'none';
+function updateInitialsPreview(val) {
+  const parts = val.trim().split(/\s+/).filter(Boolean);
+  const initials = parts.map(w => w[0]).join('').toUpperCase().slice(0,2) || '?';
+  document.getElementById('basic-initials-edit').textContent = initials;
 }
 
-/**
- * Сохранение исходных значений перед редактированием
- */
-function saveOriginalValues(section) {
-    originalValues[section] = {};
-    
-    if (section === 'basic') {
-        originalValues[section].name = document.getElementById('name-input').value;
-    }
-    else if (section === 'medical') {
-        originalValues[section].birth_year = document.getElementById('birth-year-input').value;
-        originalValues[section].gender = document.getElementById('gender-input').value;
-        originalValues[section].height = document.getElementById('height-input').value;
-        originalValues[section].weight = document.getElementById('weight-input').value;
-        originalValues[section].chronic = document.getElementById('chronic-input').value;
-        originalValues[section].allergies = document.getElementById('allergies-input').value;
-        originalValues[section].family_history = document.getElementById('family-history-input').value;
-        originalValues[section].medications = document.getElementById('medications-input').value;
-    }
-    else if (section === 'lifestyle') {
-        originalValues[section].smoking = document.getElementById('smoking-input').value;
-        originalValues[section].alcohol = document.getElementById('alcohol-input').value;
-        originalValues[section].activity = document.getElementById('activity-input').value;
-    }
+function toggleSeg(btn) {
+  const group = btn.dataset.group;
+  document.querySelectorAll(`.seg-btn[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(`${group}-input`).value = btn.dataset.val;
 }
 
-/**
- * Восстановление исходных значений при отмене
- */
-function restoreOriginalValues(section) {
-    if (!originalValues[section]) return;
-    
-    if (section === 'basic') {
-        document.getElementById('name-input').value = originalValues[section].name;
-    }
-    else if (section === 'medical') {
-        document.getElementById('birth-year-input').value = originalValues[section].birth_year;
-        document.getElementById('gender-input').value = originalValues[section].gender;
-        document.getElementById('height-input').value = originalValues[section].height;
-        document.getElementById('weight-input').value = originalValues[section].weight;
-        document.getElementById('chronic-input').value = originalValues[section].chronic;
-        document.getElementById('allergies-input').value = originalValues[section].allergies;
-        document.getElementById('family-history-input').value = originalValues[section].family_history;
-        document.getElementById('medications-input').value = originalValues[section].medications;
-    }
-    else if (section === 'lifestyle') {
-        document.getElementById('smoking-input').value = originalValues[section].smoking;
-        document.getElementById('alcohol-input').value = originalValues[section].alcohol;
-        document.getElementById('activity-input').value = originalValues[section].activity;
-    }
+/* ── Edit / Cancel / Save ── */
+function editSection(sec) {
+  _origValues[sec] = _snapshot(sec);
+  document.getElementById(`${sec}-view`).style.display = 'none';
+  const editEl = document.getElementById(`${sec}-edit`);
+  editEl.style.display = sec === 'lifestyle' ? 'flex' : 'block';
+  document.getElementById(`${sec}-edit-btn`).style.display = 'none';
+  document.getElementById(`${sec}-cancel-btn`).style.display = '';
+  document.getElementById(`${sec}-save-btn`).style.display = '';
 }
 
-/**
- * Сохранение изменений через API
- */
-async function saveSection(section) {
-    // Собираем данные в зависимости от секции
-    let data = { section: section };
-    
-    if (section === 'basic') {
-        data.name = document.getElementById('name-input').value.trim();
-        
-        // Валидация: имя не должно быть пустым
-        if (!data.name) {
-            alert('{{ t("name_required", lang) if t("name_required", lang) else "Имя обязательно для заполнения" }}');
-            return;
-        }
-    }
-    else if (section === 'medical') {
-        const birthYear = document.getElementById('birth-year-input').value;
-        const height = document.getElementById('height-input').value;
-        const weight = document.getElementById('weight-input').value;
-        
-        // Валидация года рождения
-        if (birthYear) {
-            const year = parseInt(birthYear);
-            const currentYear = new Date().getFullYear() - 16;
-            if (year < 1900 || year > currentYear) {
-                alert('{{ t("birth_year_invalid", lang) }}');
-                return;
-            }
-        }
-        
-        // Валидация роста
-        if (height) {
-            const h = parseInt(height);
-            if (h < 100 || h > 250) {
-                alert('{{ t("height_invalid", lang) }}');
-                return;
-            }
-        }
-        
-        // Валидация веса
-        if (weight) {
-            const w = parseFloat(weight);
-            if (w < 30 || w > 300) {
-                alert('{{ t("weight_invalid", lang) }}');
-                return;
-            }
-        }
-        
-        data.birth_year = birthYear;
-        data.gender = document.getElementById('gender-input').value;
-        data.height_cm = height;
-        data.weight_kg = weight;
-        data.chronic_conditions = document.getElementById('chronic-input').value.trim();
-        data.allergies = document.getElementById('allergies-input').value.trim();
-        data.family_history = document.getElementById('family-history-input').value.trim();
-        data.medications = document.getElementById('medications-input').value.trim();
-    }
-    else if (section === 'lifestyle') {
-        data.smoking = document.getElementById('smoking-input').value;
-        data.alcohol = document.getElementById('alcohol-input').value;
-        data.physical_activity = document.getElementById('activity-input').value;
-    }
-    
-    try {
-        // Отправляем данные на сервер
-        const response = await fetch('/api/profile/update', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            // Обновляем отображаемые значения
-            updateDisplayValues(section, data);
-            
-            // Возвращаем режим просмотра
-            cancelEdit(section);
-            
-            // Показываем уведомление об успехе
-            showNotification('{{ t("profile_updated", lang) if t("profile_updated", lang) else "Профиль обновлен" }}', 'success');
-        } else {
-            showNotification(result.message || '{{ t("error_updating", lang) if t("error_updating", lang) else "Ошибка обновления" }}', 'error');
-        }
-    } catch (error) {
-        console.error('Error updating profile:', error);
-        showNotification('{{ t("error_updating", lang) if t("error_updating", lang) else "Ошибка обновления" }}', 'error');
-    }
+function cancelSection(sec) {
+  _restore(sec, _origValues[sec] || {});
+  document.getElementById(`${sec}-edit`).style.display = 'none';
+  document.getElementById(`${sec}-view`).style.display = '';
+  document.getElementById(`${sec}-edit-btn`).style.display = '';
+  document.getElementById(`${sec}-cancel-btn`).style.display = 'none';
+  document.getElementById(`${sec}-save-btn`).style.display = 'none';
 }
 
-/**
- * Обновление отображаемых значений после сохранения
- */
-function updateDisplayValues(section, data) {
-    if (section === 'basic') {
-        document.getElementById('name-display').textContent = data.name || '{{ t("profile_not_specified", lang) }}';
-    }
-    else if (section === 'medical') {
-        document.getElementById('birth-year-display').textContent = data.birth_year || '{{ t("profile_not_specified", lang) }}';
-        document.getElementById('gender-display').textContent = data.gender || '{{ t("profile_not_specified", lang) }}';
-        
-        const heightText = data.height_cm ? `${data.height_cm} {{ t("profile_height_unit", lang) }}` : '{{ t("profile_not_specified", lang) }}';
-        document.getElementById('height-display').textContent = heightText;
-        
-        const weightText = data.weight_kg ? `${data.weight_kg} {{ t("profile_weight_unit", lang) }}` : '{{ t("profile_not_specified", lang) }}';
-        document.getElementById('weight-display').textContent = weightText;
-        
-        document.getElementById('chronic-display').textContent = data.chronic_conditions || '{{ t("profile_not_specified", lang) }}';
-        document.getElementById('allergies-display').textContent = data.allergies || '{{ t("profile_not_specified", lang) }}';
-        document.getElementById('family-history-display').textContent = data.family_history || '{{ t("profile_not_specified", lang) }}';
-        document.getElementById('medications-display').textContent = data.medications || '{{ t("profile_not_specified", lang) }}';
-    }
-    else if (section === 'lifestyle') {
-        document.getElementById('smoking-display').textContent = data.smoking || '{{ t("profile_not_specified", lang) }}';
-        document.getElementById('alcohol-display').textContent = data.alcohol || '{{ t("profile_not_specified", lang) }}';
-        document.getElementById('activity-display').textContent = data.physical_activity || '{{ t("profile_not_specified", lang) }}';
-    }
+function _snapshot(sec) {
+  if (sec === 'basic') return { name: document.getElementById('name-input').value };
+  if (sec === 'medical') return {
+    birth_year: document.getElementById('birth-year-input').value,
+    gender: document.getElementById('gender-input').value,
+    height: document.getElementById('height-input').value,
+    weight: document.getElementById('weight-input').value,
+    chronic: document.getElementById('chronic-input').value,
+    allergies: document.getElementById('allergies-input').value,
+    family_history: document.getElementById('family-history-input').value,
+    medications: document.getElementById('medications-input').value,
+  };
+  if (sec === 'lifestyle') return {
+    smoking: document.getElementById('smoking-input').value,
+    alcohol: document.getElementById('alcohol-input').value,
+    activity: document.getElementById('activity-input').value,
+  };
+  return {};
 }
 
-/**
- * Показ уведомления
- */
-function showNotification(message, type = 'success') {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        background: ${type === 'success' ? '#00C9A7' : '#dc3545'};
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        animation: slideIn 0.3s ease;
-    `;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
+function _restore(sec, v) {
+  if (sec === 'basic') { document.getElementById('name-input').value = v.name || ''; return; }
+  if (sec === 'medical') {
+    document.getElementById('birth-year-input').value = v.birth_year || '';
+    document.getElementById('gender-input').value = v.gender || '';
+    document.getElementById('height-input').value = v.height || '';
+    document.getElementById('weight-input').value = v.weight || '';
+    document.getElementById('chronic-input').value = v.chronic || '';
+    document.getElementById('allergies-input').value = v.allergies || '';
+    document.getElementById('family-history-input').value = v.family_history || '';
+    document.getElementById('medications-input').value = v.medications || '';
+    return;
+  }
+  if (sec === 'lifestyle') {
+    ['smoking','alcohol','activity'].forEach(g => {
+      document.getElementById(`${g}-input`).value = v[g] || '';
+      document.querySelectorAll(`.seg-btn[data-group="${g}"]`).forEach(b => {
+        b.classList.toggle('active', b.dataset.val === (v[g] || ''));
+      });
+    });
+  }
 }
 
-// Функция для подтверждения удаления аккаунта (оставляем как было)
-function deleteAccount() {
-    // Показываем модальное окно
-    document.getElementById('deleteModal').style.display = 'flex';
+/* ── Save section ── */
+async function saveSection(sec) {
+  const btn = document.getElementById(`${sec}-save-btn`);
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+
+  let payload = {};
+  if (sec === 'basic') {
+    payload = { name: document.getElementById('name-input').value.trim() };
+  } else if (sec === 'medical') {
+    payload = {
+      birth_year: document.getElementById('birth-year-input').value || null,
+      gender: document.getElementById('gender-input').value || null,
+      height_cm: document.getElementById('height-input').value || null,
+      weight_kg: document.getElementById('weight-input').value || null,
+      chronic_conditions: document.getElementById('chronic-input').value.trim() || null,
+      allergies: document.getElementById('allergies-input').value.trim() || null,
+      family_history: document.getElementById('family-history-input').value.trim() || null,
+      medications: document.getElementById('medications-input').value.trim() || null,
+    };
+  } else if (sec === 'lifestyle') {
+    payload = {
+      smoking: document.getElementById('smoking-input').value || null,
+      alcohol: document.getElementById('alcohol-input').value || null,
+      physical_activity: document.getElementById('activity-input').value || null,
+    };
+  }
+
+  payload.section = sec;
+
+  try {
+    const resp = await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await resp.json();
+
+    if (data.success) {
+      _updateDisplayValues(sec, payload);
+      cancelSection(sec);
+      showToast('✓ ' + (data.message || 'Сохранено'), 'success');
+    } else {
+      showToast('✗ ' + (data.error || 'Ошибка'), 'error');
+    }
+  } catch {
+    showToast('✗ Ошибка соединения', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = '';
+  }
 }
 
+/* ── Update display values after save ── */
+function _displayVal(val, unit, fallback) {
+  if (!val || val === '') return fallback;
+  return unit ? `${val} ${unit}` : val;
+}
+const _fb = '{{ t("profile_not_specified", lang) }}';
+const _hUnit = '{{ t("profile_height_unit", lang) }}';
+const _wUnit = '{{ t("profile_weight_unit", lang) }}';
+
+function _updateDisplayValues(sec, payload) {
+  if (sec === 'basic') {
+    const name = payload.name || _fb;
+    document.getElementById('basic-name-display').textContent = name;
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    const initials = parts.map(w => w[0]).join('').toUpperCase().slice(0,2) || '?';
+    document.getElementById('basic-initials').textContent = initials;
+    return;
+  }
+  if (sec === 'medical') {
+    _setDisplay('birth-year-display', payload.birth_year, '', _fb);
+    _setDisplay('gender-display', payload.gender, '', _fb);
+    _setDisplay('height-display', payload.height_cm, _hUnit, _fb);
+    _setDisplay('weight-display', payload.weight_kg, _wUnit, _fb);
+    _setDisplay('chronic-display', payload.chronic_conditions, '', _fb);
+    _setDisplay('allergies-display', payload.allergies, '', _fb);
+    _setDisplay('family-history-display', payload.family_history, '', _fb);
+    _setDisplay('medications-display', payload.medications, '', _fb);
+    return;
+  }
+  if (sec === 'lifestyle') {
+    _setDisplay('smoking-display', payload.smoking, '', _fb);
+    _setDisplay('alcohol-display', payload.alcohol, '', _fb);
+    _setDisplay('activity-display', payload.physical_activity, '', _fb);
+  }
+}
+
+function _setDisplay(id, val, unit, fb) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const empty = !val;
+  el.textContent = empty ? fb : (unit ? `${val} ${unit}` : val);
+  el.classList.toggle('empty', empty);
+}
+
+/* ── Delete account ── */
+function openDeleteModal() {
+  document.getElementById('deleteModal').classList.add('open');
+}
 function closeDeleteModal() {
-    document.getElementById('deleteModal').style.display = 'none';
+  document.getElementById('deleteModal').classList.remove('open');
 }
-
-// Закрытие модального окна при клике вне его
-document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('deleteModal');
-    
-    if (modal) {
-        modal.addEventListener('click', function(e) {
-            // Если клик был по затемнённому фону (не по содержимому)
-            if (e.target === modal) {
-                closeDeleteModal();
-            }
-        });
-    }
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+  });
 });
 
 async function confirmDelete() {
-    const confirmed = confirm(
-        '⚠️ {{ t("warning", lang) }}!\n\n' +
-        '{{ t("confirm_delete_account_message", lang) }}\n\n' +
-        '{{ t("will_be_deleted", lang) }}:\n' +
-        '• {{ t("all_documents", lang) }}\n' +
-        '• {{ t("chat_history", lang) }}\n' +
-        '• {{ t("medical_profile", lang) }}\n' +
-        '• {{ t("profile", lang) }}\n' +
-        '• {{ t("subscriptions_and_payments", lang) }}\n\n' +
-        '{{ t("action_irreversible", lang) }}!'
-    );
-    
-    if (!confirmed) return;
-    
-    const doubleConfirm = confirm('{{ t("double_confirm_message", lang) }}');
-    
-    if (!doubleConfirm) return;
-    
-    // Показываем загрузку
-    const button = event.target;
-    button.disabled = true;
-    button.innerHTML = '⏳ {{ t("deleting", lang) }}...';
-    
-    try {
-        const response = await fetch('/api/delete-account', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            alert('✅ ' + data.message);
-            window.location.href = data.redirect || '/';
-        } else {
-            alert('❌ ' + (data.error || '{{ t("account_deletion_error", lang) }}'));
-            button.disabled = false;
-            button.innerHTML = '🗑️ {{ t("profile_delete_account", lang) }}';
-        }
-    } catch (error) {
-        console.error('Ошибка:', error);
-        alert('❌ {{ t("account_deletion_error", lang) }}');
-        button.disabled = false;
-        button.innerHTML = '🗑️ {{ t("profile_delete_account", lang) }}';
+  const btn = document.querySelector('.pf-modal-delete');
+  btn.disabled = true;
+  btn.textContent = '{{ t("deleting", lang) }}...';
+
+  try {
+    const resp = await fetch('/api/delete-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await resp.json();
+    if (data.success) {
+      showToast('✓ ' + data.message, 'success');
+      setTimeout(() => { window.location.href = data.redirect || '/'; }, 1200);
+    } else {
+      showToast('✗ ' + (data.error || '{{ t("account_deletion_error", lang) }}'), 'error');
+      btn.disabled = false;
+      btn.textContent = '{{ t("common_delete", lang) }}';
     }
+  } catch {
+    showToast('✗ {{ t("account_deletion_error", lang) }}', 'error');
+    btn.disabled = false;
+    btn.textContent = '{{ t("common_delete", lang) }}';
+  }
 }
 </script>
-
-<style>
-@keyframes slideIn {
-    from {
-        transform: translateX(400px);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideOut {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(400px);
-        opacity: 0;
-    }
-}
-
-/* Модальное окно удаления */
-.modal-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    animation: fadeIn 0.3s;
-}
-
-.modal-content {
-    background: white;
-    border-radius: 16px;
-    padding: 32px;
-    max-width: 500px;
-    width: 90%;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    animation: slideUp 0.3s;
-}
-
-.modal-icon {
-    width: 60px;
-    height: 60px;
-    margin: 0 auto 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    border-radius: 50%;
-    background: #fff3cd;
-}
-
-.modal-content h3 {
-    margin: 0 0 16px 0;
-    color: #212529;
-    text-align: center;
-}
-
-.modal-content p {
-    color: #6c757d;
-    line-height: 1.6;
-    margin-bottom: 20px;
-}
-
-.delete-list {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 16px;
-    margin: 20px 0;
-}
-
-.delete-list ul {
-    margin: 12px 0 0 0;
-    padding-left: 20px;
-}
-
-.delete-list li {
-    color: #495057;
-    margin: 8px 0;
-}
-
-.warning-text {
-    color: #dc3545 !important;
-    font-weight: 600;
-    text-align: center;
-}
-
-.modal-buttons {
-    display: flex;
-    gap: 12px;
-    margin-top: 24px;
-}
-
-.btn-cancel, .btn-delete {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.btn-cancel {
-    background: #e9ecef;
-    color: #495057;
-}
-
-.btn-cancel:hover {
-    background: #dee2e6;
-}
-
-.btn-delete {
-    background: #dc3545;
-    color: white;
-}
-
-.btn-delete:hover {
-    background: #c82333;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideUp {
-    from { 
-        transform: translateY(20px);
-        opacity: 0;
-    }
-    to { 
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-/* Адаптация для мобильных */
-@media (max-width: 768px) {
-    /* Медицинская анкета - 2 колонки */
-    #medical-view-mode > div:first-child {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 1rem !important;
-    }
-    
-    #medical-view-mode > div > div strong {
-        margin-bottom: 0.3rem !important;
-        font-size: 0.9rem;
-    }
-    
-    #medical-edit-mode > div:first-child {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 1rem !important;
-    }
-}
-
-/* Только на ОЧЕНЬ узких экранах (<400px) делаем 1 колонку для Basic Info */
-@media (max-width: 440px) {
-    #basic-view-mode > div,
-    #basic-edit-mode > div {
-        grid-template-columns: 1fr !important;
-        gap: 0.3rem !important;
-    }
-}
-</style>
-<!-- ❌ МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ АККАУНТА -->
-<div id="deleteModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-icon warning">⚠️</div>
-        <h3>{{ t('profile_delete_account_confirm_title', lang) }}</h3>
-        <p>{{ t('profile_delete_account_confirm_message', lang) }}</p>
-        <div class="delete-list">
-            <p><strong>{{ t('profile_will_be_deleted', lang) }}</strong></p>
-            <ul>
-                <li>{{ t('profile_delete_documents', lang) }}</li>
-                <li>{{ t('profile_delete_chat_history', lang) }}</li>
-                <li>{{ t('profile_delete_medical_questionnaire', lang) }}</li>
-                <li>{{ t('profile_delete_profile', lang) }}</li>
-            </ul>
-        </div>
-        <p class="warning-text">{{ t('profile_action_irreversible', lang) }}</p>
-        <div class="modal-buttons">
-            <button class="btn-cancel" onclick="closeDeleteModal()">{{ t('common_cancel', lang) }}</button>
-            <button class="btn-delete" onclick="confirmDelete()">{{ t('common_delete', lang) }}</button>
-        </div>
-    </div>
-</div>
-
 {% endblock %}

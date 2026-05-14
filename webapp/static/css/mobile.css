@@ -607,54 +607,6 @@
     }
 
     /* ========================================
-    КНОПКИ РЕДАКТИРОВАНИЯ - ТОЛЬКО ИКОНКА
-    ======================================== */
-
-    /* Базовые стили для всех кнопок редактирования */
-    .card button[id$="-edit-btn"],
-    .card button[id$="-save-btn"],
-    .card button[id$="-cancel-btn"] {
-        padding: 0.6rem !important;
-        min-width: 44px !important;
-        width: 44px !important;
-        height: 44px !important;
-        line-height: 1 !important;
-    }
-
-    /* Кнопка редактирования */
-    .card button[id$="-edit-btn"] {
-        font-size: 0 !important;
-        background: #00c9a7 !important;
-    }
-
-    .card button[id$="-edit-btn"]::before {
-        content: "✏️";
-        font-size: 1rem;
-    }
-
-    /* Кнопка сохранения */
-    .card button[id$="-save-btn"] {
-        font-size: 0 !important;
-        background: #00c9a7 !important;
-    }
-
-    .card button[id$="-save-btn"]::before {
-        content: "✅";
-        font-size: 1rem;
-    }
-
-    /* Кнопка отмены */
-    .card button[id$="-cancel-btn"] {
-        font-size: 0 !important;
-        background: #e2e8f0 !important;
-    }
-
-    .card button[id$="-cancel-btn"]::before {
-        content: "❌";
-        font-size: 1rem;
-    }
-
-    /* ========================================
        СЕКЦИИ
        ======================================== */
     
@@ -731,71 +683,7 @@
     .stat-card h3 {
         font-size: 2rem !important;
     }
-
-    /* ========================================
-       МЕДИЦИНСКАЯ АНКЕТА
-       ======================================== */
     
-    #medical-view-mode .info-grid,
-    #medical-edit-mode .info-grid {
-        grid-template-columns: 1fr !important;
-        gap: 1rem !important;
-    }
-    
-    #medical-view-mode .info-row,
-    #medical-edit-mode .info-row {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 0.5rem !important;
-    }
-    
-    #medical-view-mode p,
-    #medical-edit-mode p {
-        margin: 0 !important;
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 0.5rem !important;
-    }
-    
-    #medical-view-mode strong,
-    #medical-edit-mode strong {
-        font-size: 0.85rem !important;
-        color: #4a5568 !important;
-    }
-    
-    #medical-view-mode span,
-    #medical-edit-mode span {
-        font-size: 1rem !important;
-        color: #1a202c !important;
-        font-weight: 600 !important;
-    }
-    
-    #medical-edit-mode input,
-    #medical-edit-mode select {
-        width: 100% !important;
-        padding: 0.75rem !important;
-        font-size: 16px !important;
-        border: 2px solid #e2e8f0 !important;
-        border-radius: 8px !important;
-        box-sizing: border-box !important;
-    }
-    
-    #medical-edit-mode textarea {
-        width: 100% !important;
-        min-height: 100px !important;
-        padding: 0.75rem !important;
-        font-size: 16px !important;
-        border: 2px solid #e2e8f0 !important;
-        border-radius: 8px !important;
-        box-sizing: border-box !important;
-        resize: vertical !important;
-    }
-    
-    .card button[style*="display: flex"] {
-        width: 100% !important;
-        justify-content: center !important;
-    }
-
     /* ========================================
        UTILITY КЛАССЫ
        ======================================== */
@@ -1014,14 +902,7 @@
 
     section[style*="padding: 4rem 2rem"] h2 {
         font-size: 1.5rem !important;
-    }
-
-    /* На очень маленьких экранах медицинская анкета в 1 колонку */
-    #medical-view-mode .info-row,
-    #medical-edit-mode .info-row,
-    div[style*="display: flex"][style*="gap: 2rem"] {
-        grid-template-columns: 1fr !important;
-    }
+    }    
 }
 
 /* ============================================

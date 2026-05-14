@@ -674,6 +674,23 @@ async def document_detail(
         
         # Получаем медкарту для этого документа
         timeline = await get_timeline_by_document(doc_id, user_id)
+
+        doc_biomarkers = []
+        if doc['document_type'] == 'lab_results':
+            lang = request.session.get('language', 'en')
+            bm_rows = await conn.fetch("""
+                SELECT 
+                    lr.slug,
+                    lr.original_value,
+                    lr.original_unit,
+                    lr.status,
+                    COALESCE(si.name_localized, lr.display_name, lr.slug) AS display_name
+                FROM lab_results lr
+                LEFT JOIN seo_indicators si ON lr.slug = si.slug AND si.lang = $3
+                WHERE lr.document_id = $1 AND lr.user_id = $2
+                ORDER BY lr.slug
+            """, doc_id, user_id, lang)
+            doc_biomarkers = [dict(r) for r in bm_rows]
         
         from webapp.utils.text_formatter import format_for_web
 
@@ -701,6 +718,7 @@ async def document_detail(
         'doc': dict(doc),
         'timeline': timeline,
         'first_ai_message': last_ai_formatted,
+        'doc_biomarkers': doc_biomarkers,
     })
 
     try:

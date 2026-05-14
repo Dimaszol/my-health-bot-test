@@ -1,207 +1,434 @@
 <!-- webapp/templates/link_telegram.html -->
-<!-- 🔗 Страница для связывания Telegram аккаунта -->
-
 {% extends "base.html" %}
 
-{% block title %}{{ t('connect_telegram_title', lang) }}{% endblock %}
+{% block title %}{{ t('connect_telegram_title', lang) }} - {{ t('site_title', lang) }}{% endblock %}
+
+{% block extra_styles %}
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+footer { display: none !important; }
+
+:root {
+  --teal:   #2DE8C8;
+  --td:     #1AC9AD;
+  --tdim:   rgba(45,232,200,0.10);
+  --bg:     #f0f9f7;
+  --card:   #ffffff;
+  --text:   #111d1b;
+  --muted:  #6b8c87;
+  --border: #e0edeb;
+  --shadow: 0 2px 14px rgba(17,29,27,0.07), 0 1px 3px rgba(17,29,27,0.04);
+  --red:    #FF5B5B;
+  --amber:  #F59E0B;
+  --amberdim: rgba(245,158,11,0.10);
+}
+
+body { font-family: 'Manrope', sans-serif !important; }
+
+main {
+  background: var(--bg) !important;
+  padding: 2rem 0 4rem !important;
+  min-height: 100vh;
+}
+
+.tg-inner { max-width: 600px; margin: 0 auto; }
+
+.tg-wrap {
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+/* Page header */
+.tg-header { margin-bottom: 1.75rem; }
+.tg-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #6ab0b9;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.3rem;
+  line-height: 1.2;
+}
+.tg-subtitle {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 500;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+.tg-learn {
+  font-size: 0.875rem;
+  color: var(--td);
+  font-weight: 600;
+  text-decoration: none;
+}
+.tg-learn:hover { text-decoration: underline; }
+
+/* Card */
+.tg-card {
+  background: var(--card);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  margin-bottom: 14px;
+}
+
+/* Warning card */
+.tg-warn {
+  background: #fffbeb;
+  border-radius: 16px;
+  border: 1.5px solid #fcd34d;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.tg-warn-icon {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  background: rgba(245,158,11,0.12);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+.tg-warn-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #92400e;
+  margin-bottom: 3px;
+}
+.tg-warn-sub {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #b45309;
+}
+
+/* Section label */
+.tg-section-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 12px;
+}
+
+/* Steps */
+.tg-steps { display: flex; flex-direction: column; gap: 12px; }
+.tg-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tg-step-num {
+  width: 32px; height: 32px;
+  border-radius: 10px;
+  background: var(--tdim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: var(--td);
+  flex-shrink: 0;
+}
+.tg-step-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Open button */
+.tg-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  background: linear-gradient(135deg, #2DE8C8 0%, #1AC9AD 100%);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  border-radius: 14px;
+  padding: 15px 20px;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: 'Manrope', sans-serif;
+  box-shadow: 0 4px 18px rgba(45,232,200,0.30);
+  transition: all 0.15s;
+  margin-bottom: 14px;
+}
+.tg-btn:hover {
+  box-shadow: 0 6px 24px rgba(45,232,200,0.40);
+  transform: translateY(-1px);
+}
+
+/* Status box */
+.tg-status {
+  display: none;
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 14px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+}
+.tg-status.waiting {
+  border-color: var(--border);
+}
+.tg-status.success {
+  border-color: #10b981;
+  background: #d1fae5;
+}
+.tg-status.expired {
+  border-color: var(--red);
+  background: #fee2e2;
+}
+.tg-status-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+.tg-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--td);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  margin: 0 auto 10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.tg-status-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.tg-status.success .tg-status-text { color: #065f46; }
+.tg-status.expired .tg-status-text { color: #991b1b; }
+
+/* Benefits */
+.tg-benefits { display: flex; flex-direction: column; gap: 10px; }
+.tg-benefit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.tg-benefit-icon {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  background: var(--tdim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* Already linked */
+.tg-success-card {
+  background: var(--card);
+  border-radius: 20px;
+  border: 1.5px solid #10b981;
+  box-shadow: var(--shadow);
+  padding: 40px 28px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+.tg-success-icon {
+  width: 64px; height: 64px;
+  border-radius: 20px;
+  background: #d1fae5;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 16px;
+}
+.tg-success-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: -0.3px;
+}
+.tg-success-sub {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+.tg-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--tdim);
+  border: none;
+  border-radius: 12px;
+  padding: 11px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--td);
+  text-decoration: none;
+  font-family: 'Manrope', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.tg-back-btn:hover { background: rgba(45,232,200,0.18); }
+
+/* Mobile */
+@media (max-width: 600px) {
+  .tg-inner { max-width: 600px; margin: 0 auto; }
+
+.tg-wrap { padding: 0 10px; }
+  .tg-title { font-size: 1.6rem; }
+  main { padding-left: 0 !important; padding-right: 0 !important; }
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            
-            {% if already_linked %}
-            <!-- ✅ Telegram уже подключен -->
-            <div class="card shadow-sm">
-                <div class="card-body text-center py-5">
-                    <div class="mb-4">
-                        <i class="fas fa-check-circle text-success" style="font-size: 64px;"></i>
-                    </div>
-                    <h3 class="mb-3">{{ t('telegram_connected', lang) }}</h3>
-                    <p class="text-muted">
-                        {{ t('bot_link_success', lang) }}
-                    </p>
-                    <a href="/dashboard" class="btn btn-primary mt-3">
-                        <i class="fas fa-home me-2"></i>{{ t('back_to_dashboard', lang) }}
-                    </a>
-                </div>
-            </div>
-            
-            {% else %}
-            <!-- 📱 Процесс подключения Telegram -->
-            
-            <!-- 🎯 ЗАГОЛОВОК -->
-            <div style="margin-bottom: 2rem;">
-                
-                <h1 style="font-size: 2rem; font-weight: 700; color: #667eea; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <div style="width: 40px; height: 40px;">
-                        <svg viewBox="0 0 24 24" fill="#0088cc" style="width: 100%; height: 100%;">
-                            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.008-1.252-.241-1.865-.44-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635.099-.002.321.023.465.141.121.099.155.232.171.326.016.094.037.308.02.474z"/>
-                        </svg>
-                    </div>
-                    {{ t('connect_telegram_title', lang) }}
-                </h1>
-                <p style="color: #666; font-size: 1rem; margin-bottom: 0.5rem;">
-                    {{ t('telegram_link_description', lang) }}
-                </p>
-                <a href="/faq#telegram" style="color: #667eea; text-decoration: none; font-weight: 500;">
-                    {{ t('learn_more', lang) }} →
-                </a>
-            </div>
-            
-            <!-- ⚠️ ПРЕДУПРЕЖДЕНИЕ -->
-            <div class="card" style="margin-bottom: 2rem; border: 2px solid #f59e0b; background: #fffbeb;">
-                <div style="padding: 1rem;">
-                    <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
-                        <i class="fas fa-exclamation-triangle" style="color: #f59e0b; font-size: 1.25rem; margin-top: 0.15rem;"></i>
-                        <div>
-                            <strong style="color: #92400e; display: block; margin-bottom: 0.25rem;">
-                                {{ t('telegram_warning_device', lang) }}
-                            </strong>
-                            <small style="color: #92400e;">
-                                {{ t('telegram_warning_expires', lang) }}
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 📋 ИНСТРУКЦИИ -->
-            <div class="card" style="margin-bottom: 1.5rem;">
-                <h3 style="color: var(--text-primary); font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">
-                    {{ t('connect_instructions_title', lang) }}
-                </h3>
-                <ol style="padding-left: 1.5rem; color: var(--text-secondary); line-height: 1.8;">
-                    <li style="margin-bottom: 0.5rem;">{{ t('telegram_step_1', lang) }}</li>
-                    <li style="margin-bottom: 0.5rem;">{{ t('telegram_step_2', lang) }}</li>
-                    <li style="margin-bottom: 0.5rem;">{{ t('telegram_step_3', lang) }}</li>
-                </ol>
-            </div>
-            
-            <!-- 🚀 КНОПКА ОТКРЫТЬ TELEGRAM -->
-            <div style="margin-bottom: 2rem;">
-                <a 
-                    href="{{ telegram_link }}" 
-                    class="btn"
-                    target="_blank"
-                    style="width: 100%; text-align: center; font-size: 1.1rem; padding: 1rem 2rem; display: block;"
-                >
-                    <i class="fab fa-telegram" style="margin-right: 0.5rem;"></i>
-                    {{ t('open_telegram_bot', lang) }}
-                </a>
-            </div>
-            <!-- 🔄 СТАТУС СВЯЗЫВАНИЯ -->
-            <div id="linkingStatus" style="display: none; margin-bottom: 2rem; padding: 1.5rem; border-radius: 0.5rem; text-align: center;">
-                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #667eea; margin-bottom: 0.5rem;"></i>
-                <p style="color: var(--text-secondary); margin: 0;">
-                    {{ t('waiting_for_telegram', lang) }}
-                </p>
-            </div>
-            
-            <!-- 💡 ПРЕИМУЩЕСТВА -->
-            <div class="card" style="background: var(--background-light); border: 1px solid var(--border-color);">
-                <h3 style="color: var(--text-primary); font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">
-                    {{ t('link_benefits_title', lang) }}
-                </h3>
-                <ul style="padding-left: 1.5rem; color: var(--text-secondary); line-height: 1.8; margin: 0;">
-                    <li style="margin-bottom: 0.5rem;">{{ t('link_benefit_1', lang) }}</li>
-                    <li style="margin-bottom: 0.5rem;">{{ t('link_benefit_2', lang) }}</li>
-                    <li style="margin-bottom: 0.5rem;">{{ t('link_benefit_3', lang) }}</li>
-                    <li>{{ t('link_benefit_4', lang) }}</li>
-                </ul>
-            </div>
-                        
-            {% endif %}
-            
-        </div>
-    </div>
-</div>
+<div class="tg-wrap"><div class="tg-inner">
 
+{% if already_linked %}
+  <!-- ✅ Уже подключён -->
+  <div class="tg-success-card">
+    <div class="tg-success-icon">✅</div>
+    <div class="tg-success-title">{{ t('telegram_connected', lang) }}</div>
+    <div class="tg-success-sub">{{ t('bot_link_success', lang) }}</div>
+    <a href="/dashboard" class="tg-back-btn">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M9 2L4 7l5 5" stroke="#1AC9AD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      {{ t('back_to_dashboard', lang) }}
+    </a>
+  </div>
+
+{% else %}
+
+  <!-- Заголовок -->
+  <div class="tg-header">
+    <div class="tg-title">
+      <svg viewBox="0 0 24 24" fill="#6ab0b9" width="30" height="30" style="flex-shrink:0">
+        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.008-1.252-.241-1.865-.44-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635.099-.002.321.023.465.141.121.099.155.232.171.326.016.094.037.308.02.474z"/>
+      </svg>
+      {{ t('connect_telegram_title', lang) }}
+    </div>
+    <div class="tg-subtitle">{{ t('telegram_link_description', lang) }}</div>
+    <a href="/faq#telegram" class="tg-learn">{{ t('learn_more', lang) }} →</a>
+  </div>
+
+  <!-- Предупреждение -->
+  <div class="tg-warn">
+    <div class="tg-warn-icon">⚠️</div>
+    <div>
+      <div class="tg-warn-title">{{ t('telegram_warning_device', lang) }}</div>
+      <div class="tg-warn-sub">{{ t('telegram_warning_expires', lang) }}</div>
+    </div>
+  </div>
+
+  <!-- Инструкции -->
+  <div class="tg-card">
+    <div class="tg-section-label">{{ t('connect_instructions_title', lang) }}</div>
+    <div class="tg-steps">
+      <div class="tg-step">
+        <div class="tg-step-num">1</div>
+        <div class="tg-step-text">{{ t('telegram_step_1', lang) }}</div>
+      </div>
+      <div class="tg-step">
+        <div class="tg-step-num">2</div>
+        <div class="tg-step-text">{{ t('telegram_step_2', lang) }}</div>
+      </div>
+      <div class="tg-step">
+        <div class="tg-step-num">3</div>
+        <div class="tg-step-text">{{ t('telegram_step_3', lang) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Кнопка открыть Telegram -->
+  <a href="{{ telegram_link }}" class="tg-btn" target="_blank">
+    <svg viewBox="0 0 24 24" fill="white" width="20" height="20">
+      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.008-1.252-.241-1.865-.44-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635.099-.002.321.023.465.141.121.099.155.232.171.326.016.094.037.308.02.474z"/>
+    </svg>
+    {{ t('open_telegram_bot', lang) }}
+  </a>
+
+  <!-- Статус -->
+  <div id="linkingStatus" class="tg-status waiting">
+    <div class="tg-spinner"></div>
+    <div class="tg-status-text">{{ t('waiting_connection', lang) }}</div>
+  </div>
+
+  <!-- Преимущества -->
+  <div class="tg-card">
+    <div class="tg-section-label">{{ t('link_benefits_title', lang) }}</div>
+    <div class="tg-benefits">
+      <div class="tg-benefit">
+        <div class="tg-benefit-icon">📱</div>
+        {{ t('link_benefit_1', lang) }}
+      </div>      
+      <div class="tg-benefit">
+        <div class="tg-benefit-icon">☁️</div>
+        {{ t('link_benefit_3', lang) }}
+      </div>
+      <div class="tg-benefit">
+        <div class="tg-benefit-icon">🎯</div>
+        {{ t('link_benefit_4', lang) }}
+      </div>
+    </div>
+  </div>
+
+{% endif %}
+</div><!-- /tg-inner -->
+</div><!-- /tg-wrap -->
+{% endblock %}
+
+{% block extra_scripts %}
 <script>
-// 🔍 Проверка статуса связывания (каждые 3 секунды)
 let statusCheckInterval = null;
 let currentCode = '{{ link_code }}';
 
 async function checkLinkStatus() {
-    try {
-        const response = await fetch('/api/check-link-status', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ code: currentCode })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success && data.status === 'completed') {
-            // ✅ Связывание завершено!
-            clearInterval(statusCheckInterval);
-            
-            // Показываем сообщение об успехе
-            const statusDiv = document.getElementById('linkingStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.style.background = '#d1fae5';
-            statusDiv.style.border = '2px solid #10b981';
-            statusDiv.innerHTML = `
-                <div style="padding: 1rem;">
-                    <i class="fas fa-check-circle" style="color: #10b981; font-size: 2rem; margin-bottom: 0.5rem;"></i>
-                    <p style="color: #065f46; margin: 0; font-weight: 600;">
-                        🎉 {{ t('bot_link_success', lang) }}
-                    </p>
-                </div>
-            `;
-            
-            // Редирект на dashboard
-            setTimeout(() => {
-                window.location.href = '/dashboard';
-            }, 2000);
-        }
-        
-        if (data.success && data.status === 'expired') {
-            // ⏱️ Код истёк
-            clearInterval(statusCheckInterval);
-            
-            const statusDiv = document.getElementById('linkingStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.style.background = '#fee2e2';
-            statusDiv.style.border = '2px solid #ef4444';
-            statusDiv.innerHTML = `
-                <div style="padding: 1rem;">
-                    <i class="fas fa-clock" style="color: #ef4444; font-size: 2rem; margin-bottom: 0.5rem;"></i>
-                    <p style="color: #991b1b; margin: 0; font-weight: 600;">
-                        {{ t('link_expired', lang) }}
-                    </p>
-                    <small style="color: #991b1b;">
-                        {{ t('link_expired_refresh', lang) }}
-                    </small>
-                </div>
-            `;
-        }
-    } catch (error) {
-        console.error('Ошибка проверки статуса:', error);
-    }
-}
+  try {
+    const resp = await fetch('/api/check-link-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: currentCode })
+    });
+    const data = await resp.json();
 
-function startStatusCheck() {
-    // Останавливаем предыдущую проверку если есть
-    if (statusCheckInterval) {
-        clearInterval(statusCheckInterval);
+    if (data.success && data.status === 'completed') {
+      clearInterval(statusCheckInterval);
+      const box = document.getElementById('linkingStatus');
+      box.className = 'tg-status success';
+      box.style.display = 'block';
+      box.innerHTML = `
+        <div class="tg-status-icon">🎉</div>
+        <div class="tg-status-text">{{ t('bot_link_success', lang)|replace('\n', ' ') }}</div>
+      `;
+      setTimeout(() => { window.location.href = '/dashboard'; }, 2000);
     }
-    
-    // Показываем индикатор
-    document.getElementById('linkingStatus').style.display = 'block';
-    
-    // Запускаем новую проверку каждые 3 секунды
-    statusCheckInterval = setInterval(checkLinkStatus, 3000);
+
+    if (data.success && data.status === 'expired') {
+      clearInterval(statusCheckInterval);
+      const box = document.getElementById('linkingStatus');
+      box.className = 'tg-status expired';
+      box.style.display = 'block';
+      box.innerHTML = `
+        <div class="tg-status-icon">⏱️</div>
+        <div class="tg-status-text">{{ t('link_expired', lang) }} — {{ t('link_expired_refresh', lang) }}</div>
+      `;
+    }
+  } catch (e) {
+    // silent
+  }
 }
-</script>
 
 {% if not already_linked %}
-<script>
 document.addEventListener('DOMContentLoaded', function() {
-    startStatusCheck();
+  document.getElementById('linkingStatus').style.display = 'block';
+  statusCheckInterval = setInterval(checkLinkStatus, 3000);
 });
-</script>
 {% endif %}
+</script>
 {% endblock %}

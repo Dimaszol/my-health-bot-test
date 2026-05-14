@@ -1123,12 +1123,6 @@ TRANSLATIONS = {
         'en': 'View',
         'uk': 'Переглянути',
         'de': 'Ansehen'
-    },
-    'document_delete': {
-        'ru': 'Удалить',
-        'en': 'Delete',
-        'uk': 'Видалити',
-        'de': 'Löschen'
     },    
     'no_documents_action': {
         'ru': 'Загрузите первый медицинский документ — и PulseBook проведёт комплексный анализ с помощью консилиума AI-моделей. Вы получите ясные объяснения, персональные рекомендации и всю историю здоровья в одном месте.',
@@ -1278,24 +1272,7 @@ TRANSLATIONS = {
         'uk': 'Аналіз даних та формування клінічних рамок для подальшого обговорення. Не є медичним висновком.',
         'de': 'Datenanalyse und Bildung des klinischen Rahmens für weitere Diskussionen. Keine medizinische Schlussfolgerung.'
     },
-    'full_analysis_title': {
-        'ru': 'Медицинская интерпретация',
-        'en': 'Medical Interpretation',
-        'uk': 'Медична інтерпретація',
-        'de': 'Medizinische Interpretation'
-    },
-    'full_analysis_description': {
-        'ru': 'Подробный анализ документа с возможными медицинскими интерпретациями. Рассматривает различные возможные объяснения данных и может быть полезен при обсуждении с врачом.',
-        'en': 'Detailed analysis of the document with possible medical interpretations. It explores different possible explanations of the data and may be useful when discussing them with a doctor.',
-        'uk': 'Детальний аналіз документа з можливими медичними інтерпретаціями. Розглядає різні можливі пояснення даних і може бути корисним під час обговорення з лікарем.',
-        'de': 'Detaillierte Analyse des Dokuments mit möglichen medizinischen Interpretationen. Betrachtet verschiedene mögliche Erklärungen der Daten und kann bei der Besprechung mit einem Arzt hilfreich sein.'
-    },
-    'raw_text_title': {
-        'ru': 'Сводка по документу',
-        'en': 'Document Summary',
-        'uk': 'Зведення по документу',
-        'de': 'Dokumentenzusammenfassung'
-    },
+    
     'legend_analysis_desc': {
         'ru': 'Подробный анализ документа с интерпретациями нескольких ИИ-моделей.',
         'en': 'Detailed analysis of the document with interpretations from multiple AI models.',
@@ -1864,13 +1841,7 @@ TRANSLATIONS = {
         'en': 'Cancel',
         'uk': 'Скасувати',
         'de': 'Abbrechen'
-    },
-    'common_delete': {
-        'ru': 'Удалить',
-        'en': 'Delete',
-        'uk': 'Видалити',
-        'de': 'Löschen'
-    },
+    },    
     'profile_not_specified': {
         'ru': 'Не указано',
         'en': 'Not specified',
@@ -2485,12 +2456,6 @@ TRANSLATIONS = {
     "uk": "AI-аналіз має інформаційний характер і не є діагнозом або медичним призначенням. Висновки ґрунтуються лише на завантажених даних і контексті, повнота яких впливає на точність інтерпретації. Перед прийняттям медичних рішень проконсультуйтеся з лікарем.",
     "de": "Diese KI-Analyse dient ausschließlich Informationszwecken und stellt keine Diagnose oder medizinische Verschreibung dar. Die Schlussfolgerungen basieren ausschließlich auf den hochgeladenen Daten und dem angegebenen Kontext, dessen Vollständigkeit die Genauigkeit der Interpretation beeinflusst. Bitte konsultieren Sie vor medizinischen Entscheidungen einen Arzt."
 },
-'btn_delete_document': {
-    'ru': 'Удалить',
-    'en': 'Delete',
-    'uk': 'Видалити',
-    'de': 'Löschen'
-},
 'photo_upload_button': {
     'ru': '📷 Загрузить фото',
     'en': '📷 Upload a photo',
@@ -3031,41 +2996,31 @@ TRANSLATIONS = {
         'en': '💡 Why connect Telegram?',
         'uk': '💡 Чому варто підключити Telegram?',
         'de': '💡 Warum Telegram verbinden?'
-    },
-    
+    },    
     'link_benefit_1': {
-        'ru': '📱 Быстрый доступ к боту с телефона',
-        'en': '📱 Quick bot access from phone',
-        'uk': '📱 Швидкий доступ до бота з телефону',
-        'de': '📱 Schneller Bot-Zugriff vom Telefon'
-    },
-    
-    'link_benefit_2': {
-        'ru': '🔔 Уведомления о приёме лекарств',
-        'en': '🔔 Medication reminders',
-        'uk': '🔔 Нагадування про прийом ліків',
-        'de': '🔔 Medikamentenerinnerungen'
-    },
-    
+        'ru': 'Быстрый доступ к боту с телефона',
+        'en': 'Quick bot access from phone',
+        'uk': 'Швидкий доступ до бота з телефону',
+        'de': 'Schneller Bot-Zugriff vom Telefon'
+    },    
     'link_benefit_3': {
-        'ru': '☁️ Единая история на обеих платформах',
-        'en': '☁️ Unified history across platforms',
-        'uk': '☁️ Єдина історія на обох платформах',
-        'de': '☁️ Einheitliche Historie auf beiden Plattformen'
-    },
-    
+        'ru': 'Единая история на обеих платформах',
+        'en': 'Unified history across platforms',
+        'uk': 'Єдина історія на обох платформах',
+        'de': 'Einheitliche Historie auf beiden Plattformen'
+    },    
     'link_benefit_4': {
-        'ru': '🎯 Одна подписка на все устройства',
-        'en': '🎯 One subscription for all devices',
-        'uk': '🎯 Одна підписка на всі пристрої',
-        'de': '🎯 Ein Abonnement für alle Geräte'
+        'ru': 'Одна подписка на все устройства',
+        'en': 'One subscription for all devices',
+        'uk': 'Одна підписка на всі пристрої',
+        'de': 'Ein Abonnement für alle Geräte'
     },
     'refresh_code': {
-    'ru': '🔄 Обновить код',
-    'en': '🔄 Refresh Code',
-    'uk': '🔄 Оновити код',
-    'de': '🔄 Code aktualisieren'
-},
+        'ru': '🔄 Обновить код',
+        'en': '🔄 Refresh Code',
+        'uk': '🔄 Оновити код',
+        'de': '🔄 Code aktualisieren'
+    },
 
 'refreshing': {
     'ru': 'Обновление...',
@@ -3531,8 +3486,7 @@ TRANSLATIONS = {
     'seo_type_tumor_markers': {'ru': 'Онкомаркеры', 'en': 'Tumor Markers', 'uk': 'Онкомаркери', 'de': 'Tumormarker'},
     'seo_type_urine': {'ru': 'Анализ мочи', 'en': 'Urinalysis', 'uk': 'Аналіз сечі', 'de': 'Urinanalyse'},
     'seo_type_immunology': {'ru': 'Иммунологические анализы', 'en': 'Immunology Tests', 'uk': 'Імунологічні аналізи', 'de': 'Immunologische Tests'},
-    # ══ Dashboard новый дизайн ══
-    'dashboard_edit': {'ru': 'Редактировать', 'en': 'Edit', 'uk': 'Редагувати', 'de': 'Bearbeiten'},    
+    # ══ Dashboard новый дизайн ══    
     'dashboard_medcard_title': {'ru': 'Медкарта', 'en': 'Medical Records', 'uk': 'Медкарта', 'de': 'Krankenakte'},
     'dashboard_consultations_title': {'ru': 'Консультации', 'en': 'Consultations', 'uk': 'Консультації', 'de': 'Beratungen'},
     'dashboard_last_chat_label': {'ru': 'Последний чат', 'en': 'Last Chat', 'uk': 'Останній чат', 'de': 'Letzter Chat'},
@@ -3575,30 +3529,14 @@ TRANSLATIONS = {
         'de': 'Einfach erklärt'
     },
     'onboarding_skip': {'ru': 'Пропустить, перейти в кабинет', 'en': 'Skip, go to dashboard', 'uk': 'Пропустити, перейти в кабінет', 'de': 'Überspringen, zum Dashboard'},
-    'free_label': {
-        'ru': 'Бесплатно',
-        'en': 'Free',
-        'uk': 'Безкоштовно',
-        'de': 'Kostenlos'
-    },
-    'onetime_tag': {
-        'ru': 'Без подписки',
-        'en': 'No subscription',
-        'uk': 'Без підписки',
-        'de': 'Ohne Abo'
-    },
+    'free_label': {'ru': 'Бесплатно', 'en': 'Free', 'uk': 'Безкоштовно', 'de': 'Kostenlos'},
+    'onetime_tag': {'ru': 'Без подписки', 'en': 'No subscription', 'uk': 'Без підписки', 'de': 'Ohne Abo'},
     'onetime_title': {
         'ru': 'Попробовать без подписки',
         'en': 'Try without subscription',
         'uk': 'Спробувати без підписки',
         'de': 'Ohne Abo ausprobieren'
-    },
-    'onetime_feature_1': {
-        'ru': '1 медицинский документ',
-        'en': '1 medical document',
-        'uk': '1 медичний документ',
-        'de': '1 medizinisches Dokument'
-    },
+    },    
     'onetime_feature_2': {
         'ru': '10 детальных консультаций',
         'en': '10 detailed consultations',
@@ -3622,7 +3560,19 @@ TRANSLATIONS = {
         'en': 'Switch to',
         'uk': 'Перейти на',
         'de': 'Zu',
-    },
+    },    
+    'btn_delete': {'ru': 'Удалить', 'en': 'Delete', 'uk': 'Видалити', 'de': 'Löschen'},
+    'btn_chat': {'ru': 'Обсудить', 'en': 'Discuss', 'uk': 'Обговорити', 'de': 'Besprechen'},
+    'toggle_included': {'ru': 'Учитывается', 'en': 'Included', 'uk': 'Враховується', 'de': 'Berücksichtigt'},
+    'toggle_excluded': {'ru': 'Не учитывается', 'en': 'Excluded', 'uk': 'Не враховується', 'de': 'Nicht berücksichtigt'},
+    'doc_section_document': {'ru': 'Документ', 'en': 'Document', 'uk': 'Документ', 'de': 'Dokument'},
+    'doc_section_biomarkers': {'ru': 'Биомаркеры в документе', 'en': 'Biomarkers in document', 'uk': 'Біомаркери в документі', 'de': 'Biomarker im Dokument'},
+    'doc_section_interpretation': {'ru': 'Медицинская интерпретация', 'en': 'Medical interpretation', 'uk': 'Медична інтерпретація', 'de': 'Medizinische Interpretation'},
+    'doc_interpretation_label': {'ru': 'Заключение для специалиста', 'en': 'Specialist conclusion', 'uk': 'Висновок для спеціаліста', 'de': 'Fazit für Spezialisten'},
+    'doc_interpretation_badge': {'ru': 'Медицинский язык', 'en': 'Medical language', 'uk': 'Медична мова', 'de': 'Medizinische Sprache'},
+    'doc_section_discuss': {'ru': 'Обсудить документ', 'en': 'Discuss document', 'uk': 'Обговорити документ', 'de': 'Dokument besprechen'},
+    'document_title_optional': {'ru': 'Название документа', 'en': 'Document title', 'uk': 'Назва документа', 'de': 'Dokumenttitel'},
+    'document_date_label': {'ru': 'Дата документа', 'en': 'Document date', 'uk': 'Дата документа', 'de': 'Dokumentdatum'},
 }
 
 

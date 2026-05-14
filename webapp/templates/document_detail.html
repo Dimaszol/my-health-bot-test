@@ -6,171 +6,548 @@
 <link rel="stylesheet" href="/static/css/documents.css?v=1">
 <link rel="stylesheet" href="/static/css/documents-mobile.css?v=3">
 <style>
-footer {
-    display: none !important;
+main {
+  padding: 0 !important;
+}
+footer { display: none !important; }
+
+:root {
+  --teal: #2DE8C8;
+  --td: #1AC9AD;
+  --tdim: rgba(45,232,200,0.10);
+  --tglow: rgba(45,232,200,0.22);
+  --bg: #f4faf9;
+  --card: #fff;
+  --text: #111d1b;
+  --muted: #6b8c87;
+  --border: #e0edeb;
+  --red: #E05A5A;
+  --red-dim: rgba(224,90,90,0.10);
+  --blue: #4A90D9;
+  --blue-dim: rgba(74,144,217,0.10);
+  --yellow: #F5A623;
+  --yellow-dim: rgba(245,166,35,0.10);
+  --green: #0d7a5a;
+  --green-dim: rgba(46,204,154,0.10);
+  --r: 14px;
+  --shadow: 0 2px 14px rgba(17,29,27,0.07), 0 1px 3px rgba(17,29,27,0.04);
+}
+
+body { background: var(--bg); }
+
+.dd-page { margin: 0 auto; padding: 20px 20px 80px; }
+
+/* ── Action bar ── */
+.dd-action-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 22px; flex-wrap: wrap; }
+.dd-ic-btn {
+  display: flex; align-items: center; gap: 5px;
+  font-family: inherit; font-size: 12.5px; font-weight: 700;
+  padding: 7px 13px; border-radius: 9px;
+  border: 1.5px solid var(--border); background: #fff; color: var(--muted);
+  cursor: pointer; transition: all .15s; white-space: nowrap; text-decoration: none;
+}
+.dd-ic-btn:hover { border-color: var(--teal); color: var(--td); }
+.dd-ic-btn.primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+.dd-ic-btn.primary:hover { background: var(--td); }
+.dd-ic-btn.danger { color: var(--red); }
+.dd-ic-btn.danger:hover { border-color: var(--red); background: var(--red-dim); }
+
+/* ── Doc header card ── */
+.dd-header {
+  background: #fff; border-radius: var(--r); box-shadow: var(--shadow);
+  padding: 20px 22px; margin-bottom: 14px;
+}
+.dd-header-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 10px; }
+.dd-doc-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.dd-doc-meta { flex: 1; min-width: 0; }
+.dd-doc-title { font-size: 20px; font-weight: 800; color: var(--text); line-height: 1.2; margin-bottom: 6px; word-break: break-word; }
+.dd-doc-date-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.dd-doc-date { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.dd-doc-ext { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: var(--bg); color: var(--muted); }
+.dd-cat-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; border-radius: 20px; padding: 2px 9px; white-space: nowrap; }
+.dd-medcard-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 6px 0 8px; }
+.dd-timeline-list { list-style: none; margin: 0; padding: 0; }
+.dd-timeline-list li { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 13.5px; color: #334a47; line-height: 1.55; font-weight: 500; }
+
+/* ── Section label ── */
+.dd-sec-label {
+  font-size: 11.5px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .07em;
+  margin: 20px 0 10px; display: flex; align-items: center; gap: 8px;
+}
+.dd-sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── Document preview (keep existing logic) ── */
+.dd-preview-card { background: #fff; border-radius: var(--r); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 2px; }
+.pdf-viewer-desktop { }
+.pdf-viewer-mobile { display: none; }
+@media(max-width: 600px) {
+  .pdf-viewer-desktop { display: none; }
+  .pdf-viewer-mobile { display: block !important; }
+}
+
+/* ── Biomarkers grid ── */
+.dd-bm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 8px; }
+.dd-bm-card {
+  background: #fff; border-radius: 12px; padding: 10px 12px;
+  box-shadow: var(--shadow); border: 1.5px solid transparent; transition: border-color .15s;
+  overflow: hidden;
+}
+.dd-bm-card:hover { border-color: var(--teal); }
+.dd-bm-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; margin-bottom: 6px; }
+.dd-bm-name { font-size: 11px; font-weight: 700; color: var(--text); line-height: 1.3; word-break: break-word; }
+.dd-bm-badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 20px; flex-shrink: 0; white-space: nowrap; }
+.dd-bm-badge.norm { background: var(--green-dim); color: var(--green); }
+.dd-bm-badge.high { background: var(--red-dim); color: var(--red); }
+.dd-bm-badge.low { background: var(--blue-dim); color: var(--blue); }
+.dd-bm-val { font-size: 15px; font-weight: 800; color: var(--text); line-height: 1; word-break: break-all; }
+.dd-bm-unit { font-size: 10px; color: var(--muted); font-weight: 500; }
+
+/* ── Collapsible (medical interpretation) ── */
+.dd-collapsible { background: #fff; border-radius: var(--r); box-shadow: var(--shadow); overflow: hidden; }
+.dd-coll-trigger {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; background: none; border: none; cursor: pointer;
+  font-family: inherit; text-align: left; transition: background .15s;
+}
+.dd-coll-trigger:hover { background: var(--bg); }
+.dd-coll-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dd-coll-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: var(--yellow-dim); color: var(--yellow); }
+.dd-coll-chevron { flex-shrink: 0; color: var(--muted); transition: transform .22s; }
+.dd-coll-chevron.open { transform: rotate(180deg); }
+.dd-coll-body { padding: 0 20px 18px; border-top: 1px solid var(--bg); }
+.dd-coll-text { font-size: 13.5px; line-height: 1.75; color: #334a47; font-weight: 500; }
+.dd-coll-text p { margin-bottom: 10px; }
+.dd-coll-text p:last-child { margin-bottom: 0; }
+
+/* ── Summary card ── */
+.dd-summary-card { background: #fff; border-radius: var(--r); box-shadow: var(--shadow); padding: 18px 20px; }
+.dd-summary-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.dd-summary-text { font-size: 14px; line-height: 1.75; color: var(--muted); font-weight: 500; }
+.dd-summary-text p { margin-bottom: 8px; }
+.dd-summary-text p:last-child { margin-bottom: 0; }
+
+/* ── Discuss card ── */
+.dd-discuss-card { background: #fff; border-radius: var(--r); box-shadow: var(--shadow); padding: 20px 22px; }
+.dd-discuss-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 10px; }
+.dd-discuss-avatar {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--teal), var(--td));
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.dd-discuss-intro { flex: 1; min-width: 0; }
+.dd-discuss-name { font-size: 13px; font-weight: 700; color: var(--td); margin-bottom: 4px; }
+.dd-discuss-msg { font-size: 14px; line-height: 1.6; color: var(--text); font-weight: 500; }
+.dd-discuss-fade { max-height: 80px; overflow: hidden; position: relative; }
+.dd-discuss-fade::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 40px;
+  background: linear-gradient(to bottom, transparent, white); pointer-events: none;
+}
+.dd-chat-btn {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; font-family: inherit; font-size: 14px; font-weight: 700;
+  padding: 12px 20px; background: var(--teal); color: #fff;
+  border: none; border-radius: 10px; cursor: pointer; transition: background .15s;
+  text-decoration: none; margin-top: 14px;
+}
+.dd-chat-btn:hover { background: var(--td); }
+
+/* ── Disclaimer ── */
+.dd-disclaimer {
+  margin-top: 20px; padding: 14px 16px;
+  background: #fff; border-left: 3px solid var(--teal);
+  border-radius: 10px; box-shadow: var(--shadow);
+  font-size: 11.5px; color: #6b8c87; line-height: 1.5;
+}
+
+/* ── Delete modal ── */
+.dd-modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+}
+.dd-modal-overlay.open { display: flex; }
+.dd-modal {
+  background: #fff; border-radius: 16px; padding: 24px;
+  max-width: 380px; width: 100%; box-shadow: 0 8px 40px rgba(0,0,0,.15);
+}
+.dd-modal h3 { font-size: 17px; font-weight: 800; margin-bottom: 10px; color: var(--text); }
+.dd-modal p { font-size: 14px; color: var(--muted); line-height: 1.55; margin-bottom: 20px; }
+.dd-modal-btns { display: flex; gap: 10px; }
+.dd-modal-cancel {
+  flex: 1; padding: 11px; border-radius: 10px;
+  border: 1.5px solid var(--border); background: #fff; color: var(--muted);
+  font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.dd-modal-confirm {
+  flex: 1; padding: 11px; border-radius: 10px;
+  border: none; background: var(--red); color: #fff;
+  font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+
+/* ── Edit modal ── */
+.dd-edit-modal { background: #fff; border-radius: 16px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 8px 40px rgba(0,0,0,.15); }
+.dd-edit-modal h3 { font-size: 17px; font-weight: 800; margin-bottom: 16px; color: var(--text); }
+.dd-field { margin-bottom: 14px; }
+.dd-field label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 5px; }
+.dd-field input {
+  width: 100%; padding: 10px 12px; border-radius: 9px;
+  border: 1.5px solid var(--border); font-family: inherit; font-size: 14px;
+  color: var(--text); outline: none; transition: border-color .15s; box-sizing: border-box;
+}
+.dd-field input:focus { border-color: var(--teal); }
+.dd-save-btn {
+  width: 100%; padding: 12px; border-radius: 10px; border: none;
+  background: var(--teal); color: #fff; font-family: inherit;
+  font-size: 14px; font-weight: 700; cursor: pointer; transition: background .15s;
+}
+.dd-save-btn:hover { background: var(--td); }
+
+@media(max-width: 520px) {
+  .dd-page { padding: 14px 8px 60px; }
+  .dd-action-bar { gap: 5px; }
+  .dd-ic-btn span { display: none; }
+  .dd-ic-btn { padding: 9px 12px; }
+  .dd-ic-btn svg { width: 18px; height: 18px; }
+  .dd-bm-grid { grid-template-columns: 1fr 1fr; }
+  .dd-doc-title { font-size: 17px; }
+  .dd-toggle-lbl { display: none; }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 900px; margin: 2rem auto; padding: 0 1rem;">
-    
-    <!-- Кнопка "Назад" вверху -->
-    <a href="/dashboard/documents" style="display: inline-flex; align-items: center; gap: 0.5rem; color: #667eea; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.95rem;">
-        ← {{ t('back_to_documents', lang) }}
+
+{# ── TYPE colors/labels (same as documents.html) ── #}
+{% set TYPE_COLORS = {
+  'ecg': '#E05A5A',
+  'lab_results': '#4A90D9',
+  'imaging': '#9B59B6',
+  'pathology': '#E67E22',
+  'clinical_report': '#1AC9AD',
+  'prescription': '#27AE60',
+  'generic': '#6b8c87'
+} %}
+{% set doc_type = doc.document_type or 'generic' %}
+{% set cat_color = TYPE_COLORS.get(doc_type, '#6b8c87') %}
+{% set cat_bg = 'rgba(74,144,217,0.10)' if doc_type == 'lab_results'
+  else 'rgba(224,90,90,0.10)' if doc_type == 'ecg'
+  else 'rgba(155,89,182,0.10)' if doc_type == 'imaging'
+  else 'rgba(230,126,34,0.10)' if doc_type == 'pathology'
+  else 'rgba(26,201,173,0.10)' if doc_type == 'clinical_report'
+  else 'rgba(39,174,96,0.10)' if doc_type == 'prescription'
+  else 'rgba(107,140,135,0.10)' %}
+
+<div class="dd-page">
+
+  <!-- ── Action bar ── -->
+  <div class="dd-action-bar">
+    <a href="/dashboard/document/{{ doc.id }}/chat" class="dd-ic-btn primary">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M4 4h12v9H4V4zM4 9l-2 4 3-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>{{ t('btn_chat', lang) }}</span>
     </a>
-    
-    <!-- Шапка: дата и название в одну строку -->
-    <div style="margin-bottom: 2rem; border-bottom: 2px solid #667eea; padding-bottom: 1rem;">
-        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap;">
-            <h1 style="font-size: 2rem; color: #333; margin: 0; word-break: break-word;">
-                {{ doc.title }}
-            </h1>
-            <p style="color: #999; font-size: 0.9rem; margin: 0; white-space: nowrap;">
-                📅 {{ doc.document_date.strftime('%d.%m.%Y') if doc.document_date else t('date_unknown', lang) }}
-            </p>
-        </div>        
-        {% if doc.additional_context %}
-        <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">
-            {{ t('context_label', lang) }} — {{ doc.additional_context }}
-        </p>
-        {% endif %}
+    <a href="/api/document-download/{{ doc.id }}" class="dd-ic-btn">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 3v10M6 9l4 4 4-4M4 17h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>{{ t('btn_download', lang) }}</span>
+    </a>
+    <button class="dd-ic-btn" onclick="openEditModal()">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M13 3l4 4-9 9H4v-4L13 3z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>{{ t('btn_edit', lang) }}</span>
+    </button>
+    <button class="dd-ic-btn danger" onclick="openDeleteModal()">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M4 5h12M7 5V3h6v2M8 9v5M12 9v5M5 5l1 11h8l1-11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>{{ t('btn_delete', lang) }}</span>
+    </button>
+    <label class="toggle-switch-compact" style="margin-left:auto;"
+        title="{{ t('toggle_document_in_chat', lang) }}">
+    <input type="checkbox" id="confirmedCheckbox" 
+            {% if doc.confirmed %}checked{% endif %}
+            onchange="toggleConfirmed()">
+    <span class="toggle-slider-compact"></span>
+    </label>
+  </div>
+
+  <!-- ── Doc header ── -->
+  <div class="dd-header">
+    <div class="dd-header-top">      
+      <div class="dd-doc-meta">
+        <div class="dd-doc-title">{{ doc.title }}</div>
+        <div class="dd-doc-date-row">
+          <span class="dd-doc-date">
+            📅 {{ doc.document_date.strftime('%d.%m.%Y') if doc.document_date else t('date_unknown', lang) }}
+          </span>
+          <span class="dd-doc-ext">{{ doc.file_type|upper if doc.file_type else '—' }}</span>
+          <span class="dd-cat-pill" style="color: {{ cat_color }}; background: {{ cat_bg }};">
+            {{ t('doc_type_' + doc_type, lang) }}
+          </span>
+        </div>
+      </div>
     </div>
-    
-    <!-- Медкарта (без заголовка) -->
+
     {% if timeline and timeline|length > 0 %}
-    <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8f9fa; border-left: 4px solid #667eea; border-radius: 8px;">
-        <ul style="margin: 0; padding-left: 0; list-style-type: none;">
-            {% for entry in timeline %}
-            <li style="margin-bottom: 0.8rem; display: flex; align-items: flex-start; gap: 0.5rem;">
-                {% if entry.importance == 'critical' %}
-                <span style="color: #dc3545; font-size: 0.9rem;">🔴</span>
-                {% elif entry.importance == 'important' %}
-                <span style="color: #ffc107; font-size: 0.9rem;">🟡</span>
-                {% else %}
-                <span style="color: #999; font-size: 0.9rem;">⚪</span>
-                {% endif %}
-                <span style="color: #444; line-height: 1.6;">{{ entry.description }}</span>
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
-    
-    <!-- Превью документа (без заголовка) -->
-    <div style="margin-bottom: 2rem; text-align: center;">
-        {% if doc.file_type in ['jpg', 'jpeg', 'png', 'webp', 'image'] %}
-            <img src="/api/document-image/{{ doc.id }}" 
-                 alt="Документ" 
-                 style="max-width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        {% elif doc.file_type == 'pdf' %}
-            <!-- Desktop: iframe -->
-            <div class="pdf-viewer-desktop">
-                <iframe src="/api/document-pdf/{{ doc.id }}" 
-                        style="width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 8px;"></iframe>
-            </div>
-            <!-- Mobile: кнопка открытия -->
-            <div class="pdf-viewer-mobile" style="text-align: center; padding: 2rem;">
-                <a href="/api/document-pdf/{{ doc.id }}" 
-                target="_blank"
-                class="btn btn-primary"
-                style="display: inline-block;">
-                    📄 {{ t('open_pdf', lang) }}
-                </a>
-            </div>
+    <ul class="dd-timeline-list">
+      {% for entry in timeline %}
+      <li>
+        {% if entry.importance == 'critical' %}
+        <span style="color:#dc3545; flex-shrink:0;">🔴</span>
+        {% elif entry.importance == 'important' %}
+        <span style="color:#ffc107; flex-shrink:0;">🟡</span>
         {% else %}
-            <p style="color: #999; text-align: center; padding: 2rem;">{{ t('preview_unavailable', lang) }}</p>
+        <span style="color:#bbb; flex-shrink:0;">⚪</span>
         {% endif %}
-    </div>
-    
-    <!-- Детальный анализ -->
-    {% if doc.full_analysis %}
-    <div class="card" style="margin-bottom: 2rem;">
-        <div onclick="toggleSection('full-analysis')" style="cursor: pointer;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="color: #667eea; margin: 0;">🔬 {{ t('full_analysis_title', lang) }}</h3>
-                <span id="full-analysis-icon" style="font-size: 1.2rem; color: #667eea; transition: transform 0.2s; flex-shrink: 0;">▶</span>
-            </div>
-            <p style="margin: 0.4rem 0 0 0; font-size: 0.8rem !important; color: #6b7280; line-height: 1.4;">{{ t('full_analysis_description', lang) }}</p>
-        </div>
-        <div id="full-analysis" style="display: none; margin-top: 1.5rem;">
-            <div style="line-height: 1.8; color: #444; font-size: 0.95rem;">
-                {{ doc.full_analysis | markdown | safe }}
-            </div>
-        </div>
-    </div>
+        {{ entry.description }}
+      </li>
+      {% endfor %}
+    </ul>
     {% endif %}
+  </div>
 
-    <!-- Сводка для пациента -->
-    {% if doc.raw_text %}
-    <div class="card" style="margin-bottom: 2rem;">
-        <div onclick="toggleSection('raw-text')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="color: #667eea; margin: 0;">📝 {{ t('raw_text_title', lang) }}</h3>
-            <span id="raw-text-icon" style="font-size: 1.2rem; color: #667eea; transition: transform 0.2s;">▶</span>
-        </div>
-        <div id="raw-text" style="display: none; margin-top: 1rem;">
-            <div style="line-height: 1.8; color: #444; font-size: 0.95rem;">
-                {{ doc.raw_text | markdown | safe }}
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- 🆕 ПРЕВЬЮ ЧАТА ПО ДОКУМЕНТУ -->
-    {% if first_ai_message %}
-    <div class="card" style="margin-bottom: 2rem;">
-        <h3 style="color: #667eea; margin: 0 0 1rem 0;">💬 {{ t('document_discussion', lang) }}</h3>
-        
-        <div style="max-height: 120px; overflow: hidden; position: relative; margin-bottom: 1rem;">
-            <div style="color: #444; line-height: 1.6; font-size: 0.95rem;">{{ first_ai_message.message | safe }}</div>
-            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 50px; background: linear-gradient(to bottom, transparent, white); pointer-events: none;"></div>
-        </div>
-        
-        <a href="/dashboard/document/{{ doc.id }}/chat"
-            style="display: block; text-align: center; padding: 0.75rem; background: linear-gradient(135deg, #00c9a7 0%, #00b894 100%); color: white; border-radius: 8px; font-weight: 500; font-size: 0.95rem; text-decoration: none; box-shadow: 0 2px 8px rgba(0, 201, 167, 0.3);">
-            💬 {{ t('btn_discuss', lang) }}
+  <!-- ── Document preview ── -->
+  <div class="dd-sec-label">{{ t('doc_section_document', lang) }}</div>
+  <div class="dd-preview-card">
+    {% if doc.file_type in ['jpg', 'jpeg', 'png', 'webp', 'image'] %}
+      <img src="/api/document-image/{{ doc.id }}" 
+        alt="{{ doc.title }}" 
+        style="width:auto; max-width:100%; max-height:80vh; display:block; margin:0 auto; border-radius: var(--r);">
+    {% elif doc.file_type == 'pdf' %}
+      <div class="pdf-viewer-desktop">
+        <iframe src="/api/document-pdf/{{ doc.id }}"
+                style="width:100%; height:600px; border:none; display:block;"></iframe>
+      </div>
+      <div class="pdf-viewer-mobile" style="text-align:center; padding:2rem;">
+        <a href="/api/document-pdf/{{ doc.id }}"
+           target="_blank"
+           class="dd-ic-btn primary"
+           style="display:inline-flex;">
+          📄 {{ t('open_pdf', lang) }}
         </a>
-    </div>
+      </div>
+    {% else %}
+      <div style="text-align:center; padding:3rem 2rem; color:var(--muted);">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" style="margin:0 auto 12px;display:block;">
+          <rect x="8" y="4" width="24" height="32" rx="4" stroke="#b5ccc9" stroke-width="1.5"/>
+          <path d="M14 14h12M14 20h12M14 26h8" stroke="#b5ccc9" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        {{ t('preview_unavailable', lang) }}
+      </div>
     {% endif %}
+  </div>
 
-
-    <!-- Disclaimer + Кнопка удаления -->
-    <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8f9fa; border-left: 4px solid #667eea; border-radius: 8px;">
-        <p style="margin: 0; font-size: 0.8rem; color: #6b7280; line-height: 1.4; flex: 1;">
-            {{ t('ai_disclaimer', lang) }}
-        </p>
+  <!-- ── Biomarkers (only for lab_results) ── -->
+  {% if doc_type == 'lab_results' and doc_biomarkers and doc_biomarkers|length > 0 %}
+  <div class="dd-sec-label">{{ t('doc_section_biomarkers', lang) }}</div>
+  <div class="dd-bm-grid">
+    {% for bm in doc_biomarkers %}
+    {% set status = bm.status or 'norm' %}
+    {% set badge_class = 'norm' if status == 'normal' else status %}
+    <div class="dd-bm-card">
+      <div class="dd-bm-top">
+        <div class="dd-bm-name">{{ bm.display_name }}</div>
+        <span class="dd-bm-badge {{ badge_class }}">
+          {% if status == 'high' %}{{ t('bm_status_high', lang) }}
+          {% elif status == 'low' %}{{ t('bm_status_low', lang) }}
+          {% else %}{{ t('bm_status_norm', lang) }}{% endif %}
+        </span>
+      </div>
+      <div class="dd-bm-val">{{ bm.original_value }} <span class="dd-bm-unit">{{ bm.original_unit or '' }}</span></div>      
     </div>
-    
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ── Medical interpretation (full_analysis) ── -->
+  {% if doc.full_analysis %}
+  <div class="dd-sec-label">{{ t('doc_section_interpretation', lang) }}</div>
+  <div class="dd-collapsible">
+    <button class="dd-coll-trigger" onclick="toggleColl('interp')">
+      <div class="dd-coll-title">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <rect x="1" y="1" width="14" height="14" rx="3" stroke="var(--yellow)" stroke-width="1.4"/>
+          <path d="M8 5v4M8 11v.5" stroke="var(--yellow)" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        {{ t('doc_interpretation_label', lang) }}
+        <span class="dd-coll-badge">{{ t('doc_interpretation_badge', lang) }}</span>
+      </div>
+      <svg id="interp-chevron" class="dd-coll-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div id="interp-body" style="display:none;">
+      <div class="dd-coll-body">
+        <div class="dd-coll-text">
+          {{ doc.full_analysis | markdown | safe }}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Summary (raw_text / summary) ── -->
+  {% if doc.summary or doc.raw_text %}
+  <div class="dd-sec-label">{{ t('doc_section_summary', lang) }}</div>
+  <div class="dd-summary-card">    
+    <div class="dd-summary-text">
+      {{ doc.raw_text | markdown | safe }}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Discuss (last ai message) ── -->
+  {% if first_ai_message %}
+  <div class="dd-sec-label">{{ t('doc_section_discuss', lang) }}</div>
+  <div class="dd-discuss-card">    
+    <div class="dd-discuss-fade">
+      <div class="dd-discuss-msg">{{ first_ai_message.message | safe }}</div>
+    </div>
+    <a href="/dashboard/document/{{ doc.id }}/chat"
+       class="dd-chat-btn"
+       id="chatDocBtn">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M4 4h12v9H4V4zM4 9l-2 4 3-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      {{ t('btn_discuss', lang) }}
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- ── Disclaimer ── -->
+  <div class="dd-disclaimer">{{ t('ai_disclaimer', lang) }}</div>
+
+</div>
+
+<!-- ── Delete confirm modal ── -->
+<div class="dd-modal-overlay" id="deleteModal">
+  <div class="dd-modal">
+    <h3>🗑 {{ t('btn_delete', lang) }}</h3>
+    <p>{{ t('delete_doc_confirm', lang) }}</p>
+    <div class="dd-modal-btns">
+      <button class="dd-modal-cancel" onclick="closeDeleteModal()">{{ t('btn_cancel', lang) }}</button>
+      <button class="dd-modal-confirm" onclick="confirmDelete()">{{ t('btn_delete', lang) }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit modal ── -->
+<div class="dd-modal-overlay" id="editModal">
+  <div class="dd-edit-modal">
+    <h3>{{ t('btn_edit', lang) }}</h3>
+    <div class="dd-field">
+      <label>{{ t('document_title_optional', lang) }}</label>
+      <input type="text" id="editTitle" value="{{ doc.title }}" maxlength="200">
+    </div>
+    <div class="dd-field">
+      <label>{{ t('document_date_label', lang) }}</label>
+      <input type="date" id="editDate"
+             value="{{ doc.document_date.strftime('%Y-%m-%d') if doc.document_date else '' }}">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button class="dd-modal-cancel" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid var(--border);background:#fff;color:var(--muted);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;" onclick="closeEditModal()">{{ t('cancel', lang) }}</button>
+      <button class="dd-save-btn" style="flex:2;" onclick="saveEdit()">{{ t('save', lang) }}</button>
+    </div>
+  </div>
 </div>
 
 <script>
-function toggleSection(id) {
-    const content = document.getElementById(id);
-    const icon = document.getElementById(id + '-icon');
-    const isOpen = content.style.display !== 'none';
-    content.style.display = isOpen ? 'none' : 'block';
-    icon.style.transform = isOpen ? '' : 'rotate(90deg)';
-}
-// 📊 Отслеживание прокрутки до конца
-let scrollTracked = false;
-window.addEventListener('scroll', function() {
-    if (scrollTracked) return;
-    const scrolled = window.scrollY + window.innerHeight;
-    const total = document.documentElement.scrollHeight;
-    if (scrolled >= total - 100) {
-        scrollTracked = true;
-        trackEvent('summary_scrolled', { doc_id: {{ doc.id }} });
+// ── Toggle confirmed ──
+let isConfirmed = {{ 'true' if doc.confirmed else 'false' }};
+const DOC_ID = {{ doc.id }};
+
+function showFlashMessage(message, type) {
+    let container = document.getElementById('flash-messages');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'flash-messages';
+        container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;';
+        document.body.appendChild(container);
     }
+    const flash = document.createElement('div');
+    flash.style.cssText = `background:${type==='success'?'#00C9A7':'#ef4444'};color:white;padding:1rem 1.5rem;border-radius:8px;margin-bottom:0.5rem;box-shadow:0 4px 12px rgba(0,0,0,.15);animation:slideIn .3s ease;display:flex;align-items:center;gap:.5rem;`;
+    flash.innerHTML = `<span>${type==='success'?'✅':'❌'}</span><span>${message}</span>`;
+    container.appendChild(flash);
+    setTimeout(() => { flash.style.animation='slideOut .3s ease'; setTimeout(()=>flash.remove(),300); }, 3000);
+}
+const _fs = document.createElement('style');
+_fs.textContent = '@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}@keyframes slideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:0}}';
+document.head.appendChild(_fs);
+
+async function toggleConfirmed() {
+  const newVal = document.getElementById('confirmedCheckbox').checked;
+  try {
+    const res = await fetch(`/api/toggle-document-confirmed/${DOC_ID}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmed: newVal })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showFlashMessage(data.message, 'success');
+    } else {
+      showFlashMessage(data.message || 'Error', 'error');
+      document.getElementById('confirmedCheckbox').checked = !newVal;
+    }
+  } catch(e) {
+    document.getElementById('confirmedCheckbox').checked = !newVal;
+  }
+}
+
+// ── Collapsible ──
+function toggleColl(id) {
+  const body = document.getElementById(id + '-body');
+  const chevron = document.getElementById(id + '-chevron');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  chevron.classList.toggle('open', !open);
+}
+
+// ── Delete modal ──
+function openDeleteModal() { document.getElementById('deleteModal').classList.add('open'); }
+function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('open'); }
+async function confirmDelete() {
+  try {
+    const res = await fetch(`/api/delete-document/${DOC_ID}`, { method: 'DELETE' });
+    if (res.ok) { window.location.href = '/dashboard/documents'; }
+  } catch(e) {}
+}
+
+// ── Edit modal ──
+function openEditModal() { document.getElementById('editModal').classList.add('open'); }
+function closeEditModal() { document.getElementById('editModal').classList.remove('open'); }
+async function saveEdit() {
+  const title = document.getElementById('editTitle').value.trim();
+  const date = document.getElementById('editDate').value;
+  if (!title) return;
+  try {
+    const res = await fetch(`/api/update-document/${DOC_ID}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, document_date: date || null })
+    });
+    if (res.ok) { window.location.reload(); }
+  } catch(e) {}
+}
+
+// Close modals on overlay click
+['deleteModal','editModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
 });
 
-// 📊 Отслеживание клика на чат по документу
+// ── Analytics ──
+let scrollTracked = false;
+window.addEventListener('scroll', function() {
+  if (scrollTracked) return;
+  const scrolled = window.scrollY + window.innerHeight;
+  const total = document.documentElement.scrollHeight;
+  if (scrolled >= total - 100) {
+    scrollTracked = true;
+    if (typeof trackEvent === 'function') trackEvent('summary_scrolled', { doc_id: DOC_ID });
+  }
+});
 document.addEventListener('DOMContentLoaded', function() {
-    const chatBtn = document.querySelector('a[href="/dashboard/document/{{ doc.id }}/chat"]');
-    if (chatBtn) {
-        chatBtn.addEventListener('click', function() {
-            trackEvent('chat_doc_opened', { doc_id: {{ doc.id }} });
-        });
-    }
+  const chatBtn = document.getElementById('chatDocBtn');
+  if (chatBtn) {
+    chatBtn.addEventListener('click', function() {
+      if (typeof trackEvent === 'function') trackEvent('chat_doc_opened', { doc_id: DOC_ID });
+    });
+  }
 });
 </script>
 {% endblock %}
