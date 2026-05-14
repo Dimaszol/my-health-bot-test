@@ -660,7 +660,7 @@ footer { display: none !important; }
         <span class="db-action-btn-label">{{ t('dashboard_add_doc_btn', lang) }}</span>
       </a>
       <!-- Мои документы -->
-      <a href="/dashboard/documents?tab=docs" class="db-action-btn">
+      <a href="/dashboard/documents" class="db-action-btn" onclick="sessionStorage.setItem('pendingTab','docs')">
         <div class="db-action-btn-icon">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <rect x="3" y="2" width="12" height="14" rx="2.5" stroke="#2DE8C8" stroke-width="1.7"/>
@@ -670,7 +670,7 @@ footer { display: none !important; }
         <span class="db-action-btn-label">{{ t('dashboard_my_docs_btn', lang) }}</span>
       </a>
       <!-- Мои биомаркеры -->
-      <a href="/dashboard/documents?tab=biomarkers" class="db-action-btn">
+      <a href="/dashboard/documents" class="db-action-btn" onclick="sessionStorage.setItem('pendingTab','biomarkers')">
         <div class="db-action-btn-icon">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <circle cx="9" cy="9" r="6" stroke="#2DE8C8" stroke-width="1.7"/>

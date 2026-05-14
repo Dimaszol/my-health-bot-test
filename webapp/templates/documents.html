@@ -1225,8 +1225,13 @@ document.addEventListener('DOMContentLoaded', function() {
     convertToLocalTime();
     
     console.log('✅ Инициализация завершена!');
-    // 7️⃣ Читаем параметр ?tab= — внутри DOMContentLoaded для корректной работы в TWA
-    const urlTabInit = new URLSearchParams(window.location.search).get('tab');
+    // 7️⃣ Читаем параметр ?tab=
+    let urlTabInit = new URLSearchParams(window.location.search).get('tab');
+    // Fallback: sessionStorage для PWA (где query string обрезается)
+    if (!urlTabInit) {
+        urlTabInit = sessionStorage.getItem('pendingTab');
+    }
+    sessionStorage.removeItem('pendingTab');
     if (urlTabInit === 'docs') switchTab('docs');
     else if (urlTabInit === 'biomarkers') switchTab('biomarkers');
 });
