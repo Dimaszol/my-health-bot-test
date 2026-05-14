@@ -1225,6 +1225,10 @@ document.addEventListener('DOMContentLoaded', function() {
     convertToLocalTime();
     
     console.log('✅ Инициализация завершена!');
+    // 7️⃣ Читаем параметр ?tab= — внутри DOMContentLoaded для корректной работы в TWA
+    const urlTabInit = new URLSearchParams(window.location.search).get('tab');
+    if (urlTabInit === 'docs') switchTab('docs');
+    else if (urlTabInit === 'biomarkers') switchTab('biomarkers');
 });
 
 window.addEventListener('load', function() {
@@ -1851,10 +1855,5 @@ function setBmStatusFilter(type) {
         container.innerHTML = renderBmGroups(grouped, BM_GROUP_ORDER);
     }
 }
-
-// Читаем параметр ?tab= при загрузке
-const urlTab = new URLSearchParams(window.location.search).get('tab');
-if (urlTab === 'docs') switchTab('docs');
-else if (urlTab === 'biomarkers') switchTab('biomarkers');
 </script>
 {% endblock %}
