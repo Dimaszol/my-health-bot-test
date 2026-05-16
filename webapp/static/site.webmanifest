@@ -1,6 +1,8 @@
 {
   "name": "PulseBook - Health AI Assistant",
   "short_name": "PulseBook",
+  "start_url": "/dashboard",
+  "scope": "/",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

@@ -1,7 +1,6 @@
 // 📱 Service Worker для PWA с обработкой suspend-режима
-const CACHE_NAME = 'pulsebook-v2';
+const CACHE_NAME = 'pulsebook-v5';
 const urlsToCache = [
-  '/',
   '/static/css/style.css',
   '/static/css/mobile.css',
   '/static/js/app.js',
@@ -11,6 +10,7 @@ const urlsToCache = [
 
 // Установка SW - кэшируем основные файлы
 self.addEventListener('install', (event) => {
+  self.skipWaiting(); // ← добавь эту строку
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -32,12 +32,20 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim()) // ← и эту строку
   );
 });
 
-// Перехват запросов - сначала кэш, потом сеть
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  
+  // HTML страницы — всегда из сети (чтобы не терять query параметры)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  
+  // Статика — сначала кэш, потом сеть
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

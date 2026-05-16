@@ -6,15 +6,6 @@ const isPWA =
     window.matchMedia('(display-mode: standalone)').matches ||
     window.navigator.standalone === true;
 
-if (isPWA) {
-    if (location.pathname !== '/dashboard' && location.pathname !== '/') {
-        const hasDocParam = location.search.includes('new_doc_id') || location.search.includes('doc_id');
-        if (!hasDocParam) {
-            history.replaceState({}, '', location.pathname);
-        }
-    }
-}
-
 // Глобальная функция навигации
 window.goTo = function(url) {
     if (isPWA) {

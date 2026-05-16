@@ -709,6 +709,12 @@ footer {
 
 {% block extra_scripts %}
 <script>
+
+const pendingAction = sessionStorage.getItem('pendingAction');
+if (pendingAction) {
+    sessionStorage.removeItem('pendingAction');
+    // ничего не делаем — таб загрузки открыт по умолчанию
+}
 // ========================================
 // 🔄 ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 // ========================================
@@ -1078,7 +1084,8 @@ document.addEventListener('DOMContentLoaded', function() {
                               
                 if (data.success) {
                     // Сохраняем doc_id в URL — polling подхватится даже после перезагрузки
-                    history.replaceState(null, '', '?doc_id=' + data.document_id);
+                    sessionStorage.setItem('pollingDocId', data.document_id);
+                    history.replaceState(null, '', window.location.pathname);
                     startDocumentPolling(data.document_id);
                     trackEvent('upload_success');
                 } else {
@@ -1090,7 +1097,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Не показываем ошибку — возможно файл уже принят сервером
                     // Проверяем URL на случай если doc_id уже был сохранён
                     const urlParams = new URLSearchParams(window.location.search);
-                    const existingDocId = urlParams.get('doc_id');
+                    const existingDocId = sessionStorage.getItem('pollingDocId');
                     if (existingDocId) {
                         startDocumentPolling(existingDocId);
                     } else {
@@ -1205,8 +1212,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 5️⃣ Polling при загрузке страницы
     const urlParams2 = new URLSearchParams(window.location.search);
-    const docId = urlParams2.get('doc_id');
-    const newDocId2 = urlParams2.get('new_doc_id');
+    const docId = urlParams2.get('doc_id') || sessionStorage.getItem('pollingDocId');
+    if (docId) sessionStorage.removeItem('pollingDocId');
+    const newDocId2 = urlParams2.get('new_doc_id') || sessionStorage.getItem('pendingDocId');
     const paymentCancelled = urlParams2.get('payment_cancelled');
 
     if (!newDocId2 && !paymentCancelled) {
@@ -1238,7 +1246,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.addEventListener('load', function() {
     const urlParams = new URLSearchParams(window.location.search);
-    const newDocId = urlParams.get('new_doc_id');
+    const newDocId = sessionStorage.getItem('pendingDocId') || urlParams.get('new_doc_id');
+    if (newDocId) sessionStorage.removeItem('pendingDocId');
 
     if (newDocId) {
         const newCard = document.querySelector(`.document-card[data-doc-id="${newDocId}"]`);
@@ -1247,13 +1256,9 @@ window.addEventListener('load', function() {
             toggleDocument(newDocId);
             setTimeout(() => trackEvent('analysis_viewed'), 2000);
 
-            requestAnimationFrame(() => {
-                setTimeout(() => {
-                    const headerHeight = document.querySelector('nav') ? document.querySelector('nav').offsetHeight : 70;
-                    const cardTop = newCard.getBoundingClientRect().top + window.scrollY - headerHeight - 20;
-                    window.scrollTo({ top: cardTop, behavior: 'smooth' });
-                }, 150);
-            });
+            setTimeout(() => {
+                newCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
 
             window.history.replaceState({}, document.title, window.location.pathname);
         }
@@ -1471,7 +1476,8 @@ async function startDocumentPolling(docId) {
         if (pollCount > 60) {
             pollingActive = false;
             clearInterval(pollInterval);
-            window.location.href = window.location.pathname;
+            sessionStorage.setItem('pendingDocId', docId);
+            window.goTo(window.location.pathname);
             return;
         }
         
@@ -1485,7 +1491,8 @@ async function startDocumentPolling(docId) {
             updateProgressTitle(progressTranslations.completed);
             
             setTimeout(() => {
-                window.goTo(window.location.pathname + '?new_doc_id=' + docId);
+                sessionStorage.setItem('pendingDocId', docId);
+                window.goTo(window.location.pathname);
             }, 1500);
             
         } else if (status === 'failed') {
