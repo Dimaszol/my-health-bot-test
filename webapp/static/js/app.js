@@ -7,9 +7,11 @@ const isPWA =
     window.navigator.standalone === true;
 
 if (isPWA) {
-    // На всех страницах кроме dashboard - заменяем историю
     if (location.pathname !== '/dashboard' && location.pathname !== '/') {
-        history.replaceState({}, '', location.pathname);
+        const hasDocParam = location.search.includes('new_doc_id') || location.search.includes('doc_id');
+        if (!hasDocParam) {
+            history.replaceState({}, '', location.pathname);
+        }
     }
 }
 
