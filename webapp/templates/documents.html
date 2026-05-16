@@ -1485,7 +1485,7 @@ async function startDocumentPolling(docId) {
             updateProgressTitle(progressTranslations.completed);
             
             setTimeout(() => {
-                window.location.href = window.location.pathname + '?new_doc_id=' + docId;
+                window.goTo(window.location.pathname + '?new_doc_id=' + docId);
             }, 1500);
             
         } else if (status === 'failed') {
@@ -1493,7 +1493,7 @@ async function startDocumentPolling(docId) {
             clearInterval(pollInterval);
             
             alert('❌ {{ t("document_processing_error", lang) }}');
-            window.location.href = window.location.pathname;
+            window.goTo(window.location.pathname);
         }
     }, 4000);
 }
