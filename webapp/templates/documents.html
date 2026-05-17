@@ -4,8 +4,8 @@
 
 {% block extra_styles %}
 <!-- 📄 СТИЛИ СТРАНИЦЫ ДОКУМЕНТОВ -->
-<link rel="stylesheet" href="/static/css/documents.css?v=4">
-<link rel="stylesheet" href="/static/css/documents-mobile.css?v=14">
+<link rel="stylesheet" href="/static/css/documents.css?v=5">
+<link rel="stylesheet" href="/static/css/documents-mobile.css?v=16">
 <style>
 footer {
     display: none !important;
@@ -223,32 +223,81 @@ footer {
     {% endif %}
 
     <!-- 🔄 КАРТОЧКА ПРОГРЕССА (скрыта по умолчанию) -->
-    <div id="progress-card" class="card" style="display: none; margin-bottom: 2rem;">
-        <div style="text-align: center;">
-            <div class="spinner-container">
-                <div class="spinner"></div>
+    <div id="progress-card" class="card" style="display: none; margin-bottom: 2rem; border: 1.5px solid #2DE8C8;">
+
+        <!-- Notice -->
+        <div style="padding-bottom: 14px; margin-bottom: 16px; border-bottom: 1px dashed #e0edeb;">
+            <div style="display: flex; gap: 12px; align-items: flex-start; margin-bottom: 6px;">
+                <div style="width:30px;height:30px;border-radius:9px;background:rgba(45,232,200,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <circle cx="10" cy="10" r="8.5" stroke="#0e9b87" stroke-width="1.6"/>
+                        <path d="M10 6v5" stroke="#0e9b87" stroke-width="1.8" stroke-linecap="round"/>
+                        <circle cx="10" cy="14" r="1" fill="#0e9b87"/>
+                    </svg>
+                </div>
+                <div style="font-size:13.5px;font-weight:700;color:#111d1b;line-height:1.35;">
+                    {{ t('progress_please_wait', lang) }}
+                </div>
             </div>
-            <h3 id="progress-title" style="margin: 1rem 0; color: #667eea;">📤{{ t('progress_step_upload', lang) }}</h3>
-            <p id="progress-description" style="color: #999;">{{ t('progress_please_wait', lang) }}</p>
+            <div style="font-size:12px;color:#6b8c87;line-height:1.45;">
+                {{ t('progress_notice_sub', lang) }}
+            </div>
+        </div>
+
+        <!-- Ring + current step -->
+        <div style="display: grid; grid-template-columns: 116px 1fr; gap: 18px; align-items: center; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px dashed #e0edeb;">
             
-            <!-- Список этапов -->
-            <div class="progress-steps" style="margin-top: 1.5rem;">
-                <div class="progress-step" data-step="upload">
-                    <span class="step-icon">⏳</span>
-                    <span class="step-text">{{ t('progress_step_upload', lang) }}</span>
+            <!-- SVG Ring -->
+            <div style="width:116px;height:116px;position:relative;flex-shrink:0;">
+                <svg id="progress-ring-svg" viewBox="0 0 168 168" style="width:100%;height:100%;transform:rotate(-90deg);overflow:visible;">
+                    <defs>
+                        <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#2DE8C8"/>
+                            <stop offset="100%" stop-color="#0e9b87"/>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="84" cy="84" r="70" fill="none" stroke="#e0edeb" stroke-width="5"/>
+                    <circle id="progress-ring-fg" cx="84" cy="84" r="70" fill="none"
+                        stroke="url(#ring-grad)" stroke-width="5" stroke-linecap="round"
+                        stroke-dasharray="439.82" stroke-dashoffset="439.82"
+                        style="transition: stroke-dashoffset 0.9s cubic-bezier(.4,0,.2,1); filter: drop-shadow(0 2px 6px rgba(45,232,200,0.3));"/>
+                    <circle class="ring-trail" cx="84" cy="84" r="80"
+                        stroke-dasharray="79 520"/>
+                </svg>
+                <div id="progress-ring-center" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                    <div id="progress-ring-pct" style="font-size:26px;font-weight:800;color:#111d1b;letter-spacing:-0.8px;line-height:1;">0<span style="font-size:13px;color:#6b8c87;font-weight:700;">%</span></div>
                 </div>
-                <div class="progress-step" data-step="extract">
-                    <span class="step-icon">○</span>
-                    <span class="step-text">{{ t('progress_step_extract', lang) }}</span>
+            </div>
+
+            <!-- Current step text -->
+            <div style="display:flex;align-items:center;">
+                <div id="progress-current-text" style="font-size:15px;font-weight:700;color:#111d1b;line-height:1.35;">
+                    {{ t('progress_step1_sub', lang) }}<span class="progress-dots"><span>.</span><span>.</span><span>.</span></span>
                 </div>
-                <div class="progress-step" data-step="analyze">
-                    <span class="step-icon">○</span>
-                    <span class="step-text">{{ t('progress_step_analyze', lang) }}</span>
-                </div>
-                <div class="progress-step" data-step="save">
-                    <span class="step-icon">○</span>
-                    <span class="step-text">{{ t('progress_step_save', lang) }}</span>
-                </div>
+            </div>
+        </div>
+
+        <!-- Chips -->
+        <div style="display:flex;flex-direction:column;gap:6px;">
+            <div class="progress-chip" data-step="0" style="display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:center;padding:8px 12px;background:#fff;border-radius:11px;border:1px solid #e0edeb;transition:all 0.35s ease;">
+                <div class="chip-num" style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:#f7fafa;color:#94aeaa;flex-shrink:0;">1</div>
+                <div style="font-size:13px;font-weight:700;color:#94aeaa;" class="chip-title">{{ t('progress_step1_title', lang) }}<span class="chip-ellipsis">…</span></div>
+            </div>
+            <div class="progress-chip" data-step="1" style="display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:center;padding:8px 12px;background:#fff;border-radius:11px;border:1px solid #e0edeb;transition:all 0.35s ease;">
+                <div class="chip-num" style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:#f7fafa;color:#94aeaa;flex-shrink:0;">2</div>
+                <div style="font-size:13px;font-weight:700;color:#94aeaa;" class="chip-title">{{ t('progress_step2_title', lang) }}<span class="chip-ellipsis">…</span></div>
+            </div>
+            <div class="progress-chip" data-step="2" style="display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:center;padding:8px 12px;background:#fff;border-radius:11px;border:1px solid #e0edeb;transition:all 0.35s ease;">
+                <div class="chip-num" style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:#f7fafa;color:#94aeaa;flex-shrink:0;">3</div>
+                <div style="font-size:13px;font-weight:700;color:#94aeaa;" class="chip-title">{{ t('progress_step3_title', lang) }}<span class="chip-ellipsis">…</span></div>
+            </div>
+            <div class="progress-chip" data-step="3" style="display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:center;padding:8px 12px;background:#fff;border-radius:11px;border:1px solid #e0edeb;transition:all 0.35s ease;">
+                <div class="chip-num" style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:#f7fafa;color:#94aeaa;flex-shrink:0;">4</div>
+                <div style="font-size:13px;font-weight:700;color:#94aeaa;" class="chip-title">{{ t('progress_step4_title', lang) }}<span class="chip-ellipsis">…</span></div>
+            </div>
+            <div class="progress-chip" data-step="4" style="display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:center;padding:8px 12px;background:#fff;border-radius:11px;border:1px solid #e0edeb;transition:all 0.35s ease;">
+                <div class="chip-num" style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:#f7fafa;color:#94aeaa;flex-shrink:0;">5</div>
+                <div style="font-size:13px;font-weight:700;color:#94aeaa;" class="chip-title">{{ t('progress_step5_title', lang) }}<span class="chip-ellipsis">…</span></div>
             </div>
         </div>
     </div>
@@ -723,14 +772,6 @@ let currentOpenDocId = null;
 let pollingActive = false;
 history.scrollRestoration = 'manual';
 
-const progressTranslations = {
-    upload: "{{ t('progress_upload', lang) }}",
-    extract: "{{ t('progress_extract', lang) }}",
-    analyze: "{{ t('progress_analyze', lang) }}",
-    save: "{{ t('progress_save', lang) }}",
-    completed: "{{ t('progress_completed', lang) }}"
-};
-
 // ========================================
 // 📄 ФУНКЦИЯ TOGGLE ДОКУМЕНТА
 // ========================================
@@ -836,39 +877,97 @@ async function deleteDocument(docId) {
 }
 
 // ========================================
-// 📤 ФУНКЦИИ ЗАГРУЗКИ (если есть форма)
+// 🔄 НОВЫЙ ПРОГРЕСС: RING + CHIPS
 // ========================================
 
-function simulateProgressSteps() {
-    const steps = [
-        { name: 'upload', icon: '⏳', key: 'upload', delay: 10000 },
-        { name: 'extract', icon: '⏳', key: 'extract', delay: 25000 },
-        { name: 'analyze', icon: '⏳', key: 'analyze', delay: 45000 },
-        { name: 'save', icon: '⏳', key: 'save', delay: 65000 }
-    ];
-    
-    steps.forEach((step, index) => {
-        setTimeout(() => {
-            if (index > 0) {
-                updateProgressStep(steps[index - 1].name, 'completed', '✓');
-            }
-            updateProgressStep(step.name, 'active', step.icon);
-            updateProgressTitle(progressTranslations[step.key]);
-        }, step.delay);
+const PROGRESS_STEPS = [
+    { sub: "{{ t('progress_step1_sub', lang) }}" },
+    { sub: "{{ t('progress_step2_sub', lang) }}" },
+    { sub: "{{ t('progress_step3_sub', lang) }}" },
+    { sub: "{{ t('progress_step4_sub', lang) }}" },
+    { sub: "{{ t('progress_step5_sub', lang) }}" },
+];
+const TOTAL_STEPS = PROGRESS_STEPS.length;
+const RING_C = 2 * Math.PI * 70; // 439.82
+
+function setProgressStep(stepIdx) {
+    const isDone = stepIdx >= TOTAL_STEPS;
+    const pct = isDone ? 100 : Math.round((stepIdx / TOTAL_STEPS) * 100);
+
+    // Ring fill
+    const ringFg = document.getElementById('progress-ring-fg');
+    if (ringFg) {
+        ringFg.style.strokeDashoffset = RING_C - (RING_C * pct / 100);
+    }
+
+    if (ringFg && !isDone) {
+        ringFg.style.animation = 'ringBreath 2.6s ease-in-out infinite';
+    } else if (ringFg) {
+        ringFg.style.animation = 'none';
+    }
+
+    // Ring center
+    const ringPct = document.getElementById('progress-ring-pct');
+    if (ringPct) {
+        if (isDone) {
+            ringPct.innerHTML = '<svg width="44" height="44" viewBox="0 0 48 48" fill="none"><path d="M10 25 L21 36 L38 14" stroke="#1AC9AD" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        } else {
+            ringPct.innerHTML = pct + '<span style="font-size:13px;color:#6b8c87;font-weight:700;">%</span>';
+        }
+    }
+
+    // Current text
+    const currentText = document.getElementById('progress-current-text');
+    if (currentText) {
+        if (isDone) {
+            currentText.innerHTML = '{{ t("progress_completed", lang) }}';
+            currentText.style.color = '#1AC9AD';
+        } else {
+            currentText.innerHTML = PROGRESS_STEPS[stepIdx].sub + '<span class="progress-dots"><span>.</span><span>.</span><span>.</span></span>';
+            currentText.style.color = '#111d1b';
+        }
+    }
+
+    // Chips
+    document.querySelectorAll('.progress-chip').forEach((chip, i) => {
+        const numEl = chip.querySelector('.chip-num');
+        const titleEl = chip.querySelector('.chip-title');
+        if (isDone || i < stepIdx) {
+            // done
+            chip.style.background = 'rgba(45,232,200,0.07)';
+            chip.style.borderColor = 'rgba(45,232,200,0.35)';
+            chip.classList.remove('active-chip');
+            numEl.style.background = '#2DE8C8';
+            numEl.style.color = 'white';
+            numEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+            titleEl.style.color = '#1AC9AD';
+        } else if (i === stepIdx) {
+            // active
+            chip.style.background = 'rgba(45,232,200,0.05)';
+            chip.style.borderColor = '#2DE8C8';
+            chip.classList.add('active-chip');
+            numEl.style.background = '#2DE8C8';
+            numEl.style.color = 'white';
+            numEl.innerHTML = '<div style="width:10px;height:10px;border:2px solid white;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;"></div>';
+            titleEl.style.color = '#111d1b';
+        } else {
+            // pending
+            chip.style.background = '#fff';
+            chip.style.borderColor = '#e0edeb';
+            chip.classList.remove('active-chip');
+            numEl.style.background = '#f7fafa';
+            numEl.style.color = '#94aeaa';
+            numEl.textContent = i + 1;
+            titleEl.style.color = '#94aeaa';
+        }
     });
 }
 
-function updateProgressStep(stepName, status, icon) {
-    const step = document.querySelector(`.progress-step[data-step="${stepName}"]`);
-    if (step) {
-        step.className = `progress-step ${status}`;
-        step.querySelector('.step-icon').textContent = icon;
-    }
-}
-
-function updateProgressTitle(text) {
-    const elem = document.getElementById('progress-title');
-    if (elem) elem.textContent = text;
+function simulateProgressSteps() {
+    const delays = [1000, 7000, 25000, 52000, 75000];
+    delays.forEach((delay, i) => {
+        setTimeout(() => setProgressStep(i), delay);
+    });
 }
 
 function resetUploadForm() {
@@ -877,11 +976,7 @@ function resetUploadForm() {
     
     if (progressCard) progressCard.style.display = 'none';
     if (uploadCard) uploadCard.style.display = 'block';
-    
-    document.querySelectorAll('.progress-step').forEach(step => {
-        step.className = 'progress-step';
-        step.querySelector('.step-icon').textContent = '○';
-    });
+
 }
 
 function convertToLocalTime() {
@@ -1487,8 +1582,7 @@ async function startDocumentPolling(docId) {
             pollingActive = false;
             clearInterval(pollInterval);
             
-            updateProgressStep('save', 'completed', '✓');
-            updateProgressTitle(progressTranslations.completed);
+            setProgressStep(TOTAL_STEPS); // показывает 100% и галочку
             
             setTimeout(() => {
                 sessionStorage.setItem('pendingDocId', docId);

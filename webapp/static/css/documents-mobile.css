@@ -64,8 +64,8 @@
 
     /* ========== КАРТОЧКА ПРОГРЕССА ========== */
     #progress-card {
-        padding: 1.25rem !important;
-        text-align: center;
+        padding: 1rem !important;
+        margin-bottom: 1rem !important;        
     }
 
     #progress-title {

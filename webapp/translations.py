@@ -958,66 +958,84 @@ TRANSLATIONS = {
     # ============================================
     # 📤 ПРОГРЕСС ЗАГРУЗКИ ДОКУМЕНТОВ
     # ============================================
-    "progress_upload": {
-        "ru": "⬆️ Подготавливаем документ к анализу…",
-        "en": "⬆️ Preparing the document for analysis…",
-        "uk": "⬆️ Готуємо документ до аналізу…",
-        "de": "⬆️ Dokument wird für die Analyse vorbereitet…"
-    },
-    "progress_extract": {
-        "ru": "🔍 Проводим анализ документа по его типу…",
-        "en": "🔍 Analyzing the document based on its type…",
-        "uk": "🔍 Аналізуємо документ відповідно до його типу…",
-        "de": "🔍 Analyse des Dokuments nach seinem Typ…"
-    },
-
-    "progress_analyze": {
-        "ru": "⚙️ Уточняем возможные интерпретации данных…",
-        "en": "⚙️ Refining possible interpretations of the data…",
-        "uk": "⚙️ Уточнюємо можливі інтерпретації даних…",
-        "de": "⚙️ Mögliche Interpretationen der Daten werden präzisiert…"
-    },
-    "progress_save": {
-        "ru": "📁 Формируем сводку и сохраняем результаты…",
-        "en": "📁 Generating summary and saving results…",
-        "uk": "📁 Формуємо зведення та зберігаємо результати…",
-        "de": "📁 Zusammenfassung wird erstellt und Ergebnisse werden gespeichert…"
-    },
+    
     'progress_completed': {
-        'ru': '✅ Документ успешно обработан!',
-        'en': '✅ Document processed successfully!',
-        'uk': '✅ Документ успішно оброблено!',
-        'de': '✅ Dokument erfolgreich verarbeitet!'
-    },
-    "progress_step_upload": {
-        "ru": "Загрузка файла и извлечение данных",
-        "en": "File upload and data extraction",
-        "uk": "Завантаження файлу та витяг даних",
-        "de": "Datei-Upload und Datenextraktion"
-    },
-    "progress_step_extract": {
-        "ru": "Первичный разбор",
-        "en": "Initial review",
-        "uk": "Первинний розбір",
-        "de": "Erste Analyse"
-    },
-    "progress_step_analyze": {
-        "ru": "Детальный анализ",
-        "en": "Detailed analysis",
-        "uk": "Детальний аналіз",
-        "de": "Detaillierte Analyse"
-    },
-    'progress_step_save': {
-        'ru': 'Формирование сводки',
-        'en': 'Summary generation',
-        'uk': 'Формування зведення',
-        'de': 'Erstellung der Zusammenfassung'
-    },
+        'ru': 'Документ успешно обработан!',
+        'en': 'Document processed successfully!',
+        'uk': 'Документ успішно оброблено!',
+        'de': 'Dokument erfolgreich verarbeitet!'
+    },    
     "progress_please_wait": {
-        "ru": "Анализ занимает несколько минут. Не закрывайте и не обновляйте страницу.",
-        "en": "The analysis takes a few minutes. Do not close or refresh the page.",
-        "uk": "Аналіз займає кілька хвилин. Не закривайте та не оновлюйте сторінку.",
-        "de": "Die Analyse dauert einige Minuten. Bitte schließen oder aktualisieren Sie die Seite nicht."
+        "ru": "Анализ занимает около 2 минут. Пожалуйста, не закрывайте и не обновляйте страницу.",
+        "en": "The analysis takes about 2 minutes. Please do not close or refresh the page.",
+        "uk": "Аналіз займає близько 2 хвилин. Будь ласка, не закривайте та не оновлюйте сторінку.",
+        "de": "Die Analyse dauert etwa 2 Minuten. Bitte schließen oder aktualisieren Sie die Seite nicht."
+    },
+    "progress_notice_sub": {
+        "ru": "Документ проходит многоэтапный анализ с использованием специализированных моделей.",
+        "en": "The document undergoes multi-stage analysis using specialized models.",
+        "uk": "Документ проходить багатоетапний аналіз із використанням спеціалізованих моделей.",
+        "de": "Das Dokument durchläuft eine mehrstufige Analyse mit spezialisierten Modellen."
+    },
+    "progress_step1_title": {
+        "ru": "Определяем тип документа",
+        "en": "Identifying document type",
+        "uk": "Визначаємо тип документа",
+        "de": "Dokumenttyp wird ermittelt"
+    },
+    "progress_step1_sub": {
+        "ru": "Подбираем подходящий сценарий анализа",
+        "en": "Selecting the appropriate analysis scenario",
+        "uk": "Підбираємо відповідний сценарій аналізу",
+        "de": "Passendes Analyseszenario wird ausgewählt"
+    },
+    "progress_step2_title": {
+        "ru": "Проводим первичный разбор",
+        "en": "Performing initial parsing",
+        "uk": "Проводимо первинний розбір",
+        "de": "Erste Analyse wird durchgeführt"
+    },
+    "progress_step2_sub": {
+        "ru": "Выделяем ключевые показатели и данные",
+        "en": "Extracting key indicators and data",
+        "uk": "Виділяємо ключові показники та дані",
+        "de": "Wichtige Kennzahlen und Daten werden extrahiert"
+    },
+    "progress_step3_title": {
+        "ru": "Проводим углублённый анализ",
+        "en": "Performing in-depth analysis",
+        "uk": "Проводимо поглиблений аналіз",
+        "de": "Detaillierte Analyse wird durchgeführt"
+    },
+    "progress_step3_sub": {
+        "ru": "Выявляем закономерности и возможные интерпретации",
+        "en": "Identifying patterns and possible interpretations",
+        "uk": "Виявляємо закономірності та можливі інтерпретації",
+        "de": "Muster und mögliche Interpretationen werden identifiziert"
+    },
+    "progress_step4_title": {
+        "ru": "Формируем итоговое объяснение",
+        "en": "Generating final explanation",
+        "uk": "Формуємо підсумкове пояснення",
+        "de": "Abschlusserklärung wird erstellt"
+    },
+    "progress_step4_sub": {
+        "ru": "Представляем результаты в удобном и понятном виде",
+        "en": "Presenting results in a clear and convenient format",
+        "uk": "Представляємо результати у зручному та зрозумілому вигляді",
+        "de": "Ergebnisse werden übersichtlich dargestellt"
+    },
+    "progress_step5_title": {
+        "ru": "Сохраняем в медицинскую карту",
+        "en": "Saving to medical record",
+        "uk": "Зберігаємо до медичної картки",
+        "de": "Wird in die Krankenakte gespeichert"
+    },
+    "progress_step5_sub": {
+        "ru": "Формируем структурированную запись и подготавливаем результат",
+        "en": "Creating a structured record and preparing the result",
+        "uk": "Формуємо структурований запис і готуємо результат",
+        "de": "Strukturierter Eintrag wird erstellt und Ergebnis vorbereitet"
     },
     # ============================================
     # 📄 СТРАНИЦА ДОКУМЕНТОВ

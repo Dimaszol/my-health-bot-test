@@ -300,6 +300,47 @@ input:checked + .toggle-slider-compact:before {
     50% { transform: scale(1.1); }
 }
 
+/* Вращающийся трейл вокруг кольца */
+#progress-ring-svg .ring-trail {
+    fill: none;
+    stroke: #2DE8C8;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    opacity: 0.5;
+    animation: trailSpin 2.4s linear infinite;
+    transform-origin: 84px 84px;
+}
+@keyframes trailSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Пульсация активного chip */
+.progress-chip.active-chip {
+    animation: chipPulse 2s ease-in-out infinite;
+}
+@keyframes chipPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(45, 232, 200, 0); }
+    50% { box-shadow: 0 0 0 4px rgba(45, 232, 200, 0.2); }
+}
+
+/* Дыхание кольца */
+@keyframes ringBreath {
+    0%, 100% { filter: drop-shadow(0 2px 6px rgba(45,232,200,0.25)); }
+    50% { filter: drop-shadow(0 2px 16px rgba(45,232,200,0.55)); }
+}
+
+.progress-dots span {
+    display: inline-block;
+    animation: dotJump 1.2s ease infinite;
+}
+.progress-dots span:nth-child(2) { animation-delay: 0.15s; }
+.progress-dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes dotJump {
+    0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-2px); }
+}
+
 /* ========================================
    📄 КАРТОЧКА ДОКУМЕНТА (АККОРДЕОН)
    ======================================== */
