@@ -297,28 +297,25 @@ footer { display: none !important; }
         <h2>{{ st('seo_section_related', lang) }}</h2>
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
             {% for rel in page.related %}
-            <a href="/dashboard/biomarker/{{ rel.slug }}" class="card" style="text-decoration: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem;">
-                <div style="flex: 1; min-width: 0;">
-                    <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+            <a href="/dashboard/biomarker/{{ rel.slug }}" class="card" style="text-decoration: none; display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem 1.25rem;">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;">
+                    <div style="font-weight: 700; color: var(--text-primary);">
                         {{ rel.name }}{% if rel.relation_title %} — {{ rel.relation_title }}{% endif %}
                     </div>
-                    {% if rel.relation_desc %}
-                    <div style="font-size: 0.9rem; color: var(--text-secondary);">{{ rel.relation_desc }}</div>
-                    {% endif %}
+                    <div style="flex-shrink: 0;">
+                        {% if rel.user_value %}
+                        <span class="sp {{ rel.user_status }}">
+                            <span class="dot"></span>
+                            {{ rel.user_value }} {{ rel.user_unit or '' }}
+                        </span>
+                        {% else %}
+                        <span class="rel-nodata">{{ t('bmd_detail_no_value', lang) }}</span>
+                        {% endif %}
+                    </div>
                 </div>
-                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0;">
-                    {% if rel.user_value %}
-                    <span class="sp {{ rel.user_status }}">
-                        <span class="dot"></span>
-                        {{ rel.user_value }} {{ rel.user_unit or '' }}
-                    </span>
-                    {% else %}
-                    <span class="rel-nodata">{{ t('bmd_detail_no_value', lang) }}</span>
-                    {% endif %}
-                    <svg style="color:var(--border-color);" width="14" height="14" viewBox="0 0 16 16" fill="none">
-                        <path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
+                {% if rel.relation_desc %}
+                <div style="font-size: 0.9rem; color: var(--text-secondary);">{{ rel.relation_desc }}</div>
+                {% endif %}
             </a>
             {% endfor %}
         </div>
