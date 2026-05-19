@@ -3621,6 +3621,93 @@ TRANSLATIONS = {
         'uk': 'Аналіз за кілька хвилин',
         'de': 'Analyse in wenigen Minuten',
     },
+    'bm_detail_history': {
+        'ru': 'История измерений', 'en': 'Measurement history',
+        'uk': 'Історія вимірювань', 'de': 'Messverlauf'
+    },
+    'bm_detail_no_history': {
+        'ru': 'История пуста — данные не найдены', 'en': 'No data found',
+        'uk': 'Історія порожня — даних немає', 'de': 'Keine Daten gefunden'
+    },
+    'bm_detail_about': {
+        'ru': 'Что такое', 'en': 'About', 'uk': 'Що таке', 'de': 'Was ist'
+    },
+    'bm_detail_influences': {
+        'ru': 'Что может влиять на показатель', 'en': 'What may affect this marker',
+        'uk': 'Що може впливати на показник', 'de': 'Einflussfaktoren'
+    },
+    'bm_detail_related': {
+        'ru': 'Связанные показатели', 'en': 'Related markers',
+        'uk': 'Пов\'язані показники', 'de': 'Verwandte Marker'
+    },
+    'bm_detail_no_value': {
+        'ru': 'Нет данных', 'en': 'No data', 'uk': 'Немає даних', 'de': 'Keine Daten'
+    },
+    'bm_detail_go_doc': {
+        'ru': 'Открыть документ', 'en': 'Open document',
+        'uk': 'Відкрити документ', 'de': 'Dokument öffnen'
+    },
+    'bm_detail_back': {
+        'ru': 'Биомаркеры', 'en': 'Biomarkers', 'uk': 'Біомаркери', 'de': 'Biomarker'
+    },
+    'bm_detail_causes_high': {
+        'ru': 'Причины повышения', 'en': 'Causes of high', 'uk': 'Причини підвищення', 'de': 'Ursachen erhöht'
+    },
+    'bm_detail_causes_low': {
+        'ru': 'Причины понижения', 'en': 'Causes of low', 'uk': 'Причини зниження', 'de': 'Ursachen niedrig'
+    },
+    'bmd_detail_last_date': {
+        'ru': 'Последнее измерение', 'en': 'Last measurement',
+        'uk': 'Останнє вимірювання', 'de': 'Letzte Messung'
+    },
+    'bmd_detail_low': {
+        'ru': 'Низко', 'en': 'Low', 'uk': 'Низько', 'de': 'Niedrig'
+    },
+    'bmd_detail_high': {
+        'ru': 'Высоко', 'en': 'High', 'uk': 'Високо', 'de': 'Hoch'
+    },
+    'bmd_detail_no_history': {
+        'ru': 'История пуста', 'en': 'No history yet',
+        'uk': 'Історія порожня', 'de': 'Keine Historie'
+    },
+    'bmd_detail_no_history_sub': {
+        'ru': 'Загрузите анализы, чтобы начать отслеживать этот показатель',
+        'en': 'Upload lab results to start tracking this marker',
+        'uk': 'Завантажте аналізи, щоб почати відстежувати цей показник',
+        'de': 'Laden Sie Laborergebnisse hoch, um diesen Wert zu verfolgen'
+    },
+    'bmd_detail_influences_sub': {
+        'ru': 'Не диагноз — это возможные причины отклонения. Подтверждает врач.',
+        'en': 'Not a diagnosis — these are possible causes. A doctor should confirm.',
+        'uk': 'Не діагноз — це можливі причини відхилення. Підтверджує лікар.',
+        'de': 'Keine Diagnose — mögliche Ursachen. Ein Arzt sollte bestätigen.'
+    },
+    'bmd_detail_combinations': {
+        'ru': 'в сочетании с другими показателями',
+        'en': 'in combination with other markers',
+        'uk': 'у поєднанні з іншими показниками',
+        'de': 'in Kombination mit anderen Markern'
+    },
+    'bmd_detail_combinations_sub': {
+        'ru': 'Один показатель редко говорит обо всём. Комбинации помогают сузить причину.',
+        'en': 'One marker rarely tells the whole story. Combinations help narrow the cause.',
+        'uk': 'Один показник рідко говорить про все. Комбінації допомагають звузити причину.',
+        'de': 'Ein Wert allein sagt selten alles. Kombinationen helfen, die Ursache einzugrenzen.'
+    },
+    'bmd_detail_related_sub': {
+        'ru': 'Эти биомаркеры обычно смотрят вместе. Нажмите, чтобы перейти.',
+        'en': 'These markers are usually reviewed together. Click to navigate.',
+        'uk': 'Ці маркери зазвичай переглядають разом. Натисніть, щоб перейти.',
+        'de': 'Diese Marker werden meist gemeinsam betrachtet. Klicken zum Navigieren.'
+    },
+    'bmd_detail_history': {
+        'ru': 'История измерений', 'en': 'Measurement history',
+        'uk': 'Історія вимірювань', 'de': 'Messverlauf'
+    },
+    'bmd_detail_no_value': {
+        'ru': 'Нет данных', 'en': 'No data',
+        'uk': 'Немає даних', 'de': 'Keine Daten'
+    },
 }
 
 

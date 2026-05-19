@@ -2015,14 +2015,14 @@ function renderBmGroups(grouped, order) {
             const stLabel = st === 'normal' ? BM_LABELS.norm : st === 'high' ? BM_LABELS.high : BM_LABELS.low;
             const badgeClass = st === 'normal' ? 'norm' : st === 'high' ? 'high' : 'low';
             html += `
-                <div class="bm-card">
+                <a href="/dashboard/biomarker/${bm.slug}" class="bm-card" style="text-decoration:none;display:flex;">
                     <div>
                         <div class="bm-name">${bm.name_localized || bm.slug}</div>
                         <div class="bm-val">${bm.original_value || '—'} ${bm.original_unit || ''}</div>
                         <div style="font-size:11px;color:#6b8c87;margin-top:2px;">${bm.test_date || ''}</div>
                     </div>
                     <span class="bm-badge ${badgeClass}">${stLabel}</span>
-                </div>`;
+                </a>`;
         });
         html += `</div></div>`;
     });

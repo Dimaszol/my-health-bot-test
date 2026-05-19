@@ -684,9 +684,11 @@ async def document_detail(
                     lr.original_value,
                     lr.original_unit,
                     lr.status,
-                    COALESCE(si.name_localized, lr.display_name, lr.slug) AS display_name
+                    COALESCE(si.name_localized, lr.display_name, lr.slug) AS display_name,
+                    CASE WHEN i.slug IS NOT NULL THEN true ELSE false END AS has_page
                 FROM lab_results lr
                 LEFT JOIN seo_indicators si ON lr.slug = si.slug AND si.lang = $3
+                LEFT JOIN indicators i ON lr.slug = i.slug AND i.is_published = TRUE
                 WHERE lr.document_id = $1 AND lr.user_id = $2
                 ORDER BY lr.slug
             """, doc_id, user_id, lang)
@@ -728,6 +730,92 @@ async def document_detail(
         pass
     
     return templates.TemplateResponse("document_detail.html", context)
+
+@router.get("/biomarker/{slug}", response_class=HTMLResponse)
+async def biomarker_detail(
+    request: Request,
+    slug: str,
+    user_id: int = Depends(get_current_user)
+):
+    lang = request.session.get('language', 'en')
+    conn = await get_db_connection()
+    try:
+        # SEO данные показателя
+        seo_row = await conn.fetchrow("""
+            SELECT
+                s.name_localized, s.short_desc, s.quick_answer, s.explanation,
+                s.norms, s.causes_high, s.causes_low,
+                s.related, s.combinations, s.interpretation,
+                i.slug, i.unit, i.type,
+                i.normal_min_m, i.normal_max_m,
+                i.normal_min_f, i.normal_max_f
+            FROM seo_indicators s
+            JOIN indicators i ON s.slug = i.slug
+            WHERE s.slug = $1 AND s.lang = $2 AND i.is_published = TRUE
+        """, slug, lang)
+
+        if not seo_row:
+            raise HTTPException(status_code=404)
+
+        import json
+        page = dict(seo_row)
+        page['short_desc'] = seo_row['short_desc'] or ''        
+        for field in ('norms', 'causes_high', 'causes_low', 'related', 'combinations', 'interpretation'):
+            if isinstance(page[field], str):
+                page[field] = json.loads(page[field])
+            elif page[field] is None:
+                page[field] = [] if field != 'interpretation' else {}
+
+        # История пользователя по этому показателю (все записи, все документы)
+        history_rows = await conn.fetch("""
+            SELECT
+                lr.original_value, lr.original_unit, lr.status,
+                lr.test_date, lr.document_id,
+                d.title AS doc_title
+            FROM lab_results lr
+            LEFT JOIN documents d ON lr.document_id = d.id
+            WHERE lr.user_id = $1 AND lr.slug = $2
+            ORDER BY lr.test_date DESC NULLS LAST
+        """, user_id, slug)
+        history = [dict(r) for r in history_rows]
+        for h in history:
+            if h.get('test_date'):
+                h['test_date'] = h['test_date'].strftime('%d.%m.%Y')
+
+        # Для каждого related — берём последнее значение пользователя
+        related = page.get('related') or []
+        related_with_values = []
+        for rel in related:
+            rel_slug = rel.get('slug')
+            if not rel_slug:
+                related_with_values.append({**rel, 'user_value': None, 'user_status': None, 'user_unit': None})
+                continue
+            last = await conn.fetchrow("""
+                SELECT original_value, original_unit, status
+                FROM lab_results
+                WHERE user_id = $1 AND slug = $2
+                ORDER BY test_date DESC NULLS LAST LIMIT 1
+            """, user_id, rel_slug)
+            related_with_values.append({
+                **rel,
+                'user_value': last['original_value'] if last else None,
+                'user_status': last['status'] if last else None,
+                'user_unit': last['original_unit'] if last else None,
+            })
+        page['related'] = related_with_values
+
+    finally:
+        await release_db_connection(conn)
+
+    from webapp.seo_translations import st
+    context = get_template_context(request)
+    context.update({
+        'page': page,
+        'history': history,
+        'slug': slug,
+        'st': st,
+    })
+    return templates.TemplateResponse("biomarker_detail.html", context)
 
 @router.get("/document/{doc_id}/chat", response_class=HTMLResponse)
 async def document_chat_page(

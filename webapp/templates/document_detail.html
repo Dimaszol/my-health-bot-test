@@ -339,7 +339,11 @@ body { background: var(--bg); }
     {% for bm in doc_biomarkers %}
     {% set status = bm.status or 'norm' %}
     {% set badge_class = 'norm' if status == 'normal' else status %}
+    {% if bm.has_page %}
+    <a href="/dashboard/biomarker/{{ bm.slug }}" class="dd-bm-card" style="text-decoration:none;display:block;">
+    {% else %}
     <div class="dd-bm-card">
+    {% endif %}
       <div class="dd-bm-top">
         <div class="dd-bm-name">{{ bm.display_name }}</div>
         <span class="dd-bm-badge {{ badge_class }}">
@@ -348,8 +352,12 @@ body { background: var(--bg); }
           {% else %}{{ t('bm_status_normal', lang) }}{% endif %}
         </span>
       </div>
-      <div class="dd-bm-val">{{ bm.original_value }} <span class="dd-bm-unit">{{ bm.original_unit or '' }}</span></div>      
+      <div class="dd-bm-val">{{ bm.original_value }} <span class="dd-bm-unit">{{ bm.original_unit or '' }}</span></div>
+    {% if bm.has_page %}
+    </a>
+    {% else %}
     </div>
+    {% endif %}
     {% endfor %}
   </div>
   {% endif %}
