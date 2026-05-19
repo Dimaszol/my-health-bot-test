@@ -713,7 +713,7 @@ footer { display: none !important; }
         </span>
       </div>
       <div class="db-chat-msg">
-        {% set msg_text = last_doc_chat.last_msg | striptags %}
+        {% set msg_text = last_doc_chat.last_msg | striptags | replace('**', '') | replace('__', '') | replace('##', '') | replace('# ', '') %}
         {{ msg_text[:80] }}{% if msg_text|length > 80 %}…{% endif %}
       </div>
     </a>

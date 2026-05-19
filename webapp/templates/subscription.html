@@ -898,5 +898,13 @@ document.addEventListener('click', function(e) {
   const modal = document.getElementById('cancelModal');
   if (e.target === modal) hideCancelModal();
 });
+
+// Сбрасываем спиннер при возврате через кнопку "назад"
+window.addEventListener('pageshow', function(event) {
+  if (event.persisted) {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.classList.remove('active');
+  }
+});
 </script>
 {% endblock %}

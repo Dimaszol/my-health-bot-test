@@ -10,6 +10,85 @@
 footer {
     display: none !important;
 }
+/* ===== DROP ZONE ===== */
+.drop-zone {
+    border: 2px dashed #c8dfe2;
+    border-radius: 14px;
+    padding: 22px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    background: #f7fafa;
+    position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+    border-color: #6ab0b9;
+    background: rgba(106,176,185,0.08);
+    transform: scale(1.003);
+}
+.drop-zone.has-file {
+    border-color: #6ab0b9;
+    background: rgba(106,176,185,0.08);
+    border-style: solid;
+}
+.drop-icon {
+    width: 44px; height: 44px;
+    margin: 0 auto 10px;
+    background: rgba(106,176,185,0.12);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+}
+.drop-zone:hover .drop-icon, .drop-zone.drag-over .drop-icon {
+    background: rgba(106,176,185,0.22);
+    transform: translateY(-2px);
+}
+.drop-title {
+    font-size: 13.5px; font-weight: 600; color: #334155;
+    margin-bottom: 8px; line-height: 1.45;
+}
+.drop-btn-label {
+    display: inline-block;
+    margin-top: 10px; padding: 7px 18px;
+    background: #26bda4; color: #fff;
+    font-size: 13px; font-weight: 700;
+    border-radius: 8px; cursor: pointer;
+    transition: background 0.15s;
+    min-height: 34px; line-height: 20px;  /* добавь это */
+}
+.drop-zone:hover .drop-btn-label { background: #19927e; }
+.format-badges { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; justify-content: center; }
+.format-badge {
+    font-size: 10px; font-weight: 500; color: #9ab5bb;
+    background: #eef4f5; border-radius: 5px; padding: 2px 7px;
+}
+.file-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.file-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(106,176,185,0.12);
+    border: 1px solid #6ab0b9;
+    border-radius: 10px; padding: 0px 12px;
+    font-size: 13px; font-weight: 600; color: #4e99a3;
+    animation: chipIn 0.2s ease;
+    min-height: 34px;  /* добавь это */
+    box-sizing: border-box;
+}
+@keyframes chipIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+.chip-remove {
+    background: none; border: none; cursor: pointer;
+    color: #4e99a3; font-size: 17px; line-height: 1;
+    padding: 0; opacity: 0.6; transition: opacity 0.15s;
+}
+.chip-remove:hover { opacity: 1; }
+.trust-strip {
+    display: flex; gap: 16px; margin-top: 16px;
+    padding-top: 14px; border-top: 1px solid #e0edeb;
+    flex-wrap: wrap;
+}
+.trust-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; color: #6b8c87; font-weight: 500;
+}
 .doc-chip {
     font-size:12.5px; font-weight:700; padding:6px 13px;
     border-radius:20px; border:1.5px solid #e0edeb;
@@ -77,38 +156,45 @@ footer {
             
         <form id="upload-form">        
             <div class="form-group">
-                <label>{{ t('select_file', lang) }}</label>
-                <input 
-                    type="file" 
-                    id="doc-file" 
-                    accept=".pdf,.docx,.txt,.jpg,.jpeg,.png"
-                    required
-                    style="width: 100%; padding: 1rem; border: 2px dashed #667eea; border-radius: 8px; background: #f8f9fa; cursor: pointer;"
-                />
-                <p style="color: #999; font-size: 0.9rem; margin-top: 0.5rem;">
-                    {{ t('supported_formats', lang) }}
-                </p>
+                <div id="drop-zone" class="drop-zone"
+                    ondragover="dzDragOver(event,'drop-zone')"
+                    ondragleave="dzDragLeave('drop-zone')"
+                    ondrop="dzDrop(event,'doc-file','drop-zone','file-chips')"
+                    onclick="document.getElementById('doc-file').click()">
+                    <input type="file" id="doc-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none"
+                        onchange="dzFileSelected(this,'drop-zone','file-chips')" />
+                    <div id="drop-icon" class="drop-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 3v13M6 8l6-6 6 6" stroke="#6ab0b9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M3 18v1.5A1.5 1.5 0 004.5 21h15a1.5 1.5 0 001.5-1.5V18" stroke="#6ab0b9" stroke-width="2.2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div id="drop-title" class="drop-title">{{ t('drop_zone_title', lang) }}</div>
+                    <span class="drop-btn-label">{{ t('select_file_btn', lang) }}</span>
+                    <div id="file-chips" class="file-chips" style="display:none"></div>
+                    <div class="format-badges">
+                        <span class="format-badge">PDF</span>
+                        <span class="format-badge">JPG</span>
+                        <span class="format-badge">PNG</span>
+                        <span class="format-badge">{{ t('drop_max_size', lang) }}</span>
+                    </div>                    
+                </div>                
             </div>
             
             <div class="form-group" style="margin-top: 1.5rem;">
                 <label style="font-weight: 600; color: #333; margin-bottom: 0.5rem; display: block;">
                     {{ t('additional_context_label', lang) }}
-                </label>            
-                <textarea 
-                    id="doc-context" 
-                    maxlength="400"
-                    rows="2"
-                    placeholder="{{ t('additional_context_placeholder', lang) }}"
-                    style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; font-family: inherit; resize: none; overflow: hidden;"
-                ></textarea>
-                
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
-                        <p style="color: #999; font-size: 0.85rem; margin: 0; flex: 1;">
-                            {{ t('additional_context_hint_description', lang) }}
-                        </p>
-                        <span id="char-counter" style="color: #999; font-size: 0.85rem; white-space: nowrap;">0/400</span>
-                    </div>
-                
+                </label>
+                <div style="position: relative;">
+                    <textarea 
+                        id="doc-context" 
+                        maxlength="400"
+                        rows="2"
+                        placeholder="{{ t('additional_context_hint_description', lang) }}"
+                        style="width: 100%; padding: 0.75rem; padding-bottom: 1.8rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; font-family: inherit; resize: none; overflow: hidden;"
+                    ></textarea>
+                    <span id="char-counter" style="position: absolute; bottom: 0.5rem; right: 0.75rem; color: #999; font-size: 0.8rem; pointer-events: none;">0/400</span>
+                </div>
             </div>
             {% if documents %}
             <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem;">
@@ -125,6 +211,16 @@ footer {
                     {{ t('btn_analyze_document', lang) }}
                 </button>
             </div>
+            <div class="trust-strip">
+                <div class="trust-item">
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="2" y="5" width="9" height="7" rx="1.5" stroke="#6ab0b9" stroke-width="1.4"/><path d="M4 5V4a2.5 2.5 0 015 0v1" stroke="#6ab0b9" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    {{ t('trust_only_you', lang) }}
+                </div>
+                <div class="trust-item">
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#6ab0b9" stroke-width="1.4"/><path d="M6.5 4v3l2 1" stroke="#6ab0b9" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    {{ t('trust_analysis_time', lang) }}
+                </div>
+            </div>
         </form>
     </div>
     {% else %}
@@ -133,10 +229,10 @@ footer {
         
         <div style="display:flex; gap:12px; align-items:flex-start;">
             
-            <div style="font-size:1.4rem;">📈</div>
+            <div style="font-size:1.0rem;">📈</div>
             
             <div>            
-                <div style="font-size:0.98rem; line-height:1.6; color:#334155;">
+                <div style="font-size:0.8rem; line-height:1.6; color:#334155;">
                     {{ t('one_document_upsell', lang) }}
                 </div>
             </div>
@@ -155,38 +251,46 @@ footer {
     <div class="card" style="margin-bottom: 1rem;" id="upload-card">
         <form id="upload-form-onetime">
             <div class="form-group">
-                <label>{{ t('select_file', lang) }}</label>
-                <input 
-                    type="file" 
-                    id="doc-file-onetime" 
-                    accept=".pdf,.docx,.txt,.jpg,.jpeg,.png"
-                    required
-                    style="width: 100%; padding: 1rem; border: 2px dashed #667eea; border-radius: 8px; background: #f8f9fa; cursor: pointer;"
-                />
-                <p style="color: #999; font-size: 0.9rem; margin-top: 0.5rem;">
-                    {{ t('supported_formats', lang) }}
-                </p>
+                <div id="drop-zone-onetime" class="drop-zone"
+                    ondragover="dzDragOver(event,'drop-zone-onetime')"
+                    ondragleave="dzDragLeave('drop-zone-onetime')"
+                    ondrop="dzDrop(event,'doc-file-onetime','drop-zone-onetime','file-chips-onetime')"
+                    onclick="document.getElementById('doc-file-onetime').click()">
+                    <input type="file" id="doc-file-onetime" accept=".pdf,.jpg,.jpeg,.png" style="display:none"
+                        onchange="dzFileSelected(this,'drop-zone-onetime','file-chips-onetime')" />
+                    <div class="drop-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 3v13M6 8l6-6 6 6" stroke="#6ab0b9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M3 18v1.5A1.5 1.5 0 004.5 21h15a1.5 1.5 0 001.5-1.5V18" stroke="#6ab0b9" stroke-width="2.2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div id="drop-title-onetime" class="drop-title">{{ t('drop_zone_title', lang) }}</div>
+                    <span class="drop-btn-label">{{ t('select_file_btn', lang) }}</span>
+                    <div class="format-badges">
+                        <span class="format-badge">PDF</span>
+                        <span class="format-badge">JPG</span>
+                        <span class="format-badge">PNG</span>
+                        <span class="format-badge">{{ t('drop_max_size', lang) }}</span>
+                    </div>                    
+                </div>
+                <div id="file-chips-onetime" class="file-chips"></div>
             </div>
             
             <div class="form-group" style="margin-top: 1.5rem;">
                 <label style="font-weight: 600; color: #333; margin-bottom: 0.5rem; display: block;">
                     {{ t('additional_context_label', lang) }}
-                </label>            
-                <textarea 
-                    id="doc-context-onetime" 
-                    maxlength="400"
-                    rows="2"
-                    placeholder="{{ t('additional_context_placeholder', lang) }}"
-                    style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; font-family: inherit; resize: none; overflow: hidden;"
-                ></textarea>
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
-                        <p style="color: #999; font-size: 0.85rem; margin: 0; flex: 1;">
-                            {{ t('additional_context_hint_description', lang) }}
-                        </p>
-                        <span id="char-counter-onetime" style="color: #999; font-size: 0.85rem; white-space: nowrap;">0/400</span>
-                    </div>
-                
-            </div>                
+                </label>
+                <div style="position: relative;">
+                    <textarea 
+                        id="doc-context-onetime"
+                        maxlength="400"
+                        rows="2"
+                        placeholder="{{ t('additional_context_hint_description', lang) }}"
+                        style="width: 100%; padding: 0.75rem; padding-bottom: 1.8rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; font-family: inherit; resize: none; overflow: hidden;"
+                    ></textarea>
+                    <span id="char-counter-onetime" style="position: absolute; bottom: 0.5rem; right: 0.75rem; color: #999; font-size: 0.8rem; pointer-events: none;">0/400</span>
+                </div>
+            </div>          
         <!-- Две кнопки -->
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem;">
                 <label class="toggle-switch-compact" title="{{ t('use_medical_history_tooltip', lang) }}">
@@ -215,7 +319,7 @@ footer {
             </a>        
         </div>
         <!-- Микротекст про Stripe -->
-        <p style="margin-top: 0.75rem; margin-bottom: 0; color: #999; font-size: 0.7rem;">
+        <p style="margin-top: 0.55rem; margin-bottom: 0; color: #999; font-size: 10px;">
             {{ t('stripe_payment_note', lang) }}
         </p>
         </form>
@@ -1960,6 +2064,76 @@ function setBmStatusFilter(type) {
         filtered.forEach(b => { const g = b.group_slug||'other'; if(!grouped[g]) grouped[g]=[]; grouped[g].push(b); });
         container.innerHTML = renderBmGroups(grouped, BM_GROUP_ORDER);
     }
+}
+// ===== DROP ZONE helpers =====
+function dzDragOver(e, zoneId) {
+    e.preventDefault();
+    document.getElementById(zoneId).classList.add('drag-over');
+}
+function dzDragLeave(zoneId) {
+    document.getElementById(zoneId).classList.remove('drag-over');
+}
+function dzDrop(e, inputId, zoneId, chipsId) {
+    e.preventDefault();
+    dzDragLeave(zoneId);
+    const files = e.dataTransfer.files;
+    if (files.length) {
+        const input = document.getElementById(inputId);
+        // Пробрасываем файл в input
+        const dt = new DataTransfer();
+        Array.from(files).slice(0, 1).forEach(f => dt.items.add(f));
+        input.files = dt.files;
+        input.dispatchEvent(new Event('change'));
+        dzRenderChips(input, zoneId, chipsId);
+    }
+}
+function dzFileSelected(input, zoneId, chipsId) {
+    dzRenderChips(input, zoneId, chipsId);
+}
+function dzRenderChips(input, zoneId, chipsId) {
+    const zone = document.getElementById(zoneId);
+    const chipsEl = document.getElementById(chipsId);
+    const files = input.files;
+
+    if (!files || !files.length) {
+        zone.classList.remove('has-file');
+        chipsEl.innerHTML = '';
+        chipsEl.style.display = 'none';
+        // Возвращаем внутренности зоны
+        zone.querySelectorAll('.drop-btn-label').forEach(el => el.style.display = '');
+        return;
+    }
+
+    zone.classList.add('has-file');
+    // Скрываем внутренности зоны
+    zone.querySelectorAll('.drop-btn-label').forEach(el => el.style.display = 'none');
+
+    // Показываем чип внутри зоны
+    chipsEl.style.display = 'flex';
+    chipsEl.style.justifyContent = 'center';
+    chipsEl.innerHTML = '';
+
+    Array.from(files).forEach((f) => {
+        const icon = f.type === 'application/pdf' ? '📄' : '🖼️';
+        const size = f.size < 1024*1024 ? `${(f.size/1024).toFixed(0)} КБ` : `${(f.size/1024/1024).toFixed(1)} МБ`;
+        const chip = document.createElement('div');
+        chip.className = 'file-chip';
+        chip.innerHTML = `<span>${icon}</span>
+            <span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
+            <span style="opacity:0.6;font-size:11px;">${size}</span>
+            <button class="chip-remove" type="button" onclick="event.stopPropagation(); dzRemoveFile('${input.id}','${zoneId}','${chipsId}')">×</button>`;
+        chipsEl.appendChild(chip);
+    });
+}
+function dzRemoveFile(inputId, zoneId, chipsId) {
+    const input = document.getElementById(inputId);
+    input.value = '';
+    const zone = document.getElementById(zoneId);
+    zone.classList.remove('has-file');
+    zone.querySelectorAll('.drop-btn-label').forEach(el => el.style.display = '');
+    const chipsEl = document.getElementById(chipsId);
+    chipsEl.innerHTML = '';
+    chipsEl.style.display = 'none';
 }
 </script>
 {% endblock %}

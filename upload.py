@@ -153,8 +153,7 @@ async def handle_document_upload(message: types.Message, bot):
                     await message.answer(part, parse_mode="HTML")
                     
                     # Небольшая задержка между сообщениями для читаемости
-                    if i < len(message_parts) - 1:
-                        import asyncio
+                    if i < len(message_parts) - 1:                        
                         await asyncio.sleep(0.5)
                         
                 except Exception as e:

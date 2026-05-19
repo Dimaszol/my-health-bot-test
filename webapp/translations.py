@@ -1014,28 +1014,28 @@ TRANSLATIONS = {
         "de": "Muster und mögliche Interpretationen werden identifiziert"
     },
     "progress_step4_title": {
-        "ru": "Формируем итоговое объяснение",
-        "en": "Generating final explanation",
-        "uk": "Формуємо підсумкове пояснення",
-        "de": "Abschlusserklärung wird erstellt"
+        "ru": "Проверяем и согласуем результаты",
+        "en": "Reviewing and validating results",
+        "uk": "Перевіряємо та узгоджуємо результати",
+        "de": "Ergebnisse werden geprüft und abgestimmt"
     },
     "progress_step4_sub": {
-        "ru": "Представляем результаты в удобном и понятном виде",
-        "en": "Presenting results in a clear and convenient format",
-        "uk": "Представляємо результати у зручному та зрозумілому вигляді",
-        "de": "Ergebnisse werden übersichtlich dargestellt"
+        "ru": "Сопоставляем данные и уточняем результаты",
+        "en": "Cross-checking data and refining results",
+        "uk": "Зіставляємо дані та уточнюємо результати",
+        "de": "Daten werden abgeglichen und Ergebnisse präzisiert"
     },
     "progress_step5_title": {
-        "ru": "Сохраняем в медицинскую карту",
-        "en": "Saving to medical record",
-        "uk": "Зберігаємо до медичної картки",
-        "de": "Wird in die Krankenakte gespeichert"
+        "ru": "Формируем итоговый результат",
+        "en": "Generating final result",
+        "uk": "Формуємо підсумковий результат",
+        "de": "Endergebnis wird erstellt"
     },
     "progress_step5_sub": {
-        "ru": "Формируем структурированную запись и подготавливаем результат",
-        "en": "Creating a structured record and preparing the result",
-        "uk": "Формуємо структурований запис і готуємо результат",
-        "de": "Strukturierter Eintrag wird erstellt und Ergebnis vorbereitet"
+        "ru": "Подготавливаем объяснение и сохраняем в медицинскую карту",
+        "en": "Preparing the explanation and saving to medical record",
+        "uk": "Готуємо пояснення та зберігаємо до медичної картки",
+        "de": "Erklärung wird vorbereitet und in die Krankenakte gespeichert"
     },
     # ============================================
     # 📄 СТРАНИЦА ДОКУМЕНТОВ
@@ -3591,6 +3591,36 @@ TRANSLATIONS = {
     'doc_section_discuss': {'ru': 'Обсудить документ', 'en': 'Discuss document', 'uk': 'Обговорити документ', 'de': 'Dokument besprechen'},
     'document_title_optional': {'ru': 'Название документа', 'en': 'Document title', 'uk': 'Назва документа', 'de': 'Dokumenttitel'},
     'document_date_label': {'ru': 'Дата документа', 'en': 'Document date', 'uk': 'Дата документа', 'de': 'Dokumentdatum'},
+    'drop_zone_title': {
+        'ru': 'Анализы, ЭКГ, снимки и другие меддокументы',
+        'en': 'Lab tests, ECGs, scans and other medical documents',
+        'uk': 'Аналізи, ЕКГ, знімки та інші меддокументи',
+        'de': 'Analysen, EKGs, Scans und andere medizinische Dokumente',
+    },
+    'select_file_btn': {
+        'ru': 'Выбрать файл',
+        'en': 'Select file',
+        'uk': 'Вибрати файл',
+        'de': 'Datei auswählen',
+    },
+    'drop_max_size': {
+        'ru': 'до 10 МБ',
+        'en': 'up to 10 MB',
+        'uk': 'до 10 МБ',
+        'de': 'bis 10 MB',
+    },
+    'trust_only_you': {
+        'ru': 'Только вы имеете доступ к документам',
+        'en': 'Only you have access to your documents',
+        'uk': 'Тільки ви маєте доступ до документів',
+        'de': 'Nur Sie haben Zugang zu Ihren Dokumenten',
+    },
+    'trust_analysis_time': {
+        'ru': 'Анализ за несколько минут',
+        'en': 'Analysis in a few minutes',
+        'uk': 'Аналіз за кілька хвилин',
+        'de': 'Analyse in wenigen Minuten',
+    },
 }
 
 
