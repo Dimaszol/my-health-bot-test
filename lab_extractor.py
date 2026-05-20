@@ -297,6 +297,7 @@ Your ONLY job: extract biomarker values from medical documents and return strict
 - original_value MUST be exactly as written in the document (e.g. "POSITIVE", "1:40 H", "118", "<0.01"). Do NOT normalize it.
 - standard_value is the converted numeric value (or null if the original is qualitative and cannot be converted).
 - status MUST be one of: "normal", "high", "low" — never null, never any other string.
+- If the document contains multiple results for the same biomarker (trend/history table), extract ONLY the most recent value based on the latest date in the document.
 
 --- STATUS RULES ---
 Numeric values:
