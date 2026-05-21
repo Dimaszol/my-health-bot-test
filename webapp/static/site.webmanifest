@@ -1,14 +1,27 @@
 {
   "name": "PulseBook - Health AI Assistant",
   "short_name": "PulseBook",
-  "start_url": "/dashboard",
+  "description": "Your personal medical AI assistant",
+  "start_url": "/dashboard?source=twa",
   "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#00C9A7",
+  "background_color": "#ffffff",
+  "lang": "en",
+  "categories": ["health", "medical"],
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/web-app-manifest-512x512.png",
@@ -17,7 +30,12 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
-  "display": "standalone"
+  "screenshots": [
+    {
+      "src": "/static/screenshot1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
 }

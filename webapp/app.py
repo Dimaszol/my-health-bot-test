@@ -573,6 +573,22 @@ Sitemap: {domain}/sitemap.xml
 """
     return Response(content=content, media_type="text/plain")
 
+@app.get("/.well-known/assetlinks.json")
+async def assetlinks():
+    """Digital Asset Links для TWA Android"""
+    from fastapi.responses import JSONResponse
+    # SHA256 заполнить после сборки APK через bubblewrap
+    return JSONResponse(content=[
+        {
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": "health.pulsebook.app",
+                "sha256_cert_fingerprints": ["TODO_REPLACE_AFTER_APK_BUILD"]
+            }
+        }
+    ])
+
 from routes import ops
 app.include_router(ops.router, tags=["ops"])
 

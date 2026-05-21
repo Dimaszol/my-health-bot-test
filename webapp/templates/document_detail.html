@@ -245,7 +245,7 @@ body { background: var(--bg); }
       <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M4 4h12v9H4V4zM4 9l-2 4 3-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span>{{ t('btn_chat', lang) }}</span>
     </a>
-    <a href="/api/document-download/{{ doc.id }}" class="dd-ic-btn">
+    <a href="/api/download-document/{{ doc.id }}" class="dd-ic-btn" download>
       <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 3v10M6 9l4 4 4-4M4 17h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span>{{ t('btn_download', lang) }}</span>
     </a>
@@ -315,11 +315,12 @@ body { background: var(--bg); }
       </div>
       <div class="pdf-viewer-mobile" style="text-align:center; padding:2rem;">
         <a href="/api/document-pdf/{{ doc.id }}"
-           target="_blank"
-           class="dd-ic-btn primary"
-           style="display:inline-flex;">
+          target="_blank"
+          class="dd-ic-btn primary"
+          style="display:inline-flex;">
           📄 {{ t('open_pdf', lang) }}
         </a>
+      </div>
       </div>
     {% else %}
       <div style="text-align:center; padding:3rem 2rem; color:var(--muted);">

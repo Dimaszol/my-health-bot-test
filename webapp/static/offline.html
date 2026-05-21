@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>PulseBook — Offline</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8fafb;
+            color: #1a2332;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+        }
+
+        .container {
+            text-align: center;
+            max-width: 360px;
+        }
+
+        .icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: #e8f5f3;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon svg {
+            width: 40px;
+            height: 40px;
+            stroke: #00C9A7;
+        }
+
+        .logo {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #00C9A7;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.3px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: #1a2332;
+        }
+
+        p {
+            font-size: 0.95rem;
+            color: #6b7a8d;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        button {
+            background: #00C9A7;
+            color: white;
+            border: none;
+            padding: 0.875rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            max-width: 280px;
+            transition: background 0.2s;
+        }
+
+        button:active {
+            background: #00a88d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">PulseBook</div>
+
+        <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+                <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+                <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+                <path d="M10.71 5.05A16 16 0 0 1 22.56 9"></path>
+                <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                <line x1="12" y1="20" x2="12.01" y2="20"></line>
+            </svg>
+        </div>
+
+        <h1 id="title">No connection</h1>
+        <p id="message">Check your internet connection and try again.</p>
+        <button id="btn" onclick="window.location.reload()">Try again</button>
+    </div>
+
+    <script>
+        const lang = navigator.language ? navigator.language.slice(0, 2) : 'en';
+
+        const i18n = {
+            ru: { title: 'Нет подключения', message: 'Проверьте интернет-соединение и попробуйте снова.', btn: 'Попробовать снова' },
+            uk: { title: 'Немає підключення', message: 'Перевірте інтернет-з\'єднання і спробуйте ще раз.', btn: 'Спробувати ще раз' },
+            de: { title: 'Keine Verbindung', message: 'Überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.', btn: 'Erneut versuchen' },
+            en: { title: 'No connection', message: 'Check your internet connection and try again.', btn: 'Try again' }
+        };
+
+        const t = i18n[lang] || i18n.en;
+        document.getElementById('title').textContent = t.title;
+        document.getElementById('message').textContent = t.message;
+        document.getElementById('btn').textContent = t.btn;
+    </script>
+</body>
+</html>

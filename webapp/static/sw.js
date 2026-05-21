@@ -1,6 +1,7 @@
 // 📱 Service Worker для PWA с обработкой suspend-режима
 const CACHE_NAME = 'pulsebook-v5';
 const urlsToCache = [
+  '/static/offline.html',
   '/static/css/style.css',
   '/static/css/mobile.css',
   '/static/js/app.js',
@@ -41,8 +42,10 @@ self.addEventListener('fetch', (event) => {
   
   // HTML страницы — всегда из сети (чтобы не терять query параметры)
   if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request));
-    return;
+      event.respondWith(
+          fetch(event.request).catch(() => caches.match('/static/offline.html'))
+      );
+      return;
   }
   
   // Статика — сначала кэш, потом сеть
