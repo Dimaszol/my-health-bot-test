@@ -584,7 +584,7 @@ async def assetlinks():
             "target": {
                 "namespace": "android_app",
                 "package_name": "health.pulsebook.app",
-                "sha256_cert_fingerprints": ["TODO_REPLACE_AFTER_APK_BUILD"]
+                "sha256_cert_fingerprints": ["0E:C4:70:DF:B5:C3:46:5E:16:17:03:41:A1:D8:B5:9F:9B:46:CE:70:11:56:25:08:F6:E5:F1:B3:FC:D8:06:9F"]
             }
         }
     ])
