@@ -173,3 +173,9 @@ pnpm-debug.log*
 
 # Flask сессии
 flask_session/
+
+# ✅ ИСКЛЮЧЕНИЯ - статические иконки приложения
+!webapp/static/*.png
+!webapp/static/*.svg
+!webapp/static/*.ico
+!webapp/static/images/
