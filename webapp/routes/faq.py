@@ -45,6 +45,12 @@ async def faq_page_with_lang(request: Request, lang: str):
     
     return templates.TemplateResponse('faq.html', context)
 
+@router.get("/delete-account", response_class=HTMLResponse)
+async def delete_account_page(request: Request):
+    context = get_template_context(request)
+    context['faq_t'] = get_faq_translation
+    return templates.TemplateResponse("delete_account.html", context)
+
 @router.get("/{lang}/delete-account", response_class=HTMLResponse)
 async def delete_account_page_lang(request: Request, lang: str):
     if lang not in ['de', 'ru', 'uk']:
