@@ -54,7 +54,7 @@ FAQ_TRANSLATIONS = {
 <p>✓ Все медицинские документы в одном месте<br>
 ✓ Мгновенный анализ от "консилиума" AI-моделей<br>
 ✓ Персонализированные рекомендации на основе вашей истории<br>
-✓ Полная конфиденциальность и соответствие HIPAA/GDPR</p>
+✓ Полная конфиденциальность и соответствие GDPR</p>
 
 <p><strong>PulseBook — это ваш умный медицинский помощник, который всегда с вами.</strong></p>
 ''',
@@ -76,7 +76,7 @@ FAQ_TRANSLATIONS = {
 <p>✓ All medical documents in one place<br>
 ✓ Instant analysis from AI model "consortium"<br>
 ✓ Personalized recommendations based on your history<br>
-✓ Full confidentiality and HIPAA/GDPR compliance</p>
+✓ Full confidentiality and GDPR compliance</p>
 
 <p><strong>PulseBook is your smart medical assistant, always with you.</strong></p>
 ''',
@@ -98,7 +98,7 @@ FAQ_TRANSLATIONS = {
 <p>✓ Всі медичні документи в одному місці<br>
 ✓ Миттєвий аналіз від "консиліуму" AI-моделей<br>
 ✓ Персоналізовані рекомендації на основі вашої історії<br>
-✓ Повна конфіденційність та відповідність HIPAA/GDPR</p>
+✓ Повна конфіденційність та відповідність GDPR</p>
 
 <p><strong>PulseBook — це ваш розумний медичний помічник, який завжди з вами.</strong></p>
 ''',
@@ -120,7 +120,7 @@ FAQ_TRANSLATIONS = {
 <p>✓ Alle medizinischen Dokumente an einem Ort<br>
 ✓ Sofortige Analyse vom KI-Modell-"Konsortium"<br>
 ✓ Personalisierte Empfehlungen basierend auf Ihrer Geschichte<br>
-✓ Vollständige Vertraulichkeit und HIPAA/GDPR-Konformität</p>
+✓ Vollständige Vertraulichkeit und GDPR-Konformität</p>
 
 <p><strong>PulseBook ist Ihr intelligenter medizinischer Assistent, immer bei Ihnen.</strong></p>
 '''
@@ -521,7 +521,7 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 
 <h4>Безопасность:</h4>
 
-<p>Все документы хранятся в зашифрованном виде и доступны только вам. Мы соблюдаем стандарты HIPAA и GDPR.</p>
+<p>Все документы хранятся в зашифрованном виде и доступны только вам. Мы соблюдаем стандарты GDPR.</p>
 ''',
         'en': '''
 <h4>How to work with medical documents?</h4>
@@ -568,7 +568,7 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 
 <h4>Security:</h4>
 
-<p>All documents are stored encrypted and accessible only to you. We comply with HIPAA and GDPR standards.</p>
+<p>All documents are stored encrypted and accessible only to you. We comply with GDPR standards.</p>
 ''',
         'uk': '''
 <h4>Як працювати з медичними документами?</h4>
@@ -615,7 +615,7 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 
 <h4>Безпека:</h4>
 
-<p>Всі документи зберігаються в зашифрованому вигляді та доступні тільки вам. Ми дотримуємося стандартів HIPAA та GDPR.</p>
+<p>Всі документи зберігаються в зашифрованому вигляді та доступні тільки вам. Ми дотримуємося стандартів GDPR.</p>
 ''',
         'de': '''
 <h4>Wie arbeitet man mit medizinischen Dokumenten?</h4>
@@ -662,7 +662,7 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 
 <h4>Sicherheit:</h4>
 
-<p>Alle Dokumente werden verschlüsselt gespeichert und sind nur für Sie zugänglich. Wir erfüllen HIPAA- und GDPR-Standards.</p>
+<p>Alle Dokumente werden verschlüsselt gespeichert und sind nur für Sie zugänglich. Wir erfüllen GDPR-Standards.</p>
 '''
     },
     
@@ -873,7 +873,192 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 <p><strong>💡 Tipp:</strong> Aktualisieren Sie Gewichts-, Medikamenten- und Krankheitsdaten bei Änderungen — dies hilft der KI, relevantere Empfehlungen zu geben.</p>
 '''
     },
-    
+
+
+# ============================================
+    # 6️⃣ Удаление
+    # ============================================
+
+'faq_account_deletion_title': {
+    'ru': 'Удаление аккаунта',
+    'en': 'Account Deletion',
+    'uk': 'Видалення акаунта',
+    'de': 'Kontolöschung'
+},
+
+'faq_account_deletion_content': {
+    'ru': '''
+<h4>Удаление аккаунта PulseBook</h4>
+
+<p>Вы можете в любое время безвозвратно удалить свой аккаунт PulseBook и все связанные с ним данные.</p>
+
+<h4>Как удалить аккаунт</h4>
+
+<ol>
+    <li>Войдите в PulseBook.</li>
+    <li>Откройте страницу <a href="https://pulsebook.health/dashboard/profile">«Профиль».</a></li>
+    <li>Прокрутите вниз до раздела «Опасная зона».</li>
+    <li>Нажмите «Удалить мой аккаунт».</li>
+    <li>Подтвердите удаление.</li>
+</ol>
+
+<h4>Что произойдет после удаления</h4>
+
+<p>Удаление аккаунта происходит мгновенно и не может быть отменено.</p>
+
+<p>После подтверждения удаления ваш аккаунт PulseBook и все связанные данные удаляются навсегда без возможности восстановления.</p>
+
+<h4>Какие данные будут удалены</h4>
+
+<ul>
+    <li>Информация профиля</li>
+    <li>Данные анкеты здоровья</li>
+    <li>Загруженные медицинские документы</li>
+    <li>История чатов с ИИ</li>
+    <li>Личные заметки и медицинские записи</li>
+    <li>Настройки аккаунта</li>
+</ul>
+
+<h4>Хранение данных</h4>
+
+<p>PulseBook не хранит персональные данные после удаления аккаунта.</p>
+
+<p>Все данные удаляются сразу после подтверждения удаления и не могут быть восстановлены.</p>
+
+<h4>Нужна помощь?</h4>
+
+<p>Если у вас возникли проблемы с удалением аккаунта, свяжитесь с нами: support@pulsebook.health</p>
+''',
+
+    'en': '''
+<h4>Delete Your PulseBook Account</h4>
+
+<p>You can permanently delete your PulseBook account and all associated data at any time.</p>
+
+<h4>How to delete your account</h4>
+
+<ol>
+    <li>Sign in to PulseBook.</li>
+    <li>Open the <a href="https://pulsebook.health/dashboard/profile">Profile page.</a></li>
+    <li>Scroll to the Danger Zone section.</li>
+    <li>Click "Delete my account".</li>
+    <li>Confirm the deletion request.</li>
+</ol>
+
+<h4>What happens after deletion</h4>
+
+<p>Account deletion is immediate and irreversible.</p>
+
+<p>Once deletion is confirmed, your PulseBook account and all associated data are permanently deleted and cannot be recovered.</p>
+
+<h4>Data that will be deleted</h4>
+
+<ul>
+    <li>Profile information</li>
+    <li>Health questionnaire data</li>
+    <li>Uploaded medical documents</li>
+    <li>AI chat history</li>
+    <li>Personal notes and health records</li>
+    <li>Account settings</li>
+</ul>
+
+<h4>Data retention</h4>
+
+<p>PulseBook does not retain any personal data after account deletion.</p>
+
+<p>All associated data is permanently removed immediately after the deletion request is confirmed and cannot be restored.</p>
+
+<h4>Need help?</h4>
+
+<p>If you experience any issues deleting your account, please contact PulseBook support: support@pulsebook.health</p>
+''',
+
+    'uk': '''
+<h4>Видалення акаунта PulseBook</h4>
+
+<p>Ви можете будь-коли безповоротно видалити свій акаунт PulseBook та всі пов'язані з ним дані.</p>
+
+<h4>Як видалити акаунт</h4>
+
+<ol>
+    <li>Увійдіть до PulseBook.</li>
+    <li>Відкрийте сторінку <a href="https://pulsebook.health/dashboard/profile">«Профіль».</a></li>
+    <li>Прокрутіть вниз до розділу «Небезпечна зона».</li>
+    <li>Натисніть «Видалити мій акаунт».</li>
+    <li>Підтвердіть видалення.</li>
+</ol>
+
+<h4>Що станеться після видалення</h4>
+
+<p>Видалення акаунта відбувається миттєво та не може бути скасоване.</p>
+
+<p>Після підтвердження видалення ваш акаунт PulseBook і всі пов'язані дані будуть остаточно видалені без можливості відновлення.</p>
+
+<h4>Які дані буде видалено</h4>
+
+<ul>
+    <li>Інформацію профілю</li>
+    <li>Дані анкети здоров'я</li>
+    <li>Завантажені медичні документи</li>
+    <li>Історію чатів з ШІ</li>
+    <li>Особисті нотатки та медичні записи</li>
+    <li>Налаштування акаунта</li>
+</ul>
+
+<h4>Зберігання даних</h4>
+
+<p>PulseBook не зберігає персональні дані після видалення акаунта.</p>
+
+<p>Усі дані видаляються одразу після підтвердження видалення та не можуть бути відновлені.</p>
+
+<h4>Потрібна допомога?</h4>
+
+<p>Якщо у вас виникли проблеми з видаленням акаунта, зв'яжіться з нами: support@pulsebook.health</p>
+''',
+
+    'de': '''
+<h4>PulseBook-Konto löschen</h4>
+
+<p>Sie können Ihr PulseBook-Konto und alle damit verbundenen Daten jederzeit dauerhaft löschen.</p>
+
+<h4>So löschen Sie Ihr Konto</h4>
+
+<ol>
+    <li>Melden Sie sich bei PulseBook an.</li>
+    <li>Öffnen Sie die <a href="https://pulsebook.health/dashboard/profile">Profilseite.</a></li>
+    <li>Scrollen Sie zum Abschnitt „Gefahrenbereich“.</li>
+    <li>Klicken Sie auf „Mein Konto löschen“.</li>
+    <li>Bestätigen Sie die Löschung.</li>
+</ol>
+
+<h4>Was nach der Löschung passiert</h4>
+
+<p>Die Kontolöschung erfolgt sofort und kann nicht rückgängig gemacht werden.</p>
+
+<p>Nach der Bestätigung werden Ihr PulseBook-Konto und alle zugehörigen Daten dauerhaft gelöscht und können nicht wiederhergestellt werden.</p>
+
+<h4>Welche Daten gelöscht werden</h4>
+
+<ul>
+    <li>Profilinformationen</li>
+    <li>Gesundheitsfragebogen-Daten</li>
+    <li>Hochgeladene medizinische Dokumente</li>
+    <li>KI-Chatverlauf</li>
+    <li>Persönliche Notizen und Gesundheitsdaten</li>
+    <li>Kontoeinstellungen</li>
+</ul>
+
+<h4>Datenspeicherung</h4>
+
+<p>PulseBook speichert nach der Kontolöschung keine personenbezogenen Daten.</p>
+
+<p>Alle Daten werden unmittelbar nach Bestätigung der Löschung dauerhaft entfernt und können nicht wiederhergestellt werden.</p>
+
+<h4>Benötigen Sie Hilfe?</h4>
+
+<p>Falls Sie Probleme beim Löschen Ihres Kontos haben, kontaktieren Sie uns unter: support@pulsebook.health</p>
+'''
+},
     # ============================================
     # 6️⃣ БЕЗОПАСНОСТЬ
     # ============================================
@@ -897,9 +1082,7 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 
 <h4>Соответствие стандартам:</h4>
 
-<p>✓ <strong>HIPAA</strong> — американский стандарт защиты медицинских данных<br>
-✓ <strong>GDPR</strong> — европейский регламент по защите персональных данных<br>
-✓ <strong>SOC 2 Type II</strong> — международная сертификация безопасности</p>
+<p>✓ <strong>GDPR</strong> — европейский регламент по защите персональных данных<br></p>
 
 <h4>Авторизация:</h4>
 
@@ -936,9 +1119,7 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 
 <h4>Compliance with standards:</h4>
 
-<p>✓ <strong>HIPAA</strong> — American standard for protecting medical data<br>
-✓ <strong>GDPR</strong> — European regulation on personal data protection<br>
-✓ <strong>SOC 2 Type II</strong> — international security certification</p>
+<p>✓ <strong>GDPR</strong> — European regulation on personal data protection</p>
 
 <h4>Authorization:</h4>
 
@@ -975,9 +1156,7 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 
 <h4>Відповідність стандартам:</h4>
 
-<p>✓ <strong>HIPAA</strong> — американський стандарт захисту медичних даних<br>
-✓ <strong>GDPR</strong> — європейський регламент захисту персональних даних<br>
-✓ <strong>SOC 2 Type II</strong> — міжнародна сертифікація безпеки</p>
+<p>✓ <strong>GDPR</strong> — європейський регламент захисту персональних даних</p>
 
 <h4>Авторизація:</h4>
 
@@ -1014,9 +1193,7 @@ Fügen Sie Testergebnisse, Bilder oder Arztberichte in jedem Format hinzu (PDF, 
 
 <h4>Einhaltung von Standards:</h4>
 
-<p>✓ <strong>HIPAA</strong> — amerikanischer Standard zum Schutz medizinischer Daten<br>
-✓ <strong>GDPR</strong> — europäische Verordnung zum Schutz personenbezogener Daten<br>
-✓ <strong>SOC 2 Type II</strong> — internationale Sicherheitszertifizierung</p>
+<p>✓ <strong>GDPR</strong> — europäische Verordnung zum Schutz personenbezogener Daten</p>
 
 <h4>Autorisierung:</h4>
 

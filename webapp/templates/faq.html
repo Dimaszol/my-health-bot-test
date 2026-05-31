@@ -134,6 +134,31 @@
             </div>
         </div>
 
+        <!-- 5.2 Удаление аккаунта -->
+        <div class="faq-item" id="delete-account">
+            <div class="faq-header" onclick="toggleFaq(this)">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="faq-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                            <path d="M10 11v6"/>
+                            <path d="M14 11v6"/>
+                        </svg>
+                    </div>
+                    <h3>{{ faq_t('faq_account_deletion_title', lang) }}</h3>
+                </div>
+                <svg class="faq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </div>
+            <div class="faq-content">
+                <div class="faq-text">
+                    {{ faq_t('faq_account_deletion_content', lang) | safe }}
+                </div>
+            </div>
+        </div>
+
         <!-- 5.1 Telegram бот -->
         <div class="faq-item" id="telegram">
             <div class="faq-header" onclick="toggleFaq(this)">
