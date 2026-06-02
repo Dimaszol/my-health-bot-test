@@ -21,7 +21,7 @@ class GeminiMedicalAnalyzer:
             raise ValueError("❌ GEMINI_API_KEY не найден в .env файле!")
         
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-3-pro-preview')
+        self.model = genai.GenerativeModel('gemini-3.1-pro-preview')
         print("✅ Gemini 3 Pro Preview инициализирован")
     
     async def analyze_medical_image(self, image_path: str, lang: str = "ru", custom_prompt: str = None) -> Tuple[str, str]:

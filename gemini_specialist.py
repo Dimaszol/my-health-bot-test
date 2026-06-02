@@ -1252,7 +1252,7 @@ async def analyze_with_assistant(
             logger.info("File uploaded to Gemini for assistant analysis")
 
         model = genai.GenerativeModel(
-            model_name="gemini-3-pro-preview",
+            model_name="gemini-3.1-pro-preview",
             system_instruction=system_prompt_with_language
         )
         
@@ -1397,7 +1397,7 @@ NO PRIOR DATA:
             logger.info("File uploaded to Gemini for specialist analysis")
 
         model = genai.GenerativeModel(
-            model_name="gemini-3-pro-preview",
+            model_name="gemini-3.1-pro-preview",
             system_instruction=system_prompt
         )
 
