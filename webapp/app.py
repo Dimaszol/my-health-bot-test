@@ -140,10 +140,13 @@ async def lifespan(app: FastAPI):
 
 # 🏗️ СОЗДАЁМ FASTAPI ПРИЛОЖЕНИЕ 
 app = FastAPI(
-    title="Медицинский Бот - Веб Версия",
-    description="Асинхронный веб-интерфейс для медицинского бота",
+    title="Medical Bot - Web",
+    description="Async web interface for medical bot",
     version="2.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None
 )
 
 # 🔐 ДОБАВЛЯЕМ ПОДДЕРЖКУ СЕССИЙ (ПЕРВЫМ!)

@@ -60,6 +60,12 @@ HONEYPOT_WINDOW = 300  # 5 минут
 # 🧠 Максимум ключей в памяти (защита от memory leak при DDoS)
 MAX_IPS_IN_MEMORY = 10000
 
+# 🚨 Path traversal / LFI паттерны
+TRAVERSAL_PATTERNS = [
+    '../', '..\\', '%2e%2e', '%252e', '..%c0%af', '..%af',
+    '/etc/passwd', 'file://', 'http://127', 'http://localhost',
+    'http://ip6-localhost', '169.254.169.254',
+]
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """
@@ -83,6 +89,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         # 🚫 Забаненные ключи: {key: unban_timestamp}
         self.banned_keys: Dict[str, float] = {}
+
+        # 🔁 Счётчик повторных нарушений: {key: [timestamps]}
+        self.rate_violations: Dict[str, List[float]] = defaultdict(list)
 
         # 🕐 Время жизни записей (5 минут)
         self.cleanup_interval = 300
@@ -190,6 +199,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             if not self.honeypot_hits[key]:
                 del self.honeypot_hits[key]
 
+        # Очищаем violations
+        for key in list(self.rate_violations.keys()):
+            self.rate_violations[key] = [t for t in self.rate_violations[key] if t > cutoff_time]
+            if not self.rate_violations[key]:
+                del self.rate_violations[key]
+
         # Очищаем истёкшие баны
         expired_bans = [k for k, t in self.banned_keys.items() if current_time > t]
         for key in expired_bans:
@@ -232,6 +247,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         key = self._get_key(request)
         path = request.url.path
 
+        # 🚨 Path traversal / LFI в query parameters
+        query_string = str(request.url.query).lower()        
+        if any(p in query_string for p in TRAVERSAL_PATTERNS):
+            should_ban = self.check_and_update_honeypot(key, current_time)
+            if should_ban:
+                already_banned = key in self.banned_keys
+                self.banned_keys[key] = current_time + HONEYPOT_BAN_SECONDS
+                if not already_banned:
+                    logger.warning(f"Path traversal attempt banned | IP: {client_ip[:10]}...")
+            return JSONResponse(status_code=400, content={'detail': 'Bad Request'})
+
         # 🍯 Honeypot: точная проверка + порог 2 запроса за 5 минут
         if self.is_honeypot_path(path):
             should_ban = self.check_and_update_honeypot(key, current_time)
@@ -262,6 +288,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     f"Rate limit reached | IP: {client_ip[:10]}... | "
                     f"Endpoint: {endpoint_pattern} | Limit: {limit}/min"
                 )
+                # 🚫 Автобан за повторные нарушения
+                violations = self.rate_violations[key]
+                violations = [ts for ts in violations if ts > current_time - 300]
+                violations.append(current_time)
+                self.rate_violations[key] = violations
+                if len(violations) >= 10:
+                    self.banned_keys[key] = current_time + HONEYPOT_BAN_SECONDS
+                    logger.warning(f"Repeat violator auto-banned | IP: {client_ip[:10]}...")
 
             return JSONResponse(
                 status_code=429,
