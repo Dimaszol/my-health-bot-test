@@ -1650,12 +1650,11 @@ async function checkDocumentStatus(docId) {
         
         return data.status;
     } catch (error) {
-        console.error('Ошибка polling:', error);
-        return 'failed';
+        return 'pending'; // сеть недоступна — продолжаем ждать
     }
 }
 
-async function startDocumentPolling(docId) {
+async function startDocumentPolling(docId, resuming = false) {
     if (pollingActive) return;
     pollingActive = true;
 
@@ -1665,8 +1664,15 @@ async function startDocumentPolling(docId) {
     if (uploadCard) uploadCard.style.display = 'none';
     if (progressCard) progressCard.style.display = 'block';
     
-    simulateProgressSteps();
+    if (!resuming) simulateProgressSteps();
     
+    document.addEventListener('visibilitychange', function onVisibilityChange() {
+        if (document.visibilityState === 'visible') {
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+            startDocumentPolling(docId, true);
+        }
+    });
+
     let pollCount = 0;
     
     const pollInterval = setInterval(async () => {
