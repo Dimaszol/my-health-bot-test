@@ -1285,7 +1285,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Сохраняем doc_id в URL — polling подхватится даже после перезагрузки
                     sessionStorage.setItem('pollingDocId', data.document_id);
                     history.replaceState(null, '', window.location.pathname);
-                    startDocumentPolling(data.document_id);
+                    startDocumentPolling(data.document_id, true);
                     trackEvent('upload_success');
                 } else {
                     alert('❌ {{ t("error", lang) }}: ' + data.error);
@@ -1298,7 +1298,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const urlParams = new URLSearchParams(window.location.search);
                     const existingDocId = sessionStorage.getItem('pollingDocId');
                     if (existingDocId) {
-                        startDocumentPolling(existingDocId);
+                        startDocumentPolling(existingDocId, true);
                     } else {
                         alert('{{ t("upload_connection_lost", lang) }}');
                         resetUploadForm();
@@ -1418,11 +1418,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!newDocId2 && !paymentCancelled) {
         if (docId) {
-            startDocumentPolling(docId);
+            startDocumentPolling(docId, true);
         }
         {% if processing_document %}
         else {
-            startDocumentPolling({{ processing_document.id }});
+            startDocumentPolling({{ processing_document.id }}, true);
         }
         {% endif %}
     }
