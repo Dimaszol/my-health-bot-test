@@ -489,9 +489,10 @@ Format:
 No academic language or abstractions.
 
 Requirement:
-This section must explicitly state
-the SINGLE most probable clinical explanation
-(in a probabilistic, non-final form).
+
+This section must explicitly state the most probable clinical explanation (in a probabilistic, non-final form).
+
+If confidence is low or interpretation is limited by image quality, missing context, or insufficient data, the summary must explicitly reflect this uncertainty instead of presenting a single preferred explanation.
 
 If the findings are within reference ranges
 and no pathological pattern is identified,
@@ -519,9 +520,10 @@ Explain how such a pattern
 is usually interpreted in clinical practice.
 
 Mandatory:
-— describe the SINGLE leading clinical scenario only
+— describe the SINGLE leading clinical scenario only when clearly supported by the available data
 — focus on explanatory logic of this scenario
 — use neutral, probabilistic explanatory wording
+— if confidence is low or reliable differentiation is not possible, explicitly preserve that uncertainty instead of presenting a single preferred interpretation
 — DO NOT mention, compare, imply, or contrast alternative interpretations
   or less probable scenarios in this section,
   explicitly or implicitly
