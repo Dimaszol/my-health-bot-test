@@ -874,6 +874,7 @@ if (pendingAction) {
 
 let currentOpenDocId = null;
 let pollingActive = false;
+let currentProgressStep = 0;
 history.scrollRestoration = 'manual';
 
 // ========================================
@@ -997,6 +998,9 @@ const RING_C = 2 * Math.PI * 70; // 439.82
 function setProgressStep(stepIdx) {
     const isDone = stepIdx >= TOTAL_STEPS;
     const pct = isDone ? 100 : Math.round((stepIdx / TOTAL_STEPS) * 100);
+
+    currentProgressStep = stepIdx;
+    sessionStorage.setItem('progressStep', stepIdx);
 
     // Ring fill
     const ringFg = document.getElementById('progress-ring-fg');
@@ -1664,7 +1668,12 @@ async function startDocumentPolling(docId, resuming = false) {
     if (uploadCard) uploadCard.style.display = 'none';
     if (progressCard) progressCard.style.display = 'block';
     
-    if (!resuming) simulateProgressSteps();
+    if (!resuming) {
+        simulateProgressSteps();
+    } else {
+        const savedStep = parseInt(sessionStorage.getItem('progressStep') || '0');
+        setProgressStep(savedStep);
+    }
     
     document.addEventListener('visibilitychange', function onVisibilityChange() {
         if (document.visibilityState === 'visible') {
@@ -1693,6 +1702,7 @@ async function startDocumentPolling(docId, resuming = false) {
             clearInterval(pollInterval);
             
             setProgressStep(TOTAL_STEPS); // показывает 100% и галочку
+            sessionStorage.removeItem('progressStep');
             
             setTimeout(() => {
                 sessionStorage.setItem('pendingDocId', docId);
@@ -1702,6 +1712,7 @@ async function startDocumentPolling(docId, resuming = false) {
         } else if (status === 'failed') {
             pollingActive = false;
             clearInterval(pollInterval);
+            sessionStorage.removeItem('progressStep');
             
             alert('❌ {{ t("document_processing_error", lang) }}');
             window.goTo(window.location.pathname);

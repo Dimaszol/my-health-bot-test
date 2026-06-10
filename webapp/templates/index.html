@@ -835,4 +835,17 @@ function animateNumber(statName, targetValue, duration) {
     }, 16);
 }
 </script>
+<script>
+(function () {
+  // Только если открыто как standalone (TWA/PWA приложение)
+  if (!window.matchMedia('(display-mode: standalone)').matches) return;
+
+  // Определяем язык телефона
+  var lang = (navigator.language || navigator.userLanguage || 'en').substring(0, 2).toLowerCase();
+  var supported = ['de', 'ru', 'uk'];
+  var prefix = supported.includes(lang) ? '/' + lang : '';
+
+  window.location.replace(prefix + '/app-onboarding');
+})();
+</script>
 {% endblock %}

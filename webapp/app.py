@@ -642,6 +642,24 @@ async def version():
         "version": "1.0.1"        
     }
 
+@app.get("/app-onboarding", response_class=HTMLResponse)
+async def app_onboarding(request: Request):
+    if request.session.get('user_id'):
+        return RedirectResponse(url='/dashboard', status_code=302)
+    request.session['language'] = 'en'
+    context = get_template_context(request)
+    return templates.TemplateResponse('index_app.html', context)
+
+@app.get("/{lang}/app-onboarding", response_class=HTMLResponse)
+async def app_onboarding_lang(request: Request, lang: str):
+    if lang not in ['de', 'ru', 'uk']:
+        raise HTTPException(status_code=404)
+    if request.session.get('user_id'):
+        return RedirectResponse(url='/dashboard', status_code=302)
+    request.session['language'] = lang
+    context = get_template_context(request)
+    return templates.TemplateResponse('index_app.html', context)
+
 @app.get("/{lang}", response_class=HTMLResponse)
 async def index_with_language(request: Request, lang: str):
     """

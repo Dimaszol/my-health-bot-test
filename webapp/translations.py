@@ -3708,6 +3708,47 @@ TRANSLATIONS = {
         'ru': 'Нет данных', 'en': 'No data',
         'uk': 'Немає даних', 'de': 'Keine Daten'
     },
+
+    # ── App Onboarding (TWA/PWA) ──
+    'app_onb_slide1_title': {
+    'en': 'Upload a medical\ndocument',
+    'de': 'Medizinisches\nDokument hochladen',
+    'ru': 'Загрузите\nмедицинский документ',
+    'uk': 'Завантажте\nмедичний документ',
+    },
+
+    'app_onb_slide1_sub': {
+    'en': 'Understand what your test results,\nmedical reports and doctor notes mean.',
+    'de': 'Verstehen Sie, was Ihre Analysen,\nBefunde und Arztberichte bedeuten.',
+    'ru': 'Поймите, что означают ваши анализы,\nрезультаты обследований и заключения врачей.',
+    'uk': 'Зрозумійте, що означають ваші аналізи,\nрезультати обстежень та висновки лікарів.',
+    },
+    'app_onb_slide2_title': {
+    'en': 'Stop explaining\nyour history again and again',
+    'de': 'Erklären Sie Ihre Krankengeschichte\nnicht immer wieder neu',
+    'ru': 'Не объясняйте свою историю\nснова и снова',
+    'uk': 'Не пояснюйте свою історію\nзнову і знову',
+    },
+    'app_onb_slide2_sub': {
+    'en': 'Ask about test results, symptoms, or your health in general. PulseBook remembers your documents and previous conversations to provide answers tailored to your situation.',
+    'de': 'Fragen Sie nach Analysewerten, Symptomen oder Ihrer Gesundheit. PulseBook merkt sich Ihre Dokumente und frühere Gespräche, um Antworten passend zu Ihrer Situation zu geben.',
+    'ru': 'Спрашивайте о результатах анализов, симптомах и здоровье в целом. PulseBook помнит ваши документы и предыдущие консультации, чтобы давать ответы с учётом именно вашей ситуации.',
+    'uk': 'Запитуйте про результати аналізів, симптоми та здоров’я загалом. PulseBook пам’ятає ваші документи та попередні консультації, щоб надавати відповіді з урахуванням саме вашої ситуації.',
+    },
+    'app_onb_slide3_title': {
+        'en': 'Track your health\nover time',
+        'de': 'Verfolgen Sie Ihre\nGesundheit im Zeitverlauf',
+        'ru': 'Следите за здоровьем\nв динамике',
+        'uk': 'Стежте за здоров’ям\nу динаміці',
+    },
+
+    'app_onb_slide3_sub': {
+        'en': 'All documents and test results are organized into a timeline so you can see how your health changes over time',
+        'de': 'Alle Dokumente und Testergebnisse werden in einer Zeitleiste organisiert, damit Sie Veränderungen im Zeitverlauf sehen können',
+        'ru': 'Все анализы и документы выстраиваются в хронологию, чтобы вы могли видеть изменения показателей со временем',
+        'uk': 'Усі аналізи та документи формують хронологію, щоб ви могли бачити зміни показників з часом',
+    },
+    
 }
 
 
