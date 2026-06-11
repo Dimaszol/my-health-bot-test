@@ -587,7 +587,10 @@ async def assetlinks():
             "target": {
                 "namespace": "android_app",
                 "package_name": "health.pulsebook.app",
-                "sha256_cert_fingerprints": ["0E:C4:70:DF:B5:C3:46:5E:16:17:03:41:A1:D8:B5:9F:9B:46:CE:70:11:56:25:08:F6:E5:F1:B3:FC:D8:06:9F"]
+                "sha256_cert_fingerprints": [
+                    "0E:C4:70:DF:B5:C3:46:5E:16:17:03:41:A1:D8:B5:9F:9B:46:CE:70:11:56:25:08:F6:E5:F1:B3:FC:D8:06:9F",
+                    "DE:D7:70:E3:98:D5:96:29:79:75:F1:7D:15:75:CF:76:AA:73:C9:1F:2A:87:00:25:B9:35:AC:4F:9E:A6:5C:58"
+                ]
             }
         }
     ])
