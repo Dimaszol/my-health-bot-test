@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>
+  function setAppHeight() {
+    document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
+  }
+  setAppHeight();
+  window.addEventListener('resize', setAppHeight);
+</script>
 <meta name="theme-color" content="#f4faf9">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -35,10 +42,8 @@ body {
 }
 
 /* ── Layout ── */
-.onb {
-  height: 100vh;
-  height: 100dvh;
-  max-height: 100vh;
+.onb {  
+  height: var(--app-height, 100dvh);  
   display: flex;
   flex-direction: column;
   position: relative;
