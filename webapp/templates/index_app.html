@@ -61,6 +61,8 @@ body {
   gap: 10px;
   padding: 28px 24px 10px;
   padding-top: calc(28px + env(safe-area-inset-top, 0px));
+  position: relative;
+  z-index: 10;
 }
 
 .brand-name {
@@ -68,6 +70,72 @@ body {
   font-weight: 800;
   letter-spacing: -0.5px;
   color: var(--ink);
+}
+
+/* ── Language picker ── */
+.lang-pick {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-top: 6px; /* компенсация padding-top хедера */
+}
+
+.lang-btn {
+  background: transparent;
+  border: 2px solid var(--td);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--td);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.lang-btn:hover {
+  background: rgba(26, 201, 173, 0.1);
+}
+
+.lang-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  overflow: hidden;
+  display: none;
+  min-width: 90px;
+  z-index: 100;
+}
+
+.lang-dropdown.open { display: block; }
+
+.lang-option {
+  display: block;
+  width: 100%;
+  padding: 11px 16px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.lang-option:hover { background: #f4faf9; }
+
+.lang-option.active {
+  background: var(--td);
+  color: #fff;
 }
 
 /* ── Swipe area ── */
@@ -227,11 +295,23 @@ body {
   <!-- Header -->
   <div class="onb-head">
     <svg width="32" height="30" viewBox="0 0 32 30" fill="none" aria-hidden="true">
-      <path d="M16 27.5C16 27.5 2.5 19.6 2.5 10.3 2.5 5.9 5.8 3 9.4 3 12 3 14.4 4.4 16 6.8 17.6 4.4 20 3 22.6 3 26.2 3 29.5 5.9 29.5 10.3 29.5 19.6 16 27.5 16 27.5Z" fill="#1AC9AD"/>
-      <path d="M6.5 14.2H10.4L12.2 9.4L15 19.4L17.4 12.6L18.9 14.2H25.5" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M16 27.5C16 27.5 2.5 19.6 2.5 10.3 2.5 5.9 5.8 3 9.4 3 12 3 14.4 4.4 16 6.8 17.6 4.4 20 3 22.6 3 26.2 3 29.5 5.9 29.5 10.3 29.5 19.6 16 27.5 16 27.5Z" fill="#1AC9AD"/>
+        <path d="M6.5 14.2H10.4L12.2 9.4L15 19.4L17.4 12.6L18.9 14.2H25.5" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     <span class="brand-name">PulseBook</span>
-  </div>
+
+    <div class="lang-pick">
+        <button class="lang-btn" id="langBtn">
+        {{ lang | upper }} <span>▾</span>
+        </button>
+        <div class="lang-dropdown" id="langDropdown">
+            <button class="lang-option {% if lang == 'en' %}active{% endif %}" onclick="changeLang('en')">GB English</button>
+            <button class="lang-option {% if lang == 'de' %}active{% endif %}" onclick="changeLang('de')">DE Deutsch</button>
+            <button class="lang-option {% if lang == 'uk' %}active{% endif %}" onclick="changeLang('uk')">UA Українська</button>
+            <button class="lang-option {% if lang == 'ru' %}active{% endif %}" onclick="changeLang('ru')">RU Русский</button>
+        </div>
+    </div>
+    </div>
 
   <!-- Swipe viewport -->
   <div class="swipe-vp" id="swipeVp">
@@ -292,6 +372,10 @@ body {
 </div><!-- /onb -->
 
 <script>
+function changeLang(l) {
+  const prefix = l === 'en' ? '' : '/' + l;
+  window.location.href = prefix + '/app-onboarding';
+}
 (function () {
   const track = document.getElementById('swipeTrack');
   const vp    = document.getElementById('swipeVp');
@@ -378,6 +462,17 @@ body {
   });
 
   render(false);
+
+  // Language picker
+    const langBtn = document.getElementById('langBtn');
+    const langDropdown = document.getElementById('langDropdown');
+
+    langBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    langDropdown.classList.toggle('open');
+    });
+
+    document.addEventListener('click', () => langDropdown.classList.remove('open'));    
 })();
 </script>
 
