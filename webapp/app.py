@@ -650,12 +650,17 @@ async def app_onboarding(request: Request):
     if request.session.get('user_id'):
         return RedirectResponse(url='/dashboard', status_code=302)
     
-    accept_lang = request.headers.get('accept-language', 'en')
-    lang_code = accept_lang.split(',')[0].split('-')[0].lower()
-    supported = ['de', 'ru', 'uk']
-    lang = lang_code if lang_code in supported else 'en'
+    # Если явно выбран язык через параметр
+    lang_param = request.query_params.get('lang', '')
+    if lang_param == 'en':
+        request.session['language'] = 'en'
+    else:
+        accept_lang = request.headers.get('accept-language', 'en')
+        lang_code = accept_lang.split(',')[0].split('-')[0].lower()
+        supported = ['de', 'ru', 'uk']
+        lang = lang_code if lang_code in supported else 'en'
+        request.session['language'] = lang
     
-    request.session['language'] = lang
     context = get_template_context(request)
     return templates.TemplateResponse('index_app.html', context)
 

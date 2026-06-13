@@ -374,7 +374,8 @@ body {
 <script>
 function changeLang(l) {
   const prefix = l === 'en' ? '' : '/' + l;
-  window.location.href = prefix + '/app-onboarding';
+  const suffix = l === 'en' ? '?lang=en' : '';
+  window.location.href = prefix + '/app-onboarding' + suffix;
 }
 (function () {
   const track = document.getElementById('swipeTrack');
