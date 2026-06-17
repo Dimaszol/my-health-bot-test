@@ -60,6 +60,10 @@ HONEYPOT_WINDOW = 300  # 5 минут
 # 🧠 Максимум ключей в памяти (защита от memory leak при DDoS)
 MAX_IPS_IN_MEMORY = 10000
 
+# 🔍 Бан за массовые 404 (сканеры перебирают пути)
+NOT_FOUND_THRESHOLD = 7   # 7 за минуту = сканер
+NOT_FOUND_WINDOW = 60
+
 # 🚨 Path traversal / LFI паттерны
 TRAVERSAL_PATTERNS = [
     '../', '..\\', '%2e%2e', '%252e', '..%c0%af', '..%af',
@@ -92,6 +96,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         # 🔁 Счётчик повторных нарушений: {key: [timestamps]}
         self.rate_violations: Dict[str, List[float]] = defaultdict(list)
+
+        # 🔍 Счётчик 404-ответов: {key: [timestamps]}
+        self.not_found_hits: Dict[str, List[float]] = defaultdict(list)
 
         # 🕐 Время жизни записей (5 минут)
         self.cleanup_interval = 300
@@ -205,12 +212,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             if not self.rate_violations[key]:
                 del self.rate_violations[key]
 
+        # Очищаем not_found hits
+        for key in list(self.not_found_hits.keys()):
+            self.not_found_hits[key] = [t for t in self.not_found_hits[key] if t > cutoff_time]
+            if not self.not_found_hits[key]:
+                del self.not_found_hits[key]
+
         # Очищаем истёкшие баны
         expired_bans = [k for k, t in self.banned_keys.items() if current_time > t]
         for key in expired_bans:
             del self.banned_keys[key]
 
-        logger.info(f"Rate limit cleanup: removed {len(ips_to_remove)} inactive, {len(expired_bans)} expired bans")
+        logger.debug(f"Rate limit cleanup: removed {len(ips_to_remove)} inactive, {len(expired_bans)} expired bans")
 
     def _check_memory_limit(self):
         """Защита от memory leak при DDoS"""
@@ -311,6 +324,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.requests[key][endpoint_pattern] = recent_requests + [current_time]
 
         response = await call_next(request)
+
+        # 🔍 Считаем 404 — баним сканеры
+        if response.status_code == 404:
+            window_start = current_time - NOT_FOUND_WINDOW
+            hits = [t for t in self.not_found_hits[key] if t > window_start]
+            hits.append(current_time)
+            self.not_found_hits[key] = hits
+            if len(hits) >= NOT_FOUND_THRESHOLD:
+                if key not in self.banned_keys:
+                    self.banned_keys[key] = current_time + HONEYPOT_BAN_SECONDS
+                    logger.warning(f"Scanner banned (404s) | IP: {client_ip[:10]}...")
+
         response.headers['X-RateLimit-Limit'] = str(limit)
         response.headers['X-RateLimit-Remaining'] = str(limit - len(recent_requests) - 1)
         return response

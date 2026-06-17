@@ -40,6 +40,7 @@ from utils.telegram_notifications import send_admin_notification
 import logging
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
 """
 🎯 ЧТО ДЕЛАЕТ ЭТО ПРИЛОЖЕНИЕ:
