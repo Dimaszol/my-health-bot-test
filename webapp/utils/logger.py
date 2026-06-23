@@ -48,17 +48,10 @@ def mask_email(email: str) -> str:
 
 
 def mask_user_id(user_id: Any) -> str:
-    """
-    Маскирует user_id: 123456789 → user_***789
-    """
     if not user_id:
         return "***"
     
-    user_id_str = str(user_id)
-    if len(user_id_str) <= 3:
-        return "user_***"
-    
-    return f"user_***{user_id_str[-3:]}"
+    return f"user_***{str(user_id)[-4:]}"
 
 
 def mask_sensitive_text(text: str, max_length: int = 50) -> str:

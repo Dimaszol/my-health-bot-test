@@ -572,7 +572,7 @@ async def subscription_page(request: Request, user_id: int = Depends(get_current
             current_package_id = subscription['package_id']
             safe_log_info("Активная подписка найдена")
         else:
-            safe_log_info("Подписка не найдена")
+            safe_log_info("Подписка не найдена", user_id=user_id)
     finally:
         await release_db_connection(conn)
     
