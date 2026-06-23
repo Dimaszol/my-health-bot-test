@@ -3,7 +3,7 @@
 
 import json
 from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
@@ -170,6 +170,17 @@ async def analysis_list(request: Request, lang: str = "en"):
         raise HTTPException(status_code=404)
 
     request.session['language'] = lang
+
+    # Редиректы 301 для старых слагов из Google Search Console
+    SLUG_REDIRECTS = {
+        "anti-tpo": "anti_tpo",
+        "bilirubin-total": "bilirubin_total",
+        "reticulocytes": "reticulocyte",
+        "non-hdl": "non_hdl",
+    }
+    if slug in SLUG_REDIRECTS:
+        lang_prefix = f"/{lang}" if lang != "en" else ""
+        return RedirectResponse(url=f"{lang_prefix}/analysis/{SLUG_REDIRECTS[slug]}", status_code=301)
 
     conn = await get_db_connection()
     try:
